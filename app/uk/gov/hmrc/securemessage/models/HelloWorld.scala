@@ -14,19 +14,13 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.securemessage.controllers
+package uk.gov.hmrc.securemessage.models
 
-import javax.inject.{ Inject, Singleton }
-import play.api.mvc.{ Action, AnyContent, ControllerComponents }
-import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.securemessage.config.AppConfig
+import play.api.libs.json.{ Json, OFormat }
 
-import scala.concurrent.Future
+case class HelloWorld(string: String)
 
-class MicroserviceHelloWorldController @Inject()(config: AppConfig, cc: ControllerComponents)
-    extends BackendController(cc) {
-
-  def hello(): Action[AnyContent] = Action.async { implicit request =>
-    Future.successful(Ok("Hello world"))
-  }
+object HelloWorld {
+  implicit val secureMessageFormat: OFormat[HelloWorld] =
+    Json.format[HelloWorld]
 }
