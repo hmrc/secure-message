@@ -16,4 +16,11 @@
 
 package uk.gov.hmrc.securemessage.models
 
+import play.api.libs.json.{Json, OFormat}
+
 case class HelloWorld(string: String)
+
+object HelloWorld {
+  implicit val secureMessageFormat: OFormat[HelloWorld] =
+    Json.format[HelloWorld]
+}

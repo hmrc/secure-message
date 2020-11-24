@@ -19,7 +19,7 @@ lazy val microservice = Project(appName, file("."))
     libraryDependencies ++= AppDependencies.compile ++ AppDependencies.test,
     // ***************
     // Use the silencer plugin to suppress warnings
-    scalacOptions += "-P:silencer:pathFilters=routes",
+    scalacOptions += "-P:silencer:pathFilters=app.routes",
     libraryDependencies ++= Seq(
       compilerPlugin(
         "com.github.ghik" % "silencer-plugin" % silencerVersion cross CrossVersion.full
@@ -34,3 +34,4 @@ lazy val microservice = Project(appName, file("."))
   .settings(resolvers += Resolver.jcenterRepo)
 
 swaggerDomainNameSpaces := Seq("models")
+swaggerRoutesFile := "app.routes"

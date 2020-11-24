@@ -1,5 +1,5 @@
 ---
-swagger: "3.0.0"
+swagger: "2.0"
 info:
   title: "Poweramp API"
   description: "Power your music"
