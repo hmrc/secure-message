@@ -23,8 +23,8 @@ import uk.gov.hmrc.securemessage.config.AppConfig
 
 import scala.concurrent.Future
 
-@Singleton()
-class MicroserviceHelloWorldController @Inject()(cc: ControllerComponents) extends BackendController(cc) {
+class MicroserviceHelloWorldController @Inject()(config: AppConfig, cc: ControllerComponents)
+    extends BackendController(cc) {
 
   def hello(): Action[AnyContent] = Action.async { implicit request =>
     Future.successful(Ok("Hello world"))
