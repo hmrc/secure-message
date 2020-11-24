@@ -1,5 +1,7 @@
 import uk.gov.hmrc.DefaultBuildSettings.integrationTestSettings
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin.publishingSettings
+import com.lucidchart.sbt.scalafmt.ScalafmtCorePlugin.autoImport._
+import sbt.Resolver
 
 val appName = "secure-message"
 
@@ -31,7 +33,22 @@ lazy val microservice = Project(appName, file("."))
   .settings(publishingSettings: _*)
   .configs(IntegrationTest)
   .settings(integrationTestSettings(): _*)
-  .settings(resolvers += Resolver.jcenterRepo)
+  .settings(
+    resolvers ++= Seq(
+      Resolver.jcenterRepo,
+      Resolver.bintrayRepo("hmrc", "releases"),
+      Resolver.bintrayRepo("jetbrains", "markdown"),
+      "bintray-djspiewak-maven" at "https://dl.bintray.com/djspiewak/maven"
+    ),
+    inConfig(IntegrationTest)(
+      scalafmtCoreSettings ++
+        Seq(compileInputs in compile := Def.taskDyn {
+          val task = test in (resolvedScoped.value.scope in scalafmt.key)
+          val previousInputs = (compileInputs in compile).value
+          task.map(_ => previousInputs)
+        }.value)
+    )
+  )
 
 swaggerDomainNameSpaces := Seq("models")
 swaggerRoutesFile := "app.routes"
