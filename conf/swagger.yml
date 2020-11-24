@@ -1,0 +1,9 @@
+---
+swagger: "2.0"
+info:
+  title: "Hello world endpoint"
+  description: "My hello world endpoint"
+consumes:
+  - application/json
+produces:
+  - application/json
