@@ -11,7 +11,6 @@ lazy val microservice = Project(appName, file("."))
     SbtAutoBuildPlugin,
     SbtGitVersioning,
     SbtDistributablesPlugin,
-    SwaggerPlugin
   )
   .settings(
     majorVersion := 0,
@@ -32,6 +31,3 @@ lazy val microservice = Project(appName, file("."))
   .configs(IntegrationTest)
   .settings(integrationTestSettings(): _*)
   .settings(resolvers += Resolver.jcenterRepo)
-
-swaggerDomainNameSpaces := Seq("models")
-swaggerRoutesFile := "app.routes"
