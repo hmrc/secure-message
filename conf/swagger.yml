@@ -1,8 +1,8 @@
 ---
 swagger: "2.0"
 info:
-  title: "Poweramp API"
-  description: "Power your music"
+  title: "Hello world endpoint"
+  description: "My hello world endpoint"
 consumes:
   - application/json
 produces:
