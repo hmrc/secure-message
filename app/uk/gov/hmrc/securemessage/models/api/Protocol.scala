@@ -14,13 +14,9 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.securemessage.models
+package uk.gov.hmrc.securemessage.models.api
 
-import play.api.libs.json.{ Json, OFormat }
+object Protocol {
+  case class Conversation(message: String)
 
-case class HelloWorld(string: String)
-
-object HelloWorld {
-  implicit val secureMessageFormat: OFormat[HelloWorld] =
-    Json.format[HelloWorld]
 }

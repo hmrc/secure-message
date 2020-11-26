@@ -16,17 +16,21 @@
 
 package uk.gov.hmrc.securemessage.controllers
 
-import javax.inject.{ Inject, Singleton }
-import play.api.mvc.{ Action, AnyContent, ControllerComponents }
+import javax.inject.Inject
+import play.api.libs.json.JsValue
+import play.api.mvc.{ Action, ControllerComponents }
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.securemessage.config.AppConfig
+import uk.gov.hmrc.securemessage.models.api.ConversationRequest
 
 import scala.concurrent.Future
 
-class MicroserviceHelloWorldController @Inject()(config: AppConfig, cc: ControllerComponents)
-    extends BackendController(cc) {
+class SecureMessageController @Inject()(val cc: ControllerComponents) extends BackendController(cc) {
 
-  def hello(): Action[AnyContent] = Action.async { implicit request =>
-    Future.successful(Ok("Hello world"))
+  def createConversation(client: String, conversationId: String): Action[JsValue] = Action.async(parse.json) {
+    implicit request =>
+      withJsonBody[ConversationRequest] { _ =>
+        Future.successful(Created("It works!"))
+      }
   }
+
 }
