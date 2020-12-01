@@ -75,3 +75,5 @@ lazy val microservice = Project(appName, file("."))
 
 swaggerDomainNameSpaces := Seq("models")
 swaggerRoutesFile := "app.routes"
+coverageEnabled := true
+wartremoverWarnings ++= Warts.all
