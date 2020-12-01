@@ -18,9 +18,10 @@ import uk.gov.hmrc.DefaultBuildSettings.integrationTestSettings
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin.publishingSettings
 import com.lucidchart.sbt.scalafmt.ScalafmtCorePlugin.autoImport._
 import sbt.Resolver
-import uk.gov.hmrc.{ExternalService, ServiceManagerPlugin}
+import uk.gov.hmrc.{ ExternalService, ServiceManagerPlugin }
 import uk.gov.hmrc.ServiceManagerPlugin.Keys.itDependenciesList
-
+import java.net.URL
+import SbtBobbyPlugin.BobbyKeys.bobbyRulesURL
 
 val appName = "secure-message"
 
@@ -73,7 +74,8 @@ lazy val microservice = Project(appName, file("."))
     ExternalService("DATASTREAM")
   ))
 
-swaggerDomainNameSpaces := Seq("models")
-swaggerRoutesFile := "app.routes"
+swaggerDomainNameSpaces := Seq("uk.gov.hmrc.securemessage.models.api")
+swaggerRoutesFile := "prod.routes"
 coverageEnabled := true
 wartremoverWarnings ++= Warts.all
+bobbyRulesURL := Some(new URL("https://webstore.tax.service.gov.uk/bobby-config/deprecated-dependencies.json"))

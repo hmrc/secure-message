@@ -2,12 +2,6 @@
 #  parameters:
 #    - name: body
 #      schema:
-#        $ref: '#/definitions/uk.gov.hmrc.securemessage.models.api.Protocol.Conversation'
+#        $ref: '#/definitions/uk.gov.hmrc.securemessage.models.api.ConversationRequest'
 ###
 PUT   /conversation/:client/:conversationId uk.gov.hmrc.securemessage.controllers.SecureMessageController.createConversation(client: String, conversationId: String)
-
-### NoDocs ###
-GET   /docs/swagger-ui/*file                controllers.Assets.at(path:String="/public/lib/swagger-ui", file:String)
-
-### NoDocs ###
-GET   /assets/*file                         controllers.Assets.versioned(path="/public", file: Asset)
