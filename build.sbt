@@ -75,6 +75,9 @@ lazy val microservice = Project(appName, file("."))
   ))
 
 swaggerDomainNameSpaces := Seq("uk.gov.hmrc.securemessage.models.api")
+//swaggerTarget := baseDirectory.value / "docs"
+swaggerFileName := "secure-message-swagger.json"
+swaggerPrettyJson := true
 swaggerRoutesFile := "prod.routes"
 coverageEnabled := true
 wartremoverWarnings ++= Warts.all

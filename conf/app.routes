@@ -1,7 +1,11 @@
 ###
-#  parameters:
-#    - name: body
-#      schema:
-#        $ref: '#/definitions/uk.gov.hmrc.securemessage.models.api.ConversationRequest'
+# summary: create a conversation
+#   parameters:
+#     - name: body
+#       schema:
+#         $ref: '#/definitions/uk.gov.hmrc.securemessage.models.api.ConversationRequest'
+#   responses:
+#     201:
+#       description: conversation created successfully
 ###
 PUT   /conversation/:client/:conversationId uk.gov.hmrc.securemessage.controllers.SecureMessageController.createConversation(client: String, conversationId: String)
