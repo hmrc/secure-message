@@ -18,43 +18,43 @@ package uk.gov.hmrc.securemessage.models.api
 
 import play.api.libs.json.{ Json, OFormat }
 
-case class Alert(templateId: String, parameters: Option[Map[String, String]])
+final case class Alert(templateId: String, parameters: Option[Map[String, String]])
 object Alert {
   implicit val alertFormat: OFormat[Alert] =
     Json.format[Alert]
 }
 
-case class Enrolment(key: String, name: String, value: String)
+final case class Enrolment(key: String, name: String, value: String)
 object Enrolment {
   implicit val enrolmentFormat: OFormat[Enrolment] =
     Json.format[Enrolment]
 }
 
-case class System(name: String, parameters: Map[String, String], display: String)
+final case class System(name: String, parameters: Map[String, String], display: String)
 object System {
   implicit val systemFormat: OFormat[System] =
     Json.format[System]
 }
 
-case class Customer(enrolment: Enrolment, name: Option[String], email: Option[String])
+final case class Customer(enrolment: Enrolment, name: Option[String], email: Option[String])
 object Customer {
   implicit val customerFormat: OFormat[Customer] =
     Json.format[Customer]
 }
 
-case class Sender(system: System)
+final case class Sender(system: System)
 object Sender {
   implicit val senderFormat: OFormat[Sender] =
     Json.format[Sender]
 }
 
-case class Recipient(customer: Customer)
+final case class Recipient(customer: Customer)
 object Recipient {
   implicit val recipientFormat: OFormat[Recipient] =
     Json.format[Recipient]
 }
 
-case class ConversationRequest(
+final case class ConversationRequest(
   sender: Sender,
   recipients: List[Recipient],
   alert: Alert,

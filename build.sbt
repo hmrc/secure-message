@@ -77,5 +77,7 @@ lazy val microservice = Project(appName, file("."))
 swaggerDomainNameSpaces := Seq("uk.gov.hmrc.securemessage.models.api")
 swaggerRoutesFile := "prod.routes"
 coverageEnabled := true
-wartremoverWarnings ++= Warts.all
+wartremoverErrors ++= Warts.all
+wartremoverExcluded ++= routes.in(Compile).value
+
 bobbyRulesURL := Some(new URL("https://webstore.tax.service.gov.uk/bobby-config/deprecated-dependencies.json"))

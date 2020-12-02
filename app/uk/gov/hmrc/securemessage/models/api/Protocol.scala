@@ -17,6 +17,6 @@
 package uk.gov.hmrc.securemessage.models.api
 
 object Protocol {
-  case class Conversation(message: String)
+  final case class Conversation(message: String)
 
 }
