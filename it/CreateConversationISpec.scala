@@ -16,8 +16,8 @@
 
 import java.io.File
 
-import play.api.http.Status._
 import org.scalatestplus.play.PlaySpec
+import play.api.http.Status._
 import play.api.http.{ ContentTypes, HeaderNames }
 import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
@@ -28,6 +28,7 @@ class CreateConversationISpec extends PlaySpec with ServiceSpec {
   override def externalServices: Seq[String] = Seq.empty
 
   "A PUT request to /secure-message/conversation/{client}/{conversationId}" should {
+
     "return CREATED when sent a full and valid JSON payload" in {
       val wsClient = app.injector.instanceOf[WSClient]
       val response =
@@ -39,9 +40,7 @@ class CreateConversationISpec extends PlaySpec with ServiceSpec {
       response.status mustBe CREATED
 
     }
-  }
 
-  "A PUT request to /secure-message/conversation/{client}/{conversationId}" should {
     "return CREATED when sent a minimal and valid JSON payload" in {
       val wsClient = app.injector.instanceOf[WSClient]
       val response =
@@ -52,9 +51,7 @@ class CreateConversationISpec extends PlaySpec with ServiceSpec {
           .futureValue
       response.status mustBe CREATED
     }
-  }
 
-  "A PUT request to /secure-message/conversation/{client}/{conversationId}" should {
     "return BAD REQUEST when sent a minimal and valid JSON payload" in {
       val wsClient = app.injector.instanceOf[WSClient]
       val response =
@@ -66,5 +63,4 @@ class CreateConversationISpec extends PlaySpec with ServiceSpec {
       response.status mustBe BAD_REQUEST
     }
   }
-
 }
