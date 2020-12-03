@@ -22,6 +22,7 @@ import uk.gov.hmrc.{ ExternalService, ServiceManagerPlugin }
 import uk.gov.hmrc.ServiceManagerPlugin.Keys.itDependenciesList
 import java.net.URL
 import SbtBobbyPlugin.BobbyKeys.bobbyRulesURL
+import SbtBobbyPlugin.BobbyKeys.validate
 
 val appName = "secure-message"
 
@@ -74,6 +75,10 @@ lazy val microservice = Project(appName, file("."))
     ExternalService("DATASTREAM")
   ))
 
+lazy val compileScalastyle = taskKey[Unit]("compileScalastyle")
+// scalastyle >= 0.9.0
+compileScalastyle := scalastyle.in(Compile).toTask("").value
+(compile in Compile) := ((compile in Compile) dependsOn compileScalastyle).value
 swaggerDomainNameSpaces := Seq("uk.gov.hmrc.securemessage.models.api")
 swaggerTarget := baseDirectory.value / "conf"
 swaggerFileName := "secure-message-swagger.json"
@@ -82,5 +87,7 @@ swaggerRoutesFile := "prod.routes"
 coverageEnabled := true
 wartremoverErrors in (Compile, compile) ++= Warts.all
 wartremoverExcluded ++= routes.in(Compile).value
-
 bobbyRulesURL := Some(new URL("https://webstore.tax.service.gov.uk/bobby-config/deprecated-dependencies.json"))
+addCompilerPlugin("org.wartremover" %% "wartremover" % "2.4.13" cross CrossVersion.full)
+scalacOptions += "-P:wartremover:traverser:org.wartremover.warts.Unsafe"
+scalafmtOnCompile := true
