@@ -80,7 +80,7 @@ swaggerFileName := "secure-message-swagger.json"
 swaggerPrettyJson := true
 swaggerRoutesFile := "prod.routes"
 coverageEnabled := true
-wartremoverErrors ++= Warts.all
+wartremoverErrors in (Compile, compile) ++= Warts.all
 wartremoverExcluded ++= routes.in(Compile).value
 
 bobbyRulesURL := Some(new URL("https://webstore.tax.service.gov.uk/bobby-config/deprecated-dependencies.json"))
