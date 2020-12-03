@@ -41,9 +41,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures {
       val response = controller.createConversation("cdcm", "123")(fakeRequest)
       status(response) mustBe CREATED
     }
-  }
 
-  "Calling createConversation" should {
     "return CREATED (201) when sent a request with no optional fields populated" in {
       val controller = new SecureMessageController(Helpers.stubControllerComponents())
       val fakeRequest = FakeRequest(
@@ -54,9 +52,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures {
       val response = controller.createConversation("cdcm", "123")(fakeRequest)
       status(response) mustBe CREATED
     }
-  }
 
-  "Calling createConversation" should {
     "return BAD REQUEST (400) when sent a request with required fields missing" in {
       val controller = new SecureMessageController(Helpers.stubControllerComponents())
       val fakeRequest = FakeRequest(
