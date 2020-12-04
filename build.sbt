@@ -76,7 +76,6 @@ lazy val microservice = Project(appName, file("."))
   ))
 
 lazy val compileScalastyle = taskKey[Unit]("compileScalastyle")
-// scalastyle >= 0.9.0
 compileScalastyle := scalastyle.in(Compile).toTask("").value
 (compile in Compile) := ((compile in Compile) dependsOn compileScalastyle).value
 swaggerDomainNameSpaces := Seq("uk.gov.hmrc.securemessage.models.api")
@@ -87,7 +86,7 @@ swaggerRoutesFile := "prod.routes"
 coverageEnabled := true
 wartremoverErrors in (Compile, compile) ++= Warts.all
 wartremoverExcluded ++= routes.in(Compile).value
-bobbyRulesURL := Some(new URL("https://webstore.tax.service.gov.uk/bobby-config/deprecated-dependencies.json"))
 addCompilerPlugin("org.wartremover" %% "wartremover" % "2.4.13" cross CrossVersion.full)
+bobbyRulesURL := Some(new URL("https://webstore.tax.service.gov.uk/bobby-config/deprecated-dependencies.json"))
 scalacOptions += "-P:wartremover:traverser:org.wartremover.warts.Unsafe"
 scalafmtOnCompile := true
