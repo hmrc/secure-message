@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-import uk.gov.hmrc.DefaultBuildSettings.integrationTestSettings
-import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin.publishingSettings
+import java.net.URL
+
 import com.lucidchart.sbt.scalafmt.ScalafmtCorePlugin.autoImport._
 import sbt.Resolver
-import uk.gov.hmrc.{ ExternalService, ServiceManagerPlugin }
+import uk.gov.hmrc.DefaultBuildSettings.integrationTestSettings
+import uk.gov.hmrc.SbtBobbyPlugin.BobbyKeys.bobbyRulesURL
 import uk.gov.hmrc.ServiceManagerPlugin.Keys.itDependenciesList
-import java.net.URL
-import SbtBobbyPlugin.BobbyKeys.bobbyRulesURL
-import SbtBobbyPlugin.BobbyKeys.validate
+import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin.publishingSettings
+import uk.gov.hmrc.{ ExternalService, ServiceManagerPlugin }
 
 val appName = "secure-message"
 
@@ -42,7 +42,12 @@ lazy val microservice = Project(appName, file("."))
     libraryDependencies ++= AppDependencies.compile ++ AppDependencies.test,
     // ***************
     // Use the silencer plugin to suppress warnings
-    scalacOptions += "-P:silencer:pathFilters=app.routes",
+    scalacOptions ++= Seq(
+      "-P:wartremover:excluded:/conf/app.routes",
+      "-P:silencer:pathFilters=app.routes",
+      "-P:wartremover:traverser:org.wartremover.warts.Unsafe",
+      "-Xfatal-warnings"
+    ),
     libraryDependencies ++= Seq(
       compilerPlugin(
         "com.github.ghik" % "silencer-plugin" % silencerVersion cross CrossVersion.full
@@ -88,5 +93,5 @@ wartremoverErrors in (Compile, compile) ++= Warts.all
 wartremoverExcluded ++= routes.in(Compile).value
 addCompilerPlugin("org.wartremover" %% "wartremover" % "2.4.13" cross CrossVersion.full)
 bobbyRulesURL := Some(new URL("https://webstore.tax.service.gov.uk/bobby-config/deprecated-dependencies.json"))
-scalacOptions += "-P:wartremover:traverser:org.wartremover.warts.Unsafe"
 scalafmtOnCompile := true
+PlayKeys.playDefaultPort := 9051
