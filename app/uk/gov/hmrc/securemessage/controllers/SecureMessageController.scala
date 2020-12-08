@@ -17,6 +17,7 @@
 package uk.gov.hmrc.securemessage.controllers
 
 import javax.inject.Inject
+import play.api.Logger
 import play.api.libs.json.JsValue
 import play.api.mvc.{ Action, ControllerComponents }
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
@@ -26,11 +27,14 @@ import scala.concurrent.Future
 
 class SecureMessageController @Inject()(val cc: ControllerComponents) extends BackendController(cc) {
 
+  val logger: Logger = Logger(this.getClass())
+
   def createConversation(client: String, conversationId: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
       withJsonBody[ConversationRequest] { _ =>
+        logger.info(client)
+        logger.info(conversationId)
         Future.successful(Created("It works!"))
       }
   }
-
 }

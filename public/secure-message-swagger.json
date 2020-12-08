@@ -8,6 +8,9 @@
           },
           "parameters" : {
             "nullable" : true,
+            "additionalProperties" : {
+              "type" : "string"
+            },
             "type" : "object"
           }
         },
@@ -57,6 +60,9 @@
             "type" : "string"
           },
           "parameters" : {
+            "additionalProperties" : {
+              "type" : "string"
+            },
             "type" : "object"
           },
           "display" : {
@@ -88,6 +94,9 @@
             "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.models.api.Alert"
           },
           "tags" : {
+            "additionalProperties" : {
+              "type" : "string"
+            },
             "type" : "object"
           },
           "subject" : {
