@@ -1,4 +1,5 @@
 {
+  "openapi" : "3.0.3",
   "paths" : {
     "/secure-message/conversation/{client}/{conversationId}" : {
       "put" : {
@@ -136,7 +137,6 @@
       "required" : [ "sender", "recipients", "alert", "tags", "subject", "message" ]
     }
   },
-  "swagger" : "2.0",
   "info" : {
     "title" : "Secure Message API",
     "version" : "0.4.0-SNAPSHOT"

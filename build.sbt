@@ -91,6 +91,7 @@ swaggerTarget := baseDirectory.value / "public"
 swaggerFileName := "secure-message-swagger.json"
 swaggerPrettyJson := true
 swaggerRoutesFile := "prod.routes"
+swaggerV3 := true
 coverageEnabled := true
 wartremoverErrors in (Compile, compile) ++= Warts.all
 wartremoverExcluded ++= routes.in(Compile).value
