@@ -131,6 +131,7 @@ lazy val microservice = Project(appName, file("."))
 lazy val compileScalastyle = taskKey[Unit]("compileScalastyle")
 compileScalastyle := scalastyle.in(Compile).toTask("").value
 (compile in Compile) := ((compile in Compile) dependsOn compileScalastyle).value
+
 swaggerDomainNameSpaces := Seq("uk.gov.hmrc.securemessage.models.api")
 swaggerTarget := baseDirectory.value / "public"
 swaggerFileName := "secure-message-swagger.json"
@@ -152,6 +153,9 @@ lazy val silencerSettings: Seq[Setting[_]] = {
       compilerPlugin("com.github.ghik" % "silencer-plugin" % silencerVersion cross CrossVersion.full))
   )
 }
+
+dependencyUpdatesFailBuild := true
+(compile in Compile) := ((compile in Compile) dependsOn dependencyUpdates).value
 dependencyUpdatesFilter -= moduleFilter(organization = "org.scala-lang")
 dependencyUpdatesFilter -= moduleFilter(organization = "com.github.ghik")
 dependencyUpdatesFilter -= moduleFilter(organization = "com.typesafe.play")
