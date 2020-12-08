@@ -152,3 +152,5 @@ lazy val silencerSettings: Seq[Setting[_]] = {
       compilerPlugin("com.github.ghik" % "silencer-plugin" % silencerVersion cross CrossVersion.full))
   )
 }
+dependencyUpdatesFilter -= moduleFilter(organization = "org.scala-lang")
+dependencyUpdatesFilter -= moduleFilter(organization = "com.github.ghik")
