@@ -154,3 +154,5 @@ lazy val silencerSettings: Seq[Setting[_]] = {
 }
 dependencyUpdatesFilter -= moduleFilter(organization = "org.scala-lang")
 dependencyUpdatesFilter -= moduleFilter(organization = "com.github.ghik")
+dependencyUpdatesFilter -= moduleFilter(organization = "com.typesafe.play")
+dependencyUpdatesFilter -= moduleFilter(organization = "org.scalatestplus.play")

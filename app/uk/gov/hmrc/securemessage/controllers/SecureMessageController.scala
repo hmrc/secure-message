@@ -27,13 +27,11 @@ import scala.concurrent.Future
 
 class SecureMessageController @Inject()(val cc: ControllerComponents) extends BackendController(cc) {
 
-  val logger: Logger = Logger(this.getClass())
-
   def createConversation(client: String, conversationId: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
       withJsonBody[ConversationRequest] { _ =>
-        logger.info(client)
-        logger.info(conversationId)
+        Logger.logger.info(client)
+        Logger.logger.info(conversationId)
         Future.successful(Created("It works!"))
       }
   }
