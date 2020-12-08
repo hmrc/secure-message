@@ -1,0 +1,42 @@
+{
+  "sender": {
+    "system": {
+      "name": "CDCM",
+      "parameters": {
+        "caseId": "12345",
+        "queryId": "ABC123"
+      },
+      "display": "CDS Exports Team"
+    }
+  },
+  "recipients": [
+    {
+      "customer": {
+        "enrolment": {
+          "key": "HMRC-CUS-ORG",
+          "name": "EORINumber",
+          "value": "GB1234567890"
+        },
+        "name": "Fred Smith",
+        "email": "fredsmith@test.com"
+      }
+    }
+  ],
+  "alert": {
+    "templateId": "emailTemplateId",
+    "parameters": {
+      "param1": "value1",
+      "param2": "value2"
+    }
+  },
+  "tags": {
+    "sourceID": "123",
+    "caseId": "234",
+    "queryID": "345",
+    "mrn": "456",
+    "notificationType": "abc"
+  },
+  "subject": "Some subject",
+  "message": "QmxhaCBibGFoIGJsYWg=",
+  "language": "en"
+}

@@ -52,7 +52,7 @@ class CreateConversationISpec extends PlaySpec with ServiceSpec {
       response.status mustBe CREATED
     }
 
-    "return BAD REQUEST when sent a minimal and valid JSON payload" in {
+    "return BAD REQUEST when sent a minimal and invalid JSON payload" in {
       val wsClient = app.injector.instanceOf[WSClient]
       val response =
         wsClient
