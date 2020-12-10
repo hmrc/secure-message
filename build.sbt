@@ -152,7 +152,7 @@ lazy val silencerSettings: Seq[Setting[_]] = {
   )
 }
 
-//coverageEnabled := true
+coverageEnabled := true
 //coverageMinimum := 100
 //coverageFailOnMinimum := true
 dependencyUpdatesFailBuild := true
