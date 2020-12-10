@@ -10,4 +10,11 @@
 # Failing to follow this rule may result in test app.routes deployed in production.
 
 # Add all the application app.routes to the prod.app.routes file
-->         /                          prod.Routes
+
+### NoDocs ###
+GET   /docs/swagger-ui/*file                controllers.Assets.at(path:String="/public/lib/swagger-ui", file:String)
+
+### NoDocs ###
+GET   /assets/*file                         controllers.Assets.versioned(path="/public", file: Asset)
+
+->         /                                prod.Routes

@@ -1,18 +1,18 @@
-# microservice specific app.routes
- ###
- #  summary: hello world
- #  tags:
- #    - Hello world
- #  responses:
- #    200:
- #      description: success
- #      schema:
- #        $ref: '#uk/gov/hmrc/securemessage/models/HelloWorld'
- ###
-GET   /hello-world                  uk.gov.hmrc.securemessage.controllers.MicroserviceHelloWorldController.hello
-
-### NoDocs ###
-GET   /docs/swagger-ui/*file        controllers.Assets.at(path:String="/public/lib/swagger-ui", file:String)
-
-### NoDocs ###
-GET   /assets/*file                 controllers.Assets.versioned(path="/public", file: Asset)
+###
+# summary: create a conversation
+# requestBody:
+#   description: A JSON object to create a new conversation
+#   required: true
+#   content:
+#    application/json:
+#      schema:
+#        $ref: '#/components/schemas/uk.gov.hmrc.securemessage.models.api.ConversationRequest'
+# responses:
+#   201:
+#     description: conversation created successfully
+#   400:
+#     description: bad request such as an invalid payload
+#   415:
+#     description: unsupported media type - should be application/json
+###
+PUT   /conversation/:client/:conversationId uk.gov.hmrc.securemessage.controllers.SecureMessageController.createConversation(client: String, conversationId: String)
