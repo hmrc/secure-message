@@ -134,7 +134,7 @@ compileScalastyle := scalastyle.in(Compile).toTask("").value
 
 swaggerDomainNameSpaces := Seq("uk.gov.hmrc.securemessage.models.api")
 swaggerTarget := baseDirectory.value / "public"
-swaggerFileName := "secure-message-swagger.json"
+swaggerFileName := "schema.json"
 swaggerPrettyJson := true
 swaggerRoutesFile := "prod.routes"
 swaggerV3 := true
