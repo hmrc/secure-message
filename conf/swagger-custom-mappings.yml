@@ -1,0 +1,7 @@
+---
+- type: collection\.immutable\.Map\[String,String\]
+  specAsParameter: []   #this hides the type from query and path parameter
+  specAsProperty:
+    type: "object"
+    additionalProperties:
+      type: "string"

@@ -14,13 +14,17 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.securemessage.models
+package uk.gov.hmrc.securemessage.helpers
 
-import play.api.libs.json.{ Json, OFormat }
+import play.api.libs.json.{ JsValue, Json }
 
-case class HelloWorld(string: String)
+import scala.io.Source
 
-object HelloWorld {
-  implicit val secureMessageFormat: OFormat[HelloWorld] =
-    Json.format[HelloWorld]
+object Resources {
+  def readJson(fileName: String): JsValue = {
+    val resource = Source.fromURL(getClass.getResource("/" + fileName))
+    val json = Json.parse(resource.mkString)
+    resource.close()
+    json
+  }
 }
