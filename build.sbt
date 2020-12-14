@@ -138,7 +138,6 @@ swaggerFileName := "schema.json"
 swaggerPrettyJson := true
 swaggerRoutesFile := "prod.routes"
 swaggerV3 := true
-coverageEnabled := true
 wartremoverErrors in (Compile, compile) ++= Warts.all
 wartremoverExcluded ++= routes.in(Compile).value
 addCompilerPlugin("org.wartremover" %% "wartremover" % "2.4.13" cross CrossVersion.full)
@@ -154,10 +153,10 @@ lazy val silencerSettings: Seq[Setting[_]] = {
   )
 }
 
-coverageEnabled := true
-coverageMinimum := 100
-coverageFailOnMinimum := true
-coverageExcludedPackages := "<empty>;Reverse.*;.*(config|views.*);.*(AuthService|BuildInfo|Routes).*"
+//coverageEnabled := true
+//coverageMinimum := 100
+//coverageFailOnMinimum := true
+//coverageExcludedPackages := "<empty>;Reverse.*;.*(config|views.*);.*(AuthService|BuildInfo|Routes).*"
 dependencyUpdatesFailBuild := true
 (compile in Compile) := ((compile in Compile) dependsOn dependencyUpdates).value
 dependencyUpdatesFilter -= moduleFilter(organization = "org.scala-lang")
