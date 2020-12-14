@@ -157,6 +157,7 @@ lazy val silencerSettings: Seq[Setting[_]] = {
 //coverageMinimum := 100
 //coverageFailOnMinimum := true
 //coverageExcludedPackages := "<empty>;Reverse.*;.*(config|views.*);.*(AuthService|BuildInfo|Routes).*"
+
 dependencyUpdatesFailBuild := true
 (compile in Compile) := ((compile in Compile) dependsOn dependencyUpdates).value
 dependencyUpdatesFilter -= moduleFilter(organization = "org.scala-lang")
