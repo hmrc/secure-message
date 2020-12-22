@@ -27,13 +27,13 @@ class CreateConversationISpec extends PlaySpec with ServiceSpec {
 
   override def externalServices: Seq[String] = Seq.empty
 
-  "A PUT request to /secure-message/conversation/{client}/{conversationId}" should {
+  "A PUT request to /secure-messaging/conversation/{client}/{conversationId}" should {
 
     "return CREATED when sent a full and valid JSON payload" in {
       val wsClient = app.injector.instanceOf[WSClient]
       val response =
         wsClient
-          .url(resource("/secure-message/conversation/cdcm/123"))
+          .url(resource("/secure-messaging/conversation/cdcm/123"))
           .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
           .put(new File("./it/resources/create-conversation-full.json"))
           .futureValue
@@ -45,7 +45,7 @@ class CreateConversationISpec extends PlaySpec with ServiceSpec {
       val wsClient = app.injector.instanceOf[WSClient]
       val response =
         wsClient
-          .url(resource("/secure-message/conversation/cdcm/123"))
+          .url(resource("/secure-messaging/conversation/cdcm/123"))
           .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
           .put(new File("./it/resources/create-conversation-minimal.json"))
           .futureValue
@@ -56,7 +56,7 @@ class CreateConversationISpec extends PlaySpec with ServiceSpec {
       val wsClient = app.injector.instanceOf[WSClient]
       val response =
         wsClient
-          .url(resource("/secure-message/conversation/cdcm/123"))
+          .url(resource("/secure-messaging/conversation/cdcm/123"))
           .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
           .put(Json.parse("""{"missing":"data"}""".stripMargin))
           .futureValue
