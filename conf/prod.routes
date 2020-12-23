@@ -1,6 +1,6 @@
 # Add all the application app.routes to the app.routes file
-->         /secure-message              app.Routes
-->         /                          health.Routes
+->         /secure-messaging        app.Routes
+->         /                        health.Routes
 
 ### NoDocs ###
-GET        /admin/metrics             com.kenshoo.play.metrics.MetricsController.metrics
+GET        /admin/metrics           com.kenshoo.play.metrics.MetricsController.metrics
