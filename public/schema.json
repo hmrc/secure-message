@@ -8,10 +8,10 @@
           },
           "parameters" : {
             "nullable" : true,
+            "type" : "object",
             "additionalProperties" : {
               "type" : "string"
-            },
-            "type" : "object"
+            }
           }
         },
         "required" : [ "templateId" ]
@@ -60,10 +60,10 @@
             "type" : "string"
           },
           "parameters" : {
+            "type" : "object",
             "additionalProperties" : {
               "type" : "string"
-            },
-            "type" : "object"
+            }
           },
           "display" : {
             "type" : "string"
@@ -94,10 +94,10 @@
             "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.models.api.Alert"
           },
           "tags" : {
+            "type" : "object",
             "additionalProperties" : {
               "type" : "string"
-            },
-            "type" : "object"
+            }
           },
           "subject" : {
             "type" : "string"
@@ -118,6 +118,8 @@
   "paths" : {
     "/secure-message/conversation/{client}/{conversationId}" : {
       "put" : {
+        "operationId" : "createConversation",
+        "tags" : [ "app" ],
         "summary" : "create a conversation",
         "requestBody" : {
           "description" : "A JSON object to create a new conversation",
@@ -130,7 +132,6 @@
             }
           }
         },
-        "operationId" : "createConversation",
         "responses" : {
           "201" : {
             "description" : "conversation created successfully"
@@ -143,21 +144,20 @@
           }
         },
         "parameters" : [ {
-          "schema" : {
-            "type" : "string"
-          },
           "in" : "path",
           "name" : "client",
-          "required" : true
-        }, {
           "schema" : {
             "type" : "string"
           },
+          "required" : true
+        }, {
           "in" : "path",
           "name" : "conversationId",
+          "schema" : {
+            "type" : "string"
+          },
           "required" : true
-        } ],
-        "tags" : [ "app" ]
+        } ]
       }
     }
   },
