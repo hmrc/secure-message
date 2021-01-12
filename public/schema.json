@@ -4,11 +4,9 @@
       "uk.gov.hmrc.securemessage.models.api.Alert" : {
         "properties" : {
           "templateId" : {
-            "description" : "email template ID",
             "type" : "string"
           },
           "parameters" : {
-            "description" : "parameters that can be used inside the email",
             "nullable" : true,
             "type" : "object",
             "additionalProperties" : {
@@ -21,15 +19,12 @@
       "uk.gov.hmrc.securemessage.models.api.Enrolment" : {
         "properties" : {
           "key" : {
-            "description" : "key of an enrolment e.g. HMRC-CUS-ORG",
             "type" : "string"
           },
           "name" : {
-            "description" : "name of enrolment e.g. EORINumber",
             "type" : "string"
           },
           "value" : {
-            "description" : "value of enrolment e.g. GB1234567890",
             "type" : "string"
           }
         },
@@ -41,12 +36,10 @@
             "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.models.api.Enrolment"
           },
           "name" : {
-            "description" : "customer name",
             "type" : "string",
             "nullable" : true
           },
           "email" : {
-            "description" : "email of customer",
             "type" : "string",
             "nullable" : true
           }
@@ -64,11 +57,9 @@
       "uk.gov.hmrc.securemessage.models.api.System" : {
         "properties" : {
           "name" : {
-            "description" : "calling system name e.g. CDCM",
             "type" : "string"
           },
           "parameters" : {
-            "description" : "parameters that are optional for the calling service",
             "type" : "object",
             "additionalProperties" : {
               "type" : "string"
@@ -109,15 +100,12 @@
             }
           },
           "subject" : {
-            "description" : "subject of the conversation",
             "type" : "string"
           },
           "message" : {
-            "description" : "content of the message",
             "type" : "string"
           },
           "language" : {
-            "description" : "language of the customer",
             "type" : "string",
             "nullable" : true
           }

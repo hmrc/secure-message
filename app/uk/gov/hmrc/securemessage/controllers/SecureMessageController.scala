@@ -21,7 +21,7 @@ import play.api.Logger
 import play.api.libs.json.JsValue
 import play.api.mvc.{ Action, ControllerComponents }
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.securemessage.models.api.ConversationRequest
+import uk.gov.hmrc.securemessage.controllers.models.cdcm.ConversationRequest
 
 import scala.concurrent.Future
 
