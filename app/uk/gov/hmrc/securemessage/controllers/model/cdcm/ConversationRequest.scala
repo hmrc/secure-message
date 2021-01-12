@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.securemessage.controllers.models.cdcm
+package uk.gov.hmrc.securemessage.controllers.model.cdcm
 
 import play.api.libs.json.{ Json, OFormat }
 

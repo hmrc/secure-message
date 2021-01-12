@@ -132,8 +132,9 @@ lazy val compileScalastyle = taskKey[Unit]("compileScalastyle")
 compileScalastyle := scalastyle.in(Compile).toTask("").value
 (compile in Compile) := ((compile in Compile) dependsOn compileScalastyle).value
 
-swaggerDomainNameSpaces := Seq("uk.gov.hmrc.securemessage.controllers.models.cdcm.api")
+swaggerDomainNameSpaces := Seq("uk.gov.hmrc.securemessage.controllers.model.cdcm")
 swaggerTarget := baseDirectory.value / "public"
+swaggerFileName := "schema.json"
 swaggerFileName := "schema.json"
 swaggerPrettyJson := true
 swaggerRoutesFile := "prod.routes"
