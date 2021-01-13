@@ -28,59 +28,79 @@ class ConversationSpec extends PlaySpec {
 
     "be successful when optional fields are present" in {
 
-      val conversationJson: JsValue = Resources.readJson("model/core/FullConversation.json")
+      val conversationJson: JsValue = Resources.readJson("model/core/conversation-full.json")
 
       conversationJson.validate[Conversation] mustBe JsSuccess(
         Conversation(
-          "123",
+          "D-80542-20201120",
           ConversationStatus.Open,
-          Some(Map("tag1Name" -> "tag1Value")),
-          "Some subject",
-          Some(English),
+          Some(
+            Map(
+              "sourceId"         -> "CDCM",
+              "caseId"           -> "D-80542",
+              "queryId"          -> "D-80542-20201120",
+              "mrn"              -> "DMS7324874993",
+              "notificationType" -> "CDS Exports"
+            )),
+          "D-80542-20201120",
+          English,
           List(
-            Participant(1, ParticipantType.System, "CDS Exports Team", Identifier("CDCM", "queue-123", None), None),
+            Participant(
+              1,
+              ParticipantType.System,
+              Identifier("CDCM", "D-80542-20201120", None),
+              Some("CDS Exports Team"),
+              None),
             Participant(
               2,
               ParticipantType.Customer,
-              "Fred Smith",
               Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")),
-              Some("test@test.com"))
+              Some("Joe Bloggs"),
+              Some("joebloggs@test.com"))
           ),
           List(
             Message(
               1,
               new DateTime("2020-11-10T15:00:01.000Z"),
-              List(
-                Reader(1, new DateTime("2020-12-10T15:00:01.000Z")),
-                Reader(2, new DateTime("2020-12-11T15:00:01.000Z"))),
+              List(Reader(1, new DateTime("2020-11-10T15:00:01.000Z"))),
               "QmxhaCBibGFoIGJsYWg="
-            ),
-            Message(2, new DateTime("2020-11-10T15:00:01.000Z"), List.empty, "QmxhaCBibGFoIGJsYWg=")
+            )
           )
         ))
     }
 
     "be successful when optional fields are not present" in {
 
-      val conversationJson: JsValue = Resources.readJson("model/core/MinimalConversation.json")
+      val conversationJson: JsValue = Resources.readJson("model/core/conversation-minimal.json")
 
       conversationJson.validate[Conversation] mustBe JsSuccess(
         Conversation(
-          "123",
+          "D-80542-20201120",
           ConversationStatus.Open,
           None,
-          "Some subject",
-          None,
+          "D-80542-20201120",
+          English,
           List(
-            Participant(1, ParticipantType.System, "CDS Exports Team", Identifier("CDCM", "queue-123", None), None)
+            Participant(
+              1,
+              ParticipantType.System,
+              Identifier("CDCM", "D-80542-20201120", None),
+              Some("CDS Exports Team"),
+              None),
+            Participant(
+              2,
+              ParticipantType.Customer,
+              Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")),
+              None,
+              None)
           ),
           List(
             Message(
               1,
               new DateTime("2020-11-10T15:00:01.000Z"),
               List(
-                Reader(1, new DateTime("2020-12-10T15:00:01.000Z")),
-                Reader(2, new DateTime("2020-12-11T15:00:01.000Z"))),
+                Reader(1, new DateTime("2020-11-10T15:00:01.000Z"))
+              ),
               "QmxhaCBibGFoIGJsYWg="
             )
           )

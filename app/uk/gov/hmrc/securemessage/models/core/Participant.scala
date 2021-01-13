@@ -21,8 +21,8 @@ import play.api.libs.json.{ Format, Json }
 final case class Participant(
   id: Int,
   participantType: ParticipantType,
-  name: String,
   identifier: Identifier,
+  name: Option[String],
   email: Option[String])
 object Participant {
   implicit val participantFormat: Format[Participant] = Json.format[Participant]

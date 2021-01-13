@@ -33,7 +33,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures {
 
   "Calling createConversation" should {
     "return CREATED (201) when sent a request with all optional fields populated" in {
-      val fullConversationJson: JsValue = Resources.readJson("model/api/FullConversation.json")
+      val fullConversationJson: JsValue = Resources.readJson("model/api/create-conversation-full.json")
       val controller = new SecureMessageController(Helpers.stubControllerComponents())
       val fakeRequest = FakeRequest(
         method = PUT,
@@ -46,7 +46,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures {
     }
 
     "return CREATED (201) when sent a request with no optional fields populated" in {
-      val minimalConversationJson: JsValue = Resources.readJson("model/api/MinimalConversation.json")
+      val minimalConversationJson: JsValue = Resources.readJson("model/api/create-conversation-minimal.json")
       val controller = new SecureMessageController(Helpers.stubControllerComponents())
       val fakeRequest = FakeRequest(
         method = PUT,

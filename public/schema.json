@@ -1,7 +1,7 @@
 {
   "components" : {
     "schemas" : {
-      "uk.gov.hmrc.securemessage.controllers.model.cdcm.Alert" : {
+      "uk.gov.hmrc.securemessage.controllers.models.generic.Alert" : {
         "properties" : {
           "templateId" : {
             "type" : "string"
@@ -16,7 +16,7 @@
         },
         "required" : [ "templateId" ]
       },
-      "uk.gov.hmrc.securemessage.controllers.model.cdcm.Enrolment" : {
+      "uk.gov.hmrc.securemessage.controllers.models.generic.Enrolment" : {
         "properties" : {
           "key" : {
             "type" : "string"
@@ -30,10 +30,10 @@
         },
         "required" : [ "key", "name", "value" ]
       },
-      "uk.gov.hmrc.securemessage.controllers.model.cdcm.Customer" : {
+      "uk.gov.hmrc.securemessage.controllers.models.generic.Customer" : {
         "properties" : {
           "enrolment" : {
-            "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.controllers.model.cdcm.Enrolment"
+            "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.controllers.models.generic.Enrolment"
           },
           "name" : {
             "type" : "string",
@@ -46,54 +46,56 @@
         },
         "required" : [ "enrolment" ]
       },
-      "uk.gov.hmrc.securemessage.controllers.model.cdcm.Recipient" : {
+      "uk.gov.hmrc.securemessage.controllers.models.generic.Recipient" : {
         "properties" : {
           "customer" : {
-            "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.controllers.model.cdcm.Customer"
+            "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.controllers.models.generic.Customer"
           }
         },
         "required" : [ "customer" ]
       },
-      "uk.gov.hmrc.securemessage.controllers.model.cdcm.System" : {
+      "uk.gov.hmrc.securemessage.controllers.models.generic.System" : {
         "properties" : {
           "name" : {
             "type" : "string"
           },
+          "display" : {
+            "type" : "string"
+          },
           "parameters" : {
+            "nullable" : true,
             "type" : "object",
             "additionalProperties" : {
               "type" : "string"
             }
-          },
-          "display" : {
-            "type" : "string"
           }
         },
-        "required" : [ "name", "parameters", "display" ]
+        "required" : [ "name", "display" ]
       },
-      "uk.gov.hmrc.securemessage.controllers.model.cdcm.Sender" : {
+      "uk.gov.hmrc.securemessage.controllers.models.generic.Sender" : {
         "properties" : {
           "system" : {
-            "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.controllers.model.cdcm.System"
+            "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.controllers.models.generic.System"
           }
         },
         "required" : [ "system" ]
       },
-      "uk.gov.hmrc.securemessage.controllers.model.cdcm.ConversationRequest" : {
+      "uk.gov.hmrc.securemessage.controllers.models.generic.ConversationRequest" : {
         "properties" : {
           "sender" : {
-            "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.controllers.model.cdcm.Sender"
+            "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.controllers.models.generic.Sender"
           },
           "recipients" : {
             "type" : "array",
             "items" : {
-              "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.controllers.model.cdcm.Recipient"
+              "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.controllers.models.generic.Recipient"
             }
           },
           "alert" : {
-            "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.controllers.model.cdcm.Alert"
+            "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.controllers.models.generic.Alert"
           },
           "tags" : {
+            "nullable" : true,
             "type" : "object",
             "additionalProperties" : {
               "type" : "string"
@@ -110,7 +112,7 @@
             "nullable" : true
           }
         },
-        "required" : [ "sender", "recipients", "alert", "tags", "subject", "message" ]
+        "required" : [ "sender", "recipients", "alert", "subject", "message" ]
       }
     }
   },
@@ -127,7 +129,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.controllers.model.cdcm.ConversationRequest"
+                "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.controllers.models.generic.ConversationRequest"
               }
             }
           }
@@ -164,7 +166,7 @@
   "produces" : [ "application/json" ],
   "info" : {
     "title" : "Secure Message API",
-    "version" : "0.12.0-SNAPSHOT"
+    "version" : "0.14.0-SNAPSHOT"
   },
   "consumes" : [ "application/json" ],
   "tags" : [ {
