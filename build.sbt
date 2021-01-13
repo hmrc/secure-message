@@ -135,7 +135,6 @@ compileScalastyle := scalastyle.in(Compile).toTask("").value
 swaggerDomainNameSpaces := Seq("uk.gov.hmrc.securemessage.controllers.model.cdcm")
 swaggerTarget := baseDirectory.value / "public"
 swaggerFileName := "schema.json"
-swaggerFileName := "schema.json"
 swaggerPrettyJson := true
 swaggerRoutesFile := "prod.routes"
 swaggerV3 := true
