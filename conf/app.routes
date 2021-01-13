@@ -6,7 +6,7 @@
 #   content:
 #    application/json:
 #      schema:
-#        $ref: '#/components/schemas/uk.gov.hmrc.securemessage.models.api.ConversationRequest'
+#        $ref: '#/components/schemas/uk.gov.hmrc.securemessage.controllers.model.cdcm.ConversationRequest'
 # responses:
 #   201:
 #     description: conversation created successfully

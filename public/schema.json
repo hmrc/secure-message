@@ -1,7 +1,7 @@
 {
   "components" : {
     "schemas" : {
-      "uk.gov.hmrc.securemessage.models.api.Alert" : {
+      "uk.gov.hmrc.securemessage.controllers.model.cdcm.Alert" : {
         "properties" : {
           "templateId" : {
             "type" : "string"
@@ -16,7 +16,7 @@
         },
         "required" : [ "templateId" ]
       },
-      "uk.gov.hmrc.securemessage.models.api.Enrolment" : {
+      "uk.gov.hmrc.securemessage.controllers.model.cdcm.Enrolment" : {
         "properties" : {
           "key" : {
             "type" : "string"
@@ -30,10 +30,10 @@
         },
         "required" : [ "key", "name", "value" ]
       },
-      "uk.gov.hmrc.securemessage.models.api.Customer" : {
+      "uk.gov.hmrc.securemessage.controllers.model.cdcm.Customer" : {
         "properties" : {
           "enrolment" : {
-            "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.models.api.Enrolment"
+            "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.controllers.model.cdcm.Enrolment"
           },
           "name" : {
             "type" : "string",
@@ -46,15 +46,15 @@
         },
         "required" : [ "enrolment" ]
       },
-      "uk.gov.hmrc.securemessage.models.api.Recipient" : {
+      "uk.gov.hmrc.securemessage.controllers.model.cdcm.Recipient" : {
         "properties" : {
           "customer" : {
-            "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.models.api.Customer"
+            "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.controllers.model.cdcm.Customer"
           }
         },
         "required" : [ "customer" ]
       },
-      "uk.gov.hmrc.securemessage.models.api.System" : {
+      "uk.gov.hmrc.securemessage.controllers.model.cdcm.System" : {
         "properties" : {
           "name" : {
             "type" : "string"
@@ -71,27 +71,27 @@
         },
         "required" : [ "name", "parameters", "display" ]
       },
-      "uk.gov.hmrc.securemessage.models.api.Sender" : {
+      "uk.gov.hmrc.securemessage.controllers.model.cdcm.Sender" : {
         "properties" : {
           "system" : {
-            "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.models.api.System"
+            "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.controllers.model.cdcm.System"
           }
         },
         "required" : [ "system" ]
       },
-      "uk.gov.hmrc.securemessage.models.api.ConversationRequest" : {
+      "uk.gov.hmrc.securemessage.controllers.model.cdcm.ConversationRequest" : {
         "properties" : {
           "sender" : {
-            "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.models.api.Sender"
+            "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.controllers.model.cdcm.Sender"
           },
           "recipients" : {
             "type" : "array",
             "items" : {
-              "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.models.api.Recipient"
+              "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.controllers.model.cdcm.Recipient"
             }
           },
           "alert" : {
-            "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.models.api.Alert"
+            "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.controllers.model.cdcm.Alert"
           },
           "tags" : {
             "type" : "object",
@@ -116,7 +116,7 @@
   },
   "openapi" : "3.0.3",
   "paths" : {
-    "/secure-message/conversation/{client}/{conversationId}" : {
+    "/secure-messaging/conversation/{client}/{conversationId}" : {
       "put" : {
         "operationId" : "createConversation",
         "tags" : [ "app" ],
@@ -127,7 +127,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.models.api.ConversationRequest"
+                "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.controllers.model.cdcm.ConversationRequest"
               }
             }
           }
@@ -164,7 +164,7 @@
   "produces" : [ "application/json" ],
   "info" : {
     "title" : "Secure Message API",
-    "version" : "0.8.0-SNAPSHOT"
+    "version" : "0.12.0-SNAPSHOT"
   },
   "consumes" : [ "application/json" ],
   "tags" : [ {
