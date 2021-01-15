@@ -33,7 +33,7 @@ class CreateConversationISpec extends PlaySpec with ServiceSpec {
       val wsClient = app.injector.instanceOf[WSClient]
       val response =
         wsClient
-          .url(resource("/secure-messaging/conversation/cdcm/123"))
+          .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
           .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
           .put(new File("./it/resources/create-conversation-full.json"))
           .futureValue
@@ -45,7 +45,7 @@ class CreateConversationISpec extends PlaySpec with ServiceSpec {
       val wsClient = app.injector.instanceOf[WSClient]
       val response =
         wsClient
-          .url(resource("/secure-messaging/conversation/cdcm/123"))
+          .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
           .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
           .put(new File("./it/resources/create-conversation-minimal.json"))
           .futureValue
@@ -56,7 +56,7 @@ class CreateConversationISpec extends PlaySpec with ServiceSpec {
       val wsClient = app.injector.instanceOf[WSClient]
       val response =
         wsClient
-          .url(resource("/secure-messaging/conversation/cdcm/123"))
+          .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
           .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
           .put(Json.parse("""{"missing":"data"}""".stripMargin))
           .futureValue
