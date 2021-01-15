@@ -20,15 +20,16 @@ import sbt._
 object AppDependencies {
 
   val compile = Seq(
-    "uk.gov.hmrc"       %% "bootstrap-backend-play-27"  % "3.2.0",
+    "uk.gov.hmrc"       %% "bootstrap-backend-play-27"  % "3.3.0",
     "uk.gov.hmrc"       %% "simple-reactivemongo"       % "7.31.0-play-27",
+    "uk.gov.hmrc"       %% "time"                       % "3.19.0",
     "org.webjars"       % "swagger-ui"                  % "3.38.0",
     "com.beachape"      %% "enumeratum-play-json"       % "1.6.1",
     "com.typesafe.play" %% "play-json-joda"             % "2.9.1"
   )
 
   val test = Seq(
-    "uk.gov.hmrc"            %% "bootstrap-test-play-27"   % "3.2.0"          % Test,
+    "uk.gov.hmrc"            %% "bootstrap-test-play-27"   % "3.3.0"          % Test,
     "com.typesafe.play"      %% "play-test"                % current          % Test,
     "org.scalatestplus.play" %% "scalatestplus-play"       % "4.0.3"          % "test, it",
     "uk.gov.hmrc"            %% "service-integration-test" % "0.13.0-play-27" % "test, it",

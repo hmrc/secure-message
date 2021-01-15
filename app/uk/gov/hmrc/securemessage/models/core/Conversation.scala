@@ -23,7 +23,7 @@ final case class Conversation(
   status: ConversationStatus,
   tags: Option[Map[String, String]],
   subject: String,
-  language: Option[Language],
+  language: Language,
   participants: List[Participant],
   messages: List[Message]
 )
