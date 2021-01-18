@@ -14,21 +14,18 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.securemessage.models.core
+package uk.gov.hmrc.securemessage
 
-import play.api.libs.json.{ Json, OFormat }
+import com.google.inject.{ AbstractModule, Provides }
+import javax.inject.Singleton
+import play.modules.reactivemongo.ReactiveMongoComponent
+import uk.gov.hmrc.mongo.MongoConnector
 
-final case class Conversation(
-  client: String,
-  conversationId: String,
-  status: ConversationStatus,
-  tags: Option[Map[String, String]],
-  subject: String,
-  language: Language,
-  participants: List[Participant],
-  messages: List[Message]
-)
-object Conversation {
-  implicit val conversationFormat: OFormat[Conversation] =
-    Json.format[Conversation]
+class SecureMessageModule extends AbstractModule {
+
+  @Provides
+  @Singleton
+  def mongoConnectorProvider(reactiveMongoComponent: ReactiveMongoComponent): MongoConnector =
+    reactiveMongoComponent.mongoConnector
+
 }
