@@ -45,9 +45,9 @@ lazy val microservice = Project(appName, file("."))
     scalacOptions ++= Seq(
       "-P:silencer:pathFilters=target/.*",
       s"-P:silencer:sourceRoots=${baseDirectory.value.getCanonicalPath}",
-      "-P:wartremover:excluded:/conf/app.routes",
+//      "-P:wartremover:excluded:/conf/app.routes",
       "-P:silencer:pathFilters=app.routes",
-      "-P:wartremover:traverser:org.wartremover.warts.Unsafe",
+//      "-P:wartremover:traverser:org.wartremover.warts.Unsafe",
       "-deprecation", // Emit warning and location for usages of deprecated APIs.
       "-encoding",
       "utf-8", // Specify character encoding used by source files.
@@ -138,9 +138,9 @@ swaggerFileName := "schema.json"
 swaggerPrettyJson := true
 swaggerRoutesFile := "prod.routes"
 swaggerV3 := true
-wartremoverErrors in (Compile, compile) ++= Warts.all
-wartremoverExcluded ++= routes.in(Compile).value
-addCompilerPlugin("org.wartremover" %% "wartremover" % "2.4.13" cross CrossVersion.full)
+//wartremoverErrors in (Compile, compile) ++= Warts.all
+//wartremoverExcluded ++= routes.in(Compile).value
+//addCompilerPlugin("org.wartremover" %% "wartremover" % "2.4.13" cross CrossVersion.full)
 bobbyRulesURL := Some(new URL("https://webstore.tax.service.gov.uk/bobby-config/deprecated-dependencies.json"))
 scalafmtOnCompile := true
 PlayKeys.playDefaultPort := 9051

@@ -17,24 +17,40 @@
 package uk.gov.hmrc.securemessage.controllers
 
 import akka.stream.Materializer
+import org.mockito.ArgumentMatcher
+import org.mockito.ArgumentMatchers._
+import org.mockito.Mockito._
 import org.scalatest.concurrent.ScalaFutures
+import org.scalatestplus.mockito._
 import org.scalatestplus.play.PlaySpec
 import play.api.http.ContentTypes._
 import play.api.http.HeaderNames._
 import play.api.http.Status._
 import play.api.libs.json.{ JsValue, Json }
+import play.api.mvc.Result
 import play.api.test.Helpers.{ PUT, defaultAwaitTimeout, status }
 import play.api.test.{ FakeHeaders, FakeRequest, Helpers, NoMaterializer }
+import uk.gov.hmrc.auth.core.authorise.Predicate
+import uk.gov.hmrc.auth.core.retrieve.{ EmptyRetrieval, Retrieval }
+import uk.gov.hmrc.auth.core.{ AuthConnector, Enrolment, Enrolments }
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.securemessage.helpers.Resources
 
-class SecureMessageControllerSpec extends PlaySpec with ScalaFutures {
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+
+class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with MockitoSugar {
 
   implicit val mat: Materializer = NoMaterializer
+
+  lazy val mockAuthConnector: AuthConnector = mock[AuthConnector]
+
+  implicit val hc: HeaderCarrier = HeaderCarrier()
 
   "Calling createConversation" should {
     "return CREATED (201) when sent a request with all optional fields populated" in {
       val fullConversationJson: JsValue = Resources.readJson("model/api/create-conversation-full.json")
-      val controller = new SecureMessageController(Helpers.stubControllerComponents())
+      val controller = new SecureMessageController(Helpers.stubControllerComponents(), mockAuthConnector)
       val fakeRequest = FakeRequest(
         method = PUT,
         uri = routes.SecureMessageController.createConversation("cdcm", "123").url,
@@ -47,7 +63,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures {
 
     "return CREATED (201) when sent a request with no optional fields populated" in {
       val minimalConversationJson: JsValue = Resources.readJson("model/api/create-conversation-minimal.json")
-      val controller = new SecureMessageController(Helpers.stubControllerComponents())
+      val controller = new SecureMessageController(Helpers.stubControllerComponents(), mockAuthConnector)
       val fakeRequest = FakeRequest(
         method = PUT,
         uri = routes.SecureMessageController.createConversation("cdcm", "123").url,
@@ -59,15 +75,29 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures {
     }
 
     "return BAD REQUEST (400) when sent a request with required fields missing" in {
-      val controller = new SecureMessageController(Helpers.stubControllerComponents())
+      val controller = new SecureMessageController(Helpers.stubControllerComponents(), mockAuthConnector)
       val fakeRequest = FakeRequest(
         method = PUT,
         uri = routes.SecureMessageController.createConversation("cdcm", "123").url,
         headers = FakeHeaders(Seq(CONTENT_TYPE -> JSON)),
         body = Json.parse("""{"missing":"data"}""".stripMargin)
       )
-      val response = controller.createConversation("cdcm", "123")(fakeRequest)
+      val response: Future[Result] = controller.createConversation("cdcm", "123")(fakeRequest)
       status(response) mustBe BAD_REQUEST
+    }
+  }
+
+  "Calling getConversations" should {
+    "return an OK (200) with a JSON body of a list of conversations" in {
+      when(mockAuthConnector.authorise(any(), any())(any(), any()))
+        .thenReturn(Future.successful(Enrolments(Set(Enrolment(key = "", identifiers = Seq.empty, state = "", None)))))
+      val controller = new SecureMessageController(Helpers.stubControllerComponents(), mockAuthConnector)
+      val response: Future[Result] = controller.getListOfConversations("adadad").apply(FakeRequest("GET", "/"))
+      status(response) mustBe OK
+    }
+
+    "return an error when something goes wrong within the request" in {
+      1 mustBe 2
     }
   }
 }

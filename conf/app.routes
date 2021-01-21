@@ -15,4 +15,6 @@
 #   415:
 #     description: unsupported media type - should be application/json
 ###
-PUT   /conversation/:client/:conversationId uk.gov.hmrc.securemessage.controllers.SecureMessageController.createConversation(client: String, conversationId: String)
+PUT        /conversation/:client/:conversationId        uk.gov.hmrc.securemessage.controllers.SecureMessageController.createConversation(client: String, conversationId: String)
+
+GET        /conversations/:enrolment                    uk.gov.hmrc.securemessage.controllers.SecureMessageController.getListOfConversations(enrolment: String)
