@@ -32,9 +32,10 @@ object Enrolment {
   implicit val enrolmentFormat: OFormat[Enrolment] =
     Json.format[Enrolment]
 }
+
 /**
- * @param parameters metadata sent back to the sender
- * */
+  * @param parameters metadata sent back to the sender
+  * */
 final case class System(name: String, display: String, parameters: Option[Map[String, String]])
 object System {
   implicit val systemFormat: OFormat[System] =
@@ -59,10 +60,9 @@ object Recipient {
     Json.format[Recipient]
 }
 
-
 /**
- * @param tags metadata sent to the UI
- * */
+  * @param tags metadata sent to the UI
+  * */
 final case class ConversationRequest(
   sender: Sender,
   recipients: List[Recipient],
