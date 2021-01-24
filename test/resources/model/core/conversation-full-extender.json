@@ -39,7 +39,7 @@
       "identifier": {
         "enrolment": "HMRC-CUS-ORG",
         "name": "EORINumber",
-        "value": "GB1234567890"
+        "value": "GB0123456789"
       }
     }
   ],
@@ -49,7 +49,7 @@
       "created": "2020-11-10T15:00:01.000Z",
       "readBy": [
         {
-          "id": 1,
+          "id": 2,
           "readDate": "2020-11-10T15:00:01.000Z"
         }
       ],
@@ -60,7 +60,7 @@
       "created": "2020-11-10T15:00:05.000Z",
       "readBy": [
         {
-          "id": 1,
+          "id": 2,
           "readDate": "2020-11-10T15:00:02.000Z"
         }
       ],
@@ -73,6 +73,10 @@
         {
           "id": 1,
           "readDate": "2020-11-10T15:00:01.000Z"
+        },
+        {
+          "id": 3,
+          "readDate": "2020-11-10T15:00:01.000Z"
         }
       ],
       "content": "QmxhaCBibGFoIGJsYWg="
@@ -82,7 +86,7 @@
       "created": "2020-11-10T15:00:18.000Z",
       "readBy": [
         {
-          "id": 1,
+          "id": 2,
           "readDate": "2020-11-10T15:00:01.000Z"
         }
       ],

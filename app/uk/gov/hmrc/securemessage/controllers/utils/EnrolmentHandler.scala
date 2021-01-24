@@ -14,10 +14,14 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.securemessage
+package uk.gov.hmrc.securemessage.controllers.utils
 
-class SecureMessageService {
+import uk.gov.hmrc.auth.core.Enrolments
 
-  //  private def findAnyUnreadMessages(sessionIdentifer: Identifier, coreConversation: Conversation): Boolean = {}
+object EnrolmentHandler {
 
+  def enrolmentType(enrolments: Enrolments): Option[String] =
+    enrolments.getEnrolment("HMRC-CUS-ORG").flatMap { eoriEnrolment =>
+      eoriEnrolment.getIdentifier("EORINumber").map(_.value)
+    }
 }

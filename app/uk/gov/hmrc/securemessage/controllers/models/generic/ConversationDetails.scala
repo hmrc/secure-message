@@ -17,11 +17,12 @@
 package uk.gov.hmrc.securemessage.controllers.models.generic
 
 import cats.implicits._
+import cats.kernel.Eq
 import org.joda.time.DateTime
 import play.api.libs.json.JodaReads.jodaDateReads
 import play.api.libs.json.JodaWrites.jodaDateWrites
 import play.api.libs.json.{ Format, Json, OFormat }
-import uk.gov.hmrc.securemessage.models.core.{ Conversation, Message }
+import uk.gov.hmrc.securemessage.models.core.{ Conversation, Identifier, Message }
 
 final case class ConversationDetails(
   conversationId: String,
@@ -32,20 +33,21 @@ final case class ConversationDetails(
   count: Int)
 
 object ConversationDetails {
-  def coreToConversationDetails(coreConversation: Conversation): ConversationDetails = {
+
+  def coreToConversationDetails(coreConversation: Conversation, identifier: Identifier): ConversationDetails = {
     val messageCount = coreConversation.messages.size
     ConversationDetails(
       coreConversation.conversationId,
       coreConversation.subject,
       findLatestMessageDate(coreConversation),
       findLatestMessageName(coreConversation),
-      true,
+      findAnyUnreadMessages(coreConversation, identifier),
       messageCount
     )
   }
 
   private def findLatestMessage(coreConversation: Conversation): Option[Message] =
-    coreConversation.messages.sortBy(_.created.getMillis).headOption match {
+    coreConversation.messages.sortWith(_.created.getMillis > _.created.getMillis).headOption match {
       case Some(message) => Some(message)
       case _             => None
     }
@@ -61,6 +63,21 @@ object ConversationDetails {
       case Some(message) => coreConversation.participants.find(_.id === message.senderId).flatMap(_.name)
       case _             => None
     }
+
+  def findAnyUnreadMessages(coreConversation: Conversation, identifier: Identifier): Boolean = {
+    implicit val eqFoo: Eq[Identifier] = Eq.fromUniversalEquals
+    coreConversation.participants
+      .find(_.identifier === identifier)
+      .fold(false)(part => findAnyUnreadMessages(part.id, coreConversation))
+  }
+
+  private def findAnyUnreadMessages(id: Int, coreConversation: Conversation): Boolean = {
+    val listOfMessages = coreConversation.messages.map(ms => ms)
+    val listOfReader = listOfMessages.flatMap(ms => ms.readBy)
+    val listOfId = listOfReader.map(reader => reader.id)
+    val listOfMatchingIds = listOfId.count(int => int === id)
+    listOfMatchingIds =!= listOfMessages.size
+  }
 
   private val dateFormatString = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
 

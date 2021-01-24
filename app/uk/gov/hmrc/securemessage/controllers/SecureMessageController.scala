@@ -19,16 +19,23 @@ package uk.gov.hmrc.securemessage.controllers
 import javax.inject.Inject
 import play.api.Logger
 import play.api.libs.json.{ JsValue, Json }
-import play.api.mvc.{ Action, AnyContent, ControllerComponents, Result }
+import play.api.mvc.{ Action, AnyContent, ControllerComponents }
+import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
-import uk.gov.hmrc.auth.core.{ AuthConnector, AuthorisationException, AuthorisedFunctions, InsufficientEnrolments, NoActiveSession }
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.HeaderCarrierConverter
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.securemessage.controllers.models.generic.ConversationRequest
+import uk.gov.hmrc.securemessage.controllers.utils.EnrolmentHandler._
+import uk.gov.hmrc.securemessage.models.core.Identifier
+import uk.gov.hmrc.securemessage.services.SecureMessageService
 
 import scala.concurrent.{ ExecutionContext, Future }
 
-class SecureMessageController @Inject()(val cc: ControllerComponents, val authConnector: AuthConnector)(
-  implicit ec: ExecutionContext)
+class SecureMessageController @Inject()(
+  val cc: ControllerComponents,
+  val authConnector: AuthConnector,
+  secureMessageService: SecureMessageService)(implicit ec: ExecutionContext)
     extends BackendController(cc) with AuthorisedFunctions {
 
   def createConversation(client: String, conversationId: String): Action[JsValue] = Action.async(parse.json) {
@@ -40,35 +47,16 @@ class SecureMessageController @Inject()(val cc: ControllerComponents, val authCo
       }
   }
 
-  def getListOfConversations(enrolment: String): Action[AnyContent] = Action.async { implicit request =>
-    Logger.logger.info(enrolment)
-    Logger.logger.info(request.toString)
-    authorised().retrieve(Retrievals.allEnrolments) {
-      case enrolments =>
-        enrolments.getEnrolment("HMRC-CUS-ORG") match {
-          case Some(en) =>
-            en.getIdentifier("EORINumber") match {
-              case Some(eori) => Future.successful(Ok(eori.value))
-              case None       => Future.successful(Unauthorized(Json.toJson("No EORINumber found")))
-            }
-          case None => Future.successful(Unauthorized(Json.toJson("EORI enrolment not found")))
-        }
-    } recover handleError
-  }
-
-  def handleError(): PartialFunction[Throwable, Result] = {
-    case _: InsufficientEnrolments =>
-      Logger.logger.debug("Request user did not have the correct enrolment")
-      Unauthorized(Json.toJson("InsufficientEnrolment"))
-    case _: NoActiveSession =>
-      Logger.logger.debug("Request did not have an Active Session, returning Unauthorised - Unauthenticated Error")
-      Unauthorized(Json.toJson("Not authenticated"))
-    case _: AuthorisationException =>
-      Logger.logger.debug(
-        "Request has an active session but was not authorised, returning Forbidden - Not Authorised Error")
-      Forbidden(Json.toJson("Not authorised"))
-    case e: Exception =>
-      Logger.logger.debug(s"Unknown error: ${e.toString}")
-      InternalServerError
+  def getListOfConversations(): Action[AnyContent] = Action.async { implicit request =>
+    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
+    authorised().retrieve(Retrievals.allEnrolments) { enrolments =>
+      enrolmentType(enrolments) match {
+        case Some(eoriValue) =>
+          Future.successful(
+            Ok(Json.toJson(secureMessageService.getConversations(
+              Identifier(name = "EORINumber", value = eoriValue, enrolment = Some("HMRC-CUS-ORG"))))))
+        case None => Future.successful(Unauthorized(Json.toJson("No EORI enrolment found")))
+      }
+    }
   }
 }

@@ -17,4 +17,4 @@
 ###
 PUT        /conversation/:client/:conversationId        uk.gov.hmrc.securemessage.controllers.SecureMessageController.createConversation(client: String, conversationId: String)
 
-GET        /conversations/:enrolment                    uk.gov.hmrc.securemessage.controllers.SecureMessageController.getListOfConversations(enrolment: String)
+GET        /conversations                               uk.gov.hmrc.securemessage.controllers.SecureMessageController.getListOfConversations()

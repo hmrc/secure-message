@@ -161,12 +161,26 @@
           "required" : true
         } ]
       }
+    },
+    "/secure-messaging/conversations/{enrolment}" : {
+      "get" : {
+        "operationId" : "getListOfConversations",
+        "tags" : [ "app" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "enrolment",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : true
+        } ]
+      }
     }
   },
   "produces" : [ "application/json" ],
   "info" : {
     "title" : "Secure Message API",
-    "version" : "0.14.0-SNAPSHOT"
+    "version" : "0.15.0-SNAPSHOT"
   },
   "consumes" : [ "application/json" ],
   "tags" : [ {

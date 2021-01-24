@@ -25,7 +25,10 @@ import uk.gov.hmrc.integration.ServiceSpec
 
 class CreateConversationISpec extends PlaySpec with ServiceSpec {
 
-  override def externalServices: Seq[String] = Seq.empty
+  override def externalServices: Seq[String] = Seq("datastream", "auth-login-api")
+
+  override def additionalConfig: Map[String, _] =
+    Map("auditing.consumer.baseUri.port" -> externalServicePorts("datastream"))
 
   "A PUT request to /secure-messaging/conversation/{client}/{conversationId}" should {
 
@@ -38,7 +41,6 @@ class CreateConversationISpec extends PlaySpec with ServiceSpec {
           .put(new File("./it/resources/create-conversation-full.json"))
           .futureValue
       response.status mustBe CREATED
-
     }
 
     "return CREATED when sent a minimal and valid JSON payload" in {
