@@ -14,19 +14,18 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.securemessage.services
+package uk.gov.hmrc.securemessage.helpers
 
 import org.joda.time.DateTime
-import uk.gov.hmrc.securemessage.controllers.models.generic.ConversationDetails
 import uk.gov.hmrc.securemessage.models.core.Language.English
-import uk.gov.hmrc.securemessage.models.core._
+import uk.gov.hmrc.securemessage.models.core.{ Conversation, ConversationStatus, Identifier, Message, Participant, ParticipantType, Reader }
 
-class SecureMessageService {
+object ConversationUtil {
 
-  val coreConversations: List[Conversation] = List(
+  def getFullConversation(id: String): Conversation =
     Conversation(
-      "D-80542-20201120",
-      "D-80542-20201120",
+      "cdcm",
+      id,
       ConversationStatus.Open,
       Some(
         Map(
@@ -61,8 +60,39 @@ class SecureMessageService {
         )
       )
     )
-  )
 
-  def getConversations(identifier: Identifier): List[ConversationDetails] =
-    coreConversations.map(con => ConversationDetails.coreToConversationDetails(con, identifier))
+  def getMinimalConversation(id: String): Conversation =
+    Conversation(
+      "cdcm",
+      id,
+      ConversationStatus.Open,
+      None,
+      "D-80542-20201120",
+      English,
+      List(
+        Participant(
+          1,
+          ParticipantType.System,
+          Identifier("CDCM", "D-80542-20201120", None),
+          Some("CDS Exports Team"),
+          None),
+        Participant(
+          2,
+          ParticipantType.Customer,
+          Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")),
+          None,
+          None)
+      ),
+      List(
+        Message(
+          1,
+          new DateTime("2020-11-10T15:00:01.000Z"),
+          List(
+            Reader(1, new DateTime("2020-11-10T15:00:01.000Z"))
+          ),
+          "QmxhaCBibGFoIGJsYWg="
+        )
+      )
+    )
+
 }

@@ -16,16 +16,28 @@
 
 import java.io.File
 
+import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.play.PlaySpec
-import play.api.http.Status._
+import play.api.http.Status.{ BAD_REQUEST, CREATED }
 import play.api.http.{ ContentTypes, HeaderNames }
 import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
+import play.api.test.Helpers._
 import uk.gov.hmrc.integration.ServiceSpec
+import uk.gov.hmrc.securemessage.repository.ConversationRepository
 
-class CreateConversationISpec extends PlaySpec with ServiceSpec {
+import scala.concurrent.ExecutionContext
+
+class CreateConversationISpec extends PlaySpec with ServiceSpec with BeforeAndAfterEach {
 
   override def externalServices: Seq[String] = Seq.empty
+
+  val repository = app.injector.instanceOf[ConversationRepository]
+  val ec = app.injector.instanceOf[ExecutionContext]
+
+  override protected def beforeEach(): Unit = {
+    val _ = await(repository.removeAll()(ec))
+  }
 
   "A PUT request to /secure-messaging/conversation/{client}/{conversationId}" should {
 
@@ -62,4 +74,5 @@ class CreateConversationISpec extends PlaySpec with ServiceSpec {
       response.status mustBe BAD_REQUEST
     }
   }
+
 }

@@ -28,6 +28,7 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.securemessage.controllers.models.generic.ConversationRequest
 import uk.gov.hmrc.securemessage.controllers.utils.EnrolmentHandler._
 import uk.gov.hmrc.securemessage.models.core.Identifier
+import uk.gov.hmrc.securemessage.repository.ConversationRepository
 import uk.gov.hmrc.securemessage.services.SecureMessageService
 
 import scala.concurrent.{ ExecutionContext, Future }
@@ -36,15 +37,16 @@ import scala.concurrent.{ ExecutionContext, Future }
 class SecureMessageController @Inject()(
   cc: ControllerComponents,
   val authConnector: AuthConnector,
-  secureMessageService: SecureMessageService)(implicit ec: ExecutionContext)
+  secureMessageService: SecureMessageService,
+  repo: ConversationRepository)(implicit ec: ExecutionContext)
     extends BackendController(cc) with AuthorisedFunctions {
 
   def createConversation(client: String, conversationId: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
-      withJsonBody[ConversationRequest] { _ =>
-        Logger.logger.info(client)
-        Logger.logger.info(conversationId)
-        Future.successful(Created("It works!"))
+      withJsonBody[ConversationRequest] { conversationRequest =>
+        repo.insertIfUnique(conversationRequest.asConversation(client, conversationId)).map { isUnique =>
+          if (isUnique) Created else Conflict("Duplicate of existing conversation")
+        }
       }
   }
 
