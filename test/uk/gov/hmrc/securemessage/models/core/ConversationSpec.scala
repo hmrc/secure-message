@@ -16,95 +16,23 @@
 
 package uk.gov.hmrc.securemessage.models.core
 
-import org.joda.time.DateTime
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json.{ JsSuccess, JsValue }
-import uk.gov.hmrc.securemessage.helpers.Resources
-import uk.gov.hmrc.securemessage.models.core.Language.English
+import uk.gov.hmrc.securemessage.helpers.{ ConversationUtil, Resources }
 
 class ConversationSpec extends PlaySpec {
 
   "Validating a conversation" must {
 
     "be successful when optional fields are present" in {
-
       val conversationJson: JsValue = Resources.readJson("model/core/conversation-full.json")
-
-      conversationJson.validate[Conversation] mustBe JsSuccess(
-        Conversation(
-          "D-80542-20201120",
-          ConversationStatus.Open,
-          Some(
-            Map(
-              "sourceId"         -> "CDCM",
-              "caseId"           -> "D-80542",
-              "queryId"          -> "D-80542-20201120",
-              "mrn"              -> "DMS7324874993",
-              "notificationType" -> "CDS Exports"
-            )),
-          "D-80542-20201120",
-          English,
-          List(
-            Participant(
-              1,
-              ParticipantType.System,
-              Identifier("CDCM", "D-80542-20201120", None),
-              Some("CDS Exports Team"),
-              None),
-            Participant(
-              2,
-              ParticipantType.Customer,
-              Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")),
-              Some("Joe Bloggs"),
-              Some("joebloggs@test.com"))
-          ),
-          List(
-            Message(
-              1,
-              new DateTime("2020-11-10T15:00:01.000Z"),
-              List(Reader(1, new DateTime("2020-11-10T15:00:01.000Z"))),
-              "QmxhaCBibGFoIGJsYWg="
-            )
-          )
-        ))
+      conversationJson.validate[Conversation] mustBe JsSuccess(ConversationUtil.getFullConversation("D-80542-20201120"))
     }
 
     "be successful when optional fields are not present" in {
-
       val conversationJson: JsValue = Resources.readJson("model/core/conversation-minimal.json")
-
       conversationJson.validate[Conversation] mustBe JsSuccess(
-        Conversation(
-          "D-80542-20201120",
-          ConversationStatus.Open,
-          None,
-          "D-80542-20201120",
-          English,
-          List(
-            Participant(
-              1,
-              ParticipantType.System,
-              Identifier("CDCM", "D-80542-20201120", None),
-              Some("CDS Exports Team"),
-              None),
-            Participant(
-              2,
-              ParticipantType.Customer,
-              Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")),
-              None,
-              None)
-          ),
-          List(
-            Message(
-              1,
-              new DateTime("2020-11-10T15:00:01.000Z"),
-              List(
-                Reader(1, new DateTime("2020-11-10T15:00:01.000Z"))
-              ),
-              "QmxhaCBibGFoIGJsYWg="
-            )
-          )
-        ))
+        ConversationUtil.getMinimalConversation("D-80542-20201120"))
     }
 
   }

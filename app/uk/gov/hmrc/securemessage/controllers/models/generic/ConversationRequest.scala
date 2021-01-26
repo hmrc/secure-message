@@ -73,12 +73,14 @@ final case class ConversationRequest(
   language: Option[String])
     extends DateTimeUtils {
 
-  def asConversation(conversationId: String): Conversation = asConversationWithCreatedDate(conversationId, now)
+  def asConversation(client: String, conversationId: String): Conversation =
+    asConversationWithCreatedDate(client, conversationId, now)
 
-  def asConversationWithCreatedDate(conversationId: String, created: DateTime): Conversation = {
+  def asConversationWithCreatedDate(client: String, conversationId: String, created: DateTime): Conversation = {
     val initialMessage = Message(1, created, List(Reader(1, created)), message)
     val initialParticipants = getSenderParticipant(sender, conversationId) :: getRecipientParticipants(recipients)
     Conversation(
+      client,
       conversationId,
       ConversationStatus.Open,
       if (tags.isDefined) tags else None,

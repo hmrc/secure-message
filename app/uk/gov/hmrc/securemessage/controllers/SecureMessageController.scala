@@ -17,22 +17,26 @@
 package uk.gov.hmrc.securemessage.controllers
 
 import javax.inject.Inject
-import play.api.Logger
 import play.api.libs.json.JsValue
 import play.api.mvc.{ Action, ControllerComponents }
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.securemessage.controllers.models.generic.ConversationRequest
+import uk.gov.hmrc.securemessage.repository.ConversationRepository
 
-import scala.concurrent.Future
+import scala.concurrent.ExecutionContext
 
-class SecureMessageController @Inject()(val cc: ControllerComponents) extends BackendController(cc) {
+@SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
+class SecureMessageController @Inject()(repo: ConversationRepository, cc: ControllerComponents)(
+  implicit ec: ExecutionContext)
+    extends BackendController(cc) {
 
   def createConversation(client: String, conversationId: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
-      withJsonBody[ConversationRequest] { _ =>
-        Logger.logger.info(client)
-        Logger.logger.info(conversationId)
-        Future.successful(Created("It works!"))
+      withJsonBody[ConversationRequest] { conversationRequest =>
+        repo.insertIfUnique(conversationRequest.asConversation(client, conversationId)).map { isUnique =>
+          if (isUnique) Created else Conflict("Duplicate of existing conversation")
+        }
       }
   }
+
 }
