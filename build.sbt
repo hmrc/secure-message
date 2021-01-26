@@ -141,9 +141,9 @@ swaggerFileName := "schema.json"
 swaggerPrettyJson := true
 swaggerRoutesFile := "prod.routes"
 swaggerV3 := true
-//wartremoverErrors in (Compile, compile) ++= Warts.all
-//wartremoverExcluded ++= routes.in(Compile).value
-//addCompilerPlugin("org.wartremover" %% "wartremover" % "2.4.13" cross CrossVersion.full)
+wartremoverErrors in (Compile, compile) ++= Warts.all
+wartremoverExcluded ++= routes.in(Compile).value
+addCompilerPlugin("org.wartremover" %% "wartremover" % "2.4.13" cross CrossVersion.full)
 bobbyRulesURL := Some(new URL("https://webstore.tax.service.gov.uk/bobby-config/deprecated-dependencies.json"))
 scalafmtOnCompile := true
 PlayKeys.playDefaultPort := 9051

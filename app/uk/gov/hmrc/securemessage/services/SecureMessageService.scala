@@ -23,7 +23,7 @@ import uk.gov.hmrc.securemessage.models.core._
 
 class SecureMessageService {
 
-  val coreConversations = List(
+  val coreConversations: List[Conversation] = List(
     Conversation(
       "D-80542-20201120",
       ConversationStatus.Open,

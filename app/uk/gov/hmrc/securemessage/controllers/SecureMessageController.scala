@@ -32,6 +32,7 @@ import uk.gov.hmrc.securemessage.services.SecureMessageService
 
 import scala.concurrent.{ ExecutionContext, Future }
 
+@SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
 class SecureMessageController @Inject()(
   cc: ControllerComponents,
   val authConnector: AuthConnector,

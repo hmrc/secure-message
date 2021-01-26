@@ -41,7 +41,7 @@ object ConversationDetails {
       coreConversation.subject,
       findLatestMessageDate(coreConversation),
       findLatestMessageName(coreConversation),
-      findAnyUnreadMessages(coreConversation, identifier),
+      findUnreadMessages(coreConversation, identifier),
       messageCount
     )
   }
@@ -64,19 +64,19 @@ object ConversationDetails {
       case _             => None
     }
 
-  def findAnyUnreadMessages(coreConversation: Conversation, identifier: Identifier): Boolean = {
+  private def findUnreadMessages(coreConversation: Conversation, identifier: Identifier): Boolean = {
     implicit val eqFoo: Eq[Identifier] = Eq.fromUniversalEquals
     coreConversation.participants
       .find(_.identifier === identifier)
-      .fold(false)(part => findAnyUnreadMessages(part.id, coreConversation))
+      .fold(false)(participant => findUnreadMessagesByParticipant(participant.id, coreConversation))
   }
 
-  private def findAnyUnreadMessages(id: Int, coreConversation: Conversation): Boolean = {
-    val listOfMessages = coreConversation.messages.map(ms => ms)
-    val listOfReader = listOfMessages.flatMap(ms => ms.readBy)
-    val listOfId = listOfReader.map(reader => reader.id)
-    val listOfMatchingIds = listOfId.count(int => int === id)
-    listOfMatchingIds =!= listOfMessages.size
+  private def findUnreadMessagesByParticipant(participantId: Int, coreConversation: Conversation): Boolean = {
+    val messages = coreConversation.messages.map(ms => ms)
+    val readers = messages.flatMap(ms => ms.readBy)
+    val readerIds = readers.map(reader => reader.id)
+    val matchingIds = readerIds.count(int => int === participantId)
+    matchingIds =!= messages.size
   }
 
   private val dateFormatString = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
