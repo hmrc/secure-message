@@ -2,8 +2,3 @@
 openapi: 3.0.3
 info:
   title: "Secure Message API"
-consumes:
-  - application/json
-produces:
-  - application/json
-
