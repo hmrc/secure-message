@@ -59,7 +59,8 @@ class SecureMessageService {
           "QmxhaCBibGFoIGJsYWg="
         )
       )
-    ))
+    )
+  )
 
   def getConversations(identifier: Identifier): List[ConversationDetails] =
     coreConversations.map(con => ConversationDetails.coreToConversationDetails(con, identifier))

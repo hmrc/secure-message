@@ -14,46 +14,73 @@
  * limitations under the License.
  */
 
-import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json.{ Json, Reads }
 import play.api.libs.ws.WSClient
-import play.api.libs.ws.ahc.{ AhcWSClient, AhcWSClientConfig, StandaloneAhcWSClient }
 import uk.gov.hmrc.integration.ServiceSpec
 
 class GetConversationsISpec extends PlaySpec with ServiceSpec {
 
-  override def externalServices: Seq[String] = Seq("datastream", "auth-login-api")
-  implicit val system: ActorSystem = ActorSystem()
-  implicit val materializer: ActorMaterializer = akka.stream.ActorMaterializer()
-  implicit val httpClient: WSClient = new AhcWSClient(StandaloneAhcWSClient(AhcWSClientConfig()))
+  override def externalServices: Seq[String] = Seq("auth-login-api")
 
-  override def additionalConfig: Map[String, _] =
-    Map("auditing.consumer.baseUri.port" -> externalServicePorts("datastream"))
+  val wsClient = app.injector.instanceOf[WSClient]
+
+  "A GET request to /secure-messaging/conversations" should {
+
+    "return a JSON body of conversation details" in {
+      val response =
+        wsClient
+          .url(resource("/secure-messaging/conversations"))
+          .withHttpHeaders(AuthUtil.buildEoriToken)
+          .get()
+          .futureValue
+      response.body mustBe
+        """[{"conversationId":"D-80542-20201120","subject":"D-80542-20201120","issueDate":"2020-11-10T15:00:01.000+0000","senderName":"CDS Exports Team","unreadMessages":true,"count":1}]"""
+    }
+
+    "return a JSON body of [No EORI enrolment found] when there's an auth session, but no EORI enrolment" in {
+      val response =
+        wsClient
+          .url(resource("/secure-messaging/conversations"))
+          .withHttpHeaders(AuthUtil.buildNonEoriToken)
+          .get()
+          .futureValue
+      response.body mustBe "\"No EORI enrolment found\""
+    }
+  }
 
   object AuthUtil {
-    lazy val authPort = 8500
     lazy val ggAuthPort: Int = externalServicePorts("auth-login-api")
 
     implicit val deserialiser: Reads[GatewayToken] = Json.reads[GatewayToken]
 
     case class GatewayToken(gatewayToken: String)
 
-    private val GG_SA_USER_PAYLOAD =
+    private val NO_EORI_USER_PAYLOAD =
       """
         | {
         |  "credId": "1235",
         |  "affinityGroup": "Organisation",
         |  "confidenceLevel": 100,
         |  "credentialStrength": "none",
+        |  "enrolments": []
+        |  }
+     """.stripMargin
+
+    private val EORI_USER_PAYLOAD =
+      """
+        | {
+        |  "credId": "1235",
+        |  "affinityGroup": "Organisation",
+        |  "confidenceLevel": 200,
+        |  "credentialStrength": "none",
         |  "enrolments": [
         |      {
-        |        "key": "IR-SA",
+        |        "key": "HMRC-CUS-ORG",
         |        "identifiers": [
         |          {
-        |            "key": "UTR",
-        |            "value": "1234567890"
+        |            "key": "EORINumber",
+        |            "value": "GB1234567890"
         |          }
         |        ],
         |        "state": "Activated"
@@ -63,7 +90,7 @@ class GetConversationsISpec extends PlaySpec with ServiceSpec {
      """.stripMargin
 
     private def buildUserToken(payload: String): (String, String) = {
-      val response = httpClient
+      val response = wsClient
         .url(s"http://localhost:$ggAuthPort/government-gateway/session/login")
         .withHttpHeaders(("Content-Type", "application/json"))
         .post(payload)
@@ -72,7 +99,8 @@ class GetConversationsISpec extends PlaySpec with ServiceSpec {
       ("Authorization", response.header("Authorization").get)
     }
 
-    def buildSaUserToken: (String, String) = buildUserToken(GG_SA_USER_PAYLOAD)
+    def buildEoriToken: (String, String) = buildUserToken(EORI_USER_PAYLOAD)
+    def buildNonEoriToken: (String, String) = buildUserToken(NO_EORI_USER_PAYLOAD)
   }
 
 }

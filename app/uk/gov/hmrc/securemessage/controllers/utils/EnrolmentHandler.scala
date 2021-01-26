@@ -20,7 +20,7 @@ import uk.gov.hmrc.auth.core.Enrolments
 
 object EnrolmentHandler {
 
-  def enrolmentType(enrolments: Enrolments): Option[String] =
+  def findEoriEnrolment(enrolments: Enrolments): Option[String] =
     enrolments.getEnrolment("HMRC-CUS-ORG").flatMap { eoriEnrolment =>
       eoriEnrolment.getIdentifier("EORINumber").map(_.value)
     }

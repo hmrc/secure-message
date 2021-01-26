@@ -162,18 +162,10 @@
         } ]
       }
     },
-    "/secure-messaging/conversations/{enrolment}" : {
+    "/secure-messaging/conversations" : {
       "get" : {
         "operationId" : "getListOfConversations",
-        "tags" : [ "app" ],
-        "parameters" : [ {
-          "in" : "path",
-          "name" : "enrolment",
-          "schema" : {
-            "type" : "string"
-          },
-          "required" : true
-        } ]
+        "tags" : [ "app" ]
       }
     }
   },

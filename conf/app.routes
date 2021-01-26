@@ -17,4 +17,15 @@
 ###
 PUT        /conversation/:client/:conversationId        uk.gov.hmrc.securemessage.controllers.SecureMessageController.createConversation(client: String, conversationId: String)
 
+# summary: Get's a list of conversations via EORI enrolment
+#   content:
+#    application/json:
+#      schema:
+#        $ref: '#/components/schemas/uk.gov.hmrc.securemessage.controllers.models.generic.ConversationDetails'
+# responses:
+#   200:
+#     description: list of conversations was recieved
+#   401:
+#     description: unauthorised customer when they don't have an EORI enrolment
+###
 GET        /conversations                               uk.gov.hmrc.securemessage.controllers.SecureMessageController.getListOfConversations()

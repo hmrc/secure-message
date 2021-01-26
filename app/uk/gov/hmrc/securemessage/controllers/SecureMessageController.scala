@@ -33,7 +33,7 @@ import uk.gov.hmrc.securemessage.services.SecureMessageService
 import scala.concurrent.{ ExecutionContext, Future }
 
 class SecureMessageController @Inject()(
-  val cc: ControllerComponents,
+  cc: ControllerComponents,
   val authConnector: AuthConnector,
   secureMessageService: SecureMessageService)(implicit ec: ExecutionContext)
     extends BackendController(cc) with AuthorisedFunctions {
@@ -49,14 +49,26 @@ class SecureMessageController @Inject()(
 
   def getListOfConversations(): Action[AnyContent] = Action.async { implicit request =>
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
-    authorised().retrieve(Retrievals.allEnrolments) { enrolments =>
-      enrolmentType(enrolments) match {
-        case Some(eoriValue) =>
-          Future.successful(
-            Ok(Json.toJson(secureMessageService.getConversations(
+    authorised()
+      .retrieve(Retrievals.allEnrolments) { enrolments =>
+        findEoriEnrolment(enrolments) match {
+          case Some(eoriValue) =>
+            Future.successful(Ok(Json.toJson(secureMessageService.getConversations(
               Identifier(name = "EORINumber", value = eoriValue, enrolment = Some("HMRC-CUS-ORG"))))))
-        case None => Future.successful(Unauthorized(Json.toJson("No EORI enrolment found")))
+          case None => Future.successful(Unauthorized(Json.toJson("No EORI enrolment found")))
+        }
       }
-    }
+      .recoverWith {
+        case _: NoActiveSession =>
+          Logger.logger.debug("Request did not have an Active Session, returning Unauthorised - Unauthenticated Error")
+          Future.successful(Unauthorized(Json.toJson("Not authenticated")))
+        case _: AuthorisationException =>
+          Logger.logger.debug(
+            "Request has an active session but was not authorised, returning Forbidden - Not Authorised Error")
+          Future.successful(Forbidden(Json.toJson("Not authorised")))
+        case e: Exception =>
+          Logger.logger.error(s"Unknown error: ${e.toString}")
+          Future.successful(InternalServerError)
+      }
   }
 }

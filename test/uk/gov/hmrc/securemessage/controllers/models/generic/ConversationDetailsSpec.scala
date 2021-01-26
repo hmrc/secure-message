@@ -24,7 +24,7 @@ import uk.gov.hmrc.securemessage.models.core.{ Conversation, Identifier }
 class ConversationDetailsSpec extends PlaySpec {
 
   "ConversationDetails" must {
-    "Convert core conversation to conversation details and serialise into JSON" in {
+    "Convert core conversation to conversation details and then serialise into JSON" in {
       val identifier = Identifier(name = "EORINumber", value = "GB1234567890", enrolment = Some("HMRC-CUS-ORG"))
       val conversationJson: JsValue = Resources.readJson("model/core/conversation-full-extender.json")
       val coreConversation: Conversation = conversationJson.validate[Conversation].get

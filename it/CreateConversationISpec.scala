@@ -25,10 +25,7 @@ import uk.gov.hmrc.integration.ServiceSpec
 
 class CreateConversationISpec extends PlaySpec with ServiceSpec {
 
-  override def externalServices: Seq[String] = Seq("datastream", "auth-login-api")
-
-  override def additionalConfig: Map[String, _] =
-    Map("auditing.consumer.baseUri.port" -> externalServicePorts("datastream"))
+  override def externalServices: Seq[String] = Seq.empty
 
   "A PUT request to /secure-messaging/conversation/{client}/{conversationId}" should {
 
