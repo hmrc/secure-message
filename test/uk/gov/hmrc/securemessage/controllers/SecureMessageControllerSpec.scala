@@ -33,6 +33,7 @@ import play.api.test.{FakeHeaders, FakeRequest, Helpers, NoMaterializer}
 import uk.gov.hmrc.auth.core.retrieve.Retrieval
 import uk.gov.hmrc.auth.core.{AuthConnector, Enrolment, EnrolmentIdentifier, Enrolments}
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.securemessage.controllers.models.generic
 import uk.gov.hmrc.securemessage.controllers.models.generic.ConversationDetails
 import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core.Language.English
@@ -134,18 +135,19 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
           Future.successful(
             Enrolments(
               Set(
-                Enrolment(
+                uk.gov.hmrc.auth.core.Enrolment(
                   key = "HMRC-CUS-ORG",
                   identifiers = Seq(EnrolmentIdentifier("EORINumber", "GB123456789")),
                   state = "",
                   None)))))
-      when(mockSecureMessageService.getConversations(Identifier(name = "EORINumber", value = "GB123456789", enrolment = Some("HMRC-CUS-ORG"))))
-        .thenReturn(List(ConversationDetails(conversationId = "D-80542-20201120",
+      generic.Enrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789")
+      when(mockSecureMessageService.getConversations(generic.Enrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789")))
+        .thenReturn(Future(List(ConversationDetails(conversationId = "D-80542-20201120",
           subject = "D-80542-20201120",
           issueDate = Some(DateTime.parse("2020-11-10T15:00:18.000+0000")),
           senderName = Some("Joe Bloggs"),
           unreadMessages = true,
-          count = 4)))
+          count = 4))))
       val controller = new SecureMessageController(Helpers.stubControllerComponents(), mockAuthConnector, mockSecureMessageService, mockRepository)
       val response: Future[Result] = controller.getListOfConversations().apply(FakeRequest("GET", "/"))
       status(response) mustBe OK

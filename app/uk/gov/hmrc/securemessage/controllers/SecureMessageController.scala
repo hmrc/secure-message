@@ -25,9 +25,8 @@ import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.HeaderCarrierConverter
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.securemessage.controllers.models.generic.ConversationRequest
+import uk.gov.hmrc.securemessage.controllers.models.generic.{ ConversationRequest, Enrolment }
 import uk.gov.hmrc.securemessage.controllers.utils.EnrolmentHandler._
-import uk.gov.hmrc.securemessage.models.core.Identifier
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
 import uk.gov.hmrc.securemessage.services.SecureMessageService
 
@@ -56,8 +55,11 @@ class SecureMessageController @Inject()(
       .retrieve(Retrievals.allEnrolments) { enrolments =>
         findEoriEnrolment(enrolments) match {
           case Some(eoriValue) =>
-            Future.successful(Ok(Json.toJson(secureMessageService.getConversations(
-              Identifier(name = "EORINumber", value = eoriValue, enrolment = Some("HMRC-CUS-ORG"))))))
+            secureMessageService
+              .getConversations(Enrolment(key = "HMRC-CUS-ORG", name = "EORINumber", value = eoriValue))
+              .flatMap { conversationDetails =>
+                Future.successful(Ok(Json.toJson(conversationDetails)))
+              }
           case None => Future.successful(Unauthorized(Json.toJson("No EORI enrolment found")))
         }
       }

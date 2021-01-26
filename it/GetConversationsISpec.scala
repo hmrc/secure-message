@@ -14,28 +14,43 @@
  * limitations under the License.
  */
 
-import org.scalatestplus.play.PlaySpec
-import play.api.libs.json.{ Json, Reads }
-import play.api.libs.ws.WSClient
-import uk.gov.hmrc.integration.ServiceSpec
+import java.io.File
 
-class GetConversationsISpec extends PlaySpec with ServiceSpec {
+import org.scalatest.BeforeAndAfterEach
+import org.scalatestplus.play.PlaySpec
+import play.api.http.{ ContentTypes, HeaderNames }
+import play.api.libs.json.{ Json, Reads }
+import play.api.libs.ws.{ WSClient, WSResponse }
+import play.api.test.Helpers.await
+import uk.gov.hmrc.integration.ServiceSpec
+import uk.gov.hmrc.securemessage.repository.ConversationRepository
+
+import scala.concurrent.{ ExecutionContext, Future }
+
+@SuppressWarnings(Array("org.wartremover.warts.All"))
+class GetConversationsISpec extends PlaySpec with ServiceSpec with BeforeAndAfterEach {
 
   override def externalServices: Seq[String] = Seq("auth-login-api")
 
   val wsClient = app.injector.instanceOf[WSClient]
+  val repository = app.injector.instanceOf[ConversationRepository]
+  val ec = app.injector.instanceOf[ExecutionContext]
+
+  override protected def beforeEach(): Unit = {
+    val _ = await(repository.removeAll()(ec))
+  }
 
   "A GET request to /secure-messaging/conversations" should {
 
     "return a JSON body of conversation details" in {
+      createConversation
       val response =
         wsClient
           .url(resource("/secure-messaging/conversations"))
           .withHttpHeaders(AuthUtil.buildEoriToken)
           .get()
           .futureValue
-      response.body mustBe
-        """[{"conversationId":"D-80542-20201120","subject":"D-80542-20201120","issueDate":"2020-11-10T15:00:01.000+0000","senderName":"CDS Exports Team","unreadMessages":true,"count":1}]"""
+      response.body must contain """senderName":"CDS Exports Team"""
     }
 
     "return a JSON body of [No EORI enrolment found] when there's an auth session, but no EORI enrolment" in {
@@ -103,4 +118,11 @@ class GetConversationsISpec extends PlaySpec with ServiceSpec {
     def buildNonEoriToken: (String, String) = buildUserToken(NO_EORI_USER_PAYLOAD)
   }
 
+  def createConversation: Future[WSResponse] = {
+    val wsClient = app.injector.instanceOf[WSClient]
+    wsClient
+      .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
+      .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
+      .put(new File("./it/resources/create-conversation-full.json"))
+  }
 }

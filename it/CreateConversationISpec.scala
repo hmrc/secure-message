@@ -28,6 +28,7 @@ import uk.gov.hmrc.securemessage.repository.ConversationRepository
 
 import scala.concurrent.ExecutionContext
 
+@SuppressWarnings(Array("org.wartremover.warts.All"))
 class CreateConversationISpec extends PlaySpec with ServiceSpec with BeforeAndAfterEach {
 
   override def externalServices: Seq[String] = Seq.empty

@@ -45,9 +45,9 @@ lazy val microservice = Project(appName, file("."))
     scalacOptions ++= Seq(
       "-P:silencer:pathFilters=target/.*",
       s"-P:silencer:sourceRoots=${baseDirectory.value.getCanonicalPath}",
-//      "-P:wartremover:excluded:/conf/app.routes",
+      "-P:wartremover:excluded:/conf/app.routes",
       "-P:silencer:pathFilters=app.routes",
-//      "-P:wartremover:traverser:org.wartremover.warts.Unsafe",
+      "-P:wartremover:traverser:org.wartremover.warts.Unsafe",
       "-deprecation", // Emit warning and location for usages of deprecated APIs.
       "-encoding",
       "utf-8", // Specify character encoding used by source files.
