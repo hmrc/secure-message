@@ -166,12 +166,10 @@
       }
     }
   },
-  "produces" : [ "application/json" ],
   "info" : {
     "title" : "Secure Message API",
-    "version" : "0.15.0-SNAPSHOT"
+    "version" : "0.17.0-SNAPSHOT"
   },
-  "consumes" : [ "application/json" ],
   "tags" : [ {
     "name" : "app"
   } ]
