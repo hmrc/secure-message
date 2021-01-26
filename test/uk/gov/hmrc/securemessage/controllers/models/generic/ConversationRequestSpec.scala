@@ -34,7 +34,7 @@ class ConversationRequestSpec extends PlaySpec {
       fullConversationRequestJson.validate[ConversationRequest] match {
         case s: JsSuccess[ConversationRequest] =>
           val conversationRequest: ConversationRequest = s.getOrElse(fail("Unable to get conversation"))
-          val conversation = conversationRequest.asConversationWithCreatedDate("D-80542-20201120", dateTime)
+          val conversation = conversationRequest.asConversationWithCreatedDate("cdcm", "D-80542-20201120", dateTime)
           val expectedConversationJson: JsValue = Resources.readJson("model/core/conversation-full.json")
           expectedConversationJson.validate[Conversation] match {
             case success: JsSuccess[Conversation] =>
@@ -56,7 +56,7 @@ class ConversationRequestSpec extends PlaySpec {
       fullConversationRequestJson.validate[ConversationRequest] match {
         case s: JsSuccess[ConversationRequest] =>
           val conversationRequest: ConversationRequest = s.getOrElse(fail("Unable to get conversation"))
-          val conversation = conversationRequest.asConversationWithCreatedDate("D-80542-20201120", dateTime)
+          val conversation = conversationRequest.asConversationWithCreatedDate("cdcm", "D-80542-20201120", dateTime)
           val expectedConversationJson: JsValue = Resources.readJson("model/core/conversation-minimal.json")
           expectedConversationJson.validate[Conversation] match {
             case success: JsSuccess[Conversation] =>

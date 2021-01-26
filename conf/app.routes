@@ -12,6 +12,8 @@
 #     description: conversation created successfully
 #   400:
 #     description: bad request such as an invalid payload
+#   409:
+#     description: duplicate - a conversation already exists for this client and conversationId
 #   415:
 #     description: unsupported media type - should be application/json
 ###
