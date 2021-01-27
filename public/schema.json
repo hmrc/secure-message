@@ -114,6 +114,12 @@
         },
         "required" : [ "sender", "recipients", "alert", "subject", "message" ]
       }
+    },
+    "securitySchemes" : {
+      "bearerToken" : {
+        "type" : "http",
+        "scheme" : "bearer"
+      }
     }
   },
   "openapi" : "3.0.3",
@@ -168,7 +174,19 @@
     "/secure-messaging/conversations" : {
       "get" : {
         "operationId" : "getListOfConversations",
-        "tags" : [ "app" ]
+        "tags" : [ "app" ],
+        "summary" : "Get's a list of conversations via EORI enrolment",
+        "security" : [ {
+          "bearerToken" : [ ]
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "list of conversations was recieved"
+          },
+          "401" : {
+            "description" : "unauthorised customer when they don't have an EORI enrolment"
+          }
+        }
       }
     }
   },

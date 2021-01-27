@@ -18,12 +18,10 @@
 #     description: unsupported media type - should be application/json
 ###
 PUT        /conversation/:client/:conversationId        uk.gov.hmrc.securemessage.controllers.SecureMessageController.createConversation(client: String, conversationId: String)
-
+###
 # summary: Get's a list of conversations via EORI enrolment
-#   content:
-#    application/json:
-#      schema:
-#        $ref: '#/components/schemas/uk.gov.hmrc.securemessage.controllers.models.generic.ConversationDetails'
+# security:
+#   - bearerToken: []
 # responses:
 #   200:
 #     description: list of conversations was recieved

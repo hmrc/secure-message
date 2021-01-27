@@ -6,4 +6,9 @@ consumes:
   - application/json
 produces:
   - application/json
+components:
+  securitySchemes:
+    bearerToken:
+      type: http
+      scheme: bearer
 
