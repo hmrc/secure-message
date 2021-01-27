@@ -74,6 +74,21 @@ class CreateConversationISpec extends PlaySpec with ServiceSpec with BeforeAndAf
           .futureValue
       response.status mustBe BAD_REQUEST
     }
+
+    "return CONFLICT when a conversation with the given conversationId already exists" in {
+      val wsClient = app.injector.instanceOf[WSClient]
+      val _ = wsClient
+        .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
+        .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
+        .put(new File("./it/resources/create-conversation-minimal.json"))
+        .futureValue
+      val response = wsClient
+        .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
+        .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
+        .put(new File("./it/resources/create-conversation-minimal.json"))
+        .futureValue
+      response.status mustBe CONFLICT
+    }
   }
 
 }
