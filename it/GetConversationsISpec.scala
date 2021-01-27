@@ -21,7 +21,7 @@ import org.scalatestplus.play.PlaySpec
 import play.api.http.{ ContentTypes, HeaderNames }
 import play.api.libs.json.{ Json, Reads }
 import play.api.libs.ws.{ WSClient, WSResponse }
-import play.api.test.Helpers.await
+import play.api.test.Helpers._
 import uk.gov.hmrc.integration.ServiceSpec
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
 
@@ -50,7 +50,7 @@ class GetConversationsISpec extends PlaySpec with ServiceSpec with BeforeAndAfte
           .withHttpHeaders(AuthUtil.buildEoriToken)
           .get()
           .futureValue
-      response.body must contain """senderName":"CDS Exports Team"""
+      response.body must include("""senderName":"CDS Exports Team""")
     }
 
     "return a JSON body of [No EORI enrolment found] when there's an auth session, but no EORI enrolment" in {

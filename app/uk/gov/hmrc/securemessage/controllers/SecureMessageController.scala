@@ -17,7 +17,6 @@
 package uk.gov.hmrc.securemessage.controllers
 
 import javax.inject.Inject
-import play.api.Logger
 import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc.{ Action, AnyContent, ControllerComponents }
 import uk.gov.hmrc.auth.core._
@@ -25,7 +24,7 @@ import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.HeaderCarrierConverter
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.securemessage.controllers.models.generic.{ ConversationRequest, Enrolment }
+import uk.gov.hmrc.securemessage.controllers.models.generic.ConversationRequest
 import uk.gov.hmrc.securemessage.controllers.utils.EnrolmentHandler._
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
 import uk.gov.hmrc.securemessage.services.SecureMessageService
@@ -54,26 +53,14 @@ class SecureMessageController @Inject()(
     authorised()
       .retrieve(Retrievals.allEnrolments) { enrolments =>
         findEoriEnrolment(enrolments) match {
-          case Some(eoriValue) =>
+          case Some(eoriEnrolment) =>
             secureMessageService
-              .getConversations(Enrolment(key = "HMRC-CUS-ORG", name = "EORINumber", value = eoriValue))
+              .getConversations(eoriEnrolment)
               .flatMap { conversationDetails =>
                 Future.successful(Ok(Json.toJson(conversationDetails)))
               }
           case None => Future.successful(Unauthorized(Json.toJson("No EORI enrolment found")))
         }
-      }
-      .recoverWith {
-        case _: NoActiveSession =>
-          Logger.logger.debug("Request did not have an Active Session, returning Unauthorised - Unauthenticated Error")
-          Future.successful(Unauthorized(Json.toJson("Not authenticated")))
-        case _: AuthorisationException =>
-          Logger.logger.debug(
-            "Request has an active session but was not authorised, returning Forbidden - Not Authorised Error")
-          Future.successful(Forbidden(Json.toJson("Not authorised")))
-        case e: Exception =>
-          Logger.logger.error(s"Unknown error: ${e.toString}")
-          Future.successful(InternalServerError)
       }
   }
 }
