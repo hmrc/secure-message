@@ -11,4 +11,3 @@ components:
     bearerToken:
       type: http
       scheme: bearer
-
