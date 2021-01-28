@@ -53,9 +53,8 @@ object ConversationDetails {
     }
 
   private def findLatestMessageDate(coreConversation: Conversation): Option[DateTime] =
-    findLatestMessage(coreConversation) match {
-      case Some(ms) => Some(ms.created)
-      case _        => None
+    findLatestMessage(coreConversation).flatMap { ms =>
+      Some(ms.created)
     }
 
   private def findLatestMessageName(coreConversation: Conversation): Option[String] =
