@@ -30,6 +30,7 @@ import play.api.libs.json.Json
 import play.api.mvc.Result
 import play.api.test.Helpers.{PUT, contentAsString, defaultAwaitTimeout, status}
 import play.api.test.{FakeHeaders, FakeRequest, Helpers, NoMaterializer}
+import uk.gov.hmrc.auth.core.authorise.Predicate
 import uk.gov.hmrc.auth.core.retrieve.Retrieval
 import uk.gov.hmrc.auth.core.{AuthConnector, Enrolment, EnrolmentIdentifier, Enrolments}
 import uk.gov.hmrc.http.HeaderCarrier
@@ -130,7 +131,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
 
   "Calling getConversations" should {
     "return an OK (200) with a JSON body of a list of conversations" in new TestCase {
-      when(mockAuthConnector.authorise(any(), any[Retrieval[Enrolments]])(any(), any()))
+      when(mockAuthConnector.authorise(any[Predicate], any[Retrieval[Enrolments]])(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(
           Future.successful(
             Enrolments(
@@ -156,7 +157,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     }
 
     "return a 401 (UNAUTHORISED) error when no EORI enrolment found" in new TestCase {
-      when(mockAuthConnector.authorise(any(), any[Retrieval[Enrolments]])(any(), any()))
+      when(mockAuthConnector.authorise(any[Predicate], any[Retrieval[Enrolments]])(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(
           Future.successful(
             Enrolments(
