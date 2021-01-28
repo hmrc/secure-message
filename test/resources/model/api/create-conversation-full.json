@@ -1,6 +1,9 @@
 {
     "sender": {"system": {
-        "name": "CDCM",
+        "identifier": {
+            "name": "CDCM",
+            "value": "D-80542-20201120"
+        },
         "parameters": {
             "caseId": "D-80542",
             "queryId": "D-80542-20201120"
