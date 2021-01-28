@@ -12,10 +12,14 @@
 #     description: conversation created successfully
 #   400:
 #     description: bad request such as an invalid payload
+#   404:
+#     description: required resource not found - e.g. client not recognised or email not found
 #   409:
 #     description: duplicate - a conversation already exists for this client and conversationId
 #   415:
 #     description: unsupported media type - should be application/json
+#   424:
+#     description: a dependency failed - e.g. customer email validation failed
 ###
 PUT        /conversation/:client/:conversationId        uk.gov.hmrc.securemessage.controllers.SecureMessageController.createConversation(client: String, conversationId: String)
 ###
