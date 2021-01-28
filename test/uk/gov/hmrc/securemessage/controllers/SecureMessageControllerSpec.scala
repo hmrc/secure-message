@@ -36,9 +36,8 @@ import uk.gov.hmrc.auth.core.{AuthConnector, Enrolment, EnrolmentIdentifier, Enr
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.securemessage.controllers.models.generic
 import uk.gov.hmrc.securemessage.controllers.models.generic.ConversationDetails
-import uk.gov.hmrc.securemessage.helpers.Resources
-import uk.gov.hmrc.securemessage.models.core.Language.English
-import uk.gov.hmrc.securemessage.models.core.{Conversation, _}
+import uk.gov.hmrc.securemessage.helpers.{ConversationUtil, Resources}
+import uk.gov.hmrc.securemessage.models.core.Conversation
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
 import uk.gov.hmrc.securemessage.services.SecureMessageService
 
@@ -49,42 +48,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with MockitoSugar {
 
   implicit val mat: Materializer = NoMaterializer
-  val listOfCoreConversation = List(Conversation(
-    client = "D-80542-20201120",
-    conversationId = "conversationId",
-    status = ConversationStatus.Open,
-    tags = Some(
-      Map(
-        "sourceId"         -> "CDCM",
-        "caseId"           -> "D-80542",
-        "queryId"          -> "D-80542-20201120",
-        "mrn"              -> "DMS7324874993",
-        "notificationType" -> "CDS Exports"
-      )),
-    subject = "D-80542-20201120",
-    language = English,
-    participants = List(
-      Participant(
-        1,
-        ParticipantType.System,
-        Identifier("CDCM", "D-80542-20201120", None),
-        Some("CDS Exports Team"),
-        None),
-      Participant(
-        2,
-        ParticipantType.Customer,
-        Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")),
-        Some("Joe Bloggs"),
-        Some("joebloggs@test.com"))
-    ),
-    messages = List(Message(
-      1,
-      new DateTime("2020-11-10T15:00:01.000Z"),
-      List(Reader(1, new DateTime("2020-11-10T15:00:01.000Z"))),
-      "QmxhaCBibGFoIGJsYWg="
-    ))
-  )
-  )
+  val listOfCoreConversation = List(ConversationUtil.getFullConversation("D-80542-20201120"))
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
