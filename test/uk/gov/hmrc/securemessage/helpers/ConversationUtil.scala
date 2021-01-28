@@ -43,13 +43,16 @@ object ConversationUtil {
           ParticipantType.System,
           Identifier("CDCM", "D-80542-20201120", None),
           Some("CDS Exports Team"),
-          None),
+          None,
+          Some(Map("caseId" -> "D-80542", "queryId" -> "D-80542-20201120"))
+        ),
         Participant(
           2,
           ParticipantType.Customer,
           Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")),
           Some("Joe Bloggs"),
-          Some("joebloggs@test.com"))
+          Some("joebloggs@test.com"),
+          None)
       ),
       List(
         Message(
@@ -75,11 +78,13 @@ object ConversationUtil {
           ParticipantType.System,
           Identifier("CDCM", "D-80542-20201120", None),
           Some("CDS Exports Team"),
+          None,
           None),
         Participant(
           2,
           ParticipantType.Customer,
           Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")),
+          None,
           None,
           None)
       ),

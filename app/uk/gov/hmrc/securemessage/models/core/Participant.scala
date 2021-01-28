@@ -23,7 +23,8 @@ final case class Participant(
   participantType: ParticipantType,
   identifier: Identifier,
   name: Option[String],
-  email: Option[String])
+  email: Option[String],
+  parameters: Option[Map[String, String]])
 object Participant {
   implicit val participantFormat: Format[Participant] = Json.format[Participant]
 }
