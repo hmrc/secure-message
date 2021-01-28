@@ -73,9 +73,10 @@ object ConversationDetails {
 
   private def findUnreadMessagesByParticipant(participantId: Int, coreConversation: Conversation): Boolean = {
     val messages = coreConversation.messages
-    val readers = messages.flatMap(ms => ms.readBy)
-    val readerIds = readers.map(reader => reader.id)
-    val matchingIds = readerIds.count(int => int === participantId)
+    val matchingIds = coreConversation.messages
+      .flatMap(_.readBy)
+      .map(_.id)
+      .count(int => int === participantId)
     matchingIds =!= messages.size
   }
 
