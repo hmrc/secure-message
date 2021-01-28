@@ -54,10 +54,21 @@
         },
         "required" : [ "customer" ]
       },
-      "uk.gov.hmrc.securemessage.controllers.models.generic.System" : {
+      "uk.gov.hmrc.securemessage.controllers.models.generic.SystemIdentifier" : {
         "properties" : {
           "name" : {
             "type" : "string"
+          },
+          "value" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "name", "value" ]
+      },
+      "uk.gov.hmrc.securemessage.controllers.models.generic.System" : {
+        "properties" : {
+          "identifier" : {
+            "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.controllers.models.generic.SystemIdentifier"
           },
           "display" : {
             "type" : "string"
@@ -70,7 +81,7 @@
             }
           }
         },
-        "required" : [ "name", "display" ]
+        "required" : [ "identifier", "display" ]
       },
       "uk.gov.hmrc.securemessage.controllers.models.generic.Sender" : {
         "properties" : {
@@ -168,7 +179,7 @@
   },
   "info" : {
     "title" : "Secure Message API",
-    "version" : "0.17.0-SNAPSHOT"
+    "version" : "0.21.0-SNAPSHOT"
   },
   "tags" : [ {
     "name" : "app"

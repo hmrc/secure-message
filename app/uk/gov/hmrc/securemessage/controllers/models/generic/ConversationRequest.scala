@@ -17,47 +17,56 @@
 package uk.gov.hmrc.securemessage.controllers.models.generic
 
 import org.joda.time.DateTime
-import play.api.libs.json.{ Json, OFormat }
+import play.api.libs.functional.syntax.toFunctionalBuilderOps
+import play.api.libs.json.{ JsPath, Json, Reads }
 import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.time.DateTimeUtils
 
 final case class Alert(templateId: String, parameters: Option[Map[String, String]])
 object Alert {
-  implicit val alertFormat: OFormat[Alert] =
-    Json.format[Alert]
+  implicit val alertReads: Reads[Alert] =
+    Json.reads[Alert]
 }
 
 final case class Enrolment(key: String, name: String, value: String)
 object Enrolment {
-  implicit val enrolmentFormat: OFormat[Enrolment] =
-    Json.format[Enrolment]
+  implicit val enrolmentReads: Reads[Enrolment] =
+    Json.reads[Enrolment]
+}
+
+final case class SystemIdentifier(name: String, value: String)
+object SystemIdentifier {
+  implicit val identifierReads: Reads[SystemIdentifier] = Json.reads[SystemIdentifier]
 }
 
 /**
   * @param parameters metadata sent back to the sender
   * */
-final case class System(name: String, display: String, parameters: Option[Map[String, String]])
+final case class System(identifier: SystemIdentifier, display: String, parameters: Option[Map[String, String]])
 object System {
-  implicit val systemFormat: OFormat[System] =
-    Json.format[System]
+  implicit val systemReads: Reads[System] = (
+    (JsPath \ "identifier").read[SystemIdentifier] and
+      (JsPath \ "display").read[String] and
+      (JsPath \ "parameters").readNullable[Map[String, String]]
+  ).apply(System.apply _)
 }
 
 final case class Customer(enrolment: Enrolment, name: Option[String], email: Option[String])
 object Customer {
-  implicit val customerFormat: OFormat[Customer] =
-    Json.format[Customer]
+  implicit val customerReads: Reads[Customer] =
+    Json.reads[Customer]
 }
 
 final case class Sender(system: System)
 object Sender {
-  implicit val senderFormat: OFormat[Sender] =
-    Json.format[Sender]
+  implicit val senderReads: Reads[Sender] =
+    Json.reads[Sender]
 }
 
 final case class Recipient(customer: Customer)
 object Recipient {
-  implicit val recipientFormat: OFormat[Recipient] =
-    Json.format[Recipient]
+  implicit val recipientReads: Reads[Recipient] =
+    Json.reads[Recipient]
 }
 
 /**
@@ -78,7 +87,7 @@ final case class ConversationRequest(
 
   def asConversationWithCreatedDate(client: String, conversationId: String, created: DateTime): Conversation = {
     val initialMessage = Message(1, created, List(Reader(1, created)), message)
-    val initialParticipants = getSenderParticipant(sender, conversationId) :: getRecipientParticipants(recipients)
+    val initialParticipants = getSenderParticipant(sender.system) :: getRecipientParticipants(recipients)
     Conversation(
       client,
       conversationId,
@@ -96,13 +105,15 @@ final case class ConversationRequest(
       case _          => Language.English
 
     }
-  private def getSenderParticipant(sender: Sender, conversationId: String): Participant =
+  private def getSenderParticipant(senderSystem: System): Participant =
     Participant(
       1,
       ParticipantType.System,
-      Identifier(sender.system.name, conversationId, None),
-      Some(sender.system.display),
-      None)
+      Identifier(senderSystem.identifier.name, senderSystem.identifier.value, None),
+      Some(senderSystem.display),
+      None,
+      senderSystem.parameters
+    )
 
   private def getRecipientParticipants(recipients: List[Recipient]): List[Participant] =
     recipients.zip(Stream from 2) map { r =>
@@ -112,7 +123,8 @@ final case class ConversationRequest(
         ParticipantType.Customer,
         getCustomerIdentifier(customer.enrolment),
         customer.name,
-        customer.email)
+        customer.email,
+        None)
     }
 
   private def getCustomerIdentifier(enrolment: Enrolment): Identifier =
@@ -120,6 +132,6 @@ final case class ConversationRequest(
 
 }
 object ConversationRequest {
-  implicit val conversationRequestFormat: OFormat[ConversationRequest] =
-    Json.format[ConversationRequest]
+  implicit val conversationRequestReads: Reads[ConversationRequest] =
+    Json.reads[ConversationRequest]
 }
