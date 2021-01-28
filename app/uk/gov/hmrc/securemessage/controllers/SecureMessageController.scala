@@ -17,18 +17,27 @@
 package uk.gov.hmrc.securemessage.controllers
 
 import javax.inject.Inject
-import play.api.libs.json.JsValue
-import play.api.mvc.{ Action, ControllerComponents }
+import play.api.libs.json.{ JsValue, Json }
+import play.api.mvc.{ Action, AnyContent, ControllerComponents }
+import uk.gov.hmrc.auth.core._
+import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.HeaderCarrierConverter
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.securemessage.controllers.models.generic.ConversationRequest
+import uk.gov.hmrc.securemessage.controllers.utils.EnrolmentHandler._
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
+import uk.gov.hmrc.securemessage.services.SecureMessageService
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ ExecutionContext, Future }
 
 @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
-class SecureMessageController @Inject()(repo: ConversationRepository, cc: ControllerComponents)(
-  implicit ec: ExecutionContext)
-    extends BackendController(cc) {
+class SecureMessageController @Inject()(
+  cc: ControllerComponents,
+  val authConnector: AuthConnector,
+  secureMessageService: SecureMessageService,
+  repo: ConversationRepository)(implicit ec: ExecutionContext)
+    extends BackendController(cc) with AuthorisedFunctions {
 
   def createConversation(client: String, conversationId: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
@@ -39,4 +48,19 @@ class SecureMessageController @Inject()(repo: ConversationRepository, cc: Contro
       }
   }
 
+  def getListOfConversations(): Action[AnyContent] = Action.async { implicit request =>
+    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
+    authorised()
+      .retrieve(Retrievals.allEnrolments) { enrolments =>
+        findEoriEnrolment(enrolments) match {
+          case Some(eoriEnrolment) =>
+            secureMessageService
+              .getConversations(eoriEnrolment)
+              .flatMap { conversationDetails =>
+                Future.successful(Ok(Json.toJson(conversationDetails)))
+              }
+          case None => Future.successful(Unauthorized(Json.toJson("No EORI enrolment found")))
+        }
+      }
+  }
 }

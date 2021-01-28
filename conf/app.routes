@@ -21,4 +21,15 @@
 #   424:
 #     description: a dependency failed - e.g. customer email validation failed
 ###
-PUT   /conversation/:client/:conversationId uk.gov.hmrc.securemessage.controllers.SecureMessageController.createConversation(client: String, conversationId: String)
+PUT        /conversation/:client/:conversationId        uk.gov.hmrc.securemessage.controllers.SecureMessageController.createConversation(client: String, conversationId: String)
+###
+# summary: Get's a list of conversations via EORI enrolment
+# security:
+#   - bearerToken: []
+# responses:
+#   200:
+#     description: list of conversations was recieved
+#   401:
+#     description: unauthorised customer when they don't have an EORI enrolment
+###
+GET        /conversations                               uk.gov.hmrc.securemessage.controllers.SecureMessageController.getListOfConversations()

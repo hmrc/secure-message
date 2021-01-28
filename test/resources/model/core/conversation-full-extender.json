@@ -1,0 +1,97 @@
+{
+  "client": "cdcm",
+  "conversationId": "D-80542-20201120",
+  "status": "open",
+  "tags": {
+    "sourceId": "CDCM",
+    "caseId": "D-80542",
+    "queryId": "D-80542-20201120",
+    "mrn": "DMS7324874993",
+    "notificationType": "CDS Exports"
+  },
+  "subject": "D-80542-20201120",
+  "language": "en",
+  "participants": [
+    {
+      "id": 1,
+      "participantType": "system",
+      "name": "CDS Exports Team",
+      "identifier": {
+        "name": "CDCM",
+        "value": "D-80542-20201120"
+      }
+    },
+    {
+      "id": 2,
+      "participantType": "customer",
+      "name": "Joe Bloggs",
+      "email": "joebloggs@test.com",
+      "identifier": {
+        "enrolment": "HMRC-CUS-ORG",
+        "name": "EORINumber",
+        "value": "GB1234567890"
+      }
+    },
+    {
+      "id": 3,
+      "participantType": "customer",
+      "name": "Ben Dover",
+      "email": "bendover@test.com",
+      "identifier": {
+        "enrolment": "HMRC-CUS-ORG",
+        "name": "EORINumber",
+        "value": "GB0123456789"
+      }
+    }
+  ],
+  "messages": [
+    {
+      "senderId": 1,
+      "created": "2020-11-10T15:00:01.000Z",
+      "readBy": [
+        {
+          "id": 2,
+          "readDate": "2020-11-10T15:00:01.000Z"
+        }
+      ],
+      "content": "QmxhaCBibGFoIGJsYWg="
+    },
+    {
+      "senderId": 2,
+      "created": "2020-11-10T15:00:05.000Z",
+      "readBy": [
+        {
+          "id": 2,
+          "readDate": "2020-11-10T15:00:02.000Z"
+        }
+      ],
+      "content": "QmxhaCBibGFoIGJsYWg="
+    },
+    {
+      "senderId": 3,
+      "created": "2020-11-10T15:00:12.000Z",
+      "readBy": [
+        {
+          "id": 1,
+          "readDate": "2020-11-10T15:00:01.000Z"
+        },
+        {
+          "id": 3,
+          "readDate": "2020-11-10T15:00:01.000Z"
+        }
+      ],
+      "content": "QmxhaCBibGFoIGJsYWg="
+    },
+    {
+      "senderId": 2,
+      "created": "2020-11-10T15:00:18.000Z",
+      "readBy": [
+        {
+          "id": 2,
+          "readDate": "2020-11-10T15:00:01.000Z"
+        }
+      ],
+      "content": "QmxhaCBibGFoIGJsYWg="
+    }
+  ]
+}

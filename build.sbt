@@ -123,9 +123,13 @@ lazy val microservice = Project(appName, file("."))
     )
   )
   .settings(ServiceManagerPlugin.serviceManagerSettings)
-  .settings(itDependenciesList := List(
-    ExternalService("DATASTREAM")
-  ))
+  .settings(
+    itDependenciesList := List(
+      ExternalService("DATASTREAM"),
+      ExternalService("AUTH"),
+      ExternalService("IDENTITY_VERIFICATION"),
+      ExternalService("USER_DETAILS")
+    ))
   .settings(silencerSettings)
 
 lazy val compileScalastyle = taskKey[Unit]("compileScalastyle")
