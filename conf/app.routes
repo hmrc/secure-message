@@ -33,3 +33,7 @@ PUT        /conversation/:client/:conversationId        uk.gov.hmrc.securemessag
 #     description: unauthorised customer when they don't have an EORI enrolment
 ###
 GET        /conversations                               uk.gov.hmrc.securemessage.controllers.SecureMessageController.getListOfConversations()
+
+
+
+GET        /conversation/:client/:conversationId        uk.gov.hmrc.securemessage.controllers.SecureMessageController.getConversation(client: String, conversationId: String)

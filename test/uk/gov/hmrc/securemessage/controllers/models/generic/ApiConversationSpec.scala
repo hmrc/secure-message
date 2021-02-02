@@ -17,27 +17,29 @@
 package uk.gov.hmrc.securemessage.controllers.models.generic
 
 import org.scalatestplus.play.PlaySpec
-import play.api.libs.json.{ JsValue, Json }
+import play.api.Logger
+import play.api.libs.json.JsValue
 import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core._
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
-class ConversationDetailsSpec extends PlaySpec {
+class ApiConversationSpec extends PlaySpec {
 
-  "ConversationDetails" must {
-    "Convert core conversation to conversation details and then serialise into JSON" in {
+  "ApiConversation" must {
+    "Convert core conversation to ApiConversation details and then serialise into JSON" in {
       val identifier = Identifier(name = "EORINumber", value = "GB1234567890", enrolment = Some("HMRC-CUS-ORG"))
+      Logger.logger.warn(identifier.toString)
       val conversationJson: JsValue = Resources.readJson("model/core/conversation-full-extender.json")
       val coreConversation: Conversation = conversationJson.validate[Conversation].get
-      val conversationDetailsJson: JsValue = Resources.readJson("model/api/conversation-details.json")
-      val conversationDetails: ConversationDetails = conversationDetailsJson.validate[ConversationDetails].get
-      ConversationDetails.coreToConversationDetails(coreConversation, identifier) mustEqual conversationDetails
-      Json.toJson(conversationDetails) mustBe Json.parse("""{"conversationId":"D-80542-20201120",
-                                                           |"subject":"D-80542-20201120",
-                                                           |"issueDate":"2020-11-10T15:00:18.000+0000",
-                                                           |"senderName":"Joe Bloggs",
-                                                           |"unreadMessages":true,
-                                                           |"count":4}""".stripMargin)
+//      val conversationDetailsJson: JsValue = Resources.readJson("model/api/conversation-details.json")
+//      val conversationDetails: ApiConversation = conversationDetailsJson.validate[ApiConversation].get
+      ApiConversation.coreConversationToApiConversation(coreConversation, identifier) mustEqual ""
+//      Json.toJson(conversationDetails) mustBe Json.parse("""{"conversationId":"D-80542-20201120",
+//                                                           |"subject":"D-80542-20201120",
+//                                                           |"issueDate":"2020-11-10T15:00:18.000+0000",
+//                                                           |"senderName":"Joe Bloggs",
+//                                                           |"unreadMessages":true,
+//                                                           |"count":4}""".stripMargin)
     }
   }
 }

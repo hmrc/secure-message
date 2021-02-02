@@ -19,7 +19,7 @@ package uk.gov.hmrc.securemessage.controllers.models.generic
 import org.joda.time.DateTime
 import play.api.libs.functional.syntax.toFunctionalBuilderOps
 import play.api.libs.json.{ JsPath, Json, Reads }
-import uk.gov.hmrc.securemessage.models.core._
+import uk.gov.hmrc.securemessage.models.core.{ Conversation, ConversationStatus, Identifier, Language, Message, Participant, ParticipantType, Reader }
 import uk.gov.hmrc.time.DateTimeUtils
 
 final case class Alert(templateId: String, parameters: Option[Map[String, String]])

@@ -93,7 +93,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     }
   }
 
-  "Calling getConversations" should {
+  "getConversations" should {
     "return an OK (200) with a JSON body of a list of conversations" in new TestCase {
       when(mockAuthConnector.authorise(any[Predicate], any[Retrieval[Enrolments]])(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(
@@ -133,6 +133,51 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
                   None)))))
       val controller = new SecureMessageController(Helpers.stubControllerComponents(), mockAuthConnector, mockSecureMessageService, mockRepository)
       val response: Future[Result] = controller.getListOfConversations().apply(FakeRequest("GET", "/"))
+      status(response) mustBe UNAUTHORIZED
+      contentAsString(response) mustBe "\"No EORI enrolment found\""
+    }
+  }
+
+  "getConversations" should {
+    "return an OK (200) with a JSON body of a ApiConversations" in new TestCase {
+      when(mockAuthConnector.authorise(any[Predicate], any[Retrieval[Enrolments]])(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(
+          Future.successful(
+            Enrolments(
+              Set(
+                uk.gov.hmrc.auth.core.Enrolment(
+                  key = "HMRC-CUS-ORG",
+                  identifiers = Seq(EnrolmentIdentifier("EORINumber", "GB123456789")),
+                  state = "",
+                  None)))))
+      generic.Enrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789")
+      when(mockSecureMessageService.getConversations(generic.Enrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789")))
+        .thenReturn(Future(List(ConversationDetails(conversationId = "D-80542-20201120",
+          subject = "D-80542-20201120",
+          issueDate = Some(DateTime.parse("2020-11-10T15:00:18.000+0000")),
+          senderName = Some("Joe Bloggs"),
+          unreadMessages = true,
+          count = 4))))
+      val controller = new SecureMessageController(Helpers.stubControllerComponents(), mockAuthConnector, mockSecureMessageService, mockRepository)
+      val response: Future[Result] = controller.getConversation("asdadasdad", "adadadsadda").apply(FakeRequest("GET", "/"))
+      status(response) mustBe OK
+      contentAsString(response) mustBe
+        """[{"conversationId":"D-80542-20201120","subject":"D-80542-20201120","issueDate":"2020-11-10T15:00:18.000+0000","senderName":"Joe Bloggs","unreadMessages":true,"count":4}]"""
+    }
+
+    "return a 401 (UNAUTHORISED) error when no EORI enrolment found" in new TestCase {
+      when(mockAuthConnector.authorise(any[Predicate], any[Retrieval[Enrolments]])(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(
+          Future.successful(
+            Enrolments(
+              Set(
+                Enrolment(
+                  key = "some other key",
+                  identifiers = Seq(EnrolmentIdentifier("another enrolment", "GB123456789")),
+                  state = "",
+                  None)))))
+      val controller = new SecureMessageController(Helpers.stubControllerComponents(), mockAuthConnector, mockSecureMessageService, mockRepository)
+      val response: Future[Result] = controller.getConversation("asdadasdad", "adadadsadda").apply(FakeRequest("GET", "/"))
       status(response) mustBe UNAUTHORIZED
       contentAsString(response) mustBe "\"No EORI enrolment found\""
     }

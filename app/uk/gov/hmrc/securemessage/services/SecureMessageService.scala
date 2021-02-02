@@ -34,4 +34,7 @@ class SecureMessageService @Inject()(conversationRepository: ConversationReposit
     }
   }
 
+  def getConversation(client: String, conversationId: String, enrolment: Enrolment)(
+    implicit ec: ExecutionContext): Future[Option[Conversation]] =
+    conversationRepository.getConversation(client, conversationId, enrolment)
 }
