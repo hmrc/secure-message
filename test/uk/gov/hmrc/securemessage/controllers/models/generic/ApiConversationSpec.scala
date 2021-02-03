@@ -18,7 +18,7 @@ package uk.gov.hmrc.securemessage.controllers.models.generic
 
 import org.scalatestplus.play.PlaySpec
 import play.api.Logger
-import play.api.libs.json.JsValue
+import play.api.libs.json.{ JsValue, Json }
 import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core._
 
@@ -31,15 +31,37 @@ class ApiConversationSpec extends PlaySpec {
       Logger.logger.warn(identifier.toString)
       val conversationJson: JsValue = Resources.readJson("model/core/conversation-full-extender.json")
       val coreConversation: Conversation = conversationJson.validate[Conversation].get
-//      val conversationDetailsJson: JsValue = Resources.readJson("model/api/conversation-details.json")
-//      val conversationDetails: ApiConversation = conversationDetailsJson.validate[ApiConversation].get
-      ApiConversation.coreConversationToApiConversation(coreConversation, identifier) mustEqual ""
-//      Json.toJson(conversationDetails) mustBe Json.parse("""{"conversationId":"D-80542-20201120",
-//                                                           |"subject":"D-80542-20201120",
-//                                                           |"issueDate":"2020-11-10T15:00:18.000+0000",
-//                                                           |"senderName":"Joe Bloggs",
-//                                                           |"unreadMessages":true,
-//                                                           |"count":4}""".stripMargin)
+      val apiConversationJson: JsValue = Resources.readJson("model/api/api-conversation.json")
+      val apiConversation: ApiConversation = apiConversationJson.validate[ApiConversation].get
+      ApiConversation.coreConversationToApiConversation(coreConversation, identifier) mustEqual apiConversation
+      Json.toJson(apiConversation) mustBe Json.parse("""{"client":"cdcm",
+                                                       |"conversationId":"D-80542-20201120",
+                                                       |"status":"open",
+                                                       |"tags":{"queryId":"D-80542-20201120",
+                                                       |"caseId":"D-80542",
+                                                       |"notificationType":"CDS Exports",
+                                                       |"mrn":"DMS7324874993",
+                                                       |"sourceId":"CDCM"},
+                                                       |"subject":"D-80542-20201120",
+                                                       |"language":"en",
+                                                       |"messages":[{"senderInformation":{"name":"CDS Exports Team",
+                                                       |"created":"2020-11-10T15:00:01.000+0000"},
+                                                       |"youRead":"2020-11-10T15:00:01.000+0000",
+                                                       |"content":"QmxhaCBibGFoIGJsYWg="},
+                                                       |{"youSent":"2020-11-10T15:00:05.000+0000",
+                                                       |"firstReaderTime":{"name":"Joe Bloggs",
+                                                       |"readTime":"2020-11-10T15:00:02.000+0000"},
+                                                       |"content":"QmxhaCBibGFoIGJsYWg="},
+                                                       |{"senderInformation":{"name":"Ben Dover",
+                                                       |"created":"2020-11-10T15:00:12.000+0000"},
+                                                       |"youRead":"2021-02-02T21:29:31.343+0000",
+                                                       |"firstReaderTime":{"name":"CDS Exports Team",
+                                                       |"readTime":"2020-11-10T15:00:01.000+0000"},
+                                                       |"content":"QmxhaCBibGFoIGJsYWg="},
+                                                       |{"youSent":"2020-11-10T15:00:18.000+0000",
+                                                       |"firstReaderTime":{"name":"Joe Bloggs",
+                                                       |"readTime":"2020-11-10T15:00:01.000+0000"},
+                                                       |"content":"QmxhaCBibGFoIGJsYWg="}]}""".stripMargin)
     }
   }
 }

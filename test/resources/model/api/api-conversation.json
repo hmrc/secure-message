@@ -1,0 +1,52 @@
+{
+  "client": "cdcm",
+  "conversationId": "D-80542-20201120",
+  "status": "open",
+  "tags": {
+    "queryId": "D-80542-20201120",
+    "caseId": "D-80542",
+    "notificationType": "CDS Exports",
+    "mrn": "DMS7324874993",
+    "sourceId": "CDCM"
+  },
+  "subject": "D-80542-20201120",
+  "language": "en",
+  "messages": [
+    {
+      "senderInformation": {
+        "name": "CDS Exports Team",
+        "created": "2020-11-10T15:00:01.000+0000"
+      },
+      "youRead": "2020-11-10T15:00:01.000+0000",
+      "content": "QmxhaCBibGFoIGJsYWg="
+    },
+    {
+      "youSent": "2020-11-10T15:00:05.000+0000",
+      "firstReaderTime": {
+        "name": "Joe Bloggs",
+        "readTime": "2020-11-10T15:00:02.000+0000"
+      },
+      "content": "QmxhaCBibGFoIGJsYWg="
+    },
+    {
+      "senderInformation": {
+        "name": "Ben Dover",
+        "created": "2020-11-10T15:00:12.000+0000"
+      },
+      "youRead": "2021-02-02T21:29:31.343+0000",
+      "firstReaderTime": {
+        "name": "CDS Exports Team",
+        "readTime": "2020-11-10T15:00:01.000+0000"
+      },
+      "content": "QmxhaCBibGFoIGJsYWg="
+    },
+    {
+      "youSent": "2020-11-10T15:00:18.000+0000",
+      "firstReaderTime": {
+        "name": "Joe Bloggs",
+        "readTime": "2020-11-10T15:00:01.000+0000"
+      },
+      "content": "QmxhaCBibGFoIGJsYWg="
+    }
+  ]
+}

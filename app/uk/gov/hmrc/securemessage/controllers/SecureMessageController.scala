@@ -48,7 +48,7 @@ class SecureMessageController @Inject()(
       }
   }
 
-  def getListOfConversations(): Action[AnyContent] = Action.async { implicit request =>
+  def getListOfConversationsDetails(): Action[AnyContent] = Action.async { implicit request =>
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
     authorised()
       .retrieve(Retrievals.allEnrolments) { enrolments =>
@@ -72,8 +72,9 @@ class SecureMessageController @Inject()(
           case Some(eoriEnrolment) =>
             secureMessageService
               .getConversation(client, conversationId, eoriEnrolment)
-              .flatMap { conversation =>
-                Future.successful(Ok(Json.toJson(conversation)))
+              .map {
+                case Some(apiConversation) => Ok(Json.toJson(apiConversation))
+                case _                     => BadRequest(Json.toJson("No conversation found"))
               }
           case None => Future.successful(Unauthorized(Json.toJson("No EORI enrolment found")))
         }

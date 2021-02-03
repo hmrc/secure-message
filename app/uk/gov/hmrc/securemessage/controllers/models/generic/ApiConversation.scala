@@ -51,11 +51,11 @@ object ApiConversation {
     val sender: Option[Participant] = findParticipantViaId(coreConversation, message.senderId)
     val reader: Option[Participant] = findParticipantViaIdentifier(coreConversation, identifier)
     (sender, reader) match {
-      //if (I'm the sender)
+      //I'm the sender
       case (Some(participantSender), Some(participantReader)) if participantSender.id === participantReader.id =>
-        ApiMessage(None, Some(message.created), None, findOtherFirstReader(coreConversation, message), message.content)
-      //if (I'm not the sender, but I'm the first reader)
-      case (Some(participantSender), Some(_)) if imFirstReader(coreConversation, message, identifier) =>
+        ApiMessage(None, Some(message.created), None, imNotFirstReader(coreConversation, message), message.content)
+      //I'm not the sender, but I am the first reader
+      case (Some(participantSender), Some(participantReader)) if imFirstReader(message, participantReader) =>
         ApiMessage(
           Some(SenderInformation(participantSender.name, message.created)),
           None,
@@ -63,31 +63,27 @@ object ApiConversation {
           None,
           message.content
         )
-      //if (I'm not the sender, and I'm not the first reader)
+      //I'm not the the sender or the first reader
       case (Some(participantSender), Some(_)) =>
         ApiMessage(
           Some(SenderInformation(participantSender.name, message.created)),
           None,
           Some(whenReaderReadMessage(coreConversation, message, identifier)),
-          findOtherFirstReader(coreConversation, message),
+          imNotFirstReader(coreConversation, message),
           message.content
         )
-      //everything else
+      //Anything else
       case (_, _) => ApiMessage(None, None, None, None, message.content)
     }
   }
 
-  private def imFirstReader(coreConversation: Conversation, message: Message, identifier: Identifier): Boolean =
-    findParticipantViaIdentifier(coreConversation, identifier) match {
-      case Some(participant) =>
-        message.readBy.sortWith(_.readDate.getMillis > _.readDate.getMillis).headOption match {
-          case Some(reader) => reader.id === participant.id
-          case _            => false
-        }
-      case _ => false
+  private def imFirstReader(message: Message, participant: Participant): Boolean =
+    message.readBy.sortWith(_.readDate.getMillis > _.readDate.getMillis).headOption match {
+      case Some(reader) => reader.id === participant.id
+      case None         => true
     }
 
-  private def findOtherFirstReader(coreConversation: Conversation, message: Message): Option[FirstReaderInformation] =
+  private def imNotFirstReader(coreConversation: Conversation, message: Message): Option[FirstReaderInformation] =
     message.readBy.sortWith(_.readDate.getMillis > _.readDate.getMillis).headOption match {
       case Some(reader) =>
         findParticipantViaId(coreConversation, reader.id) match {
