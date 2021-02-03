@@ -53,13 +53,13 @@ object ApiConversation {
     (sender, reader) match {
       //I'm the sender
       case (Some(participantSender), Some(participantReader)) if participantSender.id === participantReader.id =>
-        ApiMessage(None, Some(message.created), None, imNotFirstReader(coreConversation, message), message.content)
+        ApiMessage(None, Some(message.created), None, notFirstReader(coreConversation, message), message.content)
       //I'm not the sender, but I am the first reader
-      case (Some(participantSender), Some(participantReader)) if imFirstReader(message, participantReader) =>
+      case (Some(participantSender), Some(participantReader)) if firstReader(message, participantReader) =>
         ApiMessage(
           Some(SenderInformation(participantSender.name, message.created)),
           None,
-          Some(whenReaderReadMessage(coreConversation, message, identifier)),
+          Some(isMessageRead(coreConversation, message, identifier)),
           None,
           message.content
         )
@@ -68,8 +68,8 @@ object ApiConversation {
         ApiMessage(
           Some(SenderInformation(participantSender.name, message.created)),
           None,
-          Some(whenReaderReadMessage(coreConversation, message, identifier)),
-          imNotFirstReader(coreConversation, message),
+          Some(isMessageRead(coreConversation, message, identifier)),
+          notFirstReader(coreConversation, message),
           message.content
         )
       //Anything else
@@ -77,13 +77,13 @@ object ApiConversation {
     }
   }
 
-  private def imFirstReader(message: Message, participant: Participant): Boolean =
+  private def firstReader(message: Message, participant: Participant): Boolean =
     message.readBy.sortWith(_.readDate.getMillis > _.readDate.getMillis).headOption match {
       case Some(reader) => reader.id === participant.id
       case None         => true
     }
 
-  private def imNotFirstReader(coreConversation: Conversation, message: Message): Option[FirstReaderInformation] =
+  private def notFirstReader(coreConversation: Conversation, message: Message): Option[FirstReaderInformation] =
     message.readBy.sortWith(_.readDate.getMillis > _.readDate.getMillis).headOption match {
       case Some(reader) =>
         findParticipantViaId(coreConversation, reader.id) match {
@@ -93,10 +93,7 @@ object ApiConversation {
       case _ => None
     }
 
-  private def whenReaderReadMessage(
-    coreConversation: Conversation,
-    message: Message,
-    identifier: Identifier): DateTime =
+  private def isMessageRead(coreConversation: Conversation, message: Message, identifier: Identifier): DateTime =
     checkAlreadyReadMessage(coreConversation, message, identifier).fold(DateTime.now)(_.readDate)
 
   private def checkAlreadyReadMessage(
