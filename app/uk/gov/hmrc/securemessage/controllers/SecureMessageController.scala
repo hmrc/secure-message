@@ -24,7 +24,7 @@ import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.HeaderCarrierConverter
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.securemessage.controllers.models.generic.ConversationRequest
+import uk.gov.hmrc.securemessage.controllers.models.generic.{ AdviserMessageRequest, ConversationRequest }
 import uk.gov.hmrc.securemessage.controllers.utils.EnrolmentHandler._
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
 import uk.gov.hmrc.securemessage.services.SecureMessageService
@@ -45,6 +45,13 @@ class SecureMessageController @Inject()(
         repo.insertIfUnique(conversationRequest.asConversation(client, conversationId)).map { isUnique =>
           if (isUnique) Created else Conflict("Duplicate of existing conversation")
         }
+      }
+  }
+
+  def createAdviserMessage(client: String, conversationId: String): Action[JsValue] = Action.async(parse.json) {
+    implicit request =>
+      withJsonBody[AdviserMessageRequest] { _ =>
+        Future.successful(Created(s"Created for client $client and conversationId $conversationId"))
       }
   }
 
