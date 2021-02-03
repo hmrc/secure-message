@@ -22,6 +22,30 @@
 #     description: a dependency failed - e.g. customer email validation failed
 ###
 PUT        /conversation/:client/:conversationId        uk.gov.hmrc.securemessage.controllers.SecureMessageController.createConversation(client: String, conversationId: String)
+
+###
+# summary: create a message
+# requestBody:
+#   description: A JSON object to create a new conversation
+#   required: true
+#   content:
+#    application/json:
+#      schema:
+#        $ref: '#/components/schemas/uk.gov.hmrc.securemessage.controllers.models.generic.ConversationRequest'
+# responses:
+#   201:
+#     description: message created successfully
+#   400:
+#     description: bad request such as an invalid payload
+#   404:
+#     description: required resource not found - e.g. client not recognised or conversation not found
+#   415:
+#     description: unsupported media type - should be application/json
+#   424:
+#     description: a dependency failed - e.g. client not recognised
+###
+POST        /conversation/:client/:conversationId/adviser-message        uk.gov.hmrc.securemessage.controllers.SecureMessageController.createAdviserMessage(client: String, conversationId: String)
+
 ###
 # summary: Get's a list of conversations via EORI enrolment
 # security:

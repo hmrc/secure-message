@@ -158,11 +158,67 @@
           "400" : {
             "description" : "bad request such as an invalid payload"
           },
+          "404" : {
+            "description" : "required resource not found - e.g. client not recognised or email not found"
+          },
           "409" : {
             "description" : "duplicate - a conversation already exists for this client and conversationId"
           },
           "415" : {
             "description" : "unsupported media type - should be application/json"
+          },
+          "424" : {
+            "description" : "a dependency failed - e.g. customer email validation failed"
+          }
+        },
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "client",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : true
+        }, {
+          "in" : "path",
+          "name" : "conversationId",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : true
+        } ]
+      }
+    },
+    "/secure-messaging/conversation/{client}/{conversationId}/adviser-message" : {
+      "post" : {
+        "operationId" : "createAdviserMessage",
+        "tags" : [ "app" ],
+        "summary" : "create a message",
+        "requestBody" : {
+          "description" : "A JSON object to create a new conversation",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.controllers.models.generic.ConversationRequest"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "201" : {
+            "description" : "message created successfully"
+          },
+          "400" : {
+            "description" : "bad request such as an invalid payload"
+          },
+          "404" : {
+            "description" : "required resource not found - e.g. client not recognised or conversation not found"
+          },
+          "415" : {
+            "description" : "unsupported media type - should be application/json"
+          },
+          "424" : {
+            "description" : "a dependency failed - e.g. client not recognised"
           }
         },
         "parameters" : [ {
@@ -201,10 +257,12 @@
       }
     }
   },
+  "produces" : [ "application/json" ],
   "info" : {
     "title" : "Secure Message API",
-    "version" : "0.21.0-SNAPSHOT"
+    "version" : "0.24.0-SNAPSHOT"
   },
+  "consumes" : [ "application/json" ],
   "tags" : [ {
     "name" : "app"
   } ]
