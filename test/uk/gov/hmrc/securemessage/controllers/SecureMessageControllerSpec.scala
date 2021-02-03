@@ -28,7 +28,7 @@ import play.api.http.HeaderNames._
 import play.api.http.Status._
 import play.api.libs.json.Json
 import play.api.mvc.Result
-import play.api.test.Helpers.{PUT, contentAsString, defaultAwaitTimeout, status}
+import play.api.test.Helpers.{POST, PUT, contentAsString, defaultAwaitTimeout, status}
 import play.api.test.{FakeHeaders, FakeRequest, Helpers, NoMaterializer}
 import uk.gov.hmrc.auth.core.authorise.Predicate
 import uk.gov.hmrc.auth.core.retrieve.Retrieval
@@ -135,6 +135,21 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       val response: Future[Result] = controller.getListOfConversations().apply(FakeRequest("GET", "/"))
       status(response) mustBe UNAUTHORIZED
       contentAsString(response) mustBe "\"No EORI enrolment found\""
+    }
+  }
+
+  "Calling createAdviserMessage" should {
+    "return CREATED (201) when with valid payload" in new TestCase {
+      private val advisorMessagePayload = Resources.readJson("model/api/adviser-message.json")
+      private val controller = new SecureMessageController(Helpers.stubControllerComponents(), mockAuthConnector, mockSecureMessageService, mockRepository)
+      private val fakeRequest = FakeRequest(
+        method = POST,
+        uri = routes.SecureMessageController.createAdviserMessage("cdcm", "123").url,
+        headers = FakeHeaders(Seq(CONTENT_TYPE -> JSON)),
+        body = advisorMessagePayload
+      )
+      private val response = controller.createAdviserMessage("cdcm", "123")(fakeRequest)
+      status(response) mustBe CREATED
     }
   }
 
