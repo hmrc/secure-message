@@ -50,7 +50,7 @@ class GetIndividualConversationISpec extends PlaySpec with ServiceSpec with Befo
           .withHttpHeaders(AuthUtil.buildEoriToken)
           .get()
           .futureValue
-      response.body must include("""youRead""")
+      response.body must include("""{"senderInformation":{"name":"CDS Exports Team"""")
     }
 
     "return a JSON body of [No Conversation found]" in {

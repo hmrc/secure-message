@@ -59,7 +59,7 @@ object ApiConversation {
         ApiMessage(
           Some(SenderInformation(participantSender.name, message.created)),
           None,
-          Some(isMessageRead(coreConversation, message, identifier)),
+          isMessageRead(coreConversation, message, identifier),
           None,
           message.content
         )
@@ -68,7 +68,7 @@ object ApiConversation {
         ApiMessage(
           Some(SenderInformation(participantSender.name, message.created)),
           None,
-          Some(isMessageRead(coreConversation, message, identifier)),
+          isMessageRead(coreConversation, message, identifier),
           notFirstReader(coreConversation, message),
           message.content
         )
@@ -84,17 +84,19 @@ object ApiConversation {
     }
 
   private def notFirstReader(coreConversation: Conversation, message: Message): Option[FirstReaderInformation] =
-    message.readBy.sortWith(_.readDate.getMillis > _.readDate.getMillis).headOption match {
-      case Some(reader) =>
-        findParticipantViaId(coreConversation, reader.id) match {
-          case Some(participant) => Some(FirstReaderInformation(participant.name, reader.readDate))
-          case _                 => None
-        }
-      case _ => None
+    message.readBy.sortWith(_.readDate.getMillis > _.readDate.getMillis).headOption.flatMap { reader =>
+      findParticipantViaId(coreConversation, reader.id).map { participant =>
+        FirstReaderInformation(participant.name, reader.readDate)
+      }
     }
 
-  private def isMessageRead(coreConversation: Conversation, message: Message, identifier: Identifier): DateTime =
-    checkAlreadyReadMessage(coreConversation, message, identifier).fold(DateTime.now)(_.readDate)
+  private def isMessageRead(
+    coreConversation: Conversation,
+    message: Message,
+    identifier: Identifier): Option[DateTime] =
+    checkAlreadyReadMessage(coreConversation, message, identifier).map { reader =>
+      reader.readDate
+    }
 
   private def checkAlreadyReadMessage(
     coreConversation: Conversation,

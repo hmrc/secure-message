@@ -136,6 +136,40 @@
   "openapi" : "3.0.3",
   "paths" : {
     "/secure-messaging/conversation/{client}/{conversationId}" : {
+      "get" : {
+        "operationId" : "getConversation",
+        "tags" : [ "app" ],
+        "summary" : "Get's a list of conversations via EORI enrolment",
+        "security" : [ {
+          "bearerToken" : [ ]
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "list of conversations was recieved"
+          },
+          "401" : {
+            "description" : "unauthorised customer when they don't have an EORI enrolment"
+          },
+          "404" : {
+            "description" : "conversation not found"
+          }
+        },
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "client",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : true
+        }, {
+          "in" : "path",
+          "name" : "conversationId",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : true
+        } ]
+      },
       "put" : {
         "operationId" : "createConversation",
         "tags" : [ "app" ],
@@ -240,7 +274,7 @@
     },
     "/secure-messaging/conversations" : {
       "get" : {
-        "operationId" : "getListOfConversations",
+        "operationId" : "getListOfConversationsDetails",
         "tags" : [ "app" ],
         "summary" : "Get's a list of conversations via EORI enrolment",
         "security" : [ {

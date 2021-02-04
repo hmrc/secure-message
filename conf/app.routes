@@ -58,6 +58,16 @@ POST        /conversation/:client/:conversationId/adviser-message        uk.gov.
 ###
 GET        /conversations                               uk.gov.hmrc.securemessage.controllers.SecureMessageController.getListOfConversationsDetails()
 
-
-
+###
+# summary: Get's a list of conversations via EORI enrolment
+# security:
+#   - bearerToken: []
+# responses:
+#   200:
+#     description: list of conversations was recieved
+#   401:
+#     description: unauthorised customer when they don't have an EORI enrolment
+#   404:
+#     description: conversation not found
+###
 GET        /conversation/:client/:conversationId        uk.gov.hmrc.securemessage.controllers.SecureMessageController.getConversation(client: String, conversationId: String)
