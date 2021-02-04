@@ -25,12 +25,12 @@ final case class ApiMessage(
   senderInformation: Option[SenderInformation],
   sent: Option[DateTime],
   read: Option[DateTime],
-  firstReaderTime: Option[FirstReaderInformation],
+  firstReader: Option[FirstReaderInformation],
   content: String)
 
 final case class SenderInformation(name: Option[String], created: DateTime)
 
-final case class FirstReaderInformation(name: Option[String], readTime: DateTime)
+final case class FirstReaderInformation(name: Option[String], read: DateTime)
 object ApiMessage {
 
   private val dateFormatString = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"

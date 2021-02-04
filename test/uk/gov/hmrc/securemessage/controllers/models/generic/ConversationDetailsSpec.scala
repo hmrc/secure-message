@@ -37,7 +37,7 @@ class ConversationDetailsSpec extends PlaySpec {
                                                            |"issueDate":"2020-11-10T15:00:18.000+0000",
                                                            |"senderName":"Joe Bloggs",
                                                            |"unreadMessages":true,
-                                                           |"count":4}""".stripMargin)
+                                                           |"count":7}""".stripMargin)
     }
   }
 }
