@@ -35,7 +35,7 @@ import uk.gov.hmrc.auth.core.retrieve.Retrieval
 import uk.gov.hmrc.auth.core.{AuthConnector, Enrolment, EnrolmentIdentifier, Enrolments}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.securemessage.controllers.models.generic
-import uk.gov.hmrc.securemessage.controllers.models.generic.{ApiConversation, ApiMessage, ConversationDetails, SenderInformation}
+import uk.gov.hmrc.securemessage.controllers.models.generic.{ApiConversation, ApiMessage, ConversationMetaData, SenderInformation}
 import uk.gov.hmrc.securemessage.helpers.{ConversationUtil, Resources}
 import uk.gov.hmrc.securemessage.models.core.Conversation
 import uk.gov.hmrc.securemessage.models.core.ConversationStatus.Open
@@ -109,14 +109,14 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
                   None)))))
       generic.Enrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789")
       when(mockSecureMessageService.getConversations(generic.Enrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789")))
-        .thenReturn(Future(List(ConversationDetails(conversationId = "D-80542-20201120",
+        .thenReturn(Future(List(ConversationMetaData(conversationId = "D-80542-20201120",
           subject = "D-80542-20201120",
           issueDate = Some(DateTime.parse("2020-11-10T15:00:18.000+0000")),
           senderName = Some("Joe Bloggs"),
           unreadMessages = true,
           count = 4))))
       val controller = new SecureMessageController(Helpers.stubControllerComponents(), mockAuthConnector, mockSecureMessageService, mockRepository)
-      val response: Future[Result] = controller.getListOfConversationsDetails().apply(FakeRequest("GET", "/"))
+      val response: Future[Result] = controller.getListOfConversationsMetadata().apply(FakeRequest("GET", "/"))
       status(response) mustBe OK
       contentAsString(response) mustBe
         """[{"conversationId":"D-80542-20201120","subject":"D-80542-20201120","issueDate":"2020-11-10T15:00:18.000+0000","senderName":"Joe Bloggs","unreadMessages":true,"count":4}]"""
@@ -134,7 +134,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
                   state = "",
                   None)))))
       val controller = new SecureMessageController(Helpers.stubControllerComponents(), mockAuthConnector, mockSecureMessageService, mockRepository)
-      val response: Future[Result] = controller.getListOfConversationsDetails().apply(FakeRequest("GET", "/"))
+      val response: Future[Result] = controller.getListOfConversationsMetadata().apply(FakeRequest("GET", "/"))
       status(response) mustBe UNAUTHORIZED
       contentAsString(response) mustBe "\"No EORI enrolment found\""
     }
@@ -154,12 +154,12 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
                   None)))))
       generic.Enrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789")
       when(mockSecureMessageService.getConversation(any[String], any[String], any[generic.Enrolment])(any[ExecutionContext]))
-        .thenReturn(Future(Some(ApiConversation("cdcm", "D-80542-20201120,", Open, Some(Map("queryId" -> "D-80542-20201120", "caseId" -> "D-80542", "notificationType" -> "CDS Exports", "mrn" -> "DMS7324874993", "sourceId" -> "CDCM")), "D-80542-20201120", English, List(ApiMessage(Some(SenderInformation(Some("CDS Exports Team"),DateTime.parse("2020-11-10T15:00:01.000Z"))),None,Some(DateTime.parse("2020-11-10T15:00:01.000Z")),None,"QmxhaCBibGFoIGJsYWg="))))))
+        .thenReturn(Future(Some(ApiConversation("cdcm", "D-80542-20201120", Open, Some(Map("queryId" -> "D-80542-20201120", "caseId" -> "D-80542", "notificationType" -> "CDS Exports", "mrn" -> "DMS7324874993", "sourceId" -> "CDCM")), "D-80542-20201120", English, List(ApiMessage(Some(SenderInformation(Some("CDS Exports Team"),DateTime.parse("2020-11-10T15:00:01.000Z"))),None,Some(DateTime.parse("2020-11-10T15:00:01.000Z")),None,"QmxhaCBibGFoIGJsYWg="))))))
       val controller = new SecureMessageController(Helpers.stubControllerComponents(), mockAuthConnector, mockSecureMessageService, mockRepository)
-      val response: Future[Result] = controller.getConversation("asdadasdad", "adadadsadda").apply(FakeRequest("GET", "/"))
+      val response: Future[Result] = controller.getConversationContent("cdcm", "D-80542-20201120").apply(FakeRequest("GET", "/"))
       status(response) mustBe OK
       contentAsString(response) mustBe
-        """{"client":"cdcm","conversationId":"D-80542-20201120,","status":"open","tags":{"queryId":"D-80542-20201120","caseId":"D-80542","notificationType":"CDS Exports","mrn":"DMS7324874993","sourceId":"CDCM"},"subject":"D-80542-20201120","language":"en","messages":[{"senderInformation":{"name":"CDS Exports Team","created":"2020-11-10T15:00:01.000+0000"},"read":"2020-11-10T15:00:01.000+0000","content":"QmxhaCBibGFoIGJsYWg="}]}"""
+        """{"client":"cdcm","conversationId":"D-80542-20201120","status":"open","tags":{"queryId":"D-80542-20201120","caseId":"D-80542","notificationType":"CDS Exports","mrn":"DMS7324874993","sourceId":"CDCM"},"subject":"D-80542-20201120","language":"en","messages":[{"senderInformation":{"name":"CDS Exports Team","created":"2020-11-10T15:00:01.000+0000"},"read":"2020-11-10T15:00:01.000+0000","content":"QmxhaCBibGFoIGJsYWg="}]}"""
     }
 
     "return an BadRequest (400) with a JSON body of No conversation found" in new TestCase {
@@ -177,7 +177,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       when(mockSecureMessageService.getConversation(any[String], any[String], any[generic.Enrolment])(any[ExecutionContext]))
         .thenReturn(Future(None))
       val controller = new SecureMessageController(Helpers.stubControllerComponents(), mockAuthConnector, mockSecureMessageService, mockRepository)
-      val response: Future[Result] = controller.getConversation("asdadasdad", "adadadsadda").apply(FakeRequest("GET", "/"))
+      val response: Future[Result] = controller.getConversationContent("asdadasdad", "adadadsadda").apply(FakeRequest("GET", "/"))
       status(response) mustBe BAD_REQUEST
       contentAsString(response) mustBe
         "\"No conversation found\""
@@ -195,7 +195,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
                   state = "",
                   None)))))
       val controller = new SecureMessageController(Helpers.stubControllerComponents(), mockAuthConnector, mockSecureMessageService, mockRepository)
-      val response: Future[Result] = controller.getConversation("asdadasdad", "adadadsadda").apply(FakeRequest("GET", "/"))
+      val response: Future[Result] = controller.getConversationContent("asdadasdad", "adadadsadda").apply(FakeRequest("GET", "/"))
       status(response) mustBe UNAUTHORIZED
       contentAsString(response) mustBe "\"No EORI enrolment found\""
     }

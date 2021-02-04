@@ -17,7 +17,7 @@
 package uk.gov.hmrc.securemessage.services
 
 import com.google.inject.Inject
-import uk.gov.hmrc.securemessage.controllers.models.generic.{ ApiConversation, ConversationDetails, Enrolment }
+import uk.gov.hmrc.securemessage.controllers.models.generic.{ ApiConversation, ConversationMetaData, Enrolment }
 import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
 
@@ -26,11 +26,11 @@ import scala.concurrent.{ ExecutionContext, Future }
 @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
 class SecureMessageService @Inject()(conversationRepository: ConversationRepository) {
 
-  def getConversations(enrolment: Enrolment)(implicit ec: ExecutionContext): Future[List[ConversationDetails]] = {
+  def getConversations(enrolment: Enrolment)(implicit ec: ExecutionContext): Future[List[ConversationMetaData]] = {
     val enrolmentToIdentifier = Identifier(enrolment.name, enrolment.value, Some(enrolment.key))
     conversationRepository.getConversations(enrolment).map { coreConversations =>
       coreConversations.map(conversations =>
-        ConversationDetails.coreToConversationDetails(conversations, enrolmentToIdentifier))
+        ConversationMetaData.coreToConversationMetadata(conversations, enrolmentToIdentifier))
     }
   }
 

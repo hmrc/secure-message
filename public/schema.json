@@ -139,7 +139,7 @@
       "get" : {
         "operationId" : "getConversation",
         "tags" : [ "app" ],
-        "summary" : "Get's a list of conversations via EORI enrolment",
+        "summary" : "Get's a conversation via client ID and conversation ID",
         "security" : [ {
           "bearerToken" : [ ]
         } ],

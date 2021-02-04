@@ -42,7 +42,7 @@ class GetConversationsISpec extends PlaySpec with ServiceSpec with BeforeAndAfte
 
   "A GET request to /secure-messaging/conversations" should {
 
-    "return a JSON body of conversation details" in {
+    "return a JSON body of conversation metadata" in {
       createConversation
       val response =
         wsClient
