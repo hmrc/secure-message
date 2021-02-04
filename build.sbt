@@ -131,6 +131,7 @@ lazy val microservice = Project(appName, file("."))
       ExternalService("USER_DETAILS")
     ))
   .settings(silencerSettings)
+  .settings(ScoverageSettings())
 
 lazy val compileScalastyle = taskKey[Unit]("compileScalastyle")
 compileScalastyle := scalastyle.in(Compile).toTask("").value
