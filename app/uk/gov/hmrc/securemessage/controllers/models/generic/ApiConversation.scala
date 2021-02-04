@@ -31,6 +31,7 @@ final case class ApiConversation(
   language: Language,
   messages: List[ApiMessage]
 )
+
 object ApiConversation {
 
   def coreConversationToApiConversation(conversation: Conversation, identifier: Identifier): ApiConversation =
@@ -51,10 +52,8 @@ object ApiConversation {
     val sender: Option[Participant] = findParticipantViaId(coreConversation, message.senderId)
     val reader: Option[Participant] = findParticipantViaIdentifier(coreConversation, identifier)
     (sender, reader) match {
-      //I'm the sender
       case (Some(participantSender), Some(participantReader)) if participantSender.id === participantReader.id =>
         ApiMessage(None, Some(message.created), None, notFirstReader(coreConversation, message), message.content)
-      //I'm not the sender, but I am the first reader
       case (Some(participantSender), Some(participantReader)) if firstReader(message, participantReader) =>
         ApiMessage(
           Some(SenderInformation(participantSender.name, message.created)),
@@ -63,7 +62,6 @@ object ApiConversation {
           None,
           message.content
         )
-      //I'm not the the sender or the first reader
       case (Some(participantSender), Some(_)) =>
         ApiMessage(
           Some(SenderInformation(participantSender.name, message.created)),
@@ -72,7 +70,6 @@ object ApiConversation {
           notFirstReader(coreConversation, message),
           message.content
         )
-      //Anything else
       case (_, _) => ApiMessage(None, None, None, None, message.content)
     }
   }

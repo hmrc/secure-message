@@ -55,7 +55,7 @@ class SecureMessageController @Inject()(
       }
   }
 
-  def getListOfConversationsMetadata(): Action[AnyContent] = Action.async { implicit request =>
+  def getMetadataForConversations(): Action[AnyContent] = Action.async { implicit request =>
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
     authorised()
       .retrieve(Retrievals.allEnrolments) { enrolments =>

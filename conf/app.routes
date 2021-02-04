@@ -56,7 +56,7 @@ POST        /conversation/:client/:conversationId/adviser-message        uk.gov.
 #   401:
 #     description: unauthorised customer when they don't have an EORI enrolment
 ###
-GET        /conversations                               uk.gov.hmrc.securemessage.controllers.SecureMessageController.getListOfConversationsMetadata()
+GET        /conversations                               uk.gov.hmrc.securemessage.controllers.SecureMessageController.getMetadataForConversations()
 
 ###
 # summary: Get's a conversation via client ID and conversation ID
