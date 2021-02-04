@@ -25,7 +25,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.HeaderCarrierConverter
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.securemessage.controllers.models.generic.{ AdviserMessageRequest, ConversationRequest }
-import uk.gov.hmrc.securemessage.controllers.utils.EnrolmentHandler._
+import uk.gov.hmrc.securemessage.controllers.utils.EnrolmentHelper._
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
 import uk.gov.hmrc.securemessage.services.SecureMessageService
 
@@ -55,19 +55,20 @@ class SecureMessageController @Inject()(
       }
   }
 
-  def getListOfConversations(): Action[AnyContent] = Action.async { implicit request =>
-    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
-    authorised()
-      .retrieve(Retrievals.allEnrolments) { enrolments =>
-        findEoriEnrolment(enrolments) match {
-          case Some(eoriEnrolment) =>
-            secureMessageService
-              .getConversations(eoriEnrolment)
-              .flatMap { conversationDetails =>
-                Future.successful(Ok(Json.toJson(conversationDetails)))
-              }
-          case None => Future.successful(Unauthorized(Json.toJson("No EORI enrolment found")))
+  def getListOfConversations(enrolmentKey: String, enrolmentName: String): Action[AnyContent] = Action.async {
+    implicit request =>
+      implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
+      authorised()
+        .retrieve(Retrievals.allEnrolments) { enrolments =>
+          findEnrolment(enrolments, enrolmentKey, enrolmentName) match {
+            case Some(eoriEnrolment) =>
+              secureMessageService
+                .getConversations(eoriEnrolment)
+                .flatMap { conversationDetails =>
+                  Future.successful(Ok(Json.toJson(conversationDetails)))
+                }
+            case None => Future.successful(Unauthorized(Json.toJson("No EORI enrolment found")))
+          }
         }
-      }
   }
 }
