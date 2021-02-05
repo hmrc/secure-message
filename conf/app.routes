@@ -26,12 +26,12 @@ PUT        /conversation/:client/:conversationId        uk.gov.hmrc.securemessag
 ###
 # summary: create a message
 # requestBody:
-#   description: A JSON object to create a new conversation
+#   description: A JSON object to create a new advisor message
 #   required: true
 #   content:
 #    application/json:
 #      schema:
-#        $ref: '#/components/schemas/uk.gov.hmrc.securemessage.controllers.models.generic.ConversationRequest'
+#        $ref: '#/components/schemas/uk.gov.hmrc.securemessage.controllers.models.generic.AdviserMessageRequest'
 # responses:
 #   201:
 #     description: message created successfully
