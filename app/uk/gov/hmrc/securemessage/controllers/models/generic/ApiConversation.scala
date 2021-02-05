@@ -19,7 +19,7 @@ package uk.gov.hmrc.securemessage.controllers.models.generic
 import cats.implicits._
 import cats.kernel.Eq
 import org.joda.time.DateTime
-import play.api.libs.json.{ Json, OFormat }
+import play.api.libs.json.{ Json, Writes }
 import uk.gov.hmrc.securemessage.models.core.{ Identifier, _ }
 
 final case class ApiConversation(
@@ -115,6 +115,8 @@ object ApiConversation {
       .find(_.identifier === identifier)
   }
 
-  implicit val conversationFormat: OFormat[ApiConversation] =
-    Json.format[ApiConversation]
+  implicit val languageWrites: Writes[Language] = Language.languageWrites
+
+  implicit val conversationFormat: Writes[ApiConversation] =
+    Json.writes[ApiConversation]
 }

@@ -17,7 +17,6 @@
 package uk.gov.hmrc.securemessage.controllers.models.generic
 
 import org.scalatestplus.play.PlaySpec
-import play.api.Logger
 import play.api.libs.json.{ JsValue, Json }
 import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core._
@@ -28,12 +27,10 @@ class ApiConversationSpec extends PlaySpec {
   "ApiConversation" must {
     "Convert core conversation to ApiConversation details and then serialise into JSON" in {
       val identifier = Identifier(name = "EORINumber", value = "GB1234567890", enrolment = Some("HMRC-CUS-ORG"))
-      Logger.logger.warn(identifier.toString)
       val conversationJson: JsValue = Resources.readJson("model/core/conversation-full-extender.json")
       val coreConversation: Conversation = conversationJson.validate[Conversation].get
-      val apiConversationJson: JsValue = Resources.readJson("model/api/api-conversation.json")
-      val apiConversation: ApiConversation = apiConversationJson.validate[ApiConversation].get
-      ApiConversation.coreConversationToApiConversation(coreConversation, identifier) mustEqual apiConversation
+      val apiConversation = ApiConversation.coreConversationToApiConversation(coreConversation, identifier)
+      apiConversation mustBe a[ApiConversation]
       Json.toJson(apiConversation) mustBe Json.parse("""{"client":"cdcm",
                                                        |"conversationId":"D-80542-20201120",
                                                        |"status":"open",
