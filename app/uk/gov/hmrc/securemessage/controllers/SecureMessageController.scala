@@ -21,8 +21,6 @@ import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc.{ Action, AnyContent, ControllerComponents }
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.HeaderCarrierConverter
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.securemessage.controllers.models.generic.{ AdviserMessageRequest, ConversationRequest }
 import uk.gov.hmrc.securemessage.controllers.utils.EnrolmentHandler._
@@ -56,7 +54,6 @@ class SecureMessageController @Inject()(
   }
 
   def getMetadataForConversations(): Action[AnyContent] = Action.async { implicit request =>
-    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
     authorised()
       .retrieve(Retrievals.allEnrolments) { enrolments =>
         findEoriEnrolment(enrolments) match {
@@ -73,7 +70,6 @@ class SecureMessageController @Inject()(
 
   def getConversationContent(client: String, conversationId: String): Action[AnyContent] = Action.async {
     implicit request =>
-      implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
       authorised()
         .retrieve(Retrievals.allEnrolments) { enrolments =>
           findEoriEnrolment(enrolments) match {
