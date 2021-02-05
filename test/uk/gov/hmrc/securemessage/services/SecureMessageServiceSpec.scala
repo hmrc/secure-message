@@ -27,7 +27,6 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.securemessage.controllers.models.generic
 import uk.gov.hmrc.securemessage.controllers.models.generic.{ ApiConversation, ApiMessage, ConversationMetaData, Enrolment }
 import uk.gov.hmrc.securemessage.helpers.ConversationUtil
-import uk.gov.hmrc.securemessage.models.core.Conversation
 import uk.gov.hmrc.securemessage.models.core.ConversationStatus.Open
 import uk.gov.hmrc.securemessage.models.core.Language.English
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
