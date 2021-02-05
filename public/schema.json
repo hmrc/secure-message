@@ -136,40 +136,6 @@
   "openapi" : "3.0.3",
   "paths" : {
     "/secure-messaging/conversation/{client}/{conversationId}" : {
-      "get" : {
-        "operationId" : "getConversation",
-        "tags" : [ "app" ],
-        "summary" : "Get's a conversation via client ID and conversation ID",
-        "security" : [ {
-          "bearerToken" : [ ]
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "list of conversations was recieved"
-          },
-          "401" : {
-            "description" : "unauthorised customer when they don't have an EORI enrolment"
-          },
-          "404" : {
-            "description" : "conversation not found"
-          }
-        },
-        "parameters" : [ {
-          "in" : "path",
-          "name" : "client",
-          "schema" : {
-            "type" : "string"
-          },
-          "required" : true
-        }, {
-          "in" : "path",
-          "name" : "conversationId",
-          "schema" : {
-            "type" : "string"
-          },
-          "required" : true
-        } ]
-      },
       "put" : {
         "operationId" : "createConversation",
         "tags" : [ "app" ],
@@ -272,9 +238,9 @@
         } ]
       }
     },
-    "/secure-messaging/conversations" : {
+    "/secure-messaging/conversations/{enrolmentKey}/{enrolmentName}" : {
       "get" : {
-        "operationId" : "getListOfConversationsDetails",
+        "operationId" : "getMetadataForConversations",
         "tags" : [ "app" ],
         "summary" : "Get's a list of conversations via EORI enrolment",
         "security" : [ {
@@ -287,7 +253,72 @@
           "401" : {
             "description" : "unauthorised customer when they don't have an EORI enrolment"
           }
-        }
+        },
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "enrolmentKey",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : true
+        }, {
+          "in" : "path",
+          "name" : "enrolmentName",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : true
+        } ]
+      }
+    },
+    "/secure-messaging/conversation/{client}/{conversationId}/{enrolmentKey}/{enrolmentName}" : {
+      "get" : {
+        "operationId" : "getConversationContent",
+        "tags" : [ "app" ],
+        "summary" : "Get's a conversation via client ID and conversation ID",
+        "security" : [ {
+          "bearerToken" : [ ]
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "conversations was recieved"
+          },
+          "401" : {
+            "description" : "unauthorised customer when they don't have an EORI enrolment"
+          },
+          "404" : {
+            "description" : "conversation not found"
+          }
+        },
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "client",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : true
+        }, {
+          "in" : "path",
+          "name" : "conversationId",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : true
+        }, {
+          "in" : "path",
+          "name" : "enrolmentKey",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : true
+        }, {
+          "in" : "path",
+          "name" : "enrolmentName",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : true
+        } ]
       }
     }
   },

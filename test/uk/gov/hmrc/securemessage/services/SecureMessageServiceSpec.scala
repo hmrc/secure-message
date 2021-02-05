@@ -56,7 +56,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
           ConversationMetaData(
             "D-80542-20201120",
             "D-80542-20201120",
-            Some(DateTime.parse("2020-11-10T15:00:01.000Z")),
+            Some(DateTime.parse("2020-11-10T15:00:01.000")),
             Some("CDS Exports Team"),
             false,
             1))
