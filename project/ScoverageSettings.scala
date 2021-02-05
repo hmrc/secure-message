@@ -14,16 +14,17 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.securemessage.controllers.utils
+import sbt.Keys.parallelExecution
+import sbt._
+import scoverage.ScoverageKeys
 
-import org.scalatestplus.play.PlaySpec
-import uk.gov.hmrc.securemessage.controllers.utils.Formats.decodeBase64String
-
-class FormatsTest extends PlaySpec {
-
-  "decodeBase64String function" must {
-    "decode from Base64 format" in {
-      decodeBase64String("PHA+TXkgZmlyc3QgcGFyYWdyYXBoLjwvcD4=") mustBe ("<p>My first paragraph.</p>")
-    }
-  }
+object ScoverageSettings {
+  def apply(): Seq[Def.Setting[_ >: String with Double with Boolean]] =
+    Seq( // Semicolon-separated list of regexes matching classes to exclude
+      ScoverageKeys.coverageExcludedPackages := "<empty>;.*Reverse.*;.*(config|testonly).*;.*(BuildInfo|Routes).*",
+      ScoverageKeys.coverageMinimum := 90.54,
+      ScoverageKeys.coverageFailOnMinimum := true,
+      ScoverageKeys.coverageHighlighting := true,
+      parallelExecution in ConfigKey.configurationToKey(Test) := false
+    )
 }

@@ -46,7 +46,7 @@ class GetIndividualConversationISpec extends PlaySpec with ServiceSpec with Befo
       createConversation
       val response =
         wsClient
-          .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
+          .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120/hmrc-cus-org/eorinumber"))
           .withHttpHeaders(AuthUtil.buildEoriToken)
           .get()
           .futureValue
@@ -57,7 +57,7 @@ class GetIndividualConversationISpec extends PlaySpec with ServiceSpec with Befo
       createConversation
       val response =
         wsClient
-          .url(resource("/secure-messaging/conversation/cdcm/D-80542-77777777"))
+          .url(resource("/secure-messaging/conversation/cdcm/D-80542-77777777/hmrc-cus-org/eorinumber"))
           .withHttpHeaders(AuthUtil.buildEoriToken)
           .get()
           .futureValue
@@ -67,7 +67,7 @@ class GetIndividualConversationISpec extends PlaySpec with ServiceSpec with Befo
     "return a JSON body of [No EORI enrolment found] when there's an auth session, but no EORI enrolment" in {
       val response =
         wsClient
-          .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
+          .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120/hmrc-cus-org/eorinumber"))
           .withHttpHeaders(AuthUtil.buildNonEoriToken)
           .get()
           .futureValue

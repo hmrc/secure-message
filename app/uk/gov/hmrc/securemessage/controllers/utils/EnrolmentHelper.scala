@@ -19,12 +19,12 @@ package uk.gov.hmrc.securemessage.controllers.utils
 import uk.gov.hmrc.auth.core.Enrolments
 import uk.gov.hmrc.securemessage.controllers.models.generic.Enrolment
 
-object EnrolmentHandler {
+object EnrolmentHelper {
 
-  def findEoriEnrolment(enrolments: Enrolments): Option[Enrolment] =
-    enrolments.getEnrolment("HMRC-CUS-ORG").flatMap { eoriEnrolment =>
+  def findEnrolment(enrolments: Enrolments, enrolmentKey: String, enrolmentName: String): Option[Enrolment] =
+    enrolments.getEnrolment(enrolmentKey).flatMap { eoriEnrolment =>
       eoriEnrolment
-        .getIdentifier("EORINumber")
+        .getIdentifier(enrolmentName)
         .map(enrolmentIdentifier => Enrolment(eoriEnrolment.key, enrolmentIdentifier.key, enrolmentIdentifier.value))
     }
 }

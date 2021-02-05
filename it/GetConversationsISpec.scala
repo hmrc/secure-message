@@ -46,7 +46,7 @@ class GetConversationsISpec extends PlaySpec with ServiceSpec with BeforeAndAfte
       createConversation
       val response =
         wsClient
-          .url(resource("/secure-messaging/conversations"))
+          .url(resource("/secure-messaging/conversations/hmrc-cus-org/eorinumber"))
           .withHttpHeaders(AuthUtil.buildEoriToken)
           .get()
           .futureValue
@@ -56,7 +56,7 @@ class GetConversationsISpec extends PlaySpec with ServiceSpec with BeforeAndAfte
     "return a JSON body of [No EORI enrolment found] when there's an auth session, but no EORI enrolment" in {
       val response =
         wsClient
-          .url(resource("/secure-messaging/conversations"))
+          .url(resource("/secure-messaging/conversations/hmrc-cus-org/eorinumber"))
           .withHttpHeaders(AuthUtil.buildNonEoriToken)
           .get()
           .futureValue

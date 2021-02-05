@@ -23,7 +23,7 @@ import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.securemessage.controllers.models.generic.{ AdviserMessageRequest, ConversationRequest }
-import uk.gov.hmrc.securemessage.controllers.utils.EnrolmentHandler._
+import uk.gov.hmrc.securemessage.controllers.utils.EnrolmentHelper._
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
 import uk.gov.hmrc.securemessage.services.SecureMessageService
 
@@ -53,35 +53,39 @@ class SecureMessageController @Inject()(
       }
   }
 
-  def getMetadataForConversations(): Action[AnyContent] = Action.async { implicit request =>
-    authorised()
-      .retrieve(Retrievals.allEnrolments) { enrolments =>
-        findEoriEnrolment(enrolments) match {
-          case Some(eoriEnrolment) =>
-            secureMessageService
-              .getConversations(eoriEnrolment)
-              .flatMap { conversationDetails =>
-                Future.successful(Ok(Json.toJson(conversationDetails)))
-              }
-          case None => Future.successful(Unauthorized(Json.toJson("No EORI enrolment found")))
-        }
-      }
-  }
-
-  def getConversationContent(client: String, conversationId: String): Action[AnyContent] = Action.async {
+  def getMetadataForConversations(enrolmentKey: String, enrolmentName: String): Action[AnyContent] = Action.async {
     implicit request =>
       authorised()
         .retrieve(Retrievals.allEnrolments) { enrolments =>
-          findEoriEnrolment(enrolments) match {
+          findEnrolment(enrolments, enrolmentKey, enrolmentName) match {
             case Some(eoriEnrolment) =>
               secureMessageService
-                .getConversation(client, conversationId, eoriEnrolment)
-                .map {
-                  case Some(apiConversation) => Ok(Json.toJson(apiConversation))
-                  case _                     => BadRequest(Json.toJson("No conversation found"))
+                .getConversations(eoriEnrolment)
+                .flatMap { conversationDetails =>
+                  Future.successful(Ok(Json.toJson(conversationDetails)))
                 }
             case None => Future.successful(Unauthorized(Json.toJson("No EORI enrolment found")))
           }
         }
+  }
+
+  def getConversationContent(
+    client: String,
+    conversationId: String,
+    enrolmentKey: String,
+    enrolmentName: String): Action[AnyContent] = Action.async { implicit request =>
+    authorised()
+      .retrieve(Retrievals.allEnrolments) { enrolments =>
+        findEnrolment(enrolments, enrolmentKey, enrolmentName) match {
+          case Some(eoriEnrolment) =>
+            secureMessageService
+              .getConversation(client, conversationId, eoriEnrolment)
+              .map {
+                case Some(apiConversation) => Ok(Json.toJson(apiConversation))
+                case _                     => BadRequest(Json.toJson("No conversation found"))
+              }
+          case None => Future.successful(Unauthorized(Json.toJson("No EORI enrolment found")))
+        }
+      }
   }
 }
