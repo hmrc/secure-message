@@ -51,14 +51,15 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
       when(mockRepository.getConversations(any[generic.Enrolment])(any[ExecutionContext]))
         .thenReturn(Future.successful(listOfCoreConversation))
       val result = await(service.getConversations(Enrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777")))
-      result === List(
-        ConversationMetaData(
-          "D-80542-20201120",
-          "D-80542-20201120",
-          Some(DateTime.parse("2020-11-10T15:00:01.000Z")),
-          Some("CDS Exports Team"),
-          false,
-          1))
+      result mustBe
+        List(
+          ConversationMetaData(
+            "D-80542-20201120",
+            "D-80542-20201120",
+            Some(DateTime.parse("2020-11-10T15:00:01.000Z")),
+            Some("CDS Exports Team"),
+            false,
+            1))
     }
   }
 
@@ -70,7 +71,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
         .thenReturn(Future.successful(Some(ConversationUtil.getFullConversation("D-80542-20201120"))))
       val result = await(
         service.getConversation("cdcm", "D-80542-20201120", Enrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777")))
-      result === Some(
+      result mustBe Some(
         ApiConversation(
           "cdcm",
           "D-80542-20201120",
