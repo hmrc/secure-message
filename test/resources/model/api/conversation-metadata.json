@@ -1,8 +1,9 @@
 {
+  "client": "cdcm",
   "conversationId": "D-80542-20201120",
-  "subject": "D-80542-20201120",
+  "subject": "MRN: 19GB4S24GC3PPFGVR7",
   "issueDate": "2020-11-10T15:00:18.000+0000",
-  "senderName": "Joe Bloggs",
+  "senderName": "CDS Exports Team",
   "unreadMessages": true,
   "count": 7
 }

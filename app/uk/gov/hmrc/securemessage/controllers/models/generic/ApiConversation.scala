@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.securemessage.controllers.models.generic
 
+import cats.data.NonEmptyList
 import cats.implicits._
 import cats.kernel.Eq
 import org.joda.time.DateTime
@@ -29,10 +30,12 @@ final case class ApiConversation(
   tags: Option[Map[String, String]],
   subject: String,
   language: Language,
-  messages: List[ApiMessage]
+  messages: NonEmptyList[ApiMessage]
 )
 
 object ApiConversation {
+
+  import NonEmptyListOps.nonEmptyListWrites
 
   def coreConversationToApiConversation(conversation: Conversation, identifier: Identifier): ApiConversation =
     ApiConversation(

@@ -24,19 +24,21 @@ import play.api.libs.json.JodaWrites.jodaDateWrites
 import play.api.libs.json.{ Format, Json, OFormat }
 import uk.gov.hmrc.securemessage.models.core.{ Conversation, Identifier, Message }
 
-final case class ConversationMetaData(
+final case class ConversationMetadata(
+  client: String,
   conversationId: String,
   subject: String,
-  issueDate: Option[DateTime],
+  issueDate: DateTime,
   senderName: Option[String],
   unreadMessages: Boolean,
   count: Int)
 
-object ConversationMetaData {
+object ConversationMetadata {
 
-  def coreToConversationMetadata(coreConversation: Conversation, identifier: Identifier): ConversationMetaData = {
+  def coreToConversationMetadata(coreConversation: Conversation, identifier: Identifier): ConversationMetadata = {
     val messageCount = coreConversation.messages.size
-    ConversationMetaData(
+    ConversationMetadata(
+      coreConversation.client,
       coreConversation.conversationId,
       coreConversation.subject,
       findLatestMessageDate(coreConversation),
@@ -46,22 +48,16 @@ object ConversationMetaData {
     )
   }
 
-  private def findLatestMessage(coreConversation: Conversation): Option[Message] =
-    coreConversation.messages.sortWith(_.created.getMillis > _.created.getMillis).headOption match {
-      case Some(message) => Some(message)
-      case _             => None
-    }
+  private def findLatestMessage(coreConversation: Conversation): Message =
+    coreConversation.messages.sortBy(_.created.getMillis).reverse.head
 
-  private def findLatestMessageDate(coreConversation: Conversation): Option[DateTime] =
-    findLatestMessage(coreConversation).flatMap { ms =>
-      Some(ms.created)
-    }
+  private def findLatestMessageDate(coreConversation: Conversation): DateTime =
+    findLatestMessage(coreConversation).created
 
-  private def findLatestMessageName(coreConversation: Conversation): Option[String] =
-    findLatestMessage(coreConversation) match {
-      case Some(message) => coreConversation.participants.find(_.id === message.senderId).flatMap(_.name)
-      case _             => None
-    }
+  private def findLatestMessageName(coreConversation: Conversation): Option[String] = {
+    val latestMessage = findLatestMessage(coreConversation)
+    coreConversation.participants.find(_.id === latestMessage.senderId).flatMap(_.name)
+  }
 
   private def findUnreadMessages(coreConversation: Conversation, identifier: Identifier): Boolean = {
     implicit val eqFoo: Eq[Identifier] = Eq.fromUniversalEquals
@@ -72,11 +68,8 @@ object ConversationMetaData {
 
   private def findUnreadMessagesByParticipant(participantId: Int, coreConversation: Conversation): Boolean = {
     val messages = coreConversation.messages
-    val matchingIds = coreConversation.messages
-      .flatMap(_.readBy)
-      .map(_.id)
-      .count(int => int === participantId)
-    matchingIds =!= messages.size
+    val messagesReadByParticipant = messages.filter(_.readBy.map(_.id).contains(participantId))
+    messagesReadByParticipant.size =!= messages.size
   }
 
   private val dateFormatString = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
@@ -84,6 +77,6 @@ object ConversationMetaData {
   implicit val dateFormat: Format[DateTime] =
     Format(jodaDateReads(dateFormatString), jodaDateWrites(dateFormatString))
 
-  implicit val conversationDetailsFormat: OFormat[ConversationMetaData] =
-    Json.format[ConversationMetaData]
+  implicit val conversationMetadataFormat: OFormat[ConversationMetadata] =
+    Json.format[ConversationMetadata]
 }

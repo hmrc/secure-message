@@ -39,7 +39,7 @@ class ApiConversationSpec extends PlaySpec {
                                                        |"notificationType":"CDS Exports",
                                                        |"mrn":"DMS7324874993",
                                                        |"sourceId":"CDCM"},
-                                                       |"subject":"D-80542-20201120",
+                                                       |"subject":"MRN: 19GB4S24GC3PPFGVR7",
                                                        |"language":"en",
                                                        |"messages":[{"senderInformation":{"name":"CDS Exports Team",
                                                        |"created":"2020-11-10T15:00:01.000+0000"},
