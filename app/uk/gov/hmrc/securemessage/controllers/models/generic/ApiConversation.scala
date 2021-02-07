@@ -42,10 +42,10 @@ object ApiConversation {
       tags = conversation.tags,
       subject = conversation.subject,
       language = conversation.language,
-      messages = conversation.messages.map(message => apiMessageDetails(conversation, message, identifier))
+      messages = conversation.messages.map(message => convertToApiMessage(conversation, message, identifier))
     )
 
-  private def apiMessageDetails(
+  private def convertToApiMessage(
     coreConversation: Conversation,
     message: Message,
     identifier: Identifier): ApiMessage = {
