@@ -27,12 +27,7 @@
     "messages": [{
         "senderId": 1,
         "created": "2020-11-10T15:00:01.000Z",
-        "readBy": [
-            {
-                "id": 1,
-                "readDate": "2020-11-10T15:00:01.000Z"
-            }
-        ],
+        "readBy": [],
         "content": "QmxhaCBibGFoIGJsYWg="
     }]
 }

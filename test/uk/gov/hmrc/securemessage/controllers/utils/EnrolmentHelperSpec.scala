@@ -24,17 +24,6 @@ import uk.gov.hmrc.securemessage.controllers.utils.EnrolmentHelper.findEnrolment
 class EnrolmentHelperSpec extends PlaySpec {
 
   "findEoriEnrolment" must {
-    "returns a specific enrolment found within a list of enrolments designated by it's key and name" in {
-      val expectedEnrolment = generic.Enrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789")
-      val enrolments = Enrolments(
-        Set(
-          uk.gov.hmrc.auth.core.Enrolment(
-            key = "HMRC-CUS-ORG",
-            identifiers = Seq(EnrolmentIdentifier("EORINumber", "GB123456789")),
-            state = "",
-            None)))
-      findEnrolment(enrolments, "HMRC-CUS-ORG", "EORINumber") mustBe Some(expectedEnrolment)
-    }
 
     "returns a specific enrolment found within a list of enrolments designated by it's key and name in a case-insensitive manner" in {
       val expectedEnrolment = generic.Enrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789")

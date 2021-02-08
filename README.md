@@ -17,6 +17,10 @@ An OpenAPI 3.0 schema is available for the endpoints on this service which can b
 - Schema: https://www.staging.tax.service.gov.uk/secure-messaging/api/schema.json
 - Swagger UI: https://www.staging.tax.service.gov.uk/secure-messaging/docs/swagger-ui/index.html?url=/secure-messaging/api/schema.json
 
+## Run the project locally 
+
+`sbt run "9051 -Dplay.http.router=testOnlyDoNotUseInAppConf.Routes"`
+
 ## Run the tests and sbt fmt before raising a PR
 
 Ensure you have service-manager python environment setup:

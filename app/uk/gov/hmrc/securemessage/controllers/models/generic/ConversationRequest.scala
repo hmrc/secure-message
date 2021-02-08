@@ -19,7 +19,7 @@ package uk.gov.hmrc.securemessage.controllers.models.generic
 import org.joda.time.DateTime
 import play.api.libs.functional.syntax.toFunctionalBuilderOps
 import play.api.libs.json.{ JsPath, Json, Reads }
-import uk.gov.hmrc.securemessage.models.core.{ Conversation, ConversationStatus, Identifier, Language, Message, Participant, ParticipantType, Reader }
+import uk.gov.hmrc.securemessage.models.core.{ Conversation, ConversationStatus, Identifier, Language, Message, Participant, ParticipantType }
 import uk.gov.hmrc.time.DateTimeUtils
 
 final case class Alert(templateId: String, parameters: Option[Map[String, String]])
@@ -86,7 +86,7 @@ final case class ConversationRequest(
     asConversationWithCreatedDate(client, conversationId, now)
 
   def asConversationWithCreatedDate(client: String, conversationId: String, created: DateTime): Conversation = {
-    val initialMessage = Message(1, created, List(Reader(1, created)), message)
+    val initialMessage = Message(1, created, List(), message)
     val initialParticipants = getSenderParticipant(sender.system) :: getRecipientParticipants(recipients)
     Conversation(
       client,

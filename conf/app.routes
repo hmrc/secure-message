@@ -47,7 +47,7 @@ PUT         /conversation/:client/:conversationId                               
 POST        /conversation/:client/:conversationId/adviser-message                     uk.gov.hmrc.securemessage.controllers.SecureMessageController.createAdviserMessage(client: String, conversationId: String)
 
 ###
-# summary: Get's a list of conversations via EORI enrolment
+# summary: Get's a list of conversations by enrolment
 # security:
 #   - bearerToken: []
 # responses:

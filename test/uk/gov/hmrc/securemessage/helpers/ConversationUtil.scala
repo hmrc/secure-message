@@ -18,7 +18,7 @@ package uk.gov.hmrc.securemessage.helpers
 
 import org.joda.time.DateTime
 import uk.gov.hmrc.securemessage.models.core.Language.English
-import uk.gov.hmrc.securemessage.models.core.{ Conversation, ConversationStatus, Identifier, Message, Participant, ParticipantType, Reader }
+import uk.gov.hmrc.securemessage.models.core.{ Conversation, ConversationStatus, Identifier, Message, Participant, ParticipantType }
 
 object ConversationUtil {
 
@@ -58,7 +58,7 @@ object ConversationUtil {
         Message(
           1,
           new DateTime("2020-11-10T15:00:01.000"),
-          List(Reader(1, new DateTime("2020-11-10T15:00:01.000"))),
+          List(),
           "QmxhaCBibGFoIGJsYWg="
         )
       )
@@ -92,9 +92,7 @@ object ConversationUtil {
         Message(
           1,
           new DateTime("2020-11-10T15:00:01.000"),
-          List(
-            Reader(1, new DateTime("2020-11-10T15:00:01.000"))
-          ),
+          List(),
           "QmxhaCBibGFoIGJsYWg="
         )
       )
