@@ -24,7 +24,7 @@ import play.api.libs.json.JodaWrites.jodaDateWrites
 import play.api.libs.json.{ Format, Json, OFormat }
 import uk.gov.hmrc.securemessage.models.core.{ Conversation, Identifier, Message }
 
-final case class ConversationDetails(
+final case class ConversationMetaData(
   conversationId: String,
   subject: String,
   issueDate: Option[DateTime],
@@ -32,11 +32,11 @@ final case class ConversationDetails(
   unreadMessages: Boolean,
   count: Int)
 
-object ConversationDetails {
+object ConversationMetaData {
 
-  def coreToConversationDetails(coreConversation: Conversation, identifier: Identifier): ConversationDetails = {
+  def coreToConversationMetadata(coreConversation: Conversation, identifier: Identifier): ConversationMetaData = {
     val messageCount = coreConversation.messages.size
-    ConversationDetails(
+    ConversationMetaData(
       coreConversation.conversationId,
       coreConversation.subject,
       findLatestMessageDate(coreConversation),
@@ -84,6 +84,6 @@ object ConversationDetails {
   implicit val dateFormat: Format[DateTime] =
     Format(jodaDateReads(dateFormatString), jodaDateWrites(dateFormatString))
 
-  implicit val conversationDetailsFormat: OFormat[ConversationDetails] =
-    Json.format[ConversationDetails]
+  implicit val conversationDetailsFormat: OFormat[ConversationMetaData] =
+    Json.format[ConversationMetaData]
 }

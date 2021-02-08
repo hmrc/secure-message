@@ -61,7 +61,7 @@
       "created": "2020-11-10T15:00:05.000Z",
       "readBy": [
         {
-          "id": 2,
+          "id": 1,
           "readDate": "2020-11-10T15:00:02.000Z"
         }
       ],
@@ -76,7 +76,7 @@
           "readDate": "2020-11-10T15:00:01.000Z"
         },
         {
-          "id": 3,
+          "id": 2,
           "readDate": "2020-11-10T15:00:01.000Z"
         }
       ],
@@ -87,10 +87,28 @@
       "created": "2020-11-10T15:00:18.000Z",
       "readBy": [
         {
-          "id": 2,
+          "id": 3,
           "readDate": "2020-11-10T15:00:01.000Z"
         }
       ],
+      "content": "QmxhaCBibGFoIGJsYWg="
+    },
+    {
+      "senderId": 2,
+      "created": "2020-11-10T15:00:18.000Z",
+      "readBy": [],
+      "content": "QmxhaCBibGFoIGJsYWg="
+    },
+    {
+      "senderId": 3,
+      "created": "2020-11-10T15:00:18.000Z",
+      "readBy": [],
+      "content": "QmxhaCBibGFoIGJsYWg="
+    },
+    {
+      "senderId": 1,
+      "created": "2020-11-10T15:00:18.000Z",
+      "readBy": [],
       "content": "QmxhaCBibGFoIGJsYWg="
     }
   ]

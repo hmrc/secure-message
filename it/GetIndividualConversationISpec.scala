@@ -28,7 +28,7 @@ import uk.gov.hmrc.securemessage.repository.ConversationRepository
 import scala.concurrent.{ ExecutionContext, Future }
 
 @SuppressWarnings(Array("org.wartremover.warts.All"))
-class GetConversationsISpec extends PlaySpec with ServiceSpec with BeforeAndAfterEach {
+class GetIndividualConversationISpec extends PlaySpec with ServiceSpec with BeforeAndAfterEach {
 
   override def externalServices: Seq[String] = Seq("auth-login-api")
 
@@ -40,23 +40,34 @@ class GetConversationsISpec extends PlaySpec with ServiceSpec with BeforeAndAfte
     val _ = await(repository.removeAll()(ec))
   }
 
-  "A GET request to /secure-messaging/conversations" should {
+  "A GET request to /secure-messaging/conversation/:client/:conversationId" should {
 
-    "return a JSON body of conversation metadata" in {
+    "return a JSON body of api conversation with a list of api messages" in {
       createConversation
       val response =
         wsClient
-          .url(resource("/secure-messaging/conversations/hmrc-cus-org/eorinumber"))
+          .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120/hmrc-cus-org/eorinumber"))
           .withHttpHeaders(AuthUtil.buildEoriToken)
           .get()
           .futureValue
-      response.body must include("""senderName":"CDS Exports Team""")
+      response.body must include("""{"senderInformation":{"name":"CDS Exports Team"""")
+    }
+
+    "return a JSON body of [No Conversation found]" in {
+      createConversation
+      val response =
+        wsClient
+          .url(resource("/secure-messaging/conversation/cdcm/D-80542-77777777/hmrc-cus-org/eorinumber"))
+          .withHttpHeaders(AuthUtil.buildEoriToken)
+          .get()
+          .futureValue
+      response.body mustBe "\"No conversation found\""
     }
 
     "return a JSON body of [No EORI enrolment found] when there's an auth session, but no EORI enrolment" in {
       val response =
         wsClient
-          .url(resource("/secure-messaging/conversations/hmrc-cus-org/eorinumber"))
+          .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120/hmrc-cus-org/eorinumber"))
           .withHttpHeaders(AuthUtil.buildNonEoriToken)
           .get()
           .futureValue

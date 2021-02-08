@@ -21,8 +21,6 @@ import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc.{ Action, AnyContent, ControllerComponents }
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.HeaderCarrierConverter
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.securemessage.controllers.models.generic.{ AdviserMessageRequest, ConversationRequest }
 import uk.gov.hmrc.securemessage.controllers.utils.EnrolmentHelper._
@@ -55,9 +53,8 @@ class SecureMessageController @Inject()(
       }
   }
 
-  def getListOfConversations(enrolmentKey: String, enrolmentName: String): Action[AnyContent] = Action.async {
+  def getMetadataForConversations(enrolmentKey: String, enrolmentName: String): Action[AnyContent] = Action.async {
     implicit request =>
-      implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
       authorised()
         .retrieve(Retrievals.allEnrolments) { enrolments =>
           findEnrolment(enrolments, enrolmentKey, enrolmentName) match {
@@ -70,5 +67,25 @@ class SecureMessageController @Inject()(
             case None => Future.successful(Unauthorized(Json.toJson("No EORI enrolment found")))
           }
         }
+  }
+
+  def getConversationContent(
+    client: String,
+    conversationId: String,
+    enrolmentKey: String,
+    enrolmentName: String): Action[AnyContent] = Action.async { implicit request =>
+    authorised()
+      .retrieve(Retrievals.allEnrolments) { enrolments =>
+        findEnrolment(enrolments, enrolmentKey, enrolmentName) match {
+          case Some(eoriEnrolment) =>
+            secureMessageService
+              .getConversation(client, conversationId, eoriEnrolment)
+              .map {
+                case Some(apiConversation) => Ok(Json.toJson(apiConversation))
+                case _                     => BadRequest(Json.toJson("No conversation found"))
+              }
+          case None => Future.successful(Unauthorized(Json.toJson("No EORI enrolment found")))
+        }
+      }
   }
 }

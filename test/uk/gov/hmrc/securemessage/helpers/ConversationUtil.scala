@@ -57,8 +57,8 @@ object ConversationUtil {
       List(
         Message(
           1,
-          new DateTime("2020-11-10T15:00:01.000Z"),
-          List(Reader(1, new DateTime("2020-11-10T15:00:01.000Z"))),
+          new DateTime("2020-11-10T15:00:01.000"),
+          List(Reader(1, new DateTime("2020-11-10T15:00:01.000"))),
           "QmxhaCBibGFoIGJsYWg="
         )
       )
@@ -91,9 +91,9 @@ object ConversationUtil {
       List(
         Message(
           1,
-          new DateTime("2020-11-10T15:00:01.000Z"),
+          new DateTime("2020-11-10T15:00:01.000"),
           List(
-            Reader(1, new DateTime("2020-11-10T15:00:01.000Z"))
+            Reader(1, new DateTime("2020-11-10T15:00:01.000"))
           ),
           "QmxhaCBibGFoIGJsYWg="
         )

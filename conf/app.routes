@@ -21,7 +21,7 @@
 #   424:
 #     description: a dependency failed - e.g. customer email validation failed
 ###
-PUT        /conversation/:client/:conversationId        uk.gov.hmrc.securemessage.controllers.SecureMessageController.createConversation(client: String, conversationId: String)
+PUT         /conversation/:client/:conversationId                                     uk.gov.hmrc.securemessage.controllers.SecureMessageController.createConversation(client: String, conversationId: String)
 
 ###
 # summary: create a message
@@ -44,7 +44,7 @@ PUT        /conversation/:client/:conversationId        uk.gov.hmrc.securemessag
 #   424:
 #     description: a dependency failed - e.g. client not recognised
 ###
-POST        /conversation/:client/:conversationId/adviser-message        uk.gov.hmrc.securemessage.controllers.SecureMessageController.createAdviserMessage(client: String, conversationId: String)
+POST        /conversation/:client/:conversationId/adviser-message                     uk.gov.hmrc.securemessage.controllers.SecureMessageController.createAdviserMessage(client: String, conversationId: String)
 
 ###
 # summary: Get's a list of conversations via EORI enrolment
@@ -56,4 +56,18 @@ POST        /conversation/:client/:conversationId/adviser-message        uk.gov.
 #   401:
 #     description: unauthorised customer when they don't have an EORI enrolment
 ###
-GET        /conversations/:enrolmentKey/:enrolmentName                  uk.gov.hmrc.securemessage.controllers.SecureMessageController.getListOfConversations(enrolmentKey: String, enrolmentName: String)
+GET         /conversations/:enrolmentKey/:enrolmentName                               uk.gov.hmrc.securemessage.controllers.SecureMessageController.getMetadataForConversations(enrolmentKey: String, enrolmentName: String)
+
+###
+# summary: Get's a conversation via client ID and conversation ID
+# security:
+#   - bearerToken: []
+# responses:
+#   200:
+#     description: conversations was recieved
+#   401:
+#     description: unauthorised customer when they don't have an EORI enrolment
+#   404:
+#     description: conversation not found
+###
+GET         /conversation/:client/:conversationId/:enrolmentKey/:enrolmentName        uk.gov.hmrc.securemessage.controllers.SecureMessageController.getConversationContent(client: String, conversationId: String, enrolmentKey: String, enrolmentName: String)

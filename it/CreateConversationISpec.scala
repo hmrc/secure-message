@@ -28,7 +28,7 @@ import uk.gov.hmrc.securemessage.repository.ConversationRepository
 
 import scala.concurrent.ExecutionContext
 
-@SuppressWarnings(Array("org.wartremover.warts.All"))
+@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class CreateConversationISpec extends PlaySpec with ServiceSpec with BeforeAndAfterEach {
 
   override def externalServices: Seq[String] = Seq.empty
