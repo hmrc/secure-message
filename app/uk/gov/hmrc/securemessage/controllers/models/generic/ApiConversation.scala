@@ -53,7 +53,7 @@ object ApiConversation {
     val reader: Option[Participant] = findParticipantViaIdentifier(coreConversation, identifier)
     (sender, reader) match {
       case (Some(participantSender), Some(participantReader)) if participantSender.id === participantReader.id =>
-        ApiMessage(None, Some(message.created), None, notFirstReader(coreConversation, message), message.content)
+        ApiMessage(None, Some(message.created), None, None, message.content)
       case (Some(participantSender), Some(participantReader)) if firstReader(message, participantReader) =>
         ApiMessage(
           Some(SenderInformation(participantSender.name, message.created)),
