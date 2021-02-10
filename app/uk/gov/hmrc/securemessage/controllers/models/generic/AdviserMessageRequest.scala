@@ -16,8 +16,7 @@
 
 package uk.gov.hmrc.securemessage.controllers.models.generic
 
-import play.api.libs.functional.syntax.toFunctionalBuilderOps
-import play.api.libs.json.{ JsPath, Json, Reads }
+import play.api.libs.json.{ Json, Reads }
 
 final case class AdviserMessageRequest(sender: AdviserMessageRequest.Sender, content: String)
 
@@ -25,12 +24,9 @@ object AdviserMessageRequest {
 
   implicit val adviserMessageRequestReads: Reads[AdviserMessageRequest] = Json.reads[AdviserMessageRequest]
 
-  final case class System(identifier: SystemIdentifier, parameters: Option[Map[String, String]])
+  final case class System(identifier: SystemIdentifier)
   object System {
-    implicit val systemReads: Reads[System] = (
-      (JsPath \ "identifier").read[SystemIdentifier] and
-        (JsPath \ "parameters").readNullable[Map[String, String]]
-    ).apply(System.apply _)
+    implicit val systemReads: Reads[System] = Json.reads[System]
   }
 
   final case class Sender(system: System)
