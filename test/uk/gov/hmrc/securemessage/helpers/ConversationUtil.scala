@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.securemessage.helpers
 
+import cats.data.NonEmptyList
 import org.joda.time.DateTime
 import uk.gov.hmrc.securemessage.models.core.Language.English
 import uk.gov.hmrc.securemessage.models.core.{ Conversation, ConversationStatus, Identifier, Message, Participant, ParticipantType, Reader }
@@ -35,7 +36,7 @@ object ConversationUtil {
           "mrn"              -> "DMS7324874993",
           "notificationType" -> "CDS Exports"
         )),
-      "D-80542-20201120",
+      "MRN: 19GB4S24GC3PPFGVR7",
       English,
       List(
         Participant(
@@ -54,7 +55,7 @@ object ConversationUtil {
           Some("joebloggs@test.com"),
           None)
       ),
-      List(
+      NonEmptyList.one(
         Message(
           1,
           new DateTime("2020-11-10T15:00:01.000"),
@@ -88,7 +89,7 @@ object ConversationUtil {
           None,
           None)
       ),
-      List(
+      NonEmptyList.one(
         Message(
           1,
           new DateTime("2020-11-10T15:00:01.000"),

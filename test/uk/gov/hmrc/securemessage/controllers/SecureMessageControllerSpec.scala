@@ -17,6 +17,7 @@
 package uk.gov.hmrc.securemessage.controllers
 
 import akka.stream.Materializer
+import cats.data.NonEmptyList
 import org.joda.time.DateTime
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
@@ -35,7 +36,7 @@ import uk.gov.hmrc.auth.core.retrieve.Retrieval
 import uk.gov.hmrc.auth.core.{AuthConnector, Enrolment, EnrolmentIdentifier, Enrolments}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.securemessage.controllers.models.generic
-import uk.gov.hmrc.securemessage.controllers.models.generic.{ApiConversation, ApiMessage, ConversationMetaData, SenderInformation}
+import uk.gov.hmrc.securemessage.controllers.models.generic.{ApiConversation, ApiMessage, ConversationMetadata, SenderInformation}
 import uk.gov.hmrc.securemessage.helpers.{ConversationUtil, Resources}
 import uk.gov.hmrc.securemessage.models.core.Conversation
 import uk.gov.hmrc.securemessage.models.core.ConversationStatus.Open
@@ -109,9 +110,11 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
                   None)))))
       generic.Enrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789")
       when(mockSecureMessageService.getConversations(generic.Enrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789")))
-        .thenReturn(Future(List(ConversationMetaData(conversationId = "D-80542-20201120",
+        .thenReturn(Future(List(ConversationMetadata(
+          client = "cdcm",
+          conversationId = "D-80542-20201120",
           subject = "D-80542-20201120",
-          issueDate = Some(DateTime.parse("2020-11-10T15:00:18.000+0000")),
+          issueDate = DateTime.parse("2020-11-10T15:00:18.000+0000"),
           senderName = Some("Joe Bloggs"),
           unreadMessages = true,
           count = 4))))
@@ -119,7 +122,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       val response: Future[Result] = controller.getMetadataForConversations("HMRC-CUS-ORG", "EORINumber").apply(FakeRequest("GET", "/"))
       status(response) mustBe OK
       contentAsString(response) mustBe
-        """[{"conversationId":"D-80542-20201120","subject":"D-80542-20201120","issueDate":"2020-11-10T15:00:18.000+0000","senderName":"Joe Bloggs","unreadMessages":true,"count":4}]"""
+        """[{"client":"cdcm","conversationId":"D-80542-20201120","subject":"D-80542-20201120","issueDate":"2020-11-10T15:00:18.000+0000","senderName":"Joe Bloggs","unreadMessages":true,"count":4}]"""
     }
 
     "return a 401 (UNAUTHORISED) error when no EORI enrolment found" in new TestCase {
@@ -154,7 +157,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
                   None)))))
       generic.Enrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789")
       when(mockSecureMessageService.getConversation(any[String], any[String], any[generic.Enrolment])(any[ExecutionContext]))
-        .thenReturn(Future(Some(ApiConversation("cdcm", "D-80542-20201120", Open, Some(Map("queryId" -> "D-80542-20201120", "caseId" -> "D-80542", "notificationType" -> "CDS Exports", "mrn" -> "DMS7324874993", "sourceId" -> "CDCM")), "D-80542-20201120", English, List(ApiMessage(Some(SenderInformation(Some("CDS Exports Team"),DateTime.parse("2020-11-10T15:00:01.000Z"))),None,Some(DateTime.parse("2020-11-10T15:00:01.000Z")),None,"QmxhaCBibGFoIGJsYWg="))))))
+        .thenReturn(Future(Some(ApiConversation("cdcm", "D-80542-20201120", Open, Some(Map("queryId" -> "D-80542-20201120", "caseId" -> "D-80542", "notificationType" -> "CDS Exports", "mrn" -> "DMS7324874993", "sourceId" -> "CDCM")), "D-80542-20201120", English, NonEmptyList.one(ApiMessage(Some(SenderInformation(Some("CDS Exports Team"),DateTime.parse("2020-11-10T15:00:01.000Z"))),None,Some(DateTime.parse("2020-11-10T15:00:01.000Z")),None,"QmxhaCBibGFoIGJsYWg="))))))
       val controller = new SecureMessageController(Helpers.stubControllerComponents(), mockAuthConnector, mockSecureMessageService, mockRepository)
       val response: Future[Result] = controller.getConversationContent("cdcm", "D-80542-20201120", "HMRC-CUS-ORG", "EORINumber").apply(FakeRequest("GET", "/"))
       status(response) mustBe OK
