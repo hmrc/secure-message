@@ -18,7 +18,8 @@ package uk.gov.hmrc.securemessage.repository
 
 import javax.inject.Inject
 import play.api.libs.json.Json.JsValueWrapper
-import play.api.libs.json.{ JsString, Json }
+import play.api.libs.json.{ JsObject, JsString, Json }
+import reactivemongo.api.Cursor
 import reactivemongo.api.indexes.{ Index, IndexType }
 import reactivemongo.bson.BSONObjectID
 import reactivemongo.core.errors.DatabaseException
@@ -26,6 +27,7 @@ import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.mongo.{ MongoConnector, ReactiveRepository }
 import uk.gov.hmrc.securemessage.controllers.models.generic.Enrolment
 import uk.gov.hmrc.securemessage.models.core.Conversation
+import uk.gov.hmrc.securemessage.models.core.Conversation.conversationFormat
 
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -56,19 +58,23 @@ class ConversationRepository @Inject()(implicit connector: MongoConnector)
           Future.successful(false)
       }
 
-  def getConversations(enrolment: Enrolment)(implicit ec: ExecutionContext): Future[List[Conversation]] =
-    find(findByEnrolmentQuery(enrolment): _*)
+  def getConversations(enrolment: Enrolment)(implicit ec: ExecutionContext): Future[List[Conversation]] = {
+    import uk.gov.hmrc.securemessage.models.core.Conversation.conversationFormat
+    collection
+      .find[JsObject, Conversation](selector = Json.obj(findByEnrolmentQuery(enrolment): _*), None)
+      .sort(Json.obj("_id" -> -1))
+      .cursor[Conversation]()
+      .collect[List](-1, Cursor.FailOnError[List[Conversation]]())
+  }
 
   def getConversation(client: String, conversationId: String, enrolment: Enrolment)(
-    implicit ec: ExecutionContext): Future[Option[Conversation]] = {
-    import uk.gov.hmrc.securemessage.models.core.Conversation.conversationFormat
+    implicit ec: ExecutionContext): Future[Option[Conversation]] =
     collection
       .find(
         selector = Json.obj("client" -> client, "conversationId" -> conversationId)
           deepMerge Json.obj(findByEnrolmentQuery(enrolment): _*),
         None)
       .one[Conversation]
-  }
 
   private def findByEnrolmentQuery(enrolment: Enrolment): Seq[(String, JsValueWrapper)] =
     Seq(

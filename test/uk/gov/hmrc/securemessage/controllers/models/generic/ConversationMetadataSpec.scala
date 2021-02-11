@@ -22,20 +22,21 @@ import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core._
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
-class ConversationMetaDataSpec extends PlaySpec {
+class ConversationMetadataSpec extends PlaySpec {
 
   "ConversationMetadata" must {
     "Convert core conversation to conversation metadata and then serialise into JSON" in {
       val identifier = Identifier(name = "EORINumber", value = "GB1234567890", enrolment = Some("HMRC-CUS-ORG"))
       val conversationJson: JsValue = Resources.readJson("model/core/conversation-full-extender.json")
       val coreConversation: Conversation = conversationJson.validate[Conversation].get
-      val conversationMetaDataJson: JsValue = Resources.readJson("model/api/conversation-metadata.json")
-      val conversationMetaData: ConversationMetaData = conversationMetaDataJson.validate[ConversationMetaData].get
-      ConversationMetaData.coreToConversationMetadata(coreConversation, identifier) mustEqual conversationMetaData
-      Json.toJson(conversationMetaData) mustBe Json.parse("""{"conversationId":"D-80542-20201120",
-                                                            |"subject":"D-80542-20201120",
+      val conversationMetadataJson: JsValue = Resources.readJson("model/api/conversation-metadata.json")
+      val conversationMetadata: ConversationMetadata = conversationMetadataJson.validate[ConversationMetadata].get
+      ConversationMetadata.coreToConversationMetadata(coreConversation, identifier) mustEqual conversationMetadata
+      Json.toJson(conversationMetadata) mustBe Json.parse("""{"client":"cdcm",
+                                                            |"conversationId":"D-80542-20201120",
+                                                            |"subject":"MRN: 19GB4S24GC3PPFGVR7",
                                                             |"issueDate":"2020-11-10T15:00:18.000+0000",
-                                                            |"senderName":"Joe Bloggs",
+                                                            |"senderName":"CDS Exports Team",
                                                             |"unreadMessages":true,
                                                             |"count":7}""".stripMargin)
     }

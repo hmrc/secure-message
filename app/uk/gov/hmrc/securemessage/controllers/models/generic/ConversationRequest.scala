@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.securemessage.controllers.models.generic
 
+import cats.data.NonEmptyList
 import org.joda.time.DateTime
 import play.api.libs.functional.syntax.toFunctionalBuilderOps
 import play.api.libs.json.{ JsPath, Json, Reads }
@@ -96,7 +97,8 @@ final case class ConversationRequest(
       subject,
       getLanguage(language),
       initialParticipants,
-      List(initialMessage))
+      NonEmptyList.one(initialMessage)
+    )
   }
 
   private def getLanguage(maybeLanguage: Option[String]): Language =

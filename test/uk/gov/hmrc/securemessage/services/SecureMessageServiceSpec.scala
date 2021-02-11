@@ -15,6 +15,7 @@
  */
 
 import akka.stream.Materializer
+import cats.data.NonEmptyList
 import org.joda.time.DateTime
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
@@ -25,7 +26,7 @@ import play.api.test.Helpers._
 import play.api.test.NoMaterializer
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.securemessage.controllers.models.generic
-import uk.gov.hmrc.securemessage.controllers.models.generic.{ ApiConversation, ApiMessage, ConversationMetaData, Enrolment }
+import uk.gov.hmrc.securemessage.controllers.models.generic.{ ApiConversation, ApiMessage, ConversationMetadata, Enrolment }
 import uk.gov.hmrc.securemessage.helpers.ConversationUtil
 import uk.gov.hmrc.securemessage.models.core.ConversationStatus.Open
 import uk.gov.hmrc.securemessage.models.core.Language.English
@@ -53,10 +54,11 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
       val result = await(service.getConversations(Enrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777")))
       result mustBe
         List(
-          ConversationMetaData(
+          ConversationMetadata(
+            "cdcm",
             "D-80542-20201120",
-            "D-80542-20201120",
-            Some(DateTime.parse("2020-11-10T15:00:01.000")),
+            "MRN: 19GB4S24GC3PPFGVR7",
+            DateTime.parse("2020-11-10T15:00:01.000"),
             Some("CDS Exports Team"),
             false,
             1))
@@ -83,9 +85,9 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
               "notificationType" -> "CDS Exports",
               "mrn"              -> "DMS7324874993",
               "sourceId"         -> "CDCM")),
-          "D-80542-20201120",
+          "MRN: 19GB4S24GC3PPFGVR7",
           English,
-          List(ApiMessage(None, None, None, None, "QmxhaCBibGFoIGJsYWg="))
+          NonEmptyList.one(ApiMessage(None, None, None, None, "QmxhaCBibGFoIGJsYWg="))
         ))
     }
 
