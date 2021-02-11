@@ -43,7 +43,7 @@ object ConversationMetadata {
       coreConversation.subject,
       findLatestMessageDate(coreConversation),
       findLatestMessageName(coreConversation),
-      findUnreadMessages(coreConversation, identifier),
+      anyUnreadMessages(coreConversation, identifier),
       messageCount
     )
   }
@@ -59,7 +59,7 @@ object ConversationMetadata {
     coreConversation.participants.find(_.id === latestMessage.senderId).flatMap(_.name)
   }
 
-  private def findUnreadMessages(coreConversation: Conversation, identifier: Identifier): Boolean = {
+  private def anyUnreadMessages(coreConversation: Conversation, identifier: Identifier): Boolean = {
     implicit val eqFoo: Eq[Identifier] = Eq.fromUniversalEquals
     coreConversation.participants
       .find(_.identifier === identifier)

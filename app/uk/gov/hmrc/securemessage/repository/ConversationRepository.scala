@@ -27,6 +27,7 @@ import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.mongo.{ MongoConnector, ReactiveRepository }
 import uk.gov.hmrc.securemessage.controllers.models.generic.Enrolment
 import uk.gov.hmrc.securemessage.models.core.Conversation
+import uk.gov.hmrc.securemessage.models.core.Conversation.conversationFormat
 
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -67,15 +68,13 @@ class ConversationRepository @Inject()(implicit connector: MongoConnector)
   }
 
   def getConversation(client: String, conversationId: String, enrolment: Enrolment)(
-    implicit ec: ExecutionContext): Future[Option[Conversation]] = {
-    import uk.gov.hmrc.securemessage.models.core.Conversation.conversationFormat
+    implicit ec: ExecutionContext): Future[Option[Conversation]] =
     collection
       .find(
         selector = Json.obj("client" -> client, "conversationId" -> conversationId)
           deepMerge Json.obj(findByEnrolmentQuery(enrolment): _*),
         None)
       .one[Conversation]
-  }
 
   private def findByEnrolmentQuery(enrolment: Enrolment): Seq[(String, JsValueWrapper)] =
     Seq(
