@@ -18,26 +18,10 @@ package uk.gov.hmrc.securemessage.controllers.models.generic
 
 import play.api.libs.json.{ Json, Reads }
 
-final case class AdviserMessageRequest(sender: AdviserMessageRequest.Sender, content: String)
+final case class CustomerMessageRequest(content: String)
 
-object AdviserMessageRequest {
+object CustomerMessageRequest {
 
-  implicit val adviserMessageRequestReads: Reads[AdviserMessageRequest] = Json.reads[AdviserMessageRequest]
-
-  final case class System(identifier: SystemIdentifier)
-  object System {
-    implicit val systemReads: Reads[System] = Json.reads[System]
-  }
-
-  final case class Sender(system: System)
-  object Sender {
-    implicit val senderReads: Reads[Sender] =
-      Json.reads[Sender]
-  }
-
-  final case class SystemIdentifier(name: String, value: String)
-  object SystemIdentifier {
-    implicit val identifierReads: Reads[SystemIdentifier] = Json.reads[SystemIdentifier]
-  }
+  implicit val customerMessageRequestReads: Reads[CustomerMessageRequest] = Json.reads[CustomerMessageRequest]
 
 }

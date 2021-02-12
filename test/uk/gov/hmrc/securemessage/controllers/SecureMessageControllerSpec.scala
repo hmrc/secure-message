@@ -33,10 +33,10 @@ import play.api.test.Helpers.{POST, PUT, contentAsString, defaultAwaitTimeout, s
 import play.api.test.{FakeHeaders, FakeRequest, Helpers, NoMaterializer}
 import uk.gov.hmrc.auth.core.authorise.Predicate
 import uk.gov.hmrc.auth.core.retrieve.Retrieval
-import uk.gov.hmrc.auth.core.{AuthConnector, Enrolment, EnrolmentIdentifier, Enrolments}
+import uk.gov.hmrc.auth.core.{AuthConnector, AuthorisationException, Enrolment, EnrolmentIdentifier, Enrolments}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.securemessage.controllers.models.generic
-import uk.gov.hmrc.securemessage.controllers.models.generic.{ApiConversation, ApiMessage, ConversationMetadata, SenderInformation}
+import uk.gov.hmrc.securemessage.controllers.models.generic.{ApiConversation, ApiMessage, ConversationMetadata, CustomerMessageRequest, SenderInformation}
 import uk.gov.hmrc.securemessage.helpers.{ConversationUtil, Resources}
 import uk.gov.hmrc.securemessage.models.core.Conversation
 import uk.gov.hmrc.securemessage.models.core.ConversationStatus.Open
@@ -55,11 +55,10 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
-  "Calling createConversation" should {
+  "Calling createConversation" must {
 
     "return CREATED (201) when sent a request with all optional fields populated" in new TestCase {
       private val fullConversationJson = Resources.readJson("model/api/create-conversation-full.json")
-      private val controller = new SecureMessageController(Helpers.stubControllerComponents(), mockAuthConnector, mockSecureMessageService, mockRepository)
       private val fakeRequest = FakeRequest(
         method = PUT,
         uri = routes.SecureMessageController.createConversation("cdcm", "123").url,
@@ -72,7 +71,6 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
 
     "return CREATED (201) when sent a request with no optional fields populated" in new TestCase {
       private val minimalConversationJson = Resources.readJson("model/api/create-conversation-minimal.json")
-      private val controller = new SecureMessageController(Helpers.stubControllerComponents(), mockAuthConnector, mockSecureMessageService, mockRepository)
       private val fakeRequest = FakeRequest(
         method = PUT,
         uri = routes.SecureMessageController.createConversation("cdcm", "123").url,
@@ -84,7 +82,6 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     }
 
     "return BAD REQUEST (400) when sent a request with required fields missing" in new TestCase {
-      private val controller = new SecureMessageController(Helpers.stubControllerComponents(), mockAuthConnector, mockSecureMessageService, mockRepository)
       private val fakeRequest = FakeRequest(
         method = PUT,
         uri = routes.SecureMessageController.createConversation("cdcm", "123").url,
@@ -96,7 +93,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     }
   }
 
-  "getConversations" should {
+  "getConversations" must {
     "return an OK (200) with a JSON body of a list of conversations" in new TestCase {
       when(mockAuthConnector.authorise(any[Predicate], any[Retrieval[Enrolments]])(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(
@@ -108,8 +105,8 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
                   identifiers = Seq(EnrolmentIdentifier("EORINumber", "GB123456789")),
                   state = "",
                   None)))))
-      generic.Enrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789")
-      when(mockSecureMessageService.getConversations(generic.Enrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789")))
+      generic.CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789")
+      when(mockSecureMessageService.getConversations(generic.CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789")))
         .thenReturn(Future(List(ConversationMetadata(
           client = "cdcm",
           conversationId = "D-80542-20201120",
@@ -118,7 +115,6 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
           senderName = Some("Joe Bloggs"),
           unreadMessages = true,
           count = 4))))
-      val controller = new SecureMessageController(Helpers.stubControllerComponents(), mockAuthConnector, mockSecureMessageService, mockRepository)
       val response: Future[Result] = controller.getMetadataForConversations("HMRC-CUS-ORG", "EORINumber").apply(FakeRequest("GET", "/"))
       status(response) mustBe OK
       contentAsString(response) mustBe
@@ -136,14 +132,13 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
                   identifiers = Seq(EnrolmentIdentifier("another enrolment", "GB123456789")),
                   state = "",
                   None)))))
-      val controller = new SecureMessageController(Helpers.stubControllerComponents(), mockAuthConnector, mockSecureMessageService, mockRepository)
       val response: Future[Result] = controller.getMetadataForConversations("HMRC-CUS-ORG", "EORINumber").apply(FakeRequest("GET", "/"))
       status(response) mustBe UNAUTHORIZED
       contentAsString(response) mustBe "\"No EORI enrolment found\""
     }
   }
 
-  "getConversation" should {
+  "getConversation" must {
     "return an OK (200) with a JSON body of a ApiConversations" in new TestCase {
       when(mockAuthConnector.authorise(any[Predicate], any[Retrieval[Enrolments]])(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(
@@ -155,10 +150,9 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
                   identifiers = Seq(EnrolmentIdentifier("EORINumber", "GB123456789")),
                   state = "",
                   None)))))
-      generic.Enrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789")
-      when(mockSecureMessageService.getConversation(any[String], any[String], any[generic.Enrolment])(any[ExecutionContext]))
+      generic.CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789")
+      when(mockSecureMessageService.getConversation(any[String], any[String], any[generic.CustomerEnrolment])(any[ExecutionContext]))
         .thenReturn(Future(Some(ApiConversation("cdcm", "D-80542-20201120", Open, Some(Map("queryId" -> "D-80542-20201120", "caseId" -> "D-80542", "notificationType" -> "CDS Exports", "mrn" -> "DMS7324874993", "sourceId" -> "CDCM")), "D-80542-20201120", English, NonEmptyList.one(ApiMessage(Some(SenderInformation(Some("CDS Exports Team"),DateTime.parse("2020-11-10T15:00:01.000Z"))),None,Some(DateTime.parse("2020-11-10T15:00:01.000Z")),None,"QmxhaCBibGFoIGJsYWg="))))))
-      val controller = new SecureMessageController(Helpers.stubControllerComponents(), mockAuthConnector, mockSecureMessageService, mockRepository)
       val response: Future[Result] = controller.getConversationContent("cdcm", "D-80542-20201120", "HMRC-CUS-ORG", "EORINumber").apply(FakeRequest("GET", "/"))
       status(response) mustBe OK
       contentAsString(response) mustBe
@@ -176,10 +170,9 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
                   identifiers = Seq(EnrolmentIdentifier("EORINumber", "GB123456789")),
                   state = "",
                   None)))))
-      generic.Enrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789")
-      when(mockSecureMessageService.getConversation(any[String], any[String], any[generic.Enrolment])(any[ExecutionContext]))
+      generic.CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789")
+      when(mockSecureMessageService.getConversation(any[String], any[String], any[generic.CustomerEnrolment])(any[ExecutionContext]))
         .thenReturn(Future(None))
-      val controller = new SecureMessageController(Helpers.stubControllerComponents(), mockAuthConnector, mockSecureMessageService, mockRepository)
       val response: Future[Result] = controller.getConversationContent("cdcm", "D-80542-20201120", "HMRC-CUS-ORG", "EORINumber").apply(FakeRequest("GET", "/"))
       status(response) mustBe BAD_REQUEST
       contentAsString(response) mustBe
@@ -197,25 +190,94 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
                   identifiers = Seq(EnrolmentIdentifier("another enrolment", "GB123456789")),
                   state = "",
                   None)))))
-      val controller = new SecureMessageController(Helpers.stubControllerComponents(), mockAuthConnector, mockSecureMessageService, mockRepository)
       val response: Future[Result] = controller.getConversationContent("cdcm", "D-80542-20201120","HMRC-CUS-ORG", "EORINumber").apply(FakeRequest("GET", "/"))
       status(response) mustBe UNAUTHORIZED
       contentAsString(response) mustBe "\"No EORI enrolment found\""
     }
   }
 
-  "Calling createAdviserMessage" should {
+  "Calling createCaseworkerMessage" must {
     "return CREATED (201) when with valid payload" in new TestCase {
-      private val advisorMessagePayload = Resources.readJson("model/api/adviser-message.json")
-      private val controller = new SecureMessageController(Helpers.stubControllerComponents(), mockAuthConnector, mockSecureMessageService, mockRepository)
+      private val caseworkerMessagePayload = Resources.readJson("model/api/caseworker-message.json")
       private val fakeRequest = FakeRequest(
         method = POST,
-        uri = routes.SecureMessageController.createAdviserMessage("cdcm", "123").url,
+        uri = routes.SecureMessageController.createCaseworkerMessage("cdcm", "123").url,
         headers = FakeHeaders(Seq(CONTENT_TYPE -> JSON)),
-        body = advisorMessagePayload
+        body = caseworkerMessagePayload
       )
-      private val response = controller.createAdviserMessage("cdcm", "123")(fakeRequest)
+      private val response = controller.createCaseworkerMessage("cdcm", "123")(fakeRequest)
       status(response) mustBe CREATED
+    }
+  }
+
+  "Calling createCustomerMessage" must {
+    "return CREATED (201) when a message is successfully added to the conversation" in new TestCase {
+      when(mockAuthConnector.authorise(any[Predicate], any[Retrieval[Enrolments]])(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(
+          Future.successful(
+            Enrolments(
+              Set(
+                uk.gov.hmrc.auth.core.Enrolment(
+                  key = "HMRC-CUS-ORG",
+                  identifiers = Seq(EnrolmentIdentifier("EORINumber", "GB123456789")),
+                  state = "",
+                  None)))))
+      private val fakeRequest = FakeRequest(
+        method = POST,
+        uri = routes.SecureMessageController.createCustomerMessage("cdcm", "D-80542-20201120").url,
+        headers = FakeHeaders(Seq(CONTENT_TYPE -> JSON)),
+        body = Json.obj("content" -> "PGRpdj5IZWxsbzwvZGl2Pg==")
+      )
+      when(mockSecureMessageService.addMessageToConversation(any[String], any[String], any[CustomerMessageRequest], any[Enrolments])(any[ExecutionContext])).thenReturn(Future(()))
+      private val response = controller.createCustomerMessage("cdcm","D-80542-20201120")(fakeRequest)
+      status(response) mustBe CREATED
+    }
+    "return UNAUTHORIZED (401) when the customer is not a conversation participant" in new TestCase {
+      when(
+        mockAuthConnector.authorise(any[Predicate], any[Retrieval[Enrolments]])(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(
+          Future.successful(
+            Enrolments(
+              Set(
+                uk.gov.hmrc.auth.core.Enrolment(
+                  key = "HMRC-CUS-ORG",
+                  identifiers = Seq(EnrolmentIdentifier("EORINumber", "GB123456789")),
+                  state = "",
+                  None)))))
+      private val fakeRequest = FakeRequest(
+        method = POST,
+        uri = routes.SecureMessageController.createCustomerMessage("cdcm", "D-80542-20201120").url,
+        headers = FakeHeaders(Seq(CONTENT_TYPE -> JSON)),
+        body = Json.obj("content" -> "PGRpdj5IZWxsbzwvZGl2Pg==")
+      )
+      when(
+        mockSecureMessageService.addMessageToConversation(any[String], any[String], any[CustomerMessageRequest], any[Enrolments])(any[ExecutionContext]))
+        .thenReturn(Future.failed(AuthorisationException.fromString("InsufficientEnrolments")))
+      private val response = controller.createCustomerMessage("cdcm","D-80542-20201120")(fakeRequest)
+      status(response) mustBe UNAUTHORIZED
+    }
+    "return BAD_REQUEST (400) when the conversation ID is not recognised" in new TestCase {
+      when(mockAuthConnector.authorise(any[Predicate], any[Retrieval[Enrolments]])(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(
+          Future.successful(
+            Enrolments(
+              Set(
+                uk.gov.hmrc.auth.core.Enrolment(
+                  key = "HMRC-CUS-ORG",
+                  identifiers = Seq(EnrolmentIdentifier("EORINumber", "GB123456789")),
+                  state = "",
+                  None)))))
+      private val fakeRequest = FakeRequest(
+        method = POST,
+        uri = routes.SecureMessageController.createCustomerMessage("cdcm", "D-80542-20201120").url,
+        headers = FakeHeaders(Seq(CONTENT_TYPE -> JSON)),
+        body = Json.obj("content" -> "PGRpdj5IZWxsbzwvZGl2Pg==")
+      )
+      when(
+        mockSecureMessageService.addMessageToConversation(any[String], any[String], any[CustomerMessageRequest], any[Enrolments])(any[ExecutionContext]))
+        .thenReturn(Future.failed(new IllegalArgumentException("Conversation ID not known")))
+      private val response = controller.createCustomerMessage("cdcm","D-80542-20201120")(fakeRequest)
+      status(response) mustBe BAD_REQUEST
     }
   }
 
@@ -224,5 +286,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     val mockAuthConnector: AuthConnector = mock[AuthConnector]
     val mockSecureMessageService: SecureMessageService = mock[SecureMessageService]
     when(mockRepository.insertIfUnique(any[Conversation])(any[ExecutionContext])).thenReturn(Future.successful(true))
+    val controller = new SecureMessageController(Helpers.stubControllerComponents(), mockAuthConnector, mockSecureMessageService, mockRepository)
+
   }
 }

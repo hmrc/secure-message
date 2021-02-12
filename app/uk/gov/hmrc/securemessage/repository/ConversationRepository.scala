@@ -16,18 +16,19 @@
 
 package uk.gov.hmrc.securemessage.repository
 
+import cats.implicits.catsSyntaxEq
 import javax.inject.Inject
 import play.api.libs.json.Json.JsValueWrapper
 import play.api.libs.json.{ JsObject, JsString, Json }
 import reactivemongo.api.Cursor
+import reactivemongo.api.Cursor.ErrorHandler
 import reactivemongo.api.indexes.{ Index, IndexType }
 import reactivemongo.bson.BSONObjectID
 import reactivemongo.core.errors.DatabaseException
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.mongo.{ MongoConnector, ReactiveRepository }
-import uk.gov.hmrc.securemessage.controllers.models.generic.Enrolment
-import uk.gov.hmrc.securemessage.models.core.Conversation
-import uk.gov.hmrc.securemessage.models.core.Conversation.conversationFormat
+import uk.gov.hmrc.securemessage.controllers.models.generic.CustomerEnrolment
+import uk.gov.hmrc.securemessage.models.core.{ Conversation, Message, Participants }
 
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -58,7 +59,7 @@ class ConversationRepository @Inject()(implicit connector: MongoConnector)
           Future.successful(false)
       }
 
-  def getConversations(enrolment: Enrolment)(implicit ec: ExecutionContext): Future[List[Conversation]] = {
+  def getConversations(enrolment: CustomerEnrolment)(implicit ec: ExecutionContext): Future[List[Conversation]] = {
     import uk.gov.hmrc.securemessage.models.core.Conversation.conversationFormat
     collection
       .find[JsObject, Conversation](selector = Json.obj(findByEnrolmentQuery(enrolment): _*), None)
@@ -67,19 +68,42 @@ class ConversationRepository @Inject()(implicit connector: MongoConnector)
       .collect[List](-1, Cursor.FailOnError[List[Conversation]]())
   }
 
-  def getConversation(client: String, conversationId: String, enrolment: Enrolment)(
+  def addMessageToConversation(client: String, conversationId: String, message: Message)(
+    implicit ec: ExecutionContext): Future[Unit] =
+    findAndUpdate(
+      query = Json.obj("client" -> client, "conversationId" -> conversationId),
+      update = Json.obj("$push" -> Json.obj("messages" -> message))
+    ).map(_ => ())
+
+  def getConversation(client: String, conversationId: String, enrolment: CustomerEnrolment)(
     implicit ec: ExecutionContext): Future[Option[Conversation]] =
     collection
-      .find(
+      .find[JsObject, Conversation](
         selector = Json.obj("client" -> client, "conversationId" -> conversationId)
           deepMerge Json.obj(findByEnrolmentQuery(enrolment): _*),
         None)
       .one[Conversation]
 
-  private def findByEnrolmentQuery(enrolment: Enrolment): Seq[(String, JsValueWrapper)] =
+  def conversationExists(client: String, conversationId: String)(implicit ec: ExecutionContext): Future[Boolean] =
+    count(query = Json.obj("client" -> client, "conversationId" -> conversationId)).flatMap { count =>
+      if (count === 0) Future(false) else Future(true)
+    }
+
+  def getConversationParticipants(client: String, conversationId: String)(
+    implicit ec: ExecutionContext): Future[Option[Participants]] =
+    collection
+      .find[JsObject, JsObject](
+        selector = Json.obj("client" -> client, "conversationId" -> conversationId),
+        projection = Some(Json.obj("participants" -> 1)))
+      .one[Participants]
+
+  def participantErrorHandler: ErrorHandler[Participants] = Cursor.FailOnError[Participants]()
+
+  private def findByEnrolmentQuery(enrolment: CustomerEnrolment): Seq[(String, JsValueWrapper)] =
     Seq(
       "participants.identifier.name"      -> JsString(enrolment.name),
       "participants.identifier.value"     -> JsString(enrolment.value),
       "participants.identifier.enrolment" -> JsString(enrolment.key)
     )
+
 }

@@ -17,7 +17,8 @@
 package uk.gov.hmrc.securemessage.models.core
 
 import cats.data.NonEmptyList
-import play.api.libs.json.{ Format, Json, JsonValidationError, OFormat, Reads, Writes }
+import play.api.libs.json.{ Json, OFormat }
+import uk.gov.hmrc.securemessage.models.utils.NonEmptyListOps._
 
 final case class Conversation(
   client: String,
@@ -30,29 +31,6 @@ final case class Conversation(
   messages: NonEmptyList[Message]
 )
 
-object NonEmptyListOps {
-
-  implicit def nonEmptyListReads[T: Reads]: Reads[NonEmptyList[T]] =
-    Reads
-      .of[List[T]]
-      .collect(
-        JsonValidationError("expected a NonEmptyList but got an empty list")
-      ) {
-        case head :: tail => NonEmptyList(head, tail)
-      }
-
-  implicit def nonEmptyListWrites[T: Writes]: Writes[NonEmptyList[T]] =
-    Writes
-      .of[List[T]]
-      .contramap(_.toList)
-
-  implicit def nonEmptyListFormat[T: Format]: Format[NonEmptyList[T]] =
-    Format(nonEmptyListReads, nonEmptyListWrites)
-
-}
-
 object Conversation {
-  import NonEmptyListOps.nonEmptyListFormat
-  implicit val conversationFormat: OFormat[Conversation] =
-    Json.format[Conversation]
+  implicit val conversationFormat: OFormat[Conversation] = Json.format[Conversation]
 }
