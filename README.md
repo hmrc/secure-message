@@ -17,6 +17,10 @@ An OpenAPI 3.0 schema is available for the endpoints on this service which can b
 - Schema: https://www.staging.tax.service.gov.uk/secure-messaging/api/schema.json
 - Swagger UI: https://www.staging.tax.service.gov.uk/secure-messaging/docs/swagger-ui/index.html?url=/secure-messaging/api/schema.json
 
+## Run the project locally 
+
+`sbt run "9051 -Dplay.http.router=testOnlyDoNotUseInAppConf.Routes"`
+
 ## Run the tests and sbt fmt before raising a PR
 
 Ensure you have service-manager python environment setup:
@@ -36,6 +40,61 @@ If your build fails due to poor test coverage, *DO NOT* lower the test coverage 
 Then run the integration tests:
 
 `sbt it:test`
+
+## Swagger endpoint
+
+Available locally here: http://localhost:9051/assets/schema.json
+
+## Swagger-UI endpoint
+
+Available locally here: http://localhost:9051/docs/swagger-ui/index.html?url=/assets/schema.json
+
+## Sample data
+
+```json
+{
+    "_id" : ObjectId("6021481d59f23de1fe8389db"),
+    "client" : "cdcm",
+    "conversationId" : "D-80542-20201120",
+    "status" : "open",
+    "subject" : "D-80542-20201120",
+    "language" : "en",
+    "participants" : [ 
+        {
+            "id" : 1,
+            "participantType" : "system",
+            "identifier" : {
+                "name" : "CDCM",
+                "value" : "D-80542-20201120"
+            },
+            "name" : "CDS Exports Team"
+        }, 
+        {
+            "id" : 2,
+            "participantType" : "customer",
+            "identifier" : {
+                "name" : "EORINumber",
+                "value" : "GB1234567890",
+                "enrolment" : "HMRC-CUS-ORG"
+            }
+        }
+    ],
+    "messages" : [ 
+        {
+            "senderId" : 1,
+            "created" : "2021-02-08T14:18:05.986+0000",
+            "readBy" : [],
+            "content" : "QmxhaCBibGFoIGJsYWg="
+        }
+    ]
+}
+```
+
+For more examples of resources which can be inserted in your local mongo database `secure-message`, collection `conversation`, can be found [here](test/resources/model/core)
+
+Alternatively you can create messages locally by using this swagger endpoint:
+
+http://localhost:9051/docs/swagger-ui/index.html?url=/assets/schema.json#/app/createConversation
 
 ## License
 
