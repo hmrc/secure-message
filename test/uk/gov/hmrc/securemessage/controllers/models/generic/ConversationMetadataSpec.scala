@@ -32,13 +32,15 @@ class ConversationMetadataSpec extends PlaySpec {
       val conversationMetadataJson: JsValue = Resources.readJson("model/api/conversation-metadata.json")
       val conversationMetadata: ConversationMetadata = conversationMetadataJson.validate[ConversationMetadata].get
       ConversationMetadata.coreToConversationMetadata(coreConversation, identifier) mustEqual conversationMetadata
-      Json.toJson(conversationMetadata) mustBe Json.parse("""{"client":"cdcm",
-                                                            |"conversationId":"D-80542-20201120",
-                                                            |"subject":"MRN: 19GB4S24GC3PPFGVR7",
-                                                            |"issueDate":"2020-11-10T15:00:18.000+0000",
-                                                            |"senderName":"CDS Exports Team",
-                                                            |"unreadMessages":true,
-                                                            |"count":7}""".stripMargin)
+      Json.toJson(conversationMetadata) mustBe Json.parse("""{
+                                                            |    "client": "cdcm",
+                                                            |    "conversationId": "D-80542-20201120",
+                                                            |    "count": 8,
+                                                            |    "issueDate": "2020-11-10T16:00:00.000+0000",
+                                                            |    "senderName": "James Smith",
+                                                            |    "subject": "MRN: 19GB4S24GC3PPFGVR7",
+                                                            |    "unreadMessages": true
+                                                            |}""".stripMargin)
     }
   }
 }

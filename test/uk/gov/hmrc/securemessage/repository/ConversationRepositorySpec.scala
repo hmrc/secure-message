@@ -23,7 +23,7 @@ import play.api.test.Helpers._
 import uk.gov.hmrc.mongo.MongoSpecSupport
 import uk.gov.hmrc.securemessage.controllers.models.generic.CustomerEnrolment
 import uk.gov.hmrc.securemessage.helpers.ConversationUtil
-import uk.gov.hmrc.securemessage.models.core.{ Message, Reader }
+import uk.gov.hmrc.securemessage.models.core.Message
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -97,7 +97,7 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
       val aConversationId = "D-80542-20201120"
       val conversation = ConversationUtil.getMinimalConversation(aConversationId)
       await(repository.insert(conversation))
-      val message = Message(2, new DateTime(), List.empty[Reader], "test", isForwarded = Some(false))
+      val message = Message(2, new DateTime(), "test", isForwarded = Some(false))
       await(repository.addMessageToConversation("cdcm", aConversationId, message))
       val updated = await(
         repository
@@ -134,6 +134,15 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
       val aConversationId = "D-80542-20201120"
       val exists = await(repository.conversationExists("cdcm", aConversationId))
       exists mustBe false
+    }
+  }
+
+  "Update conversation with new read time" should {
+    "return true when a conversation has been successfully update with a new read time" in {
+      val conversation = ConversationUtil.getFullConversation("123")
+      await(repository.insert(conversation))
+      val result = await(repository.updateConversationWithReadTime("cdcm", "D-80542-20201120", 2, DateTime.now))
+      result mustBe true
     }
   }
 

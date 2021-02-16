@@ -22,7 +22,7 @@ import org.joda.time.DateTime
 import play.api.libs.json.JodaReads.jodaDateReads
 import play.api.libs.json.JodaWrites.jodaDateWrites
 import play.api.libs.json.{ Format, Json, OFormat }
-import uk.gov.hmrc.securemessage.models.core.{ Conversation, Identifier, Message }
+import uk.gov.hmrc.securemessage.models.core.{ Conversation, Identifier, Message, Participant }
 
 final case class ConversationMetadata(
   client: String,
@@ -63,14 +63,19 @@ object ConversationMetadata {
     implicit val eqFoo: Eq[Identifier] = Eq.fromUniversalEquals
     coreConversation.participants
       .find(_.identifier === identifier)
-      .fold(false)(participant => findUnreadMessagesByParticipant(participant.id, coreConversation))
+      .fold(false)(participant => findUnreadMessagesByParticipant(participant, coreConversation))
   }
 
-  private def findUnreadMessagesByParticipant(participantId: Int, coreConversation: Conversation): Boolean = {
-    val messages = coreConversation.messages
-    val messagesReadByParticipant = messages.filter(_.readBy.map(_.id).contains(participantId))
-    messagesReadByParticipant.size =!= messages.size
-  }
+  private def findUnreadMessagesByParticipant(participant: Participant, coreConversation: Conversation): Boolean =
+    participant.readTimes match {
+      case Some(times) =>
+        times
+          .sortBy(_.getMillis)
+          .reverse
+          .headOption
+          .fold(true)(_.getMillis < findLatestMessage(coreConversation).created.getMillis)
+      case _ => true
+    }
 
   private val dateFormatString = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
 
