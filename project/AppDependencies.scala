@@ -26,7 +26,7 @@ object AppDependencies {
     "org.webjars"       % "swagger-ui"                 % "3.43.0",
     "com.beachape"      %% "enumeratum-play-json"      % "1.6.1",
     "com.typesafe.play" %% "play-json-joda"            % "2.9.1",
-    "org.typelevel"     %% "cats-core"                 % "2.4.1"
+    "org.typelevel"     %% "cats-core"                 % "2.4.2"
   )
 
   val test = Seq(
