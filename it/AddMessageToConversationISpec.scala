@@ -14,11 +14,9 @@
  * limitations under the License.
  */
 
-import java.io.File
-
 import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.play.PlaySpec
-import play.api.http.Status.{ BAD_REQUEST, CREATED }
+import play.api.http.Status.CREATED
 import play.api.http.{ ContentTypes, HeaderNames }
 import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
@@ -27,6 +25,7 @@ import uk.gov.hmrc.integration.ServiceSpec
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
 import utils.AuthHelper
 
+import java.io.File
 import scala.concurrent.ExecutionContext
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
@@ -60,7 +59,7 @@ class AddMessageToConversationISpec extends PlaySpec with ServiceSpec with Befor
           .futureValue
       response.status mustBe CREATED
     }
-    "return BAD REQUEST when the conversation ID is not recognised" in {
+    "return NOT FOUND when the conversation ID is not recognised" in {
       val client = "cdcm"
       val conversationId = "D-80542-20201120"
       val response =
@@ -69,7 +68,7 @@ class AddMessageToConversationISpec extends PlaySpec with ServiceSpec with Befor
           .withHttpHeaders(buildEoriToken(VALID_EORI))
           .post(Json.obj("content" -> "PGRpdj5IZWxsbzwvZGl2Pg=="))
           .futureValue
-      response.status mustBe BAD_REQUEST
+      response.status mustBe NOT_FOUND
     }
     "return UNAUTHORIZED when the customer is not a participant" in {
       val client = "cdcm"

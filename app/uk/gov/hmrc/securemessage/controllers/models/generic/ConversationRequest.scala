@@ -87,7 +87,7 @@ final case class ConversationRequest(
     asConversationWithCreatedDate(client, conversationId, now)
 
   def asConversationWithCreatedDate(client: String, conversationId: String, created: DateTime): Conversation = {
-    val initialMessage = Message(1, created, List(Reader(1, created)), message)
+    val initialMessage = Message(1, created, List(Reader(1, created)), message, None)
     val initialParticipants = getSenderParticipant(sender.system) :: getRecipientParticipants(recipients)
     Conversation(
       client,
