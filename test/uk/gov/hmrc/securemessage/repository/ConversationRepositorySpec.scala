@@ -97,7 +97,7 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
       val aConversationId = "D-80542-20201120"
       val conversation = ConversationUtil.getMinimalConversation(aConversationId)
       await(repository.insert(conversation))
-      val message = Message(2, new DateTime(), List.empty[Reader], "test")
+      val message = Message(2, new DateTime(), List.empty[Reader], "test", isForwarded = Some(false))
       await(repository.addMessageToConversation("cdcm", aConversationId, message))
       val updated = await(
         repository
