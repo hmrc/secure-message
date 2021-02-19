@@ -57,7 +57,8 @@ class SecureMessageService @Inject()(conversationRepository: ConversationReposit
       if (exists) {
         getParticipantId(client, conversationId, enrolments).flatMap {
           case Some(id) =>
-            val message = Message(id, new DateTime(), List.empty[Reader], messagesRequest.content)
+            val message =
+              Message(id, new DateTime(), List.empty[Reader], messagesRequest.content, isForwarded = Some(false))
             conversationRepository.addMessageToConversation(client, conversationId, message)
           case _ => Future.failed[Unit](AuthorisationException.fromString("InsufficientEnrolments"))
         }

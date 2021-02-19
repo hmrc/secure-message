@@ -256,7 +256,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       private val response = controller.createCustomerMessage("cdcm","D-80542-20201120")(fakeRequest)
       status(response) mustBe UNAUTHORIZED
     }
-    "return BAD_REQUEST (400) when the conversation ID is not recognised" in new TestCase {
+    "return NOT_FOUND (404) when the conversation ID is not recognised" in new TestCase {
       when(mockAuthConnector.authorise(any[Predicate], any[Retrieval[Enrolments]])(any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(
           Future.successful(
@@ -277,7 +277,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
         mockSecureMessageService.addMessageToConversation(any[String], any[String], any[CustomerMessageRequest], any[Enrolments])(any[ExecutionContext]))
         .thenReturn(Future.failed(new IllegalArgumentException("Conversation ID not known")))
       private val response = controller.createCustomerMessage("cdcm","D-80542-20201120")(fakeRequest)
-      status(response) mustBe BAD_REQUEST
+      status(response) mustBe NOT_FOUND
     }
   }
 

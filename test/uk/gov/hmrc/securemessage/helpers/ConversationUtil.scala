@@ -60,7 +60,8 @@ object ConversationUtil {
           1,
           new DateTime("2020-11-10T15:00:01.000"),
           List(Reader(1, new DateTime("2020-11-10T15:00:01.000"))),
-          "QmxhaCBibGFoIGJsYWg="
+          "QmxhaCBibGFoIGJsYWg=",
+          None
         )
       )
     )
@@ -96,7 +97,8 @@ object ConversationUtil {
           List(
             Reader(1, new DateTime("2020-11-10T15:00:01.000"))
           ),
-          "QmxhaCBibGFoIGJsYWg="
+          "QmxhaCBibGFoIGJsYWg=",
+          None
         )
       )
     )

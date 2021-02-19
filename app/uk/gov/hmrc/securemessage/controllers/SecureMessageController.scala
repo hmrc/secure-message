@@ -63,7 +63,7 @@ class SecureMessageController @Inject()(
           }
         }.recover {
           case ae: AuthorisationException    => Unauthorized(ae.reason)
-          case iae: IllegalArgumentException => BadRequest(iae.getMessage)
+          case iae: IllegalArgumentException => NotFound(iae.getMessage)
         }
       }
   }
