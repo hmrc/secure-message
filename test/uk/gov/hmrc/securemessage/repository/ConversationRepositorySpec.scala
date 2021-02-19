@@ -16,12 +16,14 @@
 
 package uk.gov.hmrc.securemessage.repository
 
+import org.joda.time.DateTime
 import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.play.PlaySpec
 import play.api.test.Helpers._
 import uk.gov.hmrc.mongo.MongoSpecSupport
-import uk.gov.hmrc.securemessage.controllers.models.generic.Enrolment
+import uk.gov.hmrc.securemessage.controllers.models.generic.CustomerEnrolment
 import uk.gov.hmrc.securemessage.helpers.ConversationUtil
+import uk.gov.hmrc.securemessage.models.core.{ Message, Reader }
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -56,14 +58,14 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
       await(repository.insert(conversation1))
       val conversation2 = ConversationUtil.getMinimalConversation("234")
       await(repository.insert(conversation2))
-      val result = await(repository.getConversations(Enrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890")))
+      val result = await(repository.getConversations(CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890")))
       result.size mustBe 2
     }
   }
 
   "No conversations" should {
     "be returned if the enrolment is not participating in any" in {
-      val result = await(repository.getConversations(Enrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890")))
+      val result = await(repository.getConversations(CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890")))
       result.size mustBe 0
     }
   }
@@ -73,7 +75,8 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
       val conversation = ConversationUtil.getMinimalConversation("123")
       await(repository.insert(conversation))
       val result =
-        await(repository.getConversation("cdcm", "123", Enrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890")))
+        await(
+          repository.getConversation("cdcm", "123", CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890")))
       result.size mustBe 1
     }
   }
@@ -83,8 +86,54 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
       val conversation = ConversationUtil.getMinimalConversation("123")
       await(repository.insert(conversation))
       val result = await(
-        repository.getConversation("cdcm", "D-80542-20201120", Enrolment("HMRC-CUS-ORF", "EORINumber", "GB1234567890")))
+        repository
+          .getConversation("cdcm", "D-80542-20201120", CustomerEnrolment("HMRC-CUS-ORF", "EORINumber", "GB1234567890")))
       result.size mustBe 0
+    }
+  }
+
+  "Adding a message to conversation" must {
+    "increase the message array size" in {
+      val aConversationId = "D-80542-20201120"
+      val conversation = ConversationUtil.getMinimalConversation(aConversationId)
+      await(repository.insert(conversation))
+      val message = Message(2, new DateTime(), List.empty[Reader], "test")
+      await(repository.addMessageToConversation("cdcm", aConversationId, message))
+      val updated = await(
+        repository
+          .getConversation("cdcm", aConversationId, CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890")))
+      updated match {
+        case Some(c) => c.messages.size mustBe 2
+        case _       => fail("No conversation found")
+      }
+    }
+  }
+
+  "Getting the participants from a conversation" must {
+    "return the correct number of participants" in {
+      val aConversationId = "D-80542-20201120"
+      val conversation = ConversationUtil.getMinimalConversation(aConversationId)
+      await(repository.insert(conversation))
+      val participants = await(repository.getConversationParticipants("cdcm", aConversationId))
+      participants match {
+        case Some(p) => p.participants.size mustBe 2
+        case _       => fail("No participants found")
+      }
+    }
+  }
+
+  "Checking if a conversation ID exists" must {
+    "return true when it does" in {
+      val aConversationId = "D-80542-20201120"
+      val conversation = ConversationUtil.getMinimalConversation(aConversationId)
+      await(repository.insert(conversation))
+      val exists = await(repository.conversationExists("cdcm", aConversationId))
+      exists mustBe true
+    }
+    "return false when it does not" in {
+      val aConversationId = "D-80542-20201120"
+      val exists = await(repository.conversationExists("cdcm", aConversationId))
+      exists mustBe false
     }
   }
 

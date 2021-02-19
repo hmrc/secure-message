@@ -1,5 +1,5 @@
 ###
-# summary: create a conversation
+# summary: Creates a conversation (can only be done by a caseworker)
 # requestBody:
 #   description: A JSON object to create a new conversation
 #   required: true
@@ -24,14 +24,14 @@
 PUT         /conversation/:client/:conversationId                                     uk.gov.hmrc.securemessage.controllers.SecureMessageController.createConversation(client: String, conversationId: String)
 
 ###
-# summary: create a message
+# summary: Adds a message from a caseworker to a conversation
 # requestBody:
-#   description: A JSON object to create a new advisor message
+#   description: A JSON object to create a new caseworker message
 #   required: true
 #   content:
 #    application/json:
 #      schema:
-#        $ref: '#/components/schemas/uk.gov.hmrc.securemessage.controllers.models.generic.AdviserMessageRequest'
+#        $ref: '#/components/schemas/uk.gov.hmrc.securemessage.controllers.models.generic.CaseworkerMessageRequest'
 # responses:
 #   201:
 #     description: message created successfully
@@ -44,10 +44,31 @@ PUT         /conversation/:client/:conversationId                               
 #   424:
 #     description: a dependency failed - e.g. client not recognised
 ###
-POST        /conversation/:client/:conversationId/adviser-message                     uk.gov.hmrc.securemessage.controllers.SecureMessageController.createAdviserMessage(client: String, conversationId: String)
+POST        /conversation/:client/:conversationId/caseworker-message                  uk.gov.hmrc.securemessage.controllers.SecureMessageController.createCaseworkerMessage(client: String, conversationId: String)
 
 ###
-# summary: Get's a list of conversations via EORI enrolment
+# summary: Adds a message from a customer to a conversation
+# security:
+#   - bearerToken: []
+# requestBody:
+#   description: A JSON object to create a new customer message
+#   required: true
+#   content:
+#    application/json:
+#      schema:
+#        $ref: '#/components/schemas/uk.gov.hmrc.securemessage.controllers.models.generic.CustomerMessageRequest'
+# responses:
+#   201:
+#     description: message created successfully
+#   400:
+#     description: bad request such as invalid payload or conversation ID not recognised
+#   401:
+#     description: user is not authorised to add a message
+###
+POST        /conversation/:client/:conversationId/customer-message                    uk.gov.hmrc.securemessage.controllers.SecureMessageController.createCustomerMessage(client: String, conversationId: String)
+
+###
+# summary: Gets a list of conversations via EORI enrolment
 # security:
 #   - bearerToken: []
 # responses:
@@ -59,7 +80,7 @@ POST        /conversation/:client/:conversationId/adviser-message               
 GET         /conversations/:enrolmentKey/:enrolmentName                               uk.gov.hmrc.securemessage.controllers.SecureMessageController.getMetadataForConversations(enrolmentKey: String, enrolmentName: String)
 
 ###
-# summary: Get's a conversation via client ID and conversation ID
+# summary: Gets a conversation via client ID and conversation ID
 # security:
 #   - bearerToken: []
 # responses:

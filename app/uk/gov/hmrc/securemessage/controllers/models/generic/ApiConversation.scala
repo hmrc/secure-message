@@ -35,7 +35,7 @@ final case class ApiConversation(
 
 object ApiConversation {
 
-  import NonEmptyListOps.nonEmptyListWrites
+  import uk.gov.hmrc.securemessage.models.utils.NonEmptyListOps.nonEmptyListWrites
 
   def coreConversationToApiConversation(conversation: Conversation, identifier: Identifier): ApiConversation =
     ApiConversation(

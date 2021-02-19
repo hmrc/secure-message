@@ -14,27 +14,30 @@
  * limitations under the License.
  */
 
+package uk.gov.hmrc.securemessage.services
+
 import akka.stream.Materializer
 import cats.data.NonEmptyList
 import org.joda.time.DateTime
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.when
+import org.mockito.Mockito.{times, verify, when}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.test.Helpers._
 import play.api.test.NoMaterializer
+import uk.gov.hmrc.auth.core.{AuthorisationException, Enrolment, EnrolmentIdentifier, Enrolments}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.securemessage.controllers.models.generic
-import uk.gov.hmrc.securemessage.controllers.models.generic.{ ApiConversation, ApiMessage, ConversationMetadata, Enrolment }
+import uk.gov.hmrc.securemessage.controllers.models.generic._
 import uk.gov.hmrc.securemessage.helpers.ConversationUtil
 import uk.gov.hmrc.securemessage.models.core.ConversationStatus.Open
 import uk.gov.hmrc.securemessage.models.core.Language.English
+import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
-import uk.gov.hmrc.securemessage.services.SecureMessageService
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.{ExecutionContext, Future}
 
 @SuppressWarnings(Array("org.wartremover.warts.All"))
 class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar {
@@ -44,14 +47,13 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
-  "getConversations" should {
+  "getConversations" must {
 
     "return a list of ConversationMetaData" in new TestCase {
-      private val service = new SecureMessageService(mockRepository)
-      val listOfCoreConversation = List(ConversationUtil.getFullConversation("D-80542-20201120"))
-      when(mockRepository.getConversations(any[generic.Enrolment])(any[ExecutionContext]))
+      private val listOfCoreConversation = List(ConversationUtil.getFullConversation("D-80542-20201120"))
+      when(mockRepository.getConversations(any[generic.CustomerEnrolment])(any[ExecutionContext]))
         .thenReturn(Future.successful(listOfCoreConversation))
-      val result = await(service.getConversations(Enrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777")))
+      private val result = await(service.getConversations(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777")))
       result mustBe
         List(
           ConversationMetadata(
@@ -60,19 +62,18 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
             "MRN: 19GB4S24GC3PPFGVR7",
             DateTime.parse("2020-11-10T15:00:01.000"),
             Some("CDS Exports Team"),
-            false,
+            unreadMessages = false,
             1))
     }
   }
 
-  "getConversation" should {
+  "getConversation" must {
 
     "return a Some with ApiConversation" in new TestCase {
-      private val service = new SecureMessageService(mockRepository)
-      when(mockRepository.getConversation(any[String], any[String], any[generic.Enrolment])(any[ExecutionContext]))
+      when(mockRepository.getConversation(any[String], any[String], any[generic.CustomerEnrolment])(any[ExecutionContext]))
         .thenReturn(Future.successful(Some(ConversationUtil.getFullConversation("D-80542-20201120"))))
-      val result = await(
-        service.getConversation("cdcm", "D-80542-20201120", Enrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777")))
+      private val result = await(
+        service.getConversation("cdcm", "D-80542-20201120", CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777")))
       result mustBe Some(
         ApiConversation(
           "cdcm",
@@ -92,16 +93,57 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
     }
 
     "return a None" in new TestCase {
-      private val service = new SecureMessageService(mockRepository)
-      when(mockRepository.getConversation(any[String], any[String], any[generic.Enrolment])(any[ExecutionContext]))
+      when(mockRepository.getConversation(any[String], any[String], any[generic.CustomerEnrolment])(any[ExecutionContext]))
         .thenReturn(Future.successful(None))
-      val result = await(
-        service.getConversation("cdcm", "D-80542-20201120", Enrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777")))
+      private val result = await(
+        service.getConversation("cdcm", "D-80542-20201120", CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777")))
       result mustBe None
     }
   }
 
+  "Adding a message to a conversation" must {
+
+    "update the database when the customer has a participating enrolment" in new TestCase {
+      private val customerMessage = CustomerMessageRequest("PGRpdj5IZWxsbzwvZGl2Pg==")
+      private val mockEnrolments = mock[Enrolments]
+      when(mockRepository.conversationExists(any[String], any[String])(any[ExecutionContext])).thenReturn(Future(true))
+      when(mockEnrolments.enrolments).thenReturn(Set(Enrolment("HMRC-CUS-ORG",Seq(EnrolmentIdentifier("EORINumber","GB123456789000000")),"")))
+      when(mockRepository.getConversationParticipants(any[String], any[String])(any[ExecutionContext])).thenReturn(
+        Future(Some(Participants(
+          NonEmptyList.one(Participant(1, ParticipantType.Customer, Identifier("EORINumber", "GB123456789000000", Some("HMRC-CUS-ORG")), None, None, None))))))
+      when(mockRepository.addMessageToConversation(any[String],any[String],any[Message])(any[ExecutionContext])).thenReturn(Future.successful(()))
+      await(service.addMessageToConversation("cdcm", "D-80542-20201120", customerMessage, mockEnrolments))
+      verify(mockRepository, times(1)).addMessageToConversation(any[String], any[String], any[Message])(any[ExecutionContext])
+    }
+
+    "throw an AuthorisationException if the customer does not have a participating enrolment" in new TestCase {
+      private val customerMessage = CustomerMessageRequest("PGRpdj5IZWxsbzwvZGl2Pg==")
+      private val mockEnrolments = mock[Enrolments]
+      when(mockRepository.conversationExists(any[String],any[String])(any[ExecutionContext])).thenReturn(Future.successful(true))
+      when(mockEnrolments.enrolments).thenReturn(Set(Enrolment("HMRC-CUS-ORG",Seq(EnrolmentIdentifier("EORINumber","GB123456789000001")),"")))
+      when(mockRepository.getConversationParticipants(any[String], any[String])(any[ExecutionContext])).thenReturn(
+        Future(Some(Participants(
+          NonEmptyList.one(Participant(1, ParticipantType.Customer, Identifier("EORINumber", "GB123456789000000",
+              Some("HMRC-CUS-ORG")), None, None, None))))))
+      assertThrows[AuthorisationException]{
+        await(service.addMessageToConversation("cdcm", "D-80542-20201120", customerMessage, mockEnrolments))
+      }
+    }
+
+    "throw an IllegalArgumentException if the conversation ID is not found" in new TestCase {
+      private val customerMessage = CustomerMessageRequest("PGRpdj5IZWxsbzwvZGl2Pg==")
+      private val mockEnrolments = mock[Enrolments]
+      when(mockRepository.conversationExists(any[String],any[String])(any[ExecutionContext])).thenReturn(Future.successful(false))
+      assertThrows[IllegalArgumentException]{
+        await(service.addMessageToConversation("cdcm", "D-80542-20201120", customerMessage, mockEnrolments))
+      }
+    }
+
+  }
+
   trait TestCase {
     val mockRepository: ConversationRepository = mock[ConversationRepository]
+    val service: SecureMessageService = new SecureMessageService(mockRepository)
+
   }
 }

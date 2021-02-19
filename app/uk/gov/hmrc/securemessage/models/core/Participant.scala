@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.securemessage.models.core
 
+import cats.data.NonEmptyList
 import play.api.libs.json.{ Format, Json }
 
 final case class Participant(
@@ -27,4 +28,11 @@ final case class Participant(
   parameters: Option[Map[String, String]])
 object Participant {
   implicit val participantFormat: Format[Participant] = Json.format[Participant]
+}
+
+final case class Participants(participants: NonEmptyList[Participant])
+object Participants {
+  import uk.gov.hmrc.securemessage.models.utils.NonEmptyListOps._
+  implicit val participantsFormat: Format[Participants] = Json.format[Participants]
+
 }
