@@ -25,7 +25,7 @@ class EnrolmentHelperSpec extends PlaySpec {
 
   "findEoriEnrolment" must {
     "returns a specific enrolment found within a list of enrolments designated by it's key and name" in {
-      val expectedEnrolment = generic.Enrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789")
+      val expectedEnrolment = generic.CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789")
       val enrolments = Enrolments(
         Set(
           uk.gov.hmrc.auth.core.Enrolment(
@@ -37,7 +37,7 @@ class EnrolmentHelperSpec extends PlaySpec {
     }
 
     "returns a specific enrolment found within a list of enrolments designated by it's key and name in a case-insensitive manner" in {
-      val expectedEnrolment = generic.Enrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789")
+      val expectedEnrolment = generic.CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789")
       val enrolments = Enrolments(
         Set(
           uk.gov.hmrc.auth.core.Enrolment(

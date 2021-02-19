@@ -29,10 +29,10 @@ object Alert {
     Json.reads[Alert]
 }
 
-final case class Enrolment(key: String, name: String, value: String)
-object Enrolment {
-  implicit val enrolmentReads: Reads[Enrolment] =
-    Json.reads[Enrolment]
+final case class CustomerEnrolment(key: String, name: String, value: String)
+object CustomerEnrolment {
+  implicit val enrolmentReads: Reads[CustomerEnrolment] =
+    Json.reads[CustomerEnrolment]
 }
 
 final case class SystemIdentifier(name: String, value: String)
@@ -52,7 +52,7 @@ object System {
   ).apply(System.apply _)
 }
 
-final case class Customer(enrolment: Enrolment, name: Option[String], email: Option[String])
+final case class Customer(enrolment: CustomerEnrolment, name: Option[String], email: Option[String])
 object Customer {
   implicit val customerReads: Reads[Customer] =
     Json.reads[Customer]
@@ -129,7 +129,7 @@ final case class ConversationRequest(
         None)
     }
 
-  private def getCustomerIdentifier(enrolment: Enrolment): Identifier =
+  private def getCustomerIdentifier(enrolment: CustomerEnrolment): Identifier =
     Identifier(enrolment.name, enrolment.value, Some(enrolment.key))
 
 }

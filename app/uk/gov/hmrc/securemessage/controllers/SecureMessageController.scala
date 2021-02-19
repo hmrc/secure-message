@@ -22,7 +22,7 @@ import play.api.mvc.{ Action, AnyContent, ControllerComponents }
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.securemessage.controllers.models.generic.{ AdviserMessageRequest, ConversationRequest }
+import uk.gov.hmrc.securemessage.controllers.models.generic.{ CaseworkerMessageRequest, ConversationRequest, CustomerMessageRequest }
 import uk.gov.hmrc.securemessage.controllers.utils.EnrolmentHelper._
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
 import uk.gov.hmrc.securemessage.services.SecureMessageService
@@ -46,10 +46,25 @@ class SecureMessageController @Inject()(
       }
   }
 
-  def createAdviserMessage(client: String, conversationId: String): Action[JsValue] = Action.async(parse.json) {
+  def createCaseworkerMessage(client: String, conversationId: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
-      withJsonBody[AdviserMessageRequest] { _ =>
+      withJsonBody[CaseworkerMessageRequest] { _ =>
         Future.successful(Created(s"Created for client $client and conversationId $conversationId"))
+      }
+
+  }
+
+  def createCustomerMessage(client: String, conversationId: String): Action[JsValue] = Action.async(parse.json) {
+    implicit request =>
+      authorised().retrieve(Retrievals.allEnrolments) { enrolments: Enrolments =>
+        withJsonBody[CustomerMessageRequest] { message =>
+          secureMessageService.addMessageToConversation(client, conversationId, message, enrolments).map { _ =>
+            Created(s"Created for client $client and conversationId $conversationId")
+          }
+        }.recover {
+          case ae: AuthorisationException    => Unauthorized(ae.reason)
+          case iae: IllegalArgumentException => BadRequest(iae.getMessage)
+        }
       }
   }
 

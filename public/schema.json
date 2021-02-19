@@ -1,50 +1,13 @@
 {
   "components" : {
     "schemas" : {
-      "uk.gov.hmrc.securemessage.controllers.models.generic.AdviserMessageRequest.SystemIdentifier" : {
+      "uk.gov.hmrc.securemessage.controllers.models.generic.CustomerMessageRequest" : {
         "properties" : {
-          "name" : {
-            "type" : "string"
-          },
-          "value" : {
-            "type" : "string"
-          }
-        },
-        "required" : [ "name", "value" ]
-      },
-      "uk.gov.hmrc.securemessage.controllers.models.generic.AdviserMessageRequest.System" : {
-        "properties" : {
-          "identifier" : {
-            "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.controllers.models.generic.AdviserMessageRequest.SystemIdentifier"
-          },
-          "parameters" : {
-            "nullable" : true,
-            "type" : "object",
-            "additionalProperties" : {
-              "type" : "string"
-            }
-          }
-        },
-        "required" : [ "identifier" ]
-      },
-      "uk.gov.hmrc.securemessage.controllers.models.generic.AdviserMessageRequest.Sender" : {
-        "properties" : {
-          "system" : {
-            "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.controllers.models.generic.AdviserMessageRequest.System"
-          }
-        },
-        "required" : [ "system" ]
-      },
-      "uk.gov.hmrc.securemessage.controllers.models.generic.AdviserMessageRequest" : {
-        "properties" : {
-          "sender" : {
-            "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.controllers.models.generic.AdviserMessageRequest.Sender"
-          },
           "content" : {
             "type" : "string"
           }
         },
-        "required" : [ "sender", "content" ]
+        "required" : [ "content" ]
       },
       "uk.gov.hmrc.securemessage.controllers.models.generic.Alert" : {
         "properties" : {
@@ -61,7 +24,7 @@
         },
         "required" : [ "templateId" ]
       },
-      "uk.gov.hmrc.securemessage.controllers.models.generic.Enrolment" : {
+      "uk.gov.hmrc.securemessage.controllers.models.generic.CustomerEnrolment" : {
         "properties" : {
           "key" : {
             "type" : "string"
@@ -78,7 +41,7 @@
       "uk.gov.hmrc.securemessage.controllers.models.generic.Customer" : {
         "properties" : {
           "enrolment" : {
-            "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.controllers.models.generic.Enrolment"
+            "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.controllers.models.generic.CustomerEnrolment"
           },
           "name" : {
             "type" : "string",
@@ -169,6 +132,44 @@
           }
         },
         "required" : [ "sender", "recipients", "alert", "subject", "message" ]
+      },
+      "uk.gov.hmrc.securemessage.controllers.models.generic.CaseworkerMessageRequest.SystemIdentifier" : {
+        "properties" : {
+          "name" : {
+            "type" : "string"
+          },
+          "value" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "name", "value" ]
+      },
+      "uk.gov.hmrc.securemessage.controllers.models.generic.CaseworkerMessageRequest.System" : {
+        "properties" : {
+          "identifier" : {
+            "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.controllers.models.generic.CaseworkerMessageRequest.SystemIdentifier"
+          }
+        },
+        "required" : [ "identifier" ]
+      },
+      "uk.gov.hmrc.securemessage.controllers.models.generic.CaseworkerMessageRequest.Sender" : {
+        "properties" : {
+          "system" : {
+            "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.controllers.models.generic.CaseworkerMessageRequest.System"
+          }
+        },
+        "required" : [ "system" ]
+      },
+      "uk.gov.hmrc.securemessage.controllers.models.generic.CaseworkerMessageRequest" : {
+        "properties" : {
+          "sender" : {
+            "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.controllers.models.generic.CaseworkerMessageRequest.Sender"
+          },
+          "content" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "sender", "content" ]
       }
     },
     "securitySchemes" : {
@@ -184,7 +185,7 @@
       "put" : {
         "operationId" : "createConversation",
         "tags" : [ "app" ],
-        "summary" : "create a conversation",
+        "summary" : "Creates a conversation (can only be done by a caseworker)",
         "requestBody" : {
           "description" : "A JSON object to create a new conversation",
           "required" : true,
@@ -233,18 +234,18 @@
         } ]
       }
     },
-    "/secure-messaging/conversation/{client}/{conversationId}/adviser-message" : {
+    "/secure-messaging/conversation/{client}/{conversationId}/caseworker-message" : {
       "post" : {
-        "operationId" : "createAdviserMessage",
+        "operationId" : "createCaseworkerMessage",
         "tags" : [ "app" ],
-        "summary" : "create a message",
+        "summary" : "Adds a message from a caseworker to a conversation",
         "requestBody" : {
-          "description" : "A JSON object to create a new advisor message",
+          "description" : "A JSON object to create a new caseworker message",
           "required" : true,
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.controllers.models.generic.AdviserMessageRequest"
+                "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.controllers.models.generic.CaseworkerMessageRequest"
               }
             }
           }
@@ -283,11 +284,58 @@
         } ]
       }
     },
+    "/secure-messaging/conversation/{client}/{conversationId}/customer-message" : {
+      "post" : {
+        "operationId" : "createCustomerMessage",
+        "tags" : [ "app" ],
+        "summary" : "Adds a message from a customer to a conversation",
+        "security" : [ {
+          "bearerToken" : [ ]
+        } ],
+        "requestBody" : {
+          "description" : "A JSON object to create a new customer message",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.controllers.models.generic.CustomerMessageRequest"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "201" : {
+            "description" : "message created successfully"
+          },
+          "400" : {
+            "description" : "bad request such as invalid payload or conversation ID not recognised"
+          },
+          "401" : {
+            "description" : "user is not authorised to add a message"
+          }
+        },
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "client",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : true
+        }, {
+          "in" : "path",
+          "name" : "conversationId",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : true
+        } ]
+      }
+    },
     "/secure-messaging/conversations/{enrolmentKey}/{enrolmentName}" : {
       "get" : {
         "operationId" : "getMetadataForConversations",
         "tags" : [ "app" ],
-        "summary" : "Get's a list of conversations via EORI enrolment",
+        "summary" : "Gets a list of conversations via EORI enrolment",
         "security" : [ {
           "bearerToken" : [ ]
         } ],
@@ -320,7 +368,7 @@
       "get" : {
         "operationId" : "getConversationContent",
         "tags" : [ "app" ],
-        "summary" : "Get's a conversation via client ID and conversation ID",
+        "summary" : "Gets a conversation via client ID and conversation ID",
         "security" : [ {
           "bearerToken" : [ ]
         } ],
@@ -370,7 +418,7 @@
   "produces" : [ "application/json" ],
   "info" : {
     "title" : "Secure Message API",
-    "version" : "0.29.0-SNAPSHOT"
+    "version" : "0.35.0-SNAPSHOT"
   },
   "consumes" : [ "application/json" ],
   "tags" : [ {

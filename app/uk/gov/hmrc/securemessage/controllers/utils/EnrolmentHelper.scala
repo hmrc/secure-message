@@ -17,14 +17,15 @@
 package uk.gov.hmrc.securemessage.controllers.utils
 
 import uk.gov.hmrc.auth.core.Enrolments
-import uk.gov.hmrc.securemessage.controllers.models.generic.Enrolment
+import uk.gov.hmrc.securemessage.controllers.models.generic.CustomerEnrolment
 
 object EnrolmentHelper {
 
-  def findEnrolment(enrolments: Enrolments, enrolmentKey: String, enrolmentName: String): Option[Enrolment] =
+  def findEnrolment(enrolments: Enrolments, enrolmentKey: String, enrolmentName: String): Option[CustomerEnrolment] =
     enrolments.getEnrolment(enrolmentKey).flatMap { eoriEnrolment =>
       eoriEnrolment
         .getIdentifier(enrolmentName)
-        .map(enrolmentIdentifier => Enrolment(eoriEnrolment.key, enrolmentIdentifier.key, enrolmentIdentifier.value))
+        .map(enrolmentIdentifier =>
+          CustomerEnrolment(eoriEnrolment.key, enrolmentIdentifier.key, enrolmentIdentifier.value))
     }
 }
