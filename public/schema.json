@@ -170,6 +170,15 @@
           }
         },
         "required" : [ "sender", "content" ]
+      },
+      "uk.gov.hmrc.securemessage.controllers.models.generic.ReadTime" : {
+        "properties" : {
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        },
+        "required" : [ "timestamp" ]
       }
     },
     "securitySchemes" : {
@@ -413,14 +422,53 @@
           "required" : true
         } ]
       }
+    },
+    "/secure-messaging/conversation/{client}/{conversationId}/read-time" : {
+      "post" : {
+        "operationId" : "addCustomerReadTime",
+        "tags" : [ "app" ],
+        "summary" : "Adds a date and time that a participant read the conversation",
+        "security" : [ {
+          "bearerToken" : [ ]
+        } ],
+        "requestBody" : {
+          "description" : "A JSON object to create a new customer message",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.controllers.models.generic.ReadTime"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "201" : {
+            "description" : "read date and time successfully added"
+          }
+        },
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "client",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : true
+        }, {
+          "in" : "path",
+          "name" : "conversationId",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : true
+        } ]
+      }
     }
   },
-  "produces" : [ "application/json" ],
   "info" : {
     "title" : "Secure Message API",
-    "version" : "0.36.0-SNAPSHOT"
+    "version" : "0.37.0-SNAPSHOT"
   },
-  "consumes" : [ "application/json" ],
   "tags" : [ {
     "name" : "app"
   } ]

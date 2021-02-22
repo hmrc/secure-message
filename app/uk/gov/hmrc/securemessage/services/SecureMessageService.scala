@@ -58,7 +58,7 @@ class SecureMessageService @Inject()(conversationRepository: ConversationReposit
         getParticipantId(client, conversationId, enrolments).flatMap {
           case Some(id) =>
             val message =
-              Message(id, new DateTime(), List.empty[Reader], messagesRequest.content, isForwarded = Some(false))
+              Message(id, new DateTime(), messagesRequest.content, isForwarded = Some(false))
             conversationRepository.addMessageToConversation(client, conversationId, message)
           case _ => Future.failed[Unit](AuthorisationException.fromString("InsufficientEnrolments"))
         }
@@ -71,6 +71,13 @@ class SecureMessageService @Inject()(conversationRepository: ConversationReposit
     val participantIdentifiers = getIdentifiersFromParticipants(participants).toList
     getIdentifiersFromEnrolments(enrolments).intersect(participantIdentifiers).headOption
   }
+  def updateReadTime(client: String, conversationId: String, enrolments: Enrolments, readTime: DateTime)(
+    implicit ec: ExecutionContext): Future[Boolean] =
+    getParticipantId(client, conversationId, enrolments).flatMap {
+      case Some(id) =>
+        conversationRepository.updateConversationWithReadTime(client, conversationId, id, readTime)
+      case _ => Future.successful(false)
+    }
 
   private def getIdentifiersFromEnrolments(enrolments: Enrolments): List[Identifier] =
     enrolments.enrolments

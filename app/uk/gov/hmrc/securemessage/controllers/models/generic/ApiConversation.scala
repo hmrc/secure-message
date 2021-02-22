@@ -22,6 +22,7 @@ import cats.kernel.Eq
 import org.joda.time.DateTime
 import play.api.libs.json.{ Json, Writes }
 import uk.gov.hmrc.securemessage.models.core.{ Identifier, _ }
+import uk.gov.hmrc.securemessage.models.utils.NonEmptyListOps.nonEmptyListWrites
 
 final case class ApiConversation(
   client: String,
@@ -34,8 +35,6 @@ final case class ApiConversation(
 )
 
 object ApiConversation {
-
-  import uk.gov.hmrc.securemessage.models.utils.NonEmptyListOps.nonEmptyListWrites
 
   def coreConversationToApiConversation(conversation: Conversation, identifier: Identifier): ApiConversation =
     ApiConversation(
@@ -55,55 +54,57 @@ object ApiConversation {
     val sender: Option[Participant] = findParticipantViaId(coreConversation, message.senderId)
     val reader: Option[Participant] = findParticipantViaIdentifier(coreConversation, identifier)
     (sender, reader) match {
+      // you're the sender
       case (Some(participantSender), Some(participantReader)) if participantSender.id === participantReader.id =>
         ApiMessage(None, Some(message.created), None, None, message.content)
-      case (Some(participantSender), Some(participantReader)) if firstReader(message, participantReader) =>
+      // not the sender, but am the first reader
+      case (Some(participantSender), Some(participantReader))
+          if isFirstReader(participantReader, message, coreConversation) =>
         ApiMessage(
           Some(SenderInformation(participantSender.name, message.created)),
           None,
-          isMessageRead(coreConversation, message, identifier),
+          readTime(coreConversation, message),
           None,
           message.content
         )
+      // not the sender, and not the first reader
       case (Some(participantSender), Some(_)) =>
         ApiMessage(
           Some(SenderInformation(participantSender.name, message.created)),
           None,
-          isMessageRead(coreConversation, message, identifier),
-          notFirstReader(coreConversation, message),
+          readTime(coreConversation, message),
+          getFirstReaderDetails(coreConversation, message),
           message.content
         )
       case (_, _) => ApiMessage(None, None, None, None, message.content)
     }
   }
 
-  private def firstReader(message: Message, participant: Participant): Boolean =
-    message.readBy.sortWith(_.readDate.getMillis > _.readDate.getMillis).headOption match {
-      case Some(reader) => reader.id === participant.id
-      case None         => true
+  private def findFirstReaderDetails(message: Message, coreConversation: Conversation): Option[(DateTime, Int)] = {
+    val messageCreated = message.created.getMillis
+    getReadTimesWithId(coreConversation.participants)
+      .filter(_._2 =!= message.senderId)
+      .sortBy(_._1.getMillis)
+      .filter(_._1.getMillis > messageCreated)
+      .headOption
+  }
+
+  def isFirstReader(readerParticipant: Participant, message: Message, coreConversation: Conversation): Boolean =
+    findFirstReaderDetails(message, coreConversation) match {
+      case Some(details) => details._2 === readerParticipant.id
+      case _             => false
     }
 
-  private def notFirstReader(coreConversation: Conversation, message: Message): Option[FirstReaderInformation] =
-    message.readBy.sortWith(_.readDate.getMillis > _.readDate.getMillis).headOption.flatMap { reader =>
-      findParticipantViaId(coreConversation, reader.id).map { participant =>
-        FirstReaderInformation(participant.name, reader.readDate)
+  private def getFirstReaderDetails(coreConversation: Conversation, message: Message): Option[FirstReaderInformation] =
+    findFirstReaderDetails(message, coreConversation).flatMap { details =>
+      findParticipantViaId(coreConversation, details._2).map { participantDetails =>
+        FirstReaderInformation(participantDetails.name, details._1)
       }
     }
 
-  private def isMessageRead(
-    coreConversation: Conversation,
-    message: Message,
-    identifier: Identifier): Option[DateTime] =
-    checkAlreadyReadMessage(coreConversation, message, identifier).map { reader =>
-      reader.readDate
-    }
-
-  private def checkAlreadyReadMessage(
-    coreConversation: Conversation,
-    message: Message,
-    identifier: Identifier): Option[Reader] =
-    findParticipantViaIdentifier(coreConversation, identifier).flatMap { participant =>
-      message.readBy.find(_.id === participant.id)
+  private def readTime(coreConversation: Conversation, message: Message): Option[DateTime] =
+    findFirstReaderDetails(message, coreConversation).map { details =>
+      details._1
     }
 
   private def findParticipantViaId(coreConversation: Conversation, id: Int): Option[Participant] =
@@ -118,8 +119,16 @@ object ApiConversation {
       .find(_.identifier === identifier)
   }
 
-  implicit val languageWrites: Writes[Language] = Language.languageWrites
+  def getReadTimesWithId(
+    participants: List[Participant]
+  ): List[(DateTime, Int)] =
+    participants.flatMap(part =>
+      part.readTimes match {
+        case Some(times) => times.map(rt => rt -> part.id)
+        case _           => List()
+    })
 
+  implicit val languageWrites: Writes[Language] = Language.languageWrites
   implicit val conversationFormat: Writes[ApiConversation] =
     Json.writes[ApiConversation]
 }

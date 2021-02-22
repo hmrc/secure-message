@@ -92,3 +92,22 @@ GET         /conversations/:enrolmentKey/:enrolmentName                         
 #     description: conversation not found
 ###
 GET         /conversation/:client/:conversationId/:enrolmentKey/:enrolmentName        uk.gov.hmrc.securemessage.controllers.SecureMessageController.getConversationContent(client: String, conversationId: String, enrolmentKey: String, enrolmentName: String)
+
+###
+# summary: Adds a date and time that a participant read the conversation
+# security:
+#   - bearerToken: []
+# requestBody:
+#   description: A JSON object to create a new customer message
+#   required: true
+#   content:
+#    application/json:
+#      schema:
+#        $ref: '#/components/schemas/uk.gov.hmrc.securemessage.controllers.models.generic.ReadTime'
+# responses:
+#   201:
+#     description: read date and time successfully added
+#   400:
+#     description: issue with updating read time
+###
+POST        /conversation/:client/:conversationId/read-time                           uk.gov.hmrc.securemessage.controllers.SecureMessageController.addCustomerReadTime(client: String, conversationId: String)

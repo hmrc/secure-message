@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.securemessage.models.core
+package uk.gov.hmrc.securemessage.controllers.models.generic
 
 import org.joda.time.DateTime
 import play.api.libs.json.JodaReads.jodaDateReads
 import play.api.libs.json.JodaWrites.jodaDateWrites
-import play.api.libs.json.{ Format, Json }
+import play.api.libs.json.{ Format, Json, OFormat }
 
-final case class Reader(id: Int, readDate: DateTime)
-object Reader {
+final case class ReadTime(timestamp: DateTime)
+case object ReadTime {
 
   private val dateFormatString = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
 
   implicit val dateFormat: Format[DateTime] =
     Format(jodaDateReads(dateFormatString), jodaDateWrites(dateFormatString))
 
-  implicit val readerFormat: Format[Reader] = Json.format[Reader]
-
+  implicit val messageFormat: OFormat[ReadTime] =
+    Json.format[ReadTime]
 }

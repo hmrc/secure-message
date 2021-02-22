@@ -16,17 +16,17 @@
 
 package uk.gov.hmrc.securemessage.controllers
 
-import javax.inject.Inject
 import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc.{ Action, AnyContent, ControllerComponents }
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.securemessage.controllers.models.generic.{ CaseworkerMessageRequest, ConversationRequest, CustomerMessageRequest }
+import uk.gov.hmrc.securemessage.controllers.models.generic.{ CaseworkerMessageRequest, ConversationRequest, CustomerMessageRequest, ReadTime }
 import uk.gov.hmrc.securemessage.controllers.utils.EnrolmentHelper._
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
 import uk.gov.hmrc.securemessage.services.SecureMessageService
 
+import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
 
 @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
@@ -102,5 +102,20 @@ class SecureMessageController @Inject()(
           case None => Future.successful(Unauthorized(Json.toJson("No EORI enrolment found")))
         }
       }
+  }
+
+  def addCustomerReadTime(client: String, conversationId: String): Action[JsValue] = Action.async(parse.json) {
+    implicit request =>
+      authorised()
+        .retrieve(Retrievals.allEnrolments) { enrolments: Enrolments =>
+          withJsonBody[ReadTime] { readTime: ReadTime =>
+            secureMessageService
+              .updateReadTime(client, conversationId, enrolments, readTime.timestamp)
+              .map {
+                case true  => Created(Json.toJson("read time successfully added"))
+                case false => BadRequest(Json.toJson("issue with updating read time"))
+              }
+          }
+        }
   }
 }
