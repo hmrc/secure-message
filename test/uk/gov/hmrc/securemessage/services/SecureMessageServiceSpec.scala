@@ -107,11 +107,12 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
       private val customerMessage = CustomerMessageRequest("PGRpdj5IZWxsbzwvZGl2Pg==")
       private val mockEnrolments = mock[Enrolments]
       when(mockRepository.conversationExists(any[String], any[String])(any[ExecutionContext])).thenReturn(Future(true))
-      when(mockEnrolments.enrolments).thenReturn(Set(Enrolment("HMRC-CUS-ORG",Seq(EnrolmentIdentifier("EORINumber","GB123456789000000")),"")))
+      when(mockEnrolments.enrolments).thenReturn(Set(Enrolment("HMRC-CUS-ORG", Seq(EnrolmentIdentifier("EORINumber", "GB123456789000000")), "")))
       when(mockRepository.getConversationParticipants(any[String], any[String])(any[ExecutionContext])).thenReturn(
         Future(Some(Participants(
-          NonEmptyList.one(Participant(1, ParticipantType.Customer, Identifier("EORINumber", "GB123456789000000", Some("HMRC-CUS-ORG")), None, None, None))))))
-      when(mockRepository.addMessageToConversation(any[String],any[String],any[Message])(any[ExecutionContext])).thenReturn(Future.successful(()))
+          NonEmptyList.one(
+            Participant(1, ParticipantType.Customer, Identifier("EORINumber", "GB123456789000000", Some("HMRC-CUS-ORG")), None, None, None, None))))))
+      when(mockRepository.addMessageToConversation(any[String], any[String], any[Message])(any[ExecutionContext])).thenReturn(Future.successful(()))
       await(service.addMessageToConversation("cdcm", "D-80542-20201120", customerMessage, mockEnrolments))
       verify(mockRepository, times(1)).addMessageToConversation(any[String], any[String], any[Message])(any[ExecutionContext])
     }
@@ -119,13 +120,13 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
     "throw an AuthorisationException if the customer does not have a participating enrolment" in new TestCase {
       private val customerMessage = CustomerMessageRequest("PGRpdj5IZWxsbzwvZGl2Pg==")
       private val mockEnrolments = mock[Enrolments]
-      when(mockRepository.conversationExists(any[String],any[String])(any[ExecutionContext])).thenReturn(Future.successful(true))
-      when(mockEnrolments.enrolments).thenReturn(Set(Enrolment("HMRC-CUS-ORG",Seq(EnrolmentIdentifier("EORINumber","GB123456789000001")),"")))
+      when(mockRepository.conversationExists(any[String], any[String])(any[ExecutionContext])).thenReturn(Future.successful(true))
+      when(mockEnrolments.enrolments).thenReturn(Set(Enrolment("HMRC-CUS-ORG", Seq(EnrolmentIdentifier("EORINumber", "GB123456789000001")), "")))
       when(mockRepository.getConversationParticipants(any[String], any[String])(any[ExecutionContext])).thenReturn(
         Future(Some(Participants(
           NonEmptyList.one(Participant(1, ParticipantType.Customer, Identifier("EORINumber", "GB123456789000000",
-              Some("HMRC-CUS-ORG")), None, None, None))))))
-      assertThrows[AuthorisationException]{
+            Some("HMRC-CUS-ORG")), None, None, None, None))))))
+      assertThrows[AuthorisationException] {
         await(service.addMessageToConversation("cdcm", "D-80542-20201120", customerMessage, mockEnrolments))
       }
     }
@@ -133,17 +134,74 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
     "throw an IllegalArgumentException if the conversation ID is not found" in new TestCase {
       private val customerMessage = CustomerMessageRequest("PGRpdj5IZWxsbzwvZGl2Pg==")
       private val mockEnrolments = mock[Enrolments]
-      when(mockRepository.conversationExists(any[String],any[String])(any[ExecutionContext])).thenReturn(Future.successful(false))
-      assertThrows[IllegalArgumentException]{
+      when(mockRepository.conversationExists(any[String], any[String])(any[ExecutionContext])).thenReturn(Future.successful(false))
+      assertThrows[IllegalArgumentException] {
         await(service.addMessageToConversation("cdcm", "D-80542-20201120", customerMessage, mockEnrolments))
       }
     }
+  }
 
+  "updateReadTime" should {
+
+    "return true when a readTime has been added to the db" in new TestCase {
+      when(mockRepository.getConversationParticipants(any[String], any[String])(any[ExecutionContext]))
+        .thenReturn(Future.successful(Some(Participants(NonEmptyList(
+          Participant(
+            2,
+            ParticipantType.Customer,
+            Identifier("EORINumber", "GB7777777777", Some("HMRC-CUS-ORG")),
+            None,
+            None,
+            None,
+            Some(List(DateTime.parse("2021-02-16T17:31:55.940"), DateTime.parse("2021-02-16T17:31:55.940")))
+          ),
+          List()
+        )))))
+      when(
+        mockRepository.updateConversationWithReadTime(any[String], any[String], any[Int], any[DateTime])(
+          any[ExecutionContext])).thenReturn(Future.successful(true))
+      private val result =
+        await(
+          service.updateReadTime(
+            "cdcm",
+            "D-80542-20201120",
+            enrolments,
+            DateTime.parse("2020-11-10T15:00:18.000+0000")
+          ))
+      result mustBe true
+    }
+
+    "return false when something went wrong with adding a readTime to the db" in new TestCase {
+      when(mockRepository.getConversationParticipants(any[String], any[String])(any[ExecutionContext]))
+        .thenReturn(Future.successful(Some(Participants(NonEmptyList(
+          Participant(
+            2,
+            ParticipantType.Customer,
+            Identifier("EORINumber", "GB7777777777", Some("HMRC-CUS-ORG")),
+            None,
+            None,
+            None,
+            Some(List(DateTime.parse("2021-02-16T17:31:55.940"), DateTime.parse("2021-02-16T17:31:55.940")))
+          ),
+          List()
+        )))))
+      when(
+        mockRepository.updateConversationWithReadTime(any[String], any[String], any[Int], any[DateTime])(
+          any[ExecutionContext])).thenReturn(Future.successful(false))
+      private val result =
+        await(
+          service
+            .updateReadTime("cdcm", "D-80542-20201120", enrolments, DateTime.parse("2020-11-10T15:00:18.000+0000")))
+      result mustBe false
+    }
   }
 
   trait TestCase {
+    import uk.gov.hmrc.auth.core.Enrolment
     val mockRepository: ConversationRepository = mock[ConversationRepository]
     val service: SecureMessageService = new SecureMessageService(mockRepository)
+    val enrolments: Enrolments = Enrolments(
+      Set(Enrolment("HMRC-CUS-ORG", Vector(EnrolmentIdentifier("EORINumber", "GB7777777777")), "Activated", None)))
 
   }
 }

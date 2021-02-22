@@ -20,7 +20,7 @@ import cats.data.NonEmptyList
 import org.joda.time.DateTime
 import play.api.libs.functional.syntax.toFunctionalBuilderOps
 import play.api.libs.json.{ JsPath, Json, Reads }
-import uk.gov.hmrc.securemessage.models.core.{ Conversation, ConversationStatus, Identifier, Language, Message, Participant, ParticipantType, Reader }
+import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.time.DateTimeUtils
 
 final case class Alert(templateId: String, parameters: Option[Map[String, String]])
@@ -87,7 +87,7 @@ final case class ConversationRequest(
     asConversationWithCreatedDate(client, conversationId, now)
 
   def asConversationWithCreatedDate(client: String, conversationId: String, created: DateTime): Conversation = {
-    val initialMessage = Message(1, created, List(Reader(1, created)), message, None)
+    val initialMessage = Message(1, created, message, None)
     val initialParticipants = getSenderParticipant(sender.system) :: getRecipientParticipants(recipients)
     Conversation(
       client,
@@ -114,7 +114,8 @@ final case class ConversationRequest(
       Identifier(senderSystem.identifier.name, senderSystem.identifier.value, None),
       Some(senderSystem.display),
       None,
-      senderSystem.parameters
+      senderSystem.parameters,
+      None
     )
 
   private def getRecipientParticipants(recipients: List[Recipient]): List[Participant] =
@@ -126,6 +127,7 @@ final case class ConversationRequest(
         getCustomerIdentifier(customer.enrolment),
         customer.name,
         customer.email,
+        None,
         None)
     }
 

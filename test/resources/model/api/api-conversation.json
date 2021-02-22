@@ -30,7 +30,7 @@
     },
     {
       "senderInformation": {
-        "name": "Ben Dover",
+        "name": "James Smith",
         "created": "2020-11-10T15:00:12.000+0000"
       },
       "read": "2020-11-10T15:00:01.000+0000",
@@ -43,7 +43,7 @@
     {
       "sent": "2020-11-10T15:00:18.000+0000",
       "firstReader": {
-        "name": "Ben Dover",
+        "name": "James Smith",
         "read": "2020-11-10T15:00:01.000+0000"
       },
       "content": "QmxhaCBibGFoIGJsYWg="
@@ -54,7 +54,7 @@
     },
     {
       "senderInformation": {
-        "name": "Ben Dover",
+        "name": "James Smith",
         "created": "2020-11-10T15:00:18.000+0000"
       },
       "content": "QmxhaCBibGFoIGJsYWg="

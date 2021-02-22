@@ -33,10 +33,10 @@ import play.api.test.Helpers.{POST, PUT, contentAsString, defaultAwaitTimeout, s
 import play.api.test.{FakeHeaders, FakeRequest, Helpers, NoMaterializer}
 import uk.gov.hmrc.auth.core.authorise.Predicate
 import uk.gov.hmrc.auth.core.retrieve.Retrieval
-import uk.gov.hmrc.auth.core.{AuthConnector, AuthorisationException, Enrolment, EnrolmentIdentifier, Enrolments}
+import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.securemessage.controllers.models.generic
-import uk.gov.hmrc.securemessage.controllers.models.generic.{ApiConversation, ApiMessage, ConversationMetadata, CustomerMessageRequest, SenderInformation}
+import uk.gov.hmrc.securemessage.controllers.models.generic._
 import uk.gov.hmrc.securemessage.helpers.{ConversationUtil, Resources}
 import uk.gov.hmrc.securemessage.models.core.Conversation
 import uk.gov.hmrc.securemessage.models.core.ConversationStatus.Open
@@ -105,7 +105,6 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
                   identifiers = Seq(EnrolmentIdentifier("EORINumber", "GB123456789")),
                   state = "",
                   None)))))
-      generic.CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789")
       when(mockSecureMessageService.getConversations(generic.CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789")))
         .thenReturn(Future(List(ConversationMetadata(
           client = "cdcm",
@@ -150,9 +149,12 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
                   identifiers = Seq(EnrolmentIdentifier("EORINumber", "GB123456789")),
                   state = "",
                   None)))))
-      generic.CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789")
+
       when(mockSecureMessageService.getConversation(any[String], any[String], any[generic.CustomerEnrolment])(any[ExecutionContext]))
-        .thenReturn(Future(Some(ApiConversation("cdcm", "D-80542-20201120", Open, Some(Map("queryId" -> "D-80542-20201120", "caseId" -> "D-80542", "notificationType" -> "CDS Exports", "mrn" -> "DMS7324874993", "sourceId" -> "CDCM")), "D-80542-20201120", English, NonEmptyList.one(ApiMessage(Some(SenderInformation(Some("CDS Exports Team"),DateTime.parse("2020-11-10T15:00:01.000Z"))),None,Some(DateTime.parse("2020-11-10T15:00:01.000Z")),None,"QmxhaCBibGFoIGJsYWg="))))))
+        .thenReturn(Future(Some(ApiConversation("cdcm", "D-80542-20201120", Open, Some(Map("queryId" -> "D-80542-20201120", "caseId" -> "D-80542",
+          "notificationType" -> "CDS Exports", "mrn" -> "DMS7324874993", "sourceId" -> "CDCM")), "D-80542-20201120", English,
+          NonEmptyList.one(ApiMessage(Some(SenderInformation(Some("CDS Exports Team"),DateTime.parse("2020-11-10T15:00:01.000Z"))),
+            None,Some(DateTime.parse("2020-11-10T15:00:01.000Z")),None,"QmxhaCBibGFoIGJsYWg="))))))
       val response: Future[Result] = controller.getConversationContent("cdcm", "D-80542-20201120", "HMRC-CUS-ORG", "EORINumber").apply(FakeRequest("GET", "/"))
       status(response) mustBe OK
       contentAsString(response) mustBe
@@ -170,7 +172,6 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
                   identifiers = Seq(EnrolmentIdentifier("EORINumber", "GB123456789")),
                   state = "",
                   None)))))
-      generic.CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789")
       when(mockSecureMessageService.getConversation(any[String], any[String], any[generic.CustomerEnrolment])(any[ExecutionContext]))
         .thenReturn(Future(None))
       val response: Future[Result] = controller.getConversationContent("cdcm", "D-80542-20201120", "HMRC-CUS-ORG", "EORINumber").apply(FakeRequest("GET", "/"))
@@ -278,6 +279,56 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
         .thenReturn(Future.failed(new IllegalArgumentException("Conversation ID not known")))
       private val response = controller.createCustomerMessage("cdcm","D-80542-20201120")(fakeRequest)
       status(response) mustBe NOT_FOUND
+    }
+  }
+
+  "updateReadTime" should {
+    "return CREATED (201) with a JSON body of read time successfully added when a readTime has successfully been created " in new TestCase {
+      when(mockAuthConnector.authorise(any[Predicate], any[Retrieval[Enrolments]])(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(
+          Future.successful(
+            Enrolments(
+              Set(
+                uk.gov.hmrc.auth.core.Enrolment(
+                  key = "HMRC-CUS-ORG",
+                  identifiers = Seq(EnrolmentIdentifier("EORINumber", "GB123456789")),
+                  state = "",
+                  None)))))
+      when(mockSecureMessageService.updateReadTime(any[String], any[String], any[Enrolments], any[DateTime])(any[ExecutionContext]))
+        .thenReturn(Future.successful(true))
+      private val fakeRequest = FakeRequest(
+        method = POST,
+        uri = routes.SecureMessageController.addCustomerReadTime("cdcm", "123").url,
+        headers = FakeHeaders(Seq(CONTENT_TYPE -> JSON)),
+        body = Json.toJson(ReadTime(DateTime.now))
+      )
+      val response = controller.addCustomerReadTime("cdcm", "D-80542-20201120")(fakeRequest)
+      status(response) mustBe CREATED
+      contentAsString(response) mustBe "\"read time successfully added\""
+    }
+
+    "return BADREQUEST (400) with a JSON body of issue with updating read time" in new TestCase {
+      when(mockAuthConnector.authorise(any[Predicate], any[Retrieval[Enrolments]])(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(
+          Future.successful(
+            Enrolments(
+              Set(
+                uk.gov.hmrc.auth.core.Enrolment(
+                  key = "HMRC-CUS-ORG",
+                  identifiers = Seq(EnrolmentIdentifier("EORINumber", "GB123456789")),
+                  state = "",
+                  None)))))
+      when(mockSecureMessageService.updateReadTime(any[String], any[String], any[Enrolments], any[DateTime])(any[ExecutionContext]))
+        .thenReturn(Future.successful(false))
+      private val fakeRequest = FakeRequest(
+        method = POST,
+        uri = routes.SecureMessageController.addCustomerReadTime("cdcm", "123").url,
+        headers = FakeHeaders(Seq(CONTENT_TYPE -> JSON)),
+        body = Json.toJson(ReadTime(DateTime.now))
+      )
+      val response = controller.addCustomerReadTime("cdcm", "D-80542-20201120")(fakeRequest)
+      status(response) mustBe BAD_REQUEST
+      contentAsString(response) mustBe "\"issue with updating read time\""
     }
   }
 
