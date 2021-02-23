@@ -22,6 +22,8 @@ import play.api.libs.functional.syntax.toFunctionalBuilderOps
 import play.api.libs.json.{ JsPath, Json, Reads }
 import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.time.DateTimeUtils
+import uk.gov.hmrc.emailaddress._
+import uk.gov.hmrc.emailaddress.PlayJsonFormats.emailAddressReads
 
 final case class Alert(templateId: String, parameters: Option[Map[String, String]])
 object Alert {
@@ -52,7 +54,7 @@ object System {
   ).apply(System.apply _)
 }
 
-final case class Customer(enrolment: CustomerEnrolment, name: Option[String], email: Option[String])
+final case class Customer(enrolment: CustomerEnrolment, name: Option[String], email: Option[EmailAddress])
 object Customer {
   implicit val customerReads: Reads[Customer] =
     Json.reads[Customer]

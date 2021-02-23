@@ -22,13 +22,15 @@ import play.api.libs.json.JodaReads.jodaDateReads
 import play.api.libs.json.JodaWrites.jodaDateWrites
 import play.api.libs.json.{ Format, Json }
 import uk.gov.hmrc.securemessage.models.utils.NonEmptyListOps.nonEmptyListFormat
+import uk.gov.hmrc.emailaddress._
+import uk.gov.hmrc.emailaddress.PlayJsonFormats._
 
 final case class Participant(
   id: Int,
   participantType: ParticipantType,
   identifier: Identifier,
   name: Option[String],
-  email: Option[String],
+  email: Option[EmailAddress],
   parameters: Option[Map[String, String]],
   readTimes: Option[List[DateTime]])
 object Participant {
@@ -42,6 +44,10 @@ object Participant {
 
 final case class Participants(participants: NonEmptyList[Participant])
 object Participants {
+
+  implicit val emailAddressFormat: Format[EmailAddress] =
+    Format(emailAddressReads, emailAddressWrites)
+
   implicit val participantsFormat: Format[Participants] = Json.format[Participants]
 
 }

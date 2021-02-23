@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.securemessage.controllers
 
+import javax.inject.Inject
 import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc.{ Action, AnyContent, ControllerComponents }
 import uk.gov.hmrc.auth.core._
@@ -23,26 +24,21 @@ import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.securemessage.controllers.models.generic.{ CaseworkerMessageRequest, ConversationRequest, CustomerMessageRequest, ReadTime }
 import uk.gov.hmrc.securemessage.controllers.utils.EnrolmentHelper._
-import uk.gov.hmrc.securemessage.repository.ConversationRepository
 import uk.gov.hmrc.securemessage.services.SecureMessageService
 
-import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
 
 @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
 class SecureMessageController @Inject()(
   cc: ControllerComponents,
   val authConnector: AuthConnector,
-  secureMessageService: SecureMessageService,
-  repo: ConversationRepository)(implicit ec: ExecutionContext)
+  secureMessageService: SecureMessageService)(implicit ec: ExecutionContext)
     extends BackendController(cc) with AuthorisedFunctions {
 
   def createConversation(client: String, conversationId: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
       withJsonBody[ConversationRequest] { conversationRequest =>
-        repo.insertIfUnique(conversationRequest.asConversation(client, conversationId)).map { isUnique =>
-          if (isUnique) Created else Conflict("Duplicate of existing conversation")
-        }
+        secureMessageService.createConversation(conversationRequest, client, conversationId)
       }
   }
 

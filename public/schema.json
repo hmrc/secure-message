@@ -48,7 +48,7 @@
             "nullable" : true
           },
           "email" : {
-            "type" : "string",
+            "type" : "uk.gov.hmrc.emailaddress.emailaddress",
             "nullable" : true
           }
         },

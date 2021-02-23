@@ -18,10 +18,28 @@ package uk.gov.hmrc.securemessage.helpers
 
 import cats.data.NonEmptyList
 import org.joda.time.DateTime
+import uk.gov.hmrc.securemessage.controllers.models.generic._
 import uk.gov.hmrc.securemessage.models.core.Language.English
 import uk.gov.hmrc.securemessage.models.core._
+import uk.gov.hmrc.emailaddress._
 
 object ConversationUtil {
+
+  def getConversationRequest(withEmailAddress: Boolean): ConversationRequest =
+    ConversationRequest(
+      Sender(System(SystemIdentifier("cdcm", "123"), "CDS Exports", None)),
+      List(
+        Recipient(
+          Customer(
+            CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890"),
+            Some("Joe Bloggs"),
+            if (withEmailAddress) Some(EmailAddress("joebloggs@test.com")) else None))),
+      Alert("templateId", None),
+      None,
+      "Test",
+      "base64encode",
+      None
+    )
 
   def getFullConversation(id: String): Conversation =
     Conversation(
@@ -53,7 +71,7 @@ object ConversationUtil {
           ParticipantType.Customer,
           Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")),
           Some("Joe Bloggs"),
-          Some("joebloggs@test.com"),
+          Some(EmailAddress("joebloggs@test.com")),
           None,
           None
         )
