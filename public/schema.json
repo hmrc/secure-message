@@ -48,8 +48,8 @@
             "nullable" : true
           },
           "email" : {
-            "type" : "uk.gov.hmrc.emailaddress.emailaddress",
-            "nullable" : true
+            "nullable" : true,
+            "type" : "string"
           }
         },
         "required" : [ "enrolment" ]
@@ -445,6 +445,9 @@
         "responses" : {
           "201" : {
             "description" : "read date and time successfully added"
+          },
+          "400" : {
+            "description" : "issue with updating read time"
           }
         },
         "parameters" : [ {
@@ -467,7 +470,7 @@
   },
   "info" : {
     "title" : "Secure Message API",
-    "version" : "0.37.0-SNAPSHOT"
+    "version" : "0.38.0-SNAPSHOT"
   },
   "tags" : [ {
     "name" : "app"
