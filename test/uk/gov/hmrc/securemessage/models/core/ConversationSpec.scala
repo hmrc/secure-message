@@ -26,7 +26,8 @@ class ConversationSpec extends PlaySpec {
 
     "be successful when optional fields are present" in {
       val conversationJson: JsValue = Resources.readJson("model/core/conversation-full.json")
-      conversationJson.validate[Conversation] mustBe JsSuccess(ConversationUtil.getFullConversation("D-80542-20201120"))
+      conversationJson.validate[Conversation] mustBe JsSuccess(
+        ConversationUtil.getFullConversation("D-80542-20201120", "HMRC-CUS-ORG", "EORINumber", "GB1234567890"))
     }
 
     "be successful when optional fields are not present" in {

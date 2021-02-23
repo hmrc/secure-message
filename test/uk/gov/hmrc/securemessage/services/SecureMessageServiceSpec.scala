@@ -19,6 +19,7 @@ package uk.gov.hmrc.securemessage.services
 import akka.stream.Materializer
 import cats.data.NonEmptyList
 import org.joda.time.DateTime
+import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{times, verify, when}
 import org.scalatest.concurrent.ScalaFutures
@@ -42,7 +43,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar {
 
   implicit val mat: Materializer = NoMaterializer
-  val listOfCoreConversation = List(ConversationUtil.getFullConversation("D-80542-20201120"))
+  val listOfCoreConversation = List(ConversationUtil.getFullConversation("D-80542-20201120", "HMRC-CUS-ORG", "EORINumber", "GB1234567890"))
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
@@ -68,10 +69,52 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
   "getConversations" must {
 
     "return a list of ConversationMetaData" in new TestCase {
-      private val listOfCoreConversation = List(ConversationUtil.getFullConversation("D-80542-20201120"))
+      private val listOfCoreConversation = List(ConversationUtil.getFullConversation("D-80542-20201120", "HMRC-CUS-ORG", "EORINumber", "GB1234567890"))
       when(mockRepository.getConversations(any[generic.CustomerEnrolment])(any[ExecutionContext]))
         .thenReturn(Future.successful(listOfCoreConversation))
       private val result = await(service.getConversations(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777")))
+      result mustBe
+        List(
+          ConversationMetadata(
+            "cdcm",
+            "D-80542-20201120",
+            "MRN: 19GB4S24GC3PPFGVR7",
+            DateTime.parse("2020-11-10T15:00:01.000"),
+            Some("CDS Exports Team"),
+            unreadMessages = false,
+            1))
+    }
+  }
+
+  "getConversationsFiltered" must {
+
+    "return a list of ConversationMetaData when presented with one customer enrolment and no tags for a filter" in new TestCase {
+      private val listOfCoreConversation = List(ConversationUtil.getFullConversation("D-80542-20201120", "HMRC-CUS-ORG", "EORINumber", "GB1234567890"))
+      when(mockRepository.getConversationsFiltered(
+        ArgumentMatchers.eq(Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777"))), ArgumentMatchers.eq(None))(any[ExecutionContext]))
+        .thenReturn(Future.successful(listOfCoreConversation))
+      private val result = await(service.getConversationsFiltered(Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777")), None))
+      result mustBe
+        List(
+          ConversationMetadata(
+            "cdcm",
+            "D-80542-20201120",
+            "MRN: 19GB4S24GC3PPFGVR7",
+            DateTime.parse("2020-11-10T15:00:01.000"),
+            Some("CDS Exports Team"),
+            unreadMessages = false,
+            1))
+    }
+
+    "return a list of ConversationMetaData when presented with one customer enrolment and one tag for a filter" in new TestCase {
+      private val listOfCoreConversation = List(ConversationUtil.getFullConversation("D-80542-20201120", "HMRC-CUS-ORG", "EORINumber", "GB1234567890"))
+      when(mockRepository.getConversationsFiltered(
+        ArgumentMatchers.eq(Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777"))),
+        ArgumentMatchers.eq(Some(List(Tag("notificationType", "CDS Exports")))))(any[ExecutionContext]))
+        .thenReturn(Future.successful(listOfCoreConversation))
+      private val result = await(service.getConversationsFiltered(
+        Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777")),
+        Some(List(Tag("notificationType", "CDS Exports")))))
       result mustBe
         List(
           ConversationMetadata(
@@ -89,7 +132,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
 
     "return a message with ApiConversation" in new TestCase {
       when(mockRepository.getConversation(any[String], any[String], any[generic.CustomerEnrolment])(any[ExecutionContext]))
-        .thenReturn(Future.successful(Some(ConversationUtil.getFullConversation("D-80542-20201120"))))
+        .thenReturn(Future.successful(Some(ConversationUtil.getFullConversation("D-80542-20201120", "HMRC-CUS-ORG", "EORINumber", "GB1234567890"))))
       private val result = await(
         service.getConversation("cdcm", "D-80542-20201120", CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777")))
       result.get.client mustBe "cdcm"

@@ -344,7 +344,7 @@
       "get" : {
         "operationId" : "getMetadataForConversations",
         "tags" : [ "app" ],
-        "summary" : "Gets a list of conversations via EORI enrolment",
+        "summary" : "DEPRECATED - Gets a list of conversations via enrolmentKey and enrolmentName",
         "security" : [ {
           "bearerToken" : [ ]
         } ],
@@ -353,7 +353,7 @@
             "description" : "list of conversations was recieved"
           },
           "401" : {
-            "description" : "unauthorised customer when they don't have an EORI enrolment"
+            "description" : "unauthorised customer when they don't have an enrolment"
           }
         },
         "parameters" : [ {
@@ -370,6 +370,58 @@
             "type" : "string"
           },
           "required" : true
+        } ]
+      }
+    },
+    "/secure-messaging/conversations" : {
+      "get" : {
+        "operationId" : "getMetadataForConversationsFiltered",
+        "tags" : [ "app" ],
+        "summary" : "Gets a list of conversations via enrolmentKeys, enrolments and tags filters",
+        "security" : [ {
+          "bearerToken" : [ ]
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "list of conversations was recieved"
+          },
+          "401" : {
+            "description" : "unauthorised customer when they don't have an enrolment"
+          }
+        },
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "enrolmentKey",
+          "schema" : {
+            "nullable" : true,
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "required" : false
+        }, {
+          "in" : "query",
+          "name" : "enrolment",
+          "schema" : {
+            "nullable" : true,
+            "type" : "array",
+            "items" : {
+              "type" : "customerenrolment"
+            }
+          },
+          "required" : false
+        }, {
+          "in" : "query",
+          "name" : "tag",
+          "schema" : {
+            "nullable" : true,
+            "type" : "array",
+            "items" : {
+              "type" : "tag"
+            }
+          },
+          "required" : false
         } ]
       }
     },
@@ -470,7 +522,7 @@
   },
   "info" : {
     "title" : "Secure Message API",
-    "version" : "0.42.0-SNAPSHOT"
+    "version" : "0.43.0-SNAPSHOT"
   },
   "tags" : [ {
     "name" : "app"
