@@ -16,7 +16,9 @@
 
 package uk.gov.hmrc.securemessage.connectors
 
+import controllers.Assets.CREATED
 import javax.inject.{ Inject, Singleton }
+import play.api.Logging
 import uk.gov.hmrc.http.HttpReads.Implicits.readRaw
 import uk.gov.hmrc.http.{ HeaderCarrier, HttpClient, HttpResponse }
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
@@ -27,11 +29,17 @@ import scala.concurrent.{ ExecutionContext, Future }
 
 @Singleton
 @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
-class EmailConnector @Inject()(httpClient: HttpClient, servicesConfig: ServicesConfig)(implicit ec: ExecutionContext) {
+class EmailConnector @Inject()(httpClient: HttpClient, servicesConfig: ServicesConfig)(implicit ec: ExecutionContext)
+    extends Logging {
 
   private val emailBaseUrl = servicesConfig.baseUrl("email")
 
   def send(emailRequest: EmailRequest)(implicit hc: HeaderCarrier): Future[Unit] =
-    httpClient.POST[EmailRequest, HttpResponse](s"$emailBaseUrl/hmrc/email", emailRequest).map(_ => ())
+    httpClient.POST[EmailRequest, HttpResponse](s"$emailBaseUrl/hmrc/email", emailRequest).map { response =>
+      response.status match {
+        case CREATED => ()
+        case status  => logger.error(s"Email request failed: got response status $status from email service")
+      }
+    }
 
 }

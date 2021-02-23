@@ -10,4 +10,7 @@
   specAsProperty:
     type: string
     format: date-time
-
+- type: uk\.gov\.hmrc\.emailaddress\.EmailAddress   # see https://github.com/iheartradio/play-swagger/issues/140
+  specAsParameter: [ ]   #this hides the type from query and path parameter
+  specAsProperty:
+    type: string
