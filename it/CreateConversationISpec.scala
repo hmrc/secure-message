@@ -64,6 +64,28 @@ class CreateConversationISpec extends PlaySpec with ServiceSpec with BeforeAndAf
       response.status mustBe CREATED
     }
 
+    "return BAD REQUEST when sent a conversation request with an no email address" in {
+      val wsClient = app.injector.instanceOf[WSClient]
+      val response =
+        wsClient
+          .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
+          .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
+          .put(new File("./it/resources/create-conversation-no-email.json"))
+          .futureValue
+      response.status mustBe BAD_REQUEST
+    }
+
+    "return BAD REQUEST when sent a conversation request with an invalid email address" in {
+      val wsClient = app.injector.instanceOf[WSClient]
+      val response =
+        wsClient
+          .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
+          .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
+          .put(new File("./it/resources/create-conversation-invalid-email.json"))
+          .futureValue
+      response.status mustBe BAD_REQUEST
+    }
+
     "return BAD REQUEST when sent a minimal and invalid JSON payload" in {
       val wsClient = app.injector.instanceOf[WSClient]
       val response =

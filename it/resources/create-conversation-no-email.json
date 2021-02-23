@@ -6,14 +6,11 @@
         },
         "display": "CDS Exports Team"
     }},
-    "recipients": [{"customer": {
-        "enrolment": {
-            "key": "HMRC-CUS-ORG",
-            "name": "EORINumber",
-            "value": "GB1234567890"
-        },
-        "email": "jobloggs@test.com"
-    }}],
+    "recipients": [{"customer": {"enrolment": {
+        "key": "HMRC-CUS-ORG",
+        "name": "EORINumber",
+        "value": "GB1234567890"
+    }}}],
     "alert": {"templateId": "emailTemplateId"},
     "subject": "D-80542-20201120",
     "message": "QmxhaCBibGFoIGJsYWg="

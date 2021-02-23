@@ -26,9 +26,10 @@ import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.http.ContentTypes._
 import play.api.http.HeaderNames._
+import play.api.http.HttpEntity
 import play.api.http.Status._
 import play.api.libs.json.Json
-import play.api.mvc.Result
+import play.api.mvc.{ResponseHeader, Result}
 import play.api.test.Helpers.{POST, PUT, contentAsString, defaultAwaitTimeout, status}
 import play.api.test.{FakeHeaders, FakeRequest, Helpers, NoMaterializer}
 import uk.gov.hmrc.auth.core.authorise.Predicate
@@ -65,6 +66,8 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
         headers = FakeHeaders(Seq(CONTENT_TYPE -> JSON)),
         body = fullConversationJson
       )
+      when(mockSecureMessageService.createConversation(any[ConversationRequest],any[String],any[String])(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(Future(Result(new ResponseHeader(CREATED),HttpEntity.NoEntity)))
       private val response = controller.createConversation("cdcm", "123")(fakeRequest)
       status(response) mustBe CREATED
     }
@@ -77,6 +80,8 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
         headers = FakeHeaders(Seq(CONTENT_TYPE -> JSON)),
         body = minimalConversationJson
       )
+      when(mockSecureMessageService.createConversation(any[ConversationRequest],any[String],any[String])(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(Future(Result(new ResponseHeader(CREATED),HttpEntity.NoEntity)))
       private val response = controller.createConversation("cdcm", "123")(fakeRequest)
       status(response) mustBe CREATED
     }
@@ -87,6 +92,18 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
         uri = routes.SecureMessageController.createConversation("cdcm", "123").url,
         headers = FakeHeaders(Seq(CONTENT_TYPE -> JSON)),
         body = Json.parse("""{"missing":"data"}""".stripMargin)
+      )
+      private val response = controller.createConversation("cdcm", "123")(fakeRequest)
+      status(response) mustBe BAD_REQUEST
+    }
+
+    "return BAD REQUEST (400) when an invalid email address is provided" in new TestCase {
+      private val conversationWithInvalidEmailJson = Resources.readJson("model/api/create-conversation-invalid-email.json")
+      private val fakeRequest = FakeRequest(
+        method = PUT,
+        uri = routes.SecureMessageController.createConversation("cdcm", "123").url,
+        headers = FakeHeaders(Seq(CONTENT_TYPE -> JSON)),
+        body = conversationWithInvalidEmailJson
       )
       private val response = controller.createConversation("cdcm", "123")(fakeRequest)
       status(response) mustBe BAD_REQUEST
@@ -337,7 +354,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     val mockAuthConnector: AuthConnector = mock[AuthConnector]
     val mockSecureMessageService: SecureMessageService = mock[SecureMessageService]
     when(mockRepository.insertIfUnique(any[Conversation])(any[ExecutionContext])).thenReturn(Future.successful(true))
-    val controller = new SecureMessageController(Helpers.stubControllerComponents(), mockAuthConnector, mockSecureMessageService, mockRepository)
+    val controller = new SecureMessageController(Helpers.stubControllerComponents(), mockAuthConnector, mockSecureMessageService)
 
   }
 }

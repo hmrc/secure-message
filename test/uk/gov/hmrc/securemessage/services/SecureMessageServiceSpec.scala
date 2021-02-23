@@ -35,6 +35,7 @@ import uk.gov.hmrc.securemessage.models.core.ConversationStatus.Open
 import uk.gov.hmrc.securemessage.models.core.Language.English
 import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
+import uk.gov.hmrc.securemessage.connectors.EmailConnector
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
@@ -46,6 +47,25 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
   val listOfCoreConversation = List(ConversationUtil.getFullConversation("D-80542-20201120"))
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
+
+  "createConversation" must {
+
+    "return CREATED (201) when an email address is provided" in new TestCase {
+      when(mockRepository.insertIfUnique(any[Conversation])(any[ExecutionContext])).thenReturn(Future(true))
+      private val result = service.createConversation(ConversationUtil.getConversationRequest(true),"cdcm","123")
+      status(result) mustBe CREATED
+    }
+    "return BAD REQUEST (400) when no email address is provided" in new TestCase {
+      when(mockRepository.insertIfUnique(any[Conversation])(any[ExecutionContext])).thenReturn(Future(true))
+      private val result = service.createConversation(ConversationUtil.getConversationRequest(false),"cdcm","123")
+      status(result) mustBe BAD_REQUEST
+    }
+    "return CONFLICT (409) when a conversation already exists for this client and conversation ID" in new TestCase {
+      when(mockRepository.insertIfUnique(any[Conversation])(any[ExecutionContext])).thenReturn(Future(false))
+      private val result = service.createConversation(ConversationUtil.getConversationRequest(true),"cdcm","123")
+      status(result) mustBe CONFLICT
+    }
+  }
 
   "getConversations" must {
 
@@ -199,9 +219,9 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
   trait TestCase {
     import uk.gov.hmrc.auth.core.Enrolment
     val mockRepository: ConversationRepository = mock[ConversationRepository]
-    val service: SecureMessageService = new SecureMessageService(mockRepository)
+    val mockEmailConnector: EmailConnector = mock[EmailConnector]
+    val service: SecureMessageService = new SecureMessageService(mockRepository, mockEmailConnector)
     val enrolments: Enrolments = Enrolments(
       Set(Enrolment("HMRC-CUS-ORG", Vector(EnrolmentIdentifier("EORINumber", "GB7777777777")), "Activated", None)))
-
   }
 }
