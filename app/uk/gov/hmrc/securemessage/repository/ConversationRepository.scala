@@ -17,6 +17,7 @@
 package uk.gov.hmrc.securemessage.repository
 
 import cats.implicits.catsSyntaxEq
+import javax.inject.{ Inject, Singleton }
 import org.joda.time.DateTime
 import play.api.libs.json.JodaWrites.{ JodaDateTimeWrites => _ }
 import play.api.libs.json.Json.JsValueWrapper
@@ -32,10 +33,10 @@ import uk.gov.hmrc.securemessage.controllers.models.generic.CustomerEnrolment
 import uk.gov.hmrc.securemessage.models.core.Message.dateFormat
 import uk.gov.hmrc.securemessage.models.core.{ Conversation, Message, Participants }
 
-import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
 
-@SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.Nothing"))
+@Singleton
+@SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
 class ConversationRepository @Inject()(implicit connector: MongoConnector)
     extends ReactiveRepository[Conversation, BSONObjectID](
       "conversation",
@@ -113,7 +114,7 @@ class ConversationRepository @Inject()(implicit connector: MongoConnector)
     implicit ec: ExecutionContext): Future[Boolean] =
     collection
       .update(ordered = false)
-      .one(
+      .one[JsObject, JsObject](
         Json.obj("client" -> client, "conversationId" -> conversationId, "participants.id" -> id),
         Json.obj("$push"  -> Json.obj("participants.$.readTimes" -> readTime))
       )
