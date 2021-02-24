@@ -31,77 +31,77 @@ class ApiConversationSpec extends PlaySpec {
       val coreConversation: Conversation = conversationJson.validate[Conversation].get
       val apiConversation = ApiConversation.coreConversationToApiConversation(coreConversation, identifier)
       apiConversation mustBe a[ApiConversation]
-      Json.toJson(apiConversation) mustBe Json.parse(
-        """{
-          |    "client": "cdcm",
-          |    "conversationId": "D-80542-20201120",
-          |    "language": "en",
-          |    "messages": [
-          |        {
-          |            "content": "QmxhaCBibGFoIGJsYWg=",
-          |            "read": "2020-11-10T15:01:02.000+0000",
-          |            "senderInformation": {
-          |                "created": "2020-11-10T15:01:00.000+0000",
-          |                "name": "CDS Exports Team"
-          |            }
-          |        },
-          |        {
-          |            "content": "QmxhaCBibGFoIGJsYWg=",
-          |            "sent": "2020-11-10T15:05:00.000+0000"
-          |        },
-          |        {
-          |            "content": "QmxhaCBibGFoIGJsYWg=",
-          |            "firstReader": {
-          |                "name": "Dave",
-          |                "read": "2020-11-10T15:12:30.000+0000"
-          |            },
-          |            "read": "2020-11-10T15:12:30.000+0000",
-          |            "senderInformation": {
-          |                "created": "2020-11-10T15:12:00.000+0000",
-          |                "name": "James Smith"
-          |            }
-          |        },
-          |        {
-          |            "content": "QmxhaCBibGFoIGJsYWg=",
-          |            "sent": "2020-11-10T15:18:00.000+0000"
-          |        },
-          |        {
-          |            "content": "QmxhaCBibGFoIGJsYWg=",
-          |            "sent": "2020-11-10T15:30:00.000+0000"
-          |        },
-          |        {
-          |            "content": "QmxhaCBibGFoIGJsYWg=",
-          |            "senderInformation": {
-          |                "created": "2020-11-10T15:35:00.000+0000",
-          |                "name": "James Smith"
-          |            }
-          |        },
-          |        {
-          |            "content": "QmxhaCBibGFoIGJsYWg=",
-          |            "senderInformation": {
-          |                "created": "2020-11-10T15:42:00.000+0000",
-          |                "name": "CDS Exports Team"
-          |            }
-          |        },
-          |        {
-          |            "content": "QmxhaCBibGFoIGJsYWg=",
-          |            "senderInformation": {
-          |                "created": "2020-11-10T16:00:00.000+0000",
-          |                "name": "James Smith"
-          |            }
-          |        }
-          |    ],
-          |    "status": "open",
-          |    "subject": "MRN: 19GB4S24GC3PPFGVR7",
-          |    "tags": {
-          |        "caseId": "D-80542",
-          |        "mrn": "DMS7324874993",
-          |        "notificationType": "CDS Exports",
-          |        "queryId": "D-80542-20201120",
-          |        "sourceId": "CDCM"
-          |    }
-          |}""".stripMargin
-      )
+      Json.toJson(apiConversation) mustBe Json.parse("""{
+                                                       |    "client": "cdcm",
+                                                       |    "conversationId": "D-80542-20201120",
+                                                       |    "language": "en",
+                                                       |    "messages": [
+                                                       |        {
+                                                       |            "content": "QmxhaCBibGFoIGJsYWg=",
+                                                       |            "firstReader": {
+                                                       |                "name": "Joe Bloggs",
+                                                       |                "read": "2020-11-10T15:01:02.000+0000"
+                                                       |            },
+                                                       |            "senderInformation": {
+                                                       |                "created": "2020-11-10T15:01:00.000+0000",
+                                                       |                "name": "CDS Exports Team"
+                                                       |            }
+                                                       |        },
+                                                       |        {
+                                                       |            "content": "QmxhaCBibGFoIGJsYWg=",
+                                                       |            "sent": "2020-11-10T15:05:00.000+0000"
+                                                       |        },
+                                                       |        {
+                                                       |            "content": "QmxhaCBibGFoIGJsYWg=",
+                                                       |            "firstReader": {
+                                                       |                "name": "Dave",
+                                                       |                "read": "2020-11-10T15:12:30.000+0000"
+                                                       |            },
+                                                       |            "senderInformation": {
+                                                       |                "created": "2020-11-10T15:12:00.000+0000",
+                                                       |                "name": "James Smith"
+                                                       |            }
+                                                       |        },
+                                                       |        {
+                                                       |            "content": "QmxhaCBibGFoIGJsYWg=",
+                                                       |            "sent": "2020-11-10T15:18:00.000+0000"
+                                                       |        },
+                                                       |        {
+                                                       |            "content": "QmxhaCBibGFoIGJsYWg=",
+                                                       |            "sent": "2020-11-10T15:30:00.000+0000"
+                                                       |        },
+                                                       |        {
+                                                       |            "content": "QmxhaCBibGFoIGJsYWg=",
+                                                       |            "senderInformation": {
+                                                       |                "created": "2020-11-10T15:35:00.000+0000",
+                                                       |                "name": "James Smith"
+                                                       |            }
+                                                       |        },
+                                                       |        {
+                                                       |            "content": "QmxhaCBibGFoIGJsYWg=",
+                                                       |            "senderInformation": {
+                                                       |                "created": "2020-11-10T15:42:00.000+0000",
+                                                       |                "name": "CDS Exports Team"
+                                                       |            }
+                                                       |        },
+                                                       |        {
+                                                       |            "content": "QmxhaCBibGFoIGJsYWg=",
+                                                       |            "senderInformation": {
+                                                       |                "created": "2020-11-10T16:00:00.000+0000",
+                                                       |                "name": "James Smith"
+                                                       |            }
+                                                       |        }
+                                                       |    ],
+                                                       |    "status": "open",
+                                                       |    "subject": "MRN: 19GB4S24GC3PPFGVR7",
+                                                       |    "tags": {
+                                                       |        "caseId": "D-80542",
+                                                       |        "mrn": "DMS7324874993",
+                                                       |        "notificationType": "CDS Exports",
+                                                       |        "queryId": "D-80542-20201120",
+                                                       |        "sourceId": "CDCM"
+                                                       |    }
+                                                       |}""".stripMargin)
     }
   }
 }
