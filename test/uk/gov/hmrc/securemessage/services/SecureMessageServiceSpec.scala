@@ -108,7 +108,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
               "sourceId"         -> "CDCM")),
           "MRN: 19GB4S24GC3PPFGVR7",
           English,
-          NonEmptyList.one(ApiMessage(None, None, None, None, "QmxhaCBibGFoIGJsYWg="))
+          NonEmptyList.one(ApiMessage(None, None, None, "QmxhaCBibGFoIGJsYWg="))
         ))
     }
 

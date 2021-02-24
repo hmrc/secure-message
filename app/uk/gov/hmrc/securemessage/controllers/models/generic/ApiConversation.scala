@@ -56,15 +56,14 @@ object ApiConversation {
     (sender, reader) match {
       // you're the sender
       case (Some(participantSender), Some(participantReader)) if participantSender.id === participantReader.id =>
-        ApiMessage(None, Some(message.created), None, None, message.content)
+        ApiMessage(None, Some(message.created), None, message.content)
       // not the sender, but am the first reader
       case (Some(participantSender), Some(participantReader))
           if isFirstReader(participantReader, message, coreConversation) =>
         ApiMessage(
           Some(SenderInformation(participantSender.name, message.created)),
           None,
-          readTime(coreConversation, message),
-          None,
+          firstReaderInformation(coreConversation, message),
           message.content
         )
       // not the sender, and not the first reader
@@ -72,11 +71,10 @@ object ApiConversation {
         ApiMessage(
           Some(SenderInformation(participantSender.name, message.created)),
           None,
-          readTime(coreConversation, message),
-          getFirstReaderDetails(coreConversation, message),
+          firstReaderInformation(coreConversation, message),
           message.content
         )
-      case (_, _) => ApiMessage(None, None, None, None, message.content)
+      case (_, _) => ApiMessage(None, None, None, message.content)
     }
   }
 
@@ -95,16 +93,11 @@ object ApiConversation {
       case _             => false
     }
 
-  private def getFirstReaderDetails(coreConversation: Conversation, message: Message): Option[FirstReaderInformation] =
+  private def firstReaderInformation(coreConversation: Conversation, message: Message): Option[FirstReaderInformation] =
     findFirstReaderDetails(message, coreConversation).flatMap { details =>
       findParticipantViaId(coreConversation, details._2).map { participantDetails =>
         FirstReaderInformation(participantDetails.name, details._1)
       }
-    }
-
-  private def readTime(coreConversation: Conversation, message: Message): Option[DateTime] =
-    findFirstReaderDetails(message, coreConversation).map { details =>
-      details._1
     }
 
   private def findParticipantViaId(coreConversation: Conversation, id: Int): Option[Participant] =

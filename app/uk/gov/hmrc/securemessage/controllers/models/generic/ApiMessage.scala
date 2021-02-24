@@ -24,7 +24,6 @@ import play.api.libs.json.{ Format, Json, Writes }
 final case class ApiMessage(
   senderInformation: Option[SenderInformation],
   sent: Option[DateTime],
-  read: Option[DateTime],
   firstReader: Option[FirstReaderInformation],
   content: String)
 
