@@ -105,6 +105,7 @@ Alternatively you can create messages locally by using this swagger endpoint:
 http://localhost:9051/docs/swagger-ui/index.html?url=/assets/schema.json#/app/createConversation
 
 ## Test only endpoint
+
 http://localhost:9051/delete/conversation/conversationId/client
 
 ## License
