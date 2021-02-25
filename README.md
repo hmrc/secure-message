@@ -29,7 +29,6 @@ Ensure you have service-manager python environment setup:
 
 `sbt run "9051 -Dplay.http.router=testOnlyDoNotUseInAppConf.Routes"`
 
-
 ## Run the tests and sbt fmt before raising a PR
 
 Ensure you have service-manager python environment setup:
