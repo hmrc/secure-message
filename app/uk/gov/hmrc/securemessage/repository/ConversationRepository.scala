@@ -37,11 +37,11 @@ import scala.concurrent.{ ExecutionContext, Future }
 @Singleton
 @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
 class ConversationRepository @Inject()(implicit connector: MongoConnector)
-  extends ReactiveRepository[Conversation, BSONObjectID](
-    "conversation",
-    connector.db,
-    Conversation.conversationFormat,
-    ReactiveMongoFormats.objectIdFormats) {
+    extends ReactiveRepository[Conversation, BSONObjectID](
+      "conversation",
+      connector.db,
+      Conversation.conversationFormat,
+      ReactiveMongoFormats.objectIdFormats) {
 
   private val DuplicateKey = 11000
 

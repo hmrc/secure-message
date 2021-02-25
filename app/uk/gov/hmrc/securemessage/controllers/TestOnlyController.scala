@@ -25,7 +25,7 @@ import scala.concurrent.ExecutionContext
 @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
 class TestOnlyController @Inject()(cc: ControllerComponents, repository: ConversationRepository)(
   implicit ec: ExecutionContext)
-  extends BackendController(cc) {
+    extends BackendController(cc) {
 
   def deleteConversation(conversationId: String, client: String): Action[AnyContent] = Action.async { _ =>
     repository.deleteConversationForTestOnly(conversationId, client).map { _ =>
