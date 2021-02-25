@@ -17,14 +17,13 @@
 package uk.gov.hmrc.securemessage.repository
 
 import cats.implicits.catsSyntaxEq
-import javax.inject.{ Inject, Singleton }
 import org.joda.time.DateTime
 import play.api.libs.json.JodaWrites.{ JodaDateTimeWrites => _ }
 import play.api.libs.json.Json.JsValueWrapper
 import play.api.libs.json.{ JsObject, JsString, Json }
-import reactivemongo.api.Cursor
 import reactivemongo.api.Cursor.ErrorHandler
 import reactivemongo.api.indexes.{ Index, IndexType }
+import reactivemongo.api.{ Cursor, WriteConcern }
 import reactivemongo.bson.BSONObjectID
 import reactivemongo.core.errors.DatabaseException
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
@@ -32,17 +31,17 @@ import uk.gov.hmrc.mongo.{ MongoConnector, ReactiveRepository }
 import uk.gov.hmrc.securemessage.controllers.models.generic.CustomerEnrolment
 import uk.gov.hmrc.securemessage.models.core.Message.dateFormat
 import uk.gov.hmrc.securemessage.models.core.{ Conversation, Message, Participants }
-
+import javax.inject.{ Inject, Singleton }
 import scala.concurrent.{ ExecutionContext, Future }
 
 @Singleton
 @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
 class ConversationRepository @Inject()(implicit connector: MongoConnector)
-    extends ReactiveRepository[Conversation, BSONObjectID](
-      "conversation",
-      connector.db,
-      Conversation.conversationFormat,
-      ReactiveMongoFormats.objectIdFormats) {
+  extends ReactiveRepository[Conversation, BSONObjectID](
+    "conversation",
+    connector.db,
+    Conversation.conversationFormat,
+    ReactiveMongoFormats.objectIdFormats) {
 
   private val DuplicateKey = 11000
 
@@ -119,4 +118,17 @@ class ConversationRepository @Inject()(implicit connector: MongoConnector)
         Json.obj("$push"  -> Json.obj("participants.$.readTimes" -> readTime))
       )
       .map(_.ok)
+
+  def deleteConversationForTestOnly(conversationId: String, client: String)(
+    implicit ec: ExecutionContext): Future[Unit] =
+    collection
+      .findAndRemove[JsObject](
+        selector = Json.obj("client" -> client, "conversationId" -> conversationId),
+        None,
+        None,
+        WriteConcern.Default,
+        None,
+        None,
+        Nil)
+      .map(_ => ())
 }
