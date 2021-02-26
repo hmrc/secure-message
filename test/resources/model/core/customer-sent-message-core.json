@@ -1,0 +1,44 @@
+{
+  "client" : "cdcm",
+  "conversationId" : "1111",
+  "status" : "open",
+  "subject" : "D-80542-20201120",
+  "language" : "en",
+  "participants" : [
+    {
+      "id" : 1,
+      "participantType" : "system",
+      "identifier" : {
+        "name" : "CDCM",
+        "value" : "D-80542-20201120"
+      },
+      "name" : "CDS Exports Team"
+    },
+    {
+      "id" : 2,
+      "participantType" : "customer",
+      "identifier" : {
+        "name" : "EORINumber",
+        "value" : "GB1234567890",
+        "enrolment" : "HMRC-CUS-ORG"
+      },
+      "email" : "jobloggs@test.com",
+      "readTimes" : [
+        "2021-03-01T12:52:09.011+0000"
+      ]
+    }
+  ],
+  "messages" : [
+    {
+      "senderId" : 1,
+      "created" : "2021-03-02T08:56:57.542+0000",
+      "content" : "QmxhaCBibGFoIGJsYWg="
+    },
+    {
+      "senderId" : 2,
+      "created" : "2021-03-02T09:18:45.308+0000",
+      "content" : "customer message content!!",
+      "isForwarded" : false
+    }
+  ]
+}

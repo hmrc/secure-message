@@ -172,12 +172,11 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
           "notificationType" -> "CDS Exports", "mrn" -> "DMS7324874993", "sourceId" -> "CDCM")), "D-80542-20201120", English,
           NonEmptyList.one(
             ApiMessage(
-              Some(SenderInformation(Some("CDS Exports Team"),DateTime.parse("2020-11-10T15:00:01.000Z"))),
-              None,
+              Some(SenderInformation(Some("CDS Exports Team"),DateTime.parse("2020-11-10T15:00:01.000Z"), self =  false)),
               Some(FirstReaderInformation(None, DateTime.parse("2020-11-10T15:00:01.000Z"))),"QmxhaCBibGFoIGJsYWg="))))))
       val response: Future[Result] = controller.getConversationContent("cdcm", "D-80542-20201120", "HMRC-CUS-ORG", "EORINumber").apply(FakeRequest("GET", "/"))
       status(response) mustBe OK
-      contentAsString(response) mustBe """{"client":"cdcm","conversationId":"D-80542-20201120","status":"open","tags":{"queryId":"D-80542-20201120","caseId":"D-80542","notificationType":"CDS Exports","mrn":"DMS7324874993","sourceId":"CDCM"},"subject":"D-80542-20201120","language":"en","messages":[{"senderInformation":{"name":"CDS Exports Team","created":"2020-11-10T15:00:01.000+0000"},"firstReader":{"read":"2020-11-10T15:00:01.000+0000"},"content":"QmxhaCBibGFoIGJsYWg="}]}"""
+      contentAsString(response) mustBe """{"client":"cdcm","conversationId":"D-80542-20201120","status":"open","tags":{"queryId":"D-80542-20201120","caseId":"D-80542","notificationType":"CDS Exports","mrn":"DMS7324874993","sourceId":"CDCM"},"subject":"D-80542-20201120","language":"en","messages":[{"senderInformation":{"name":"CDS Exports Team","sent":"2020-11-10T15:00:01.000+0000","self":false},"firstReader":{"read":"2020-11-10T15:00:01.000+0000"},"content":"QmxhaCBibGFoIGJsYWg="}]}"""
     }
 
     "return an BadRequest (400) with a JSON body of No conversation found" in new TestCase {

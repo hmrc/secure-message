@@ -23,11 +23,10 @@ import play.api.libs.json.{ Format, Json, Writes }
 
 final case class ApiMessage(
   senderInformation: Option[SenderInformation],
-  sent: Option[DateTime],
   firstReader: Option[FirstReaderInformation],
   content: String)
 
-final case class SenderInformation(name: Option[String], created: DateTime)
+final case class SenderInformation(name: Option[String], sent: DateTime, self: Boolean)
 
 final case class FirstReaderInformation(name: Option[String], read: DateTime)
 
