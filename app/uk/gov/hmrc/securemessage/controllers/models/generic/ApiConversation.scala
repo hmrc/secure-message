@@ -20,9 +20,9 @@ import cats.data.NonEmptyList
 import cats.implicits._
 import cats.kernel.Eq
 import org.joda.time.DateTime
-import play.api.libs.json.{ Json, Writes }
+import play.api.libs.json.{ Format, Json, Writes }
 import uk.gov.hmrc.securemessage.models.core.{ Identifier, _ }
-import uk.gov.hmrc.securemessage.models.utils.NonEmptyListOps.nonEmptyListWrites
+import uk.gov.hmrc.securemessage.models.utils.NonEmptyListOps.nonEmptyListFormat
 
 final case class ApiConversation(
   client: String,
@@ -111,6 +111,6 @@ object ApiConversation {
     })
 
   implicit val languageWrites: Writes[Language] = Language.languageWrites
-  implicit val conversationFormat: Writes[ApiConversation] =
-    Json.writes[ApiConversation]
+  implicit val conversationFormat: Format[ApiConversation] =
+    Json.format[ApiConversation]
 }

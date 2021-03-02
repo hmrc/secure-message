@@ -17,7 +17,7 @@
 package uk.gov.hmrc.securemessage.controllers.models.generic
 
 import org.scalatestplus.play.PlaySpec
-import play.api.libs.json.{ JsValue, Json }
+import play.api.libs.json.JsValue
 import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core._
 
@@ -32,15 +32,6 @@ class ConversationMetadataSpec extends PlaySpec {
       val conversationMetadataJson: JsValue = Resources.readJson("model/api/conversation-metadata.json")
       val conversationMetadata: ConversationMetadata = conversationMetadataJson.validate[ConversationMetadata].get
       ConversationMetadata.coreToConversationMetadata(coreConversation, identifier) mustEqual conversationMetadata
-      Json.toJson(conversationMetadata) mustBe Json.parse("""{
-                                                            |    "client": "cdcm",
-                                                            |    "conversationId": "D-80542-20201120",
-                                                            |    "count": 8,
-                                                            |    "issueDate": "2020-11-10T16:00:00.000+0000",
-                                                            |    "senderName": "James Smith",
-                                                            |    "subject": "MRN: 19GB4S24GC3PPFGVR7",
-                                                            |    "unreadMessages": true
-                                                            |}""".stripMargin)
     }
 
     "Convert core conversation to conversation metadata JSON when provided with a list of identifiers" in {
