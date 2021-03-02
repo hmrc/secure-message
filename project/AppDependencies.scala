@@ -26,7 +26,7 @@ object AppDependencies {
     "uk.gov.hmrc"       %% "time"                       % "3.19.0",
     "uk.gov.hmrc"       %% "emailaddress"               % "3.5.0",
     "org.webjars"       % "swagger-ui"                  % "3.42.0",
-    "com.beachape"      %% "enumeratum-play-json"       % "1.6.1",
+    "com.beachape"      %% "enumeratum-play-json"       % "1.6.2",
     "com.typesafe.play" %% "play-json-joda"             % "2.9.1",
     "org.typelevel"     %% "cats-core"                  % "2.4.2"
   )

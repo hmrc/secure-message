@@ -1,0 +1,47 @@
+{
+  "client" : "cdcn",
+  "conversationId" : "1111",
+  "status" : "open",
+  "tags" : {
+    "queryId" : "D-80542-20201120",
+    "caseId" : "D-80542",
+    "notificationType" : "CDS Exports",
+    "mrn" : "DMS7324874993",
+    "sourceId" : "CDCM"
+  },
+  "subject" : "Subject content",
+  "language" : "en",
+  "participants" : [
+    {
+      "id" : 1,
+      "participantType" : "system",
+      "identifier" : {
+        "name" : "CDCM",
+        "value" : "1111"
+      },
+      "name" : "CDS Exports Team",
+      "parameters" : {
+        "caseId" : "D-80542",
+        "queryId" : "D-80542-20201120"
+      }
+    },
+    {
+      "id" : 2,
+      "participantType" : "customer",
+      "identifier" : {
+        "name" : "EORINumber",
+        "value" : "GB1234567890",
+        "enrolment" : "HMRC-CUS-ORG"
+      },
+      "name" : "customer1",
+      "email" : "customer1@test.com"
+    }
+  ],
+  "messages" : [
+    {
+      "senderId" : 1,
+      "created" : "2021-03-02T08:36:34.604+0000",
+      "content" : "QmxhaCBibGFoIGJsYWg="
+    }
+  ]
+}

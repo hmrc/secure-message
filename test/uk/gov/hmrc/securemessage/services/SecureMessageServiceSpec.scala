@@ -31,8 +31,6 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.securemessage.controllers.models.generic
 import uk.gov.hmrc.securemessage.controllers.models.generic._
 import uk.gov.hmrc.securemessage.helpers.ConversationUtil
-import uk.gov.hmrc.securemessage.models.core.ConversationStatus.Open
-import uk.gov.hmrc.securemessage.models.core.Language.English
 import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
 import uk.gov.hmrc.securemessage.connectors.EmailConnector
@@ -89,27 +87,14 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
 
   "getConversation" must {
 
-    "return a Some with ApiConversation" in new TestCase {
+    "return a message with ApiConversation" in new TestCase {
       when(mockRepository.getConversation(any[String], any[String], any[generic.CustomerEnrolment])(any[ExecutionContext]))
         .thenReturn(Future.successful(Some(ConversationUtil.getFullConversation("D-80542-20201120"))))
       private val result = await(
         service.getConversation("cdcm", "D-80542-20201120", CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777")))
-      result mustBe Some(
-        ApiConversation(
-          "cdcm",
-          "D-80542-20201120",
-          Open,
-          Some(
-            Map(
-              "queryId"          -> "D-80542-20201120",
-              "caseId"           -> "D-80542",
-              "notificationType" -> "CDS Exports",
-              "mrn"              -> "DMS7324874993",
-              "sourceId"         -> "CDCM")),
-          "MRN: 19GB4S24GC3PPFGVR7",
-          English,
-          NonEmptyList.one(ApiMessage(None, None, None, "QmxhaCBibGFoIGJsYWg="))
-        ))
+      result.get.client mustBe "cdcm"
+      result.get.messages.size mustBe 1
+      result.get.subject mustBe "MRN: 19GB4S24GC3PPFGVR7"
     }
 
     "return a None" in new TestCase {

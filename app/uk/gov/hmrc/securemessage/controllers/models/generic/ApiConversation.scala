@@ -47,34 +47,29 @@ object ApiConversation {
       messages = conversation.messages.map(message => convertToApiMessage(conversation, message, identifier))
     )
 
+  private def isSender(sender: Option[Participant], reader: Option[Participant]) =
+    for {
+      s <- sender
+      r <- reader
+    } yield (s.id === r.id)
+
   private def convertToApiMessage(
     coreConversation: Conversation,
     message: Message,
     identifier: Identifier): ApiMessage = {
-    val sender: Option[Participant] = findParticipantViaId(coreConversation, message.senderId)
-    val reader: Option[Participant] = findParticipantViaIdentifier(coreConversation, identifier)
-    (sender, reader) match {
-      // you're the sender
-      case (Some(participantSender), Some(participantReader)) if participantSender.id === participantReader.id =>
-        ApiMessage(None, Some(message.created), None, message.content)
-      // not the sender, but am the first reader
-      case (Some(participantSender), Some(participantReader))
-          if isFirstReader(participantReader, message, coreConversation) =>
-        ApiMessage(
-          Some(SenderInformation(participantSender.name, message.created)),
-          None,
-          firstReaderInformation(coreConversation, message),
-          message.content
-        )
-      // not the sender, and not the first reader
-      case (Some(participantSender), Some(_)) =>
-        ApiMessage(
-          Some(SenderInformation(participantSender.name, message.created)),
-          None,
-          firstReaderInformation(coreConversation, message),
-          message.content
-        )
-      case (_, _) => ApiMessage(None, None, None, message.content)
+    val senderPossibly: Option[Participant] = findParticipantViaId(coreConversation, message.senderId)
+    val readerPossibly: Option[Participant] = findParticipantViaIdentifier(coreConversation, identifier)
+    val firstReaderPossibly = firstReaderInformation(coreConversation, message)
+    val self = isSender(senderPossibly, readerPossibly).getOrElse(false)
+
+    (senderPossibly, firstReaderPossibly, self) match {
+      case (Some(sender), Some(_), true) =>
+        ApiMessage(Some(SenderInformation(sender.name, message.created, self)), None, message.content)
+      case (Some(sender), Some(_), false) =>
+        ApiMessage(Some(SenderInformation(sender.name, message.created, self)), firstReaderPossibly, message.content)
+      case (Some(sender), _, _) =>
+        ApiMessage(Some(SenderInformation(sender.name, message.created, self)), None, message.content)
+      case (_, _, _) => ApiMessage(None, None, message.content)
     }
   }
 
@@ -86,12 +81,6 @@ object ApiConversation {
       .filter(_._1.getMillis > messageCreated)
       .headOption
   }
-
-  def isFirstReader(readerParticipant: Participant, message: Message, coreConversation: Conversation): Boolean =
-    findFirstReaderDetails(message, coreConversation) match {
-      case Some(details) => details._2 === readerParticipant.id
-      case _             => false
-    }
 
   private def firstReaderInformation(coreConversation: Conversation, message: Message): Option[FirstReaderInformation] =
     findFirstReaderDetails(message, coreConversation).flatMap { details =>
