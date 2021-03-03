@@ -40,6 +40,10 @@ lazy val microservice = Project(appName, file("."))
     majorVersion := 0,
     scalaVersion := "2.12.12",
     libraryDependencies ++= AppDependencies.compile ++ AppDependencies.test,
+    routesImport ++= Seq(
+      "uk.gov.hmrc.securemessage.controllers.binders._",
+      "uk.gov.hmrc.securemessage.controllers.models.generic._"
+    ),
     // ***************
     // Use the silencer plugin to suppress warnings
     scalacOptions ++= Seq(

@@ -41,19 +41,26 @@ object ConversationUtil {
       None
     )
 
-  def getFullConversation(id: String): Conversation =
+  @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
+  def getFullConversation(
+    id: String,
+    enrolmentKey: String,
+    enrolmentName: String,
+    enrolmentValue: String,
+    tags: Option[Map[String, String]] = Some(
+      Map(
+        "sourceId"         -> "CDCM",
+        "caseId"           -> "D-80542",
+        "queryId"          -> "D-80542-20201120",
+        "mrn"              -> "DMS7324874993",
+        "notificationType" -> "CDS Exports"
+      ))
+  ): Conversation =
     Conversation(
       "cdcm",
       id,
       ConversationStatus.Open,
-      Some(
-        Map(
-          "sourceId"         -> "CDCM",
-          "caseId"           -> "D-80542",
-          "queryId"          -> "D-80542-20201120",
-          "mrn"              -> "DMS7324874993",
-          "notificationType" -> "CDS Exports"
-        )),
+      tags,
       "MRN: 19GB4S24GC3PPFGVR7",
       English,
       List(
@@ -69,7 +76,7 @@ object ConversationUtil {
         Participant(
           2,
           ParticipantType.Customer,
-          Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")),
+          Identifier(enrolmentName, enrolmentValue, Some(enrolmentKey)),
           Some("Joe Bloggs"),
           Some(EmailAddress("joebloggs@test.com")),
           None,

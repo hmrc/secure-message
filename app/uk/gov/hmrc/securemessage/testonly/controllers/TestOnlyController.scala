@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.securemessage.controllers
+package uk.gov.hmrc.securemessage.testonly.controllers
 
 import com.google.inject.Inject
 import play.api.mvc.{ Action, AnyContent, ControllerComponents }
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
+
 import scala.concurrent.ExecutionContext
 
 @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))

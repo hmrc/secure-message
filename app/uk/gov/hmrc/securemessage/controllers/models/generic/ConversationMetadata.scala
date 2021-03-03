@@ -48,6 +48,20 @@ object ConversationMetadata {
     )
   }
 
+  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
+  def coreToConversationMetadata(coreConversation: Conversation, identifiers: Set[Identifier]): ConversationMetadata = {
+    val messageCount = coreConversation.messages.size
+    ConversationMetadata(
+      coreConversation.client,
+      coreConversation.conversationId,
+      coreConversation.subject,
+      findLatestMessageDate(coreConversation),
+      findLatestMessageName(coreConversation),
+      anyUnreadMessages(coreConversation, identifiers),
+      messageCount
+    )
+  }
+
   private def findLatestMessage(coreConversation: Conversation): Message =
     coreConversation.messages.sortBy(_.created.getMillis).reverse.head
 
@@ -65,6 +79,12 @@ object ConversationMetadata {
       .find(_.identifier === identifier)
       .fold(false)(participant => findUnreadMessagesByParticipant(participant, coreConversation))
   }
+
+  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
+  private def anyUnreadMessages(coreConversation: Conversation, identifiers: Set[Identifier]): Boolean =
+    coreConversation.participants
+      .find(participant => identifiers.contains(participant.identifier))
+      .fold(false)(participant => findUnreadMessagesByParticipant(participant, coreConversation))
 
   private def findUnreadMessagesByParticipant(participant: Participant, coreConversation: Conversation): Boolean =
     participant.readTimes match {

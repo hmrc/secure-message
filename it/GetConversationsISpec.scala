@@ -41,7 +41,7 @@ class GetConversationsISpec extends PlaySpec with ServiceSpec with BeforeAndAfte
     val _ = await(repository.removeAll()(ec))
   }
 
-  "A GET request to /secure-messaging/conversations" should {
+  "Deprecated - A GET request to /secure-messaging/conversations/<enrolment_key>/<enrolment_name>" should {
 
     "return a JSON body of conversation metadata" in {
       createConversation
@@ -54,14 +54,134 @@ class GetConversationsISpec extends PlaySpec with ServiceSpec with BeforeAndAfte
       response.body must include("""senderName":"CDS Exports Team""")
     }
 
-    "return a JSON body of [No EORI enrolment found] when there's an auth session, but no EORI enrolment" in {
+    "return a JSON body of [No enrolment found] when there's an auth session, but no enrolment" in {
       val response =
         wsClient
           .url(resource("/secure-messaging/conversations/hmrc-cus-org/eorinumber"))
           .withHttpHeaders(buildNonEoriToken)
           .get()
           .futureValue
-      response.body mustBe "\"No EORI enrolment found\""
+      response.body mustBe "\"No enrolment found\""
+    }
+  }
+
+  "A GET request to /secure-messaging/conversations for a filtered query" should {
+
+    "return a JSON body of conversation metadata when no filters are provided by leveraging auth enrolments" in {
+      createConversation
+      val response =
+        wsClient
+          .url(resource("/secure-messaging/conversations"))
+          .withHttpHeaders(buildEoriToken(VALID_EORI))
+          .get()
+          .futureValue
+      response.body must include("""senderName":"CDS Exports Team""")
+      response.body must include("\"count\":1")
+    }
+
+    "return a JSON body of conversation metadata when filtered by multiple tags" in {
+      createConversation
+      val response =
+        wsClient
+          .url(resource("/secure-messaging/conversations?tag=notificationType~CDS%20Exports&tag=sourceId~CDCM"))
+          .withHttpHeaders(buildEoriToken(VALID_EORI))
+          .get()
+          .futureValue
+      response.body must include("""senderName":"CDS Exports Team""")
+      response.body must include("\"count\":1")
+    }
+
+    "return a JSON body of conversation metadata when filtered by a single enrolment key" in {
+      createConversation
+      val response =
+        wsClient
+          .url(resource("/secure-messaging/conversations?enrolmentKey=HMRC-CUS-ORG"))
+          .withHttpHeaders(buildEoriToken(VALID_EORI))
+          .get()
+          .futureValue
+      response.body must include("""senderName":"CDS Exports Team""")
+      response.body must include("\"count\":1")
+    }
+
+    "return a JSON body of conversation metadata when filtered by multiple enrolment keys" in {
+      createConversation
+      val response =
+        wsClient
+          .url(resource("/secure-messaging/conversations?enrolmentKey=HMRC-CUS-ORG&enrolmentKey=SOME_ENROLMENT"))
+          .withHttpHeaders(buildEoriToken(VALID_EORI))
+          .get()
+          .futureValue
+      response.body must include("""senderName":"CDS Exports Team""")
+      response.body must include("\"count\":1")
+    }
+
+    "return a JSON body of conversation metadata when filtered by a single enrolment" in {
+      createConversation
+      val response =
+        wsClient
+          .url(resource("/secure-messaging/conversations?enrolment=HMRC-CUS-ORG~EORINumber~GB1234567890"))
+          .withHttpHeaders(buildEoriToken(VALID_EORI))
+          .get()
+          .futureValue
+      response.body must include("""senderName":"CDS Exports Team""")
+      response.body must include("\"count\":1")
+    }
+
+    "return a JSON body of conversation metadata when filtered by a multiple enrolments" in {
+      createConversation
+      val response =
+        wsClient
+          .url(resource(
+            "/secure-messaging/conversations?enrolment=HMRC-CUS-ORG~EORINumber~GB1234567890&enrolment=SOMETHING~SomeName~A1233455646"))
+          .withHttpHeaders(buildEoriToken(VALID_EORI))
+          .get()
+          .futureValue
+      response.body must include("""senderName":"CDS Exports Team""")
+      response.body must include("\"count\":1")
+    }
+
+    "return a JSON body of conversation metadata when filtered by a single enrolment and a single enrolment key" in {
+      createConversation
+      val response =
+        wsClient
+          .url(resource(
+            "/secure-messaging/conversations?enrolmentKey=HMRC-CUS-ORG&enrolment=HMRC-CUS-ORG~EORINumber~GB1234567890"))
+          .withHttpHeaders(buildEoriToken(VALID_EORI))
+          .get()
+          .futureValue
+      response.body must include("""senderName":"CDS Exports Team""")
+      response.body must include("\"count\":1")
+    }
+
+    "return a JSON body of [No enrolment found] when there's an auth session, but no enrolment matching the enrolment key filter" in {
+      val response =
+        wsClient
+          .url(resource("/secure-messaging/conversations?enrolmentKey=SOME_ENROLMENT"))
+          .withHttpHeaders(buildNonEoriToken)
+          .get()
+          .futureValue
+      response.body mustBe "\"No enrolment found\""
+    }
+
+    "return a JSON body of [No enrolment found] when there's an auth session, but no enrolment matching the enrolment filter" in {
+      val response =
+        wsClient
+          .url(resource("/secure-messaging/conversations?enrolment=SOME_ENROLMENT~SomeIdentifierName~A123456789"))
+          .withHttpHeaders(buildNonEoriToken)
+          .get()
+          .futureValue
+      response.body mustBe "\"No enrolment found\""
+    }
+
+    "return a JSON body of [No enrolment found] when there's an auth session, but no enrolment matching an enrolment nor enrolment key filter" in {
+      val response =
+        wsClient
+          .url(resource(
+            "/secure-messaging/conversations?enrolmentKey=SOME_ENROLMENT&enrolment=SOME_ENROLMENT~SomeIdentifierName~A123456789"))
+          .withHttpHeaders(buildNonEoriToken)
+          .get()
+          .futureValue
+      response.body mustBe "\"No enrolment found\""
     }
   }
 
