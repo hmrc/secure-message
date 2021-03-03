@@ -27,13 +27,9 @@ package object binders {
     new QueryStringBindable[CustomerEnrolment] {
 
       override def bind(key: String, params: Map[String, Seq[String]]): Option[Either[String, CustomerEnrolment]] =
-        for {
-          enrolment <- stringBinder.bind("enrolment", params)
-        } yield {
-          enrolment match {
-            case Right(customerEnrolment) => Right(CustomerEnrolment.parse(customerEnrolment))
-            case _                        => Left("Unable to bind a CustomerEnrolment")
-          }
+        stringBinder.bind("enrolment", params) map {
+          case Right(customerEnrolment) => Right(CustomerEnrolment.parse(customerEnrolment))
+          case _                        => Left("Unable to bind a CustomerEnrolment")
         }
 
       override def unbind(key: String, customerEnrolment: CustomerEnrolment): String =
@@ -45,13 +41,9 @@ package object binders {
     new QueryStringBindable[Tag] {
 
       override def bind(key: String, params: Map[String, Seq[String]]): Option[Either[String, Tag]] =
-        for {
-          tag <- stringBinder.bind("tag", params)
-        } yield {
-          tag match {
-            case Right(tag) => Right(Tag.parse(tag))
-            case _          => Left("Unable to bind a Tag")
-          }
+        stringBinder.bind("tag", params) map {
+          case Right(tag) => Right(Tag.parse(tag))
+          case _          => Left("Unable to bind a Tag")
         }
 
       override def unbind(key: String, tag: Tag): String =
