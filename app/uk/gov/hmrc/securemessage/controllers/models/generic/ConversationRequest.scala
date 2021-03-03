@@ -33,8 +33,26 @@ object Alert {
 
 final case class CustomerEnrolment(key: String, name: String, value: String)
 object CustomerEnrolment {
-  implicit val enrolmentReads: Reads[CustomerEnrolment] =
+  implicit val enrolmentReads: Reads[CustomerEnrolment] = {
     Json.reads[CustomerEnrolment]
+  }
+
+  def parse(enrolmentString: String): CustomerEnrolment = {
+    val enrolment = enrolmentString.split('~')
+    CustomerEnrolment(enrolment.head, enrolment(1), enrolment.last)
+  }
+}
+
+final case class Tag(key: String, value: String)
+object Tag {
+  implicit val tagReads: Reads[Tag] = {
+    Json.reads[Tag]
+  }
+
+  def parse(tagString: String): Tag = {
+    val tag = tagString.split('~')
+    Tag(tag.head, tag(1))
+  }
 }
 
 final case class SystemIdentifier(name: String, value: String)

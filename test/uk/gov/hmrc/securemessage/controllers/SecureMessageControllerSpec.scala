@@ -52,7 +52,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with MockitoSugar {
 
   implicit val mat: Materializer = NoMaterializer
-  val listOfCoreConversation = List(ConversationUtil.getFullConversation("D-80542-20201120"))
+  val listOfCoreConversation = List(ConversationUtil.getFullConversation("D-80542-20201120", "HMRC-CUS-ORG", "EORINumber", "GB1234567890"))
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
@@ -150,7 +150,57 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
                   None)))))
       val response: Future[Result] = controller.getMetadataForConversations("HMRC-CUS-ORG", "EORINumber").apply(FakeRequest("GET", "/"))
       status(response) mustBe UNAUTHORIZED
-      contentAsString(response) mustBe "\"No EORI enrolment found\""
+      contentAsString(response) mustBe "\"No enrolment found\""
+    }
+  }
+
+  "getConversationsFiltered" must {
+    "return an OK (200) with a JSON body of a list of conversations when provided with a list of valid query parameters" in new TestCase {
+      when(mockAuthConnector.authorise(any[Predicate], any[Retrieval[Enrolments]])(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(
+          Future.successful(
+            Enrolments(
+              Set(
+                uk.gov.hmrc.auth.core.Enrolment(
+                  key = "HMRC-CUS-ORG",
+                  identifiers = Seq(EnrolmentIdentifier("EORINumber", "GB123456789")),
+                  state = "",
+                  None)))))
+      when(mockSecureMessageService.getConversationsFiltered(Set(generic.CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789")), None))
+        .thenReturn(Future(List(ConversationMetadata(
+          client = "cdcm",
+          conversationId = "D-80542-20201120",
+          subject = "D-80542-20201120",
+          issueDate = DateTime.parse("2020-11-10T15:00:18.000+0000"),
+          senderName = Some("Joe Bloggs"),
+          unreadMessages = true,
+          count = 4))))
+      val response: Future[Result] = controller.getMetadataForConversationsFiltered(
+        None,
+        Some(List(CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789"))),
+        None).apply(FakeRequest("GET", "/"))
+      status(response) mustBe OK
+      contentAsString(response) mustBe
+        """[{"client":"cdcm","conversationId":"D-80542-20201120","subject":"D-80542-20201120","issueDate":"2020-11-10T15:00:18.000+0000","senderName":"Joe Bloggs","unreadMessages":true,"count":4}]"""
+    }
+
+    "return a 401 (UNAUTHORISED) error when no enrolments provided as query paramters match the ones held in the auth retrievals" in new TestCase {
+      when(mockAuthConnector.authorise(any[Predicate], any[Retrieval[Enrolments]])(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(
+          Future.successful(
+            Enrolments(
+              Set(
+                Enrolment(
+                  key = "some other key",
+                  identifiers = Seq(EnrolmentIdentifier("another enrolment", "GB123456789")),
+                  state = "",
+                  None)))))
+      val response: Future[Result] = controller.getMetadataForConversationsFiltered(
+        None,
+        Some(List(CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789"))),
+        None).apply(FakeRequest("GET", "/"))
+      status(response) mustBe UNAUTHORIZED
+      contentAsString(response) mustBe "\"No enrolment found\""
     }
   }
 

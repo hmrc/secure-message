@@ -19,4 +19,4 @@ GET   /assets/*file                         controllers.Assets.versioned(path="/
 
 ->         /                                prod.Routes
 
-DELETE    /delete/conversation/:conversationId/:client    uk.gov.hmrc.securemessage.controllers.TestOnlyController.deleteConversation(conversationId, client)
+DELETE    /delete/conversation/:conversationId/:client    uk.gov.hmrc.securemessage.testonly.controllers.TestOnlyController.deleteConversation(conversationId, client)
