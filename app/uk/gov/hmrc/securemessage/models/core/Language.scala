@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.securemessage.models.core
 import enumeratum._
-import play.api.libs.json.{ JsString, JsSuccess, Reads, Writes }
+import play.api.libs.json._
 
 import scala.collection.immutable
 
@@ -35,4 +35,6 @@ case object Language extends Enum[Language] with PlayJsonEnum[Language] {
     case _               => JsSuccess[Language](Language.English)
   }
   implicit val languageWrites: Writes[Language] = (e: Language) => JsString(e.entryName)
+
+  implicit val languageFormat: Format[Language] = Format(languageReads, languageWrites)
 }

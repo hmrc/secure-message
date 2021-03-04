@@ -60,5 +60,12 @@
       "content" : "customer message content!!",
       "isForwarded" : false
     }
-  ]
+  ],
+  "alert": {
+    "templateId": "emailTemplateId",
+    "parameters": {
+      "param1": "value1",
+      "param2": "value2"
+    }
+  }
 }
