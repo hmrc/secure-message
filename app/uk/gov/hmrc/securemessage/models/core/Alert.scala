@@ -16,22 +16,10 @@
 
 package uk.gov.hmrc.securemessage.models.core
 
-import cats.data.NonEmptyList
-import play.api.libs.json.{ Json, OFormat }
-import uk.gov.hmrc.securemessage.models.utils.NonEmptyListOps._
+import play.api.libs.json.{ Format, Json }
 
-final case class Conversation(
-  client: String,
-  conversationId: String,
-  status: ConversationStatus,
-  tags: Option[Map[String, String]],
-  subject: String,
-  language: Language,
-  participants: List[Participant],
-  messages: NonEmptyList[Message],
-  alert: Alert
-)
-
-object Conversation {
-  implicit val conversationFormat: OFormat[Conversation] = Json.format[Conversation]
+final case class Alert(templateId: String, parameters: Option[Map[String, String]])
+object Alert {
+  implicit val alertFormat: Format[Alert] =
+    Json.format[Alert]
 }

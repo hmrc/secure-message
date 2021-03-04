@@ -28,5 +28,8 @@
         "senderId": 1,
         "created": "2020-11-10T15:00:01.000Z",
         "content": "QmxhaCBibGFoIGJsYWg="
-    }]
+    }],
+    "alert": {
+        "templateId": "emailTemplateId"
+    }
 }
