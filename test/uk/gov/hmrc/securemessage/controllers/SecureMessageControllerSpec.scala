@@ -49,8 +49,6 @@ import scala.concurrent.{ ExecutionContext, Future }
 class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with MockitoSugar with OptionValues {
 
   implicit val mat: Materializer = NoMaterializer
-  val listOfCoreConversation = List(ConversationUtil.getFullConversation("D-80542-20201120", "HMRC-CUS-ORG", "EORINumber", "GB1234567890"))
-
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
   "createConversation" must {

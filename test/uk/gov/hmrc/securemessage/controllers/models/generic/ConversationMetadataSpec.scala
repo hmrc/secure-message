@@ -17,7 +17,7 @@
 package uk.gov.hmrc.securemessage.controllers.models.generic
 
 import org.scalatestplus.play.PlaySpec
-import play.api.libs.json.JsValue
+import play.api.libs.json.{ JsValue, Json }
 import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core._
 

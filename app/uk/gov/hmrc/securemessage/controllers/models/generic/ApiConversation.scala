@@ -77,8 +77,8 @@ object ApiConversation {
     val messageCreated = message.created.getMillis
     getReadTimesWithId(coreConversation.participants)
       .filter(_._2 =!= message.senderId)
-      .sortBy(_._1.getMillis)
       .filter(_._1.getMillis > messageCreated)
+      .sortBy(_._1.getMillis)
       .headOption
   }
 
