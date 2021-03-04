@@ -20,6 +20,7 @@ import cats.data.NonEmptyList
 import org.joda.time.DateTime
 import play.api.libs.functional.syntax.toFunctionalBuilderOps
 import play.api.libs.json.{ JsPath, Json, Reads }
+import uk.gov.hmrc.securemessage.models.core
 import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.time.DateTimeUtils
 import uk.gov.hmrc.emailaddress._
@@ -74,8 +75,7 @@ object System {
 
 final case class Customer(enrolment: CustomerEnrolment, name: Option[String], email: Option[EmailAddress])
 object Customer {
-  implicit val customerReads: Reads[Customer] =
-    Json.reads[Customer]
+  implicit val customerReads: Reads[Customer] = Json.reads[Customer]
 }
 
 final case class Sender(system: System)
@@ -117,7 +117,8 @@ final case class ConversationRequest(
       subject,
       getLanguage(language),
       initialParticipants,
-      NonEmptyList.one(initialMessage)
+      NonEmptyList.one(initialMessage),
+      core.Alert(alert.templateId, alert.parameters)
     )
   }
 

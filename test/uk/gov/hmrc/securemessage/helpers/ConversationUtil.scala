@@ -18,12 +18,15 @@ package uk.gov.hmrc.securemessage.helpers
 
 import cats.data.NonEmptyList
 import org.joda.time.DateTime
+import uk.gov.hmrc.securemessage.controllers.models
 import uk.gov.hmrc.securemessage.controllers.models.generic._
 import uk.gov.hmrc.securemessage.models.core.Language.English
 import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.emailaddress._
+import uk.gov.hmrc.securemessage.models.core
 
 object ConversationUtil {
+  val alert: core.Alert = core.Alert("emailTemplateId", Some(Map("param1" -> "value1", "param2" -> "value2")))
 
   def getConversationRequest(withEmailAddress: Boolean): ConversationRequest =
     ConversationRequest(
@@ -34,7 +37,7 @@ object ConversationUtil {
             CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890"),
             Some("Joe Bloggs"),
             if (withEmailAddress) Some(EmailAddress("joebloggs@test.com")) else None))),
-      Alert("templateId", None),
+      models.generic.Alert(alert.templateId, alert.parameters),
       None,
       "Test",
       "base64encode",
@@ -54,7 +57,8 @@ object ConversationUtil {
         "queryId"          -> "D-80542-20201120",
         "mrn"              -> "DMS7324874993",
         "notificationType" -> "CDS Exports"
-      ))
+      )),
+    alert: core.Alert = alert
   ): Conversation =
     Conversation(
       "cdcm",
@@ -90,7 +94,8 @@ object ConversationUtil {
           "QmxhaCBibGFoIGJsYWg=",
           None
         )
-      )
+      ),
+      alert
     )
 
   def getMinimalConversation(id: String): Conversation =
@@ -126,7 +131,8 @@ object ConversationUtil {
           "QmxhaCBibGFoIGJsYWg=",
           None
         )
-      )
+      ),
+      alert.copy(parameters = None)
     )
 
 }

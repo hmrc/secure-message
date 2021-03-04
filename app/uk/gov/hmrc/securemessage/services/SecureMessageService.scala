@@ -30,6 +30,9 @@ import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
 
 import scala.concurrent.{ ExecutionContext, Future }
+/*
+TODO: refactor so that service has no play dependencies, only core classes.
+ */
 
 @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
 class SecureMessageService @Inject()(repo: ConversationRepository, emailConnector: EmailConnector) {

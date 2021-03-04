@@ -35,5 +35,12 @@
       "created" : "2021-03-02T08:56:57.542+0000",
       "content" : "QmxhaCBibGFoIGJsYWg="
     }
-  ]
+  ],
+  "alert": {
+    "templateId": "emailTemplateId",
+    "parameters": {
+      "param1": "value1",
+      "param2": "value2"
+    }
+  }
 }

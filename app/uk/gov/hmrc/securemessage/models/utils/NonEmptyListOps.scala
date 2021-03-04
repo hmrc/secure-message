@@ -19,7 +19,7 @@ package uk.gov.hmrc.securemessage.models.utils
 import cats.data.NonEmptyList
 import play.api.libs.json.{ Format, JsonValidationError, Reads, Writes }
 
-object NonEmptyListOps {
+trait NonEmptyListOps {
 
   implicit def nonEmptyListReads[T: Reads]: Reads[NonEmptyList[T]] =
     Reads
@@ -39,3 +39,5 @@ object NonEmptyListOps {
     Format(nonEmptyListReads, nonEmptyListWrites)
 
 }
+
+object NonEmptyListOps extends NonEmptyListOps
