@@ -172,3 +172,5 @@ dependencyUpdatesFilter -= moduleFilter(organization = "org.scalatestplus.play")
 dependencyUpdatesFilter -= moduleFilter(organization = "org.webjars")
 
 sources in (Compile, doc) := Seq.empty
+
+scalaModuleInfo ~= (_.map(_.withOverrideScalaVersion(true)))
