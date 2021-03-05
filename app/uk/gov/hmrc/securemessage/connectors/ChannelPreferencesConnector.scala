@@ -17,59 +17,60 @@
 package uk.gov.hmrc.securemessage.connectors
 
 import play.api.{ Configuration, Logging }
-import play.api.http.Status.{ BAD_GATEWAY, OK }
-import play.api.libs.json.{ JsError, JsResult, JsString, JsSuccess, JsValue, Json, Reads }
+import play.api.http.Status.{ FAILED_DEPENDENCY, OK }
+import play.api.libs.json.{ JsSuccess, Json }
 import uk.gov.hmrc.emailaddress.EmailAddress
-import uk.gov.hmrc.http.{ HeaderCarrier, HttpClient }
+import uk.gov.hmrc.emailaddress.PlayJsonFormats.emailAddressReads
+import uk.gov.hmrc.http.{ HeaderCarrier, HttpClient, HttpResponse }
+import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.securemessage.models.core.Identifier
+import uk.gov.hmrc.securemessage.services.exception.HttpException
 
 import javax.inject.{ Inject, Singleton }
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success, Try }
 
 @Singleton
-@SuppressWarnings(Array("org.wartremover.warts.All"))
+@SuppressWarnings(Array("org.wartremover.warts.Nothing", "org.wartremover.warts.ImplicitParameter"))
 class ChannelPreferencesConnector @Inject()(config: Configuration, httpClient: HttpClient)(
   implicit ec: ExecutionContext)
     extends ServicesConfig(config) with Logging {
 
-  def channelPrefUrl(id: Identifier): String =
-    s"""${baseUrl("channel-preferences")}/channel-preferences/preference/email/${id.enrolment.get}/${id.name}/${id.value}"""
-
-  implicit object EmailAddressReads extends Reads[EmailAddress] {
-    def reads(json: JsValue): JsResult[EmailAddress] = json match {
-      case JsString(s) =>
-        Try(EmailAddress(s)) match {
-          case Success(v) => JsSuccess(v)
-          case Failure(e) => JsError(e.getMessage)
+  def getEmailForEnrolment(id: Identifier)(
+    implicit hc: HeaderCarrier): Future[Either[EmailLookupException, EmailAddress]] =
+    httpClient
+      .GET[HttpResponse](
+        url = s"""${baseUrl("channel-preferences")}/channel-preferences/preference/email""",
+        queryParams =
+          Seq(("enrolmentKey", id.enrolment.fold("")(identity)), ("taxIdName", id.name), ("taxIdValue", id.value))
+      )
+      .map { resp =>
+        resp.status match {
+          case OK => parseEmail(resp.body)
+          case s =>
+            val errMsg = s"channel-preferences returned status: $s body: ${resp.body}"
+            logger.error(errMsg)
+            Left(EmailLookupException(s, errMsg))
         }
-      case _ => JsError("Uable to parse email address")
-    }
-  }
+      }
 
-  private def parseEmail(body: String): Either[Int, EmailAddress] =
+  private def parseEmail(body: String): Either[EmailLookupException, EmailAddress] =
     Try(Json.parse(body)) match {
       case Success(v) =>
         (v \ "address").validate[EmailAddress] match {
           case JsSuccess(ev, _) => Right(ev)
           case _ =>
-            logger.warn(s"unable to parse $body")
-            Left(BAD_GATEWAY)
+            val errMsg = s"could not find an email address in the response: $body"
+            logger.error(errMsg)
+            Left(EmailLookupException(FAILED_DEPENDENCY, errMsg))
         }
       case Failure(e) =>
-        logger.error(s"channel-preferences response was invalid", e)
-        Left(BAD_GATEWAY)
+        val errMsg = s"channel-preferences response was an invalid json: $body, error: ${e.getMessage}"
+        logger.error(errMsg, e)
+        Left(EmailLookupException(FAILED_DEPENDENCY, errMsg))
     }
 
-  def getEmailForEnrolment(id: Identifier)(implicit hc: HeaderCarrier): Future[Either[Int, EmailAddress]] =
-    httpClient
-      .doGet(channelPrefUrl(id))
-      .map { resp =>
-        resp.status match {
-          case OK => parseEmail(resp.body)
-          case s  => Left(s)
-        }
-      }
-
 }
+
+final case class EmailLookupException(code: Int, message: String) extends HttpException

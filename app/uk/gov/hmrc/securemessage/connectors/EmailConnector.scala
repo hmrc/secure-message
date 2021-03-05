@@ -16,29 +16,34 @@
 
 package uk.gov.hmrc.securemessage.connectors
 
-import controllers.Assets.CREATED
-import javax.inject.{ Inject, Singleton }
 import play.api.Logging
+
+import javax.inject.{ Inject, Singleton }
 import uk.gov.hmrc.http.HttpReads.Implicits.readRaw
 import uk.gov.hmrc.http.{ HeaderCarrier, HttpClient, HttpResponse }
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.securemessage.models.EmailRequest
 import uk.gov.hmrc.securemessage.models.EmailRequest.emailRequestWrites
+import uk.gov.hmrc.securemessage.services.exception.{ HttpException }
+import play.api.http.Status.{ BAD_GATEWAY, CREATED }
 
 import scala.concurrent.{ ExecutionContext, Future }
 
 @Singleton
-@SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
+@SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.Nothing"))
 class EmailConnector @Inject()(httpClient: HttpClient, servicesConfig: ServicesConfig)(implicit ec: ExecutionContext)
     extends Logging {
 
   private val emailBaseUrl = servicesConfig.baseUrl("email")
 
-  def send(emailRequest: EmailRequest)(implicit hc: HeaderCarrier): Future[Unit] =
+  def send(emailRequest: EmailRequest)(implicit hc: HeaderCarrier): Future[Either[EmailException, Int]] =
     httpClient.POST[EmailRequest, HttpResponse](s"$emailBaseUrl/hmrc/email", emailRequest).map { response =>
       response.status match {
-        case CREATED => ()
-        case status  => logger.error(s"Email request failed: got response status $status from email service")
+        case CREATED => Right(CREATED)
+        case status =>
+          val errMsg = s"Email request failed: got response status $status from email service"
+          logger.error(errMsg)
+          Left(EmailException(BAD_GATEWAY, errMsg))
       }
     }
 

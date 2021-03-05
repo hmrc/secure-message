@@ -127,13 +127,17 @@ lazy val microservice = Project(appName, file("."))
     )
   )
   .settings(ServiceManagerPlugin.serviceManagerSettings)
-  .settings(
-    itDependenciesList := List(
-      ExternalService("DATASTREAM"),
-      ExternalService("AUTH"),
-      ExternalService("IDENTITY_VERIFICATION"),
-      ExternalService("USER_DETAILS")
-    ))
+  .settings(itDependenciesList := List(
+    ExternalService("DATASTREAM"),
+    ExternalService("AUTH"),
+    ExternalService("IDENTITY_VERIFICATION"),
+    ExternalService("USER_DETAILS"),
+    ExternalService("ENTITY_RESOLVER"),
+    ExternalService("CHANNEL_PREFERENCES"),
+    ExternalService("CUSTOMS_DATA_STORE"),
+    ExternalService("CUSTOMS_FINANCIALS_HODS_STUB"),
+    ExternalService("EMAIL")
+  ))
   .settings(silencerSettings)
   .settings(ScoverageSettings())
 

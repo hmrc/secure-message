@@ -19,48 +19,86 @@ package uk.gov.hmrc.securemessage.services
 import cats.data.NonEmptyList
 import com.google.inject.Inject
 import org.joda.time.DateTime
-import play.api.mvc.Result
-import play.api.mvc.Results.{ BadRequest, Conflict, Created }
 import uk.gov.hmrc.auth.core.{ AuthorisationException, Enrolments }
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.securemessage.connectors.EmailConnector
+import uk.gov.hmrc.securemessage.connectors.{ ChannelPreferencesConnector, EmailConnector }
 import uk.gov.hmrc.securemessage.controllers.models.generic._
 import uk.gov.hmrc.securemessage.models.EmailRequest
 import uk.gov.hmrc.securemessage.models.core._
+import uk.gov.hmrc.securemessage.models.core.ParticipantType.{ Customer => PCustomer, System => PSystem }
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
+import uk.gov.hmrc.securemessage.services.exception.SecureMessageException
+import cats.data._
+import cats.implicits._
+import uk.gov.hmrc.emailaddress.EmailAddress
 
 import scala.concurrent.{ ExecutionContext, Future }
-/*
-TODO: refactor so that service has no play dependencies, only core classes.
- */
 
-@SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
-class SecureMessageService @Inject()(repo: ConversationRepository, emailConnector: EmailConnector) {
+@SuppressWarnings(
+  Array(
+    "org.wartremover.warts.Nothing",
+    "org.wartremover.warts.ImplicitParameter",
+    "org.wartremover.warts.Equals",
+    "org.wartremover.warts.Any"))
+class SecureMessageService @Inject()(
+  repo: ConversationRepository,
+  emailConnector: EmailConnector,
+  channelPrefConnector: ChannelPreferencesConnector) {
 
-  def createConversation(conversationRequest: ConversationRequest, client: String, conversationId: String)(
+  //TODO: use EitherT everywhere
+  def createConversation(conversation: Conversation)(
     implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Future[Result] = {
-    val conversation = conversationRequest.asConversation(client, conversationId)
-    repo.insertIfUnique(conversation).map { isUnique =>
-      if (isUnique) {
-        getEmailRequest(conversationRequest) match {
-          case Left(err) => BadRequest(err)
-          case Right(req) =>
-            val _ = emailConnector.send(req)
-            Created
-        }
-      } else {
-        Conflict("Duplicate of existing conversation")
-      }
-    }
+    ec: ExecutionContext): Future[Either[SecureMessageException, Int]] =
+    (for {
+      cnv <- EitherT.right[SecureMessageException](getConversationWithEmailFromCds(conversation))
+      _   <- EitherT(repo.insertIfUnique(cnv))
+      res <- emailParticipants(cnv)
+    } yield res).value
+
+  val hasEmail: Participant => Boolean = p =>
+    p.participantType == PSystem || (p.participantType == PCustomer && p.email.isDefined)
+
+  private def emailParticipants(cnv: Conversation)(
+    implicit hc: HeaderCarrier,
+    ec: ExecutionContext): EitherT[Future, SecureMessageException, Int] = {
+    val fEmails: EitherT[Future, SecureMessageException, List[EmailAddress]] = EitherT(
+      Future.successful(
+        cnv.participants
+          .filter(p => p.participantType == PCustomer && p.email.isDefined)
+          .map(_.email.fold(EmailAddress("dummy@dummy.com"))(identity)) match {
+          case List() =>
+            Left(new SecureMessageException { val message = "Verified email address could not be found" })
+          case emails =>
+            Right(emails)
+        }))
+    for {
+      emails <- fEmails
+      res    <- EitherT(emailConnector.send(EmailRequest(emails, cnv.alert.templateId))).leftWiden[SecureMessageException]
+    } yield res
   }
 
-  private def getEmailRequest(request: ConversationRequest): Either[String, EmailRequest] = {
-    val emailAddresses = request.recipients.flatMap(r => r.customer.email.toList)
-    if (emailAddresses.nonEmpty) {
-      Right[String, EmailRequest](EmailRequest(emailAddresses, request.alert.templateId))
-    } else {
-      Left[String, EmailRequest]("No recipient email addresses provided")
+  private def getConversationWithEmailFromCds(
+    cnv: Conversation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Conversation] =
+    Future
+      .sequence(cnv.participants.map(p => {
+        if (p.participantType == PSystem || (p.participantType == PCustomer && p.email.isDefined)) {
+          Future.successful(p)
+        } else {
+          channelPrefConnector
+            .getEmailForEnrolment(p.identifier)
+            .map(
+              _.fold(_ => p, e => p.copy(email = Some(e)))
+            )
+        }
+      }))
+      .map(ps => cnv.copy(participants = ps))
+
+  def getConversations(enrolment: CustomerEnrolment)(
+    implicit ec: ExecutionContext): Future[List[ConversationMetadata]] = {
+    val enrolmentToIdentifier = Identifier(enrolment.name, enrolment.value, Some(enrolment.key))
+    repo.getConversations(enrolment).map { coreConversations =>
+      coreConversations.map(conversation =>
+        ConversationMetadata.coreToConversationMetadata(conversation, enrolmentToIdentifier))
     }
   }
 

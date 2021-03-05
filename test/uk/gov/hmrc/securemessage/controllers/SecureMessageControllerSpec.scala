@@ -26,10 +26,9 @@ import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.http.ContentTypes._
 import play.api.http.HeaderNames._
-import play.api.http.HttpEntity
 import play.api.http.Status._
 import play.api.libs.json.{ JsObject, JsValue, Json }
-import play.api.mvc.{ ResponseHeader, Result }
+import play.api.mvc.{ Result }
 import play.api.test.Helpers.{ POST, PUT, contentAsJson, contentAsString, defaultAwaitTimeout, status }
 import play.api.test.{ FakeHeaders, FakeRequest, Helpers, NoMaterializer }
 import uk.gov.hmrc.auth.core._
@@ -40,8 +39,9 @@ import uk.gov.hmrc.securemessage.controllers.models.generic
 import uk.gov.hmrc.securemessage.controllers.models.generic._
 import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core.Conversation
-import uk.gov.hmrc.securemessage.repository.ConversationRepository
+import uk.gov.hmrc.securemessage.repository.{ ConversationRepository }
 import uk.gov.hmrc.securemessage.services.SecureMessageService
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -183,7 +183,8 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     val mockRepository: ConversationRepository = mock[ConversationRepository]
     val mockAuthConnector: AuthConnector = mock[AuthConnector]
     val mockSecureMessageService: SecureMessageService = mock[SecureMessageService]
-    when(mockRepository.insertIfUnique(any[Conversation])(any[ExecutionContext])).thenReturn(Future.successful(true))
+    when(mockRepository.insertIfUnique(any[Conversation])(any[ExecutionContext]))
+      .thenReturn(Future.successful(Right(true)))
     val controller =
       new SecureMessageController(Helpers.stubControllerComponents(), mockAuthConnector, mockSecureMessageService)
 
@@ -206,11 +207,8 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       body = requestBody
     )
 
-    when(
-      mockSecureMessageService.createConversation(any[ConversationRequest], any[String], any[String])(
-        any[HeaderCarrier],
-        any[ExecutionContext]))
-      .thenReturn(Future(Result(new ResponseHeader(CREATED), HttpEntity.NoEntity)))
+    when(mockSecureMessageService.createConversation(any[Conversation])(any[HeaderCarrier], any[ExecutionContext]))
+      .thenReturn(Future(Right(CREATED)))
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))

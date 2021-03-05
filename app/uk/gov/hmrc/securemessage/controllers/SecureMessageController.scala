@@ -22,11 +22,15 @@ import play.api.mvc.{ Action, AnyContent, ControllerComponents }
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+import uk.gov.hmrc.securemessage.connectors.EmailException
 import uk.gov.hmrc.securemessage.controllers.models.generic._
 import uk.gov.hmrc.securemessage.controllers.utils.EnrolmentHelper._
+import uk.gov.hmrc.securemessage.repository.StoreException
 import uk.gov.hmrc.securemessage.services.SecureMessageService
+import uk.gov.hmrc.securemessage.services.exception.SecureMessageException
 
 import scala.concurrent.{ ExecutionContext, Future }
+//import scala.util.Failure
 
 @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
 class SecureMessageController @Inject()(
@@ -38,7 +42,12 @@ class SecureMessageController @Inject()(
   def createConversation(client: String, conversationId: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
       withJsonBody[ConversationRequest] { conversationRequest =>
-        secureMessageService.createConversation(conversationRequest, client, conversationId)
+        secureMessageService.createConversation(conversationRequest.asConversation(client, conversationId)).map {
+          case Right(_)                          => Created
+          case Left(ee: EmailException)          => Created(ee.message)
+          case Left(se: StoreException)          => Conflict(se.message)
+          case Left(sme: SecureMessageException) => Created(sme.message)
+        }
       }
   }
 

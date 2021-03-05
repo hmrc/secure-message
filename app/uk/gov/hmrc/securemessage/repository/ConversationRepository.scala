@@ -21,6 +21,7 @@ import org.joda.time.DateTime
 import play.api.libs.json.JodaWrites.{ JodaDateTimeWrites => _ }
 import play.api.libs.json.Json.JsValueWrapper
 import play.api.libs.json.{ JsArray, JsObject, JsString, Json }
+import play.api.http.Status.{ CONFLICT }
 import reactivemongo.api.Cursor.ErrorHandler
 import reactivemongo.api.indexes.{ Index, IndexType }
 import reactivemongo.api.{ Cursor, WriteConcern }
@@ -31,12 +32,17 @@ import uk.gov.hmrc.mongo.{ MongoConnector, ReactiveRepository }
 import uk.gov.hmrc.securemessage.controllers.models.generic.{ CustomerEnrolment, Tag }
 import uk.gov.hmrc.securemessage.models.core.Message.dateFormat
 import uk.gov.hmrc.securemessage.models.core.{ Conversation, Message, Participants }
+import uk.gov.hmrc.securemessage.services.exception.{ HttpException }
+
 import javax.inject.{ Inject, Singleton }
 import scala.collection.Seq
 import scala.concurrent.{ ExecutionContext, Future }
 
+final case class StoreException(code: Int, message: String, override val throwable: Option[Throwable])
+    extends HttpException
+
 @Singleton
-@SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
+@SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.Nothing"))
 class ConversationRepository @Inject()(implicit connector: MongoConnector)
     extends ReactiveRepository[Conversation, BSONObjectID](
       "conversation",
@@ -54,13 +60,15 @@ class ConversationRepository @Inject()(implicit connector: MongoConnector)
         unique = true,
         sparse = true))
 
-  def insertIfUnique(conversation: Conversation)(implicit ec: ExecutionContext): Future[Boolean] =
+  def insertIfUnique(conversation: Conversation)(
+    implicit ec: ExecutionContext): Future[Either[StoreException, Boolean]] =
     insert(conversation)
-      .map(_ => true)
+      .map(_ => Right(true))
       .recoverWith {
         case e: DatabaseException if e.code.contains(DuplicateKey) =>
-          logger.warn("Ignoring duplicate found on insertion to conversation collection: " + e.getMessage())
-          Future.successful(false)
+          val errMsg = "Ignoring duplicate found on insertion to conversation collection: " + e.getMessage()
+          logger.error(errMsg, e)
+          Future.successful(Left(StoreException(CONFLICT, errMsg, Some(e))))
       }
 
   def getConversationsFiltered(enrolments: Set[CustomerEnrolment], tags: Option[List[Tag]])(
