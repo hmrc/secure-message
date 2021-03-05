@@ -73,11 +73,14 @@ class ConversationRepository @Inject()(implicit connector: MongoConnector)
   }
 
   def addMessageToConversation(client: String, conversationId: String, message: Message)(
-    implicit ec: ExecutionContext): Future[Unit] =
-    findAndUpdate(
-      query = Json.obj("client" -> client, "conversationId" -> conversationId),
-      update = Json.obj("$push" -> Json.obj("messages" -> message))
-    ).map(_ => ())
+    implicit ec: ExecutionContext): Future[Boolean] =
+    collection
+      .update(ordered = false)
+      .one[JsObject, JsObject](
+        Json.obj("client" -> client, "conversationId" -> conversationId),
+        Json.obj("$push"  -> Json.obj("messages" -> message))
+      )
+      .map(_.ok)
 
   def getConversation(client: String, conversationId: String, enrolment: CustomerEnrolment)(
     implicit ec: ExecutionContext): Future[Option[Conversation]] =

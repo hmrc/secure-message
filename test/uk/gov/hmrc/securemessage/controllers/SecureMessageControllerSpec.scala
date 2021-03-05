@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.securemessage.controllers
 
+import java.text.ParseException
+
 import akka.stream.Materializer
 import cats.data.NonEmptyList
 import org.joda.time.DateTime
@@ -57,7 +59,6 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
   "Calling createConversation" must {
-
     "return CREATED (201) when sent a request with all optional fields populated" in new TestCase {
       private val fullConversationJson = Resources.readJson("model/api/create-conversation-full.json")
       private val fakeRequest = FakeRequest(
@@ -67,11 +68,10 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
         body = fullConversationJson
       )
       when(mockSecureMessageService.createConversation(any[ConversationRequest],any[String],any[String])(any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(Future(Result(new ResponseHeader(CREATED),HttpEntity.NoEntity)))
+        .thenReturn(Future(Result(ResponseHeader(CREATED),HttpEntity.NoEntity)))
       private val response = controller.createConversation("cdcm", "123")(fakeRequest)
       status(response) mustBe CREATED
     }
-
     "return CREATED (201) when sent a request with no optional fields populated" in new TestCase {
       private val minimalConversationJson = Resources.readJson("model/api/create-conversation-minimal.json")
       private val fakeRequest = FakeRequest(
@@ -85,7 +85,6 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       private val response = controller.createConversation("cdcm", "123")(fakeRequest)
       status(response) mustBe CREATED
     }
-
     "return BAD REQUEST (400) when sent a request with required fields missing" in new TestCase {
       private val fakeRequest = FakeRequest(
         method = PUT,
@@ -96,7 +95,6 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       private val response = controller.createConversation("cdcm", "123")(fakeRequest)
       status(response) mustBe BAD_REQUEST
     }
-
     "return BAD REQUEST (400) when an invalid email address is provided" in new TestCase {
       private val conversationWithInvalidEmailJson = Resources.readJson("model/api/create-conversation-invalid-email.json")
       private val fakeRequest = FakeRequest(
@@ -105,6 +103,32 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
         headers = FakeHeaders(Seq(CONTENT_TYPE -> JSON)),
         body = conversationWithInvalidEmailJson
       )
+      private val response = controller.createConversation("cdcm", "123")(fakeRequest)
+      status(response) mustBe BAD_REQUEST
+    }
+    "return BAD_REQUEST (400) when the message content is not base64 encoded" in new TestCase {
+      private val fullConversationJson = Resources.readJson("model/api/create-conversation-full.json")
+      private val fakeRequest = FakeRequest(
+        method = PUT,
+        uri = routes.SecureMessageController.createConversation("cdcm", "123").url,
+        headers = FakeHeaders(Seq(CONTENT_TYPE -> JSON)),
+        body = fullConversationJson
+      )
+      when(mockSecureMessageService.createConversation(any[ConversationRequest],any[String],any[String])(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(Future(Result(new ResponseHeader(BAD_REQUEST),HttpEntity.NoEntity)))
+      private val response = controller.createConversation("cdcm", "123")(fakeRequest)
+      status(response) mustBe BAD_REQUEST
+    }
+    "return BAD_REQUEST (400) when the message content is not valid HTML" in new TestCase {
+      private val fullConversationJson = Resources.readJson("model/api/create-conversation-full.json")
+      private val fakeRequest = FakeRequest(
+        method = PUT,
+        uri = routes.SecureMessageController.createConversation("cdcm", "123").url,
+        headers = FakeHeaders(Seq(CONTENT_TYPE -> JSON)),
+        body = fullConversationJson
+      )
+      when(mockSecureMessageService.createConversation(any[ConversationRequest],any[String],any[String])(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(Future(Result(ResponseHeader(BAD_REQUEST),HttpEntity.NoEntity)))
       private val response = controller.createConversation("cdcm", "123")(fakeRequest)
       status(response) mustBe BAD_REQUEST
     }
@@ -225,8 +249,60 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
         headers = FakeHeaders(Seq(CONTENT_TYPE -> JSON)),
         body = caseworkerMessagePayload
       )
+      when(mockSecureMessageService.addCaseWorkerMessageToConversation(
+        any[String],
+        any[String],
+        any[CaseworkerMessageRequest])(any[ExecutionContext], any[HeaderCarrier])).thenReturn(Future(()))
       private val response = controller.createCaseworkerMessage("cdcm", "123")(fakeRequest)
       status(response) mustBe CREATED
+    }
+    "return UNAUTHORIZED (401) when the caseworker is not a conversation participant" in new TestCase {
+      private val caseworkerMessagePayload = Resources.readJson("model/api/caseworker-message.json")
+      private val fakeRequest = FakeRequest(
+        method = POST,
+        uri = routes.SecureMessageController.createCaseworkerMessage("cdcm", "123").url,
+        headers = FakeHeaders(Seq(CONTENT_TYPE -> JSON)),
+        body = caseworkerMessagePayload
+      )
+      when(mockSecureMessageService.addCaseWorkerMessageToConversation(
+        any[String],
+        any[String],
+        any[CaseworkerMessageRequest])(any[ExecutionContext], any[HeaderCarrier]))
+        .thenReturn(Future.failed(AuthorisationException.fromString("Caseworker ID not found")))
+      private val response = controller.createCaseworkerMessage("cdcm", "123")(fakeRequest)
+      status(response) mustBe UNAUTHORIZED
+    }
+    "return BAD_REQUEST (400) when the message content is not base64 encoded" in new TestCase {
+      private val caseworkerMessagePayload = Resources.readJson("model/api/caseworker-message.json")
+      private val fakeRequest = FakeRequest(
+        method = POST,
+        uri = routes.SecureMessageController.createCaseworkerMessage("cdcm", "123").url,
+        headers = FakeHeaders(Seq(CONTENT_TYPE -> JSON)),
+        body = caseworkerMessagePayload
+      )
+      when(mockSecureMessageService.addCaseWorkerMessageToConversation(
+        any[String],
+        any[String],
+        any[CaseworkerMessageRequest])(any[ExecutionContext], any[HeaderCarrier])).thenReturn(Future.failed(new ParseException("Not valid base64 content", 0)))
+      private val response = controller.createCaseworkerMessage("cdcm", "123")(fakeRequest)
+      status(response) mustBe BAD_REQUEST
+      contentAsString(response) mustBe "Not valid base64 content"
+    }
+    "return BAD_REQUEST (400) when the message content is not valid HTML" in new TestCase {
+      private val caseworkerMessagePayload = Resources.readJson("model/api/caseworker-message.json")
+      private val fakeRequest = FakeRequest(
+        method = POST,
+        uri = routes.SecureMessageController.createCaseworkerMessage("cdcm", "123").url,
+        headers = FakeHeaders(Seq(CONTENT_TYPE -> JSON)),
+        body = caseworkerMessagePayload
+      )
+      when(mockSecureMessageService.addCaseWorkerMessageToConversation(
+        any[String],
+        any[String],
+        any[CaseworkerMessageRequest])(any[ExecutionContext], any[HeaderCarrier])).thenReturn(Future.failed(new ParseException("Not valid HTML content", 0)))
+      private val response = controller.createCaseworkerMessage("cdcm", "123")(fakeRequest)
+      status(response) mustBe BAD_REQUEST
+      contentAsString(response) mustBe "Not valid HTML content"
     }
   }
 
@@ -248,7 +324,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
         headers = FakeHeaders(Seq(CONTENT_TYPE -> JSON)),
         body = Json.obj("content" -> "PGRpdj5IZWxsbzwvZGl2Pg==")
       )
-      when(mockSecureMessageService.addMessageToConversation(any[String],
+      when(mockSecureMessageService.addCustomerMessageToConversation(any[String],
         any[String],
         any[CustomerMessageRequest],
         any[Enrolments])(any[ExecutionContext])).thenReturn(Future(()))
@@ -274,7 +350,11 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
         body = Json.obj("content" -> "PGRpdj5IZWxsbzwvZGl2Pg==")
       )
       when(
-        mockSecureMessageService.addMessageToConversation(any[String], any[String], any[CustomerMessageRequest], any[Enrolments])(any[ExecutionContext]))
+        mockSecureMessageService.addCustomerMessageToConversation(
+          any[String],
+          any[String],
+          any[CustomerMessageRequest],
+          any[Enrolments])(any[ExecutionContext]))
         .thenReturn(Future.failed(AuthorisationException.fromString("InsufficientEnrolments")))
       private val response = controller.createCustomerMessage("cdcm","D-80542-20201120")(fakeRequest)
       status(response) mustBe UNAUTHORIZED
@@ -297,10 +377,64 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
         body = Json.obj("content" -> "PGRpdj5IZWxsbzwvZGl2Pg==")
       )
       when(
-        mockSecureMessageService.addMessageToConversation(any[String], any[String], any[CustomerMessageRequest], any[Enrolments])(any[ExecutionContext]))
+        mockSecureMessageService.addCustomerMessageToConversation(
+          any[String],
+          any[String],
+          any[CustomerMessageRequest],
+          any[Enrolments])(any[ExecutionContext]))
         .thenReturn(Future.failed(new IllegalArgumentException("Conversation ID not known")))
       private val response = controller.createCustomerMessage("cdcm","D-80542-20201120")(fakeRequest)
       status(response) mustBe NOT_FOUND
+    }
+    "return BAD_REQUEST (400) when the message content is not base64 encoded" in new TestCase {
+      when(mockAuthConnector.authorise(any[Predicate], any[Retrieval[Enrolments]])(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(
+          Future.successful(
+            Enrolments(
+              Set(
+                uk.gov.hmrc.auth.core.Enrolment(
+                  key = "HMRC-CUS-ORG",
+                  identifiers = Seq(EnrolmentIdentifier("EORINumber", "GB123456789")),
+                  state = "",
+                  None)))))
+      private val fakeRequest = FakeRequest(
+        method = POST,
+        uri = routes.SecureMessageController.createCustomerMessage("cdcm", "D-80542-20201120").url,
+        headers = FakeHeaders(Seq(CONTENT_TYPE -> JSON)),
+        body = Json.obj("content" -> "PGRpdj5IZWxsbzwvZGl2Pg==")
+      )
+      when(mockSecureMessageService.addCustomerMessageToConversation(any[String],
+        any[String],
+        any[CustomerMessageRequest],
+        any[Enrolments])(any[ExecutionContext])).thenReturn(Future.failed(new ParseException("Not valid base64 content", 0)))
+      private val response = controller.createCustomerMessage("cdcm","D-80542-20201120")(fakeRequest)
+      status(response) mustBe BAD_REQUEST
+      contentAsString(response) mustBe "Not valid base64 content"
+    }
+    "return BAD_REQUEST (400) when the message content is not valid HTML" in new TestCase {
+      when(mockAuthConnector.authorise(any[Predicate], any[Retrieval[Enrolments]])(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(
+          Future.successful(
+            Enrolments(
+              Set(
+                uk.gov.hmrc.auth.core.Enrolment(
+                  key = "HMRC-CUS-ORG",
+                  identifiers = Seq(EnrolmentIdentifier("EORINumber", "GB123456789")),
+                  state = "",
+                  None)))))
+      private val fakeRequest = FakeRequest(
+        method = POST,
+        uri = routes.SecureMessageController.createCustomerMessage("cdcm", "D-80542-20201120").url,
+        headers = FakeHeaders(Seq(CONTENT_TYPE -> JSON)),
+        body = Json.obj("content" -> "PGRpdj5IZWxsbzwvZGl2Pg==")
+      )
+      when(mockSecureMessageService.addCustomerMessageToConversation(any[String],
+        any[String],
+        any[CustomerMessageRequest],
+        any[Enrolments])(any[ExecutionContext])).thenReturn(Future.failed(new ParseException("Not valid HTML content", 0)))
+      private val response = controller.createCustomerMessage("cdcm","D-80542-20201120")(fakeRequest)
+      status(response) mustBe BAD_REQUEST
+      contentAsString(response) mustBe "Not valid HTML content"
     }
   }
 

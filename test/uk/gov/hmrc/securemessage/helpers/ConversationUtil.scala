@@ -25,7 +25,7 @@ import uk.gov.hmrc.emailaddress._
 
 object ConversationUtil {
 
-  def getConversationRequest(withEmailAddress: Boolean): ConversationRequest =
+  def getConversationRequest(withEmailAddress: Boolean, content: String): ConversationRequest =
     ConversationRequest(
       Sender(System(SystemIdentifier("cdcm", "123"), "CDS Exports", None)),
       List(
@@ -37,7 +37,39 @@ object ConversationUtil {
       Alert("templateId", None),
       None,
       "Test",
-      "base64encode",
+      content,
+      None
+    )
+
+  def getConversationRequestWithInvalidHtmlContent(withEmailAddress: Boolean): ConversationRequest =
+    ConversationRequest(
+      Sender(System(SystemIdentifier("cdcm", "123"), "CDS Exports", None)),
+      List(
+        Recipient(
+          Customer(
+            CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890"),
+            Some("Joe Bloggs"),
+            if (withEmailAddress) Some(EmailAddress("joebloggs@test.com")) else None))),
+      Alert("templateId", None),
+      None,
+      "Test",
+      "PG1hdHQ+Q2FuIEkgaGF2ZSBteSB0YXggbW9uZXkgcGxlYXNlPzwvbWF0dD4=",
+      None
+    )
+
+  def getConversationRequestWithInvalidBase64Content(withEmailAddress: Boolean): ConversationRequest =
+    ConversationRequest(
+      Sender(System(SystemIdentifier("cdcm", "123"), "CDS Exports", None)),
+      List(
+        Recipient(
+          Customer(
+            CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890"),
+            Some("Joe Bloggs"),
+            if (withEmailAddress) Some(EmailAddress("joebloggs@test.com")) else None))),
+      Alert("templateId", None),
+      None,
+      "Test",
+      "aGV%sb-G8sIHdvcmxkIQ==",
       None
     )
 

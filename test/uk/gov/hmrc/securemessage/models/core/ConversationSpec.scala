@@ -34,7 +34,6 @@ class ConversationSpec extends PlaySpec {
       conversationJson.validate[Conversation] mustBe JsSuccess(
         ConversationUtil.getMinimalConversation("D-80542-20201120"))
     }
-
   }
 
 }

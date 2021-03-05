@@ -42,7 +42,7 @@ class AddMessageToConversationISpec extends PlaySpec with ServiceSpec with Befor
     val _ = await(repository.removeAll()(ec))
   }
 
-  "A PUT request to /secure-messaging/conversation/{client}/{conversationId}/customer-message" must {
+  "A POST request to /secure-messaging/conversation/{client}/{conversationId}/customer-message" must {
     "return CREATED when the message is successfully added to the conversation" in {
       val client = "cdcm"
       val conversationId = "D-80542-20201120"

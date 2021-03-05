@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.securemessage.controllers
 
+import java.text.ParseException
+
 import javax.inject.Inject
 import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc.{ Action, AnyContent, ControllerComponents }
@@ -44,26 +46,34 @@ class SecureMessageController @Inject()(
 
   def createCaseworkerMessage(client: String, conversationId: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
-      withJsonBody[CaseworkerMessageRequest] { _ =>
-        Future.successful(Created(s"Created for client $client and conversationId $conversationId"))
+      withJsonBody[CaseworkerMessageRequest] { caseworkerMessageRequest =>
+        secureMessageService.addCaseWorkerMessageToConversation(client, conversationId, caseworkerMessageRequest).map {
+          _ =>
+            Created(s"Created for client $client and conversationId $conversationId")
+        }
+      }.recover {
+        case ae: AuthorisationException    => Unauthorized(ae.reason)
+        case iae: IllegalArgumentException => NotFound(iae.getMessage)
+        case e: ParseException             => BadRequest(e.getMessage)
       }
-
   }
 
   def createCustomerMessage(client: String, conversationId: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
       authorised().retrieve(Retrievals.allEnrolments) { enrolments: Enrolments =>
-        withJsonBody[CustomerMessageRequest] { message =>
-          secureMessageService.addMessageToConversation(client, conversationId, message, enrolments).map { _ =>
-            Created(s"Created for client $client and conversationId $conversationId")
-          }
+        withJsonBody[CustomerMessageRequest] { customerMessageRequest =>
+          secureMessageService
+            .addCustomerMessageToConversation(client, conversationId, customerMessageRequest, enrolments)
+            .map { _ =>
+              Created(s"Created for client $client and conversationId $conversationId")
+            }
         }.recover {
           case ae: AuthorisationException    => Unauthorized(ae.reason)
           case iae: IllegalArgumentException => NotFound(iae.getMessage)
+          case e: ParseException             => BadRequest(e.getMessage)
         }
       }
   }
-
   def getMetadataForConversations(enrolmentKey: String, enrolmentName: String): Action[AnyContent] = Action.async {
     implicit request =>
       authorised()
