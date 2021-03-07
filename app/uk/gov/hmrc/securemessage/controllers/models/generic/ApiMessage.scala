@@ -19,15 +19,14 @@ package uk.gov.hmrc.securemessage.controllers.models.generic
 import org.joda.time.DateTime
 import play.api.libs.json.JodaReads.jodaDateReads
 import play.api.libs.json.JodaWrites.jodaDateWrites
-import play.api.libs.json.{ Format, Json, Writes }
+import play.api.libs.json.{ Format, Json }
 
 final case class ApiMessage(
   senderInformation: Option[SenderInformation],
-  sent: Option[DateTime],
   firstReader: Option[FirstReaderInformation],
   content: String)
 
-final case class SenderInformation(name: Option[String], created: DateTime)
+final case class SenderInformation(name: Option[String], sent: DateTime, self: Boolean)
 
 final case class FirstReaderInformation(name: Option[String], read: DateTime)
 
@@ -38,13 +37,13 @@ object ApiMessage {
   implicit val dateFormat: Format[DateTime] =
     Format(jodaDateReads(dateFormatString), jodaDateWrites(dateFormatString))
 
-  implicit val senderInformationFormat: Writes[SenderInformation] =
-    Json.writes[SenderInformation]
+  implicit val senderInformationFormat: Format[SenderInformation] =
+    Json.format[SenderInformation]
 
-  implicit val firstReaderTime: Writes[FirstReaderInformation] =
-    Json.writes[FirstReaderInformation]
+  implicit val firstReaderTime: Format[FirstReaderInformation] =
+    Json.format[FirstReaderInformation]
 
-  implicit val messageFormat: Writes[ApiMessage] =
-    Json.writes[ApiMessage]
+  implicit val messageFormat: Format[ApiMessage] =
+    Json.format[ApiMessage]
 
 }

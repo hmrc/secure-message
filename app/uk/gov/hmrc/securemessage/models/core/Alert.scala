@@ -14,17 +14,12 @@
  * limitations under the License.
  */
 
-import sbt.Keys.parallelExecution
-import sbt._
-import scoverage.ScoverageKeys
+package uk.gov.hmrc.securemessage.models.core
 
-object ScoverageSettings {
-  def apply(): Seq[Def.Setting[_ >: String with Double with Boolean]] =
-    Seq( // Semicolon-separated list of regexes matching classes to exclude
-      ScoverageKeys.coverageExcludedPackages := "<empty>;.*Reverse.*;.*(config|testonly).*;.*(BuildInfo|Routes).*",
-      ScoverageKeys.coverageMinimum := 91.20,
-      ScoverageKeys.coverageFailOnMinimum := true,
-      ScoverageKeys.coverageHighlighting := true,
-      parallelExecution in ConfigKey.configurationToKey(Test) := false
-    )
+import play.api.libs.json.{ Format, Json }
+
+final case class Alert(templateId: String, parameters: Option[Map[String, String]])
+object Alert {
+  implicit val alertFormat: Format[Alert] =
+    Json.format[Alert]
 }

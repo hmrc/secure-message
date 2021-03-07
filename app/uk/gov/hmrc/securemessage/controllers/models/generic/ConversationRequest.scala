@@ -20,6 +20,7 @@ import cats.data.NonEmptyList
 import org.joda.time.DateTime
 import play.api.libs.functional.syntax.toFunctionalBuilderOps
 import play.api.libs.json.{ JsPath, Json, Reads }
+import uk.gov.hmrc.securemessage.models.core
 import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.time.DateTimeUtils
 import uk.gov.hmrc.emailaddress._
@@ -33,8 +34,26 @@ object Alert {
 
 final case class CustomerEnrolment(key: String, name: String, value: String)
 object CustomerEnrolment {
-  implicit val enrolmentReads: Reads[CustomerEnrolment] =
+  implicit val enrolmentReads: Reads[CustomerEnrolment] = {
     Json.reads[CustomerEnrolment]
+  }
+
+  def parse(enrolmentString: String): CustomerEnrolment = {
+    val enrolment = enrolmentString.split('~')
+    CustomerEnrolment(enrolment.head, enrolment(1), enrolment.last)
+  }
+}
+
+final case class Tag(key: String, value: String)
+object Tag {
+  implicit val tagReads: Reads[Tag] = {
+    Json.reads[Tag]
+  }
+
+  def parse(tagString: String): Tag = {
+    val tag = tagString.split('~')
+    Tag(tag.head, tag(1))
+  }
 }
 
 final case class SystemIdentifier(name: String, value: String)
@@ -56,8 +75,7 @@ object System {
 
 final case class Customer(enrolment: CustomerEnrolment, name: Option[String], email: Option[EmailAddress])
 object Customer {
-  implicit val customerReads: Reads[Customer] =
-    Json.reads[Customer]
+  implicit val customerReads: Reads[Customer] = Json.reads[Customer]
 }
 
 final case class Sender(system: System)
@@ -99,7 +117,8 @@ final case class ConversationRequest(
       subject,
       getLanguage(language),
       initialParticipants,
-      NonEmptyList.one(initialMessage)
+      NonEmptyList.one(initialMessage),
+      core.Alert(alert.templateId, alert.parameters)
     )
   }
 

@@ -69,4 +69,13 @@ class ConversationRequestSpec extends PlaySpec {
     }
   }
 
+  "CustomerEnrolment request model" should {
+    "parse a URL parameter for enrolment into its 3 part constituents" in {
+      CustomerEnrolment.parse("HMRC-CUS-ORG~EoriNumber~GB1234567") mustEqual CustomerEnrolment(
+        "HMRC-CUS-ORG",
+        "EoriNumber",
+        "GB1234567")
+    }
+  }
+
 }

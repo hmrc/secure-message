@@ -24,7 +24,7 @@ import play.api.mvc.{ Action, AnyContent, ControllerComponents }
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.securemessage.controllers.models.generic.{ CaseworkerMessageRequest, ConversationRequest, CustomerMessageRequest, ReadTime }
+import uk.gov.hmrc.securemessage.controllers.models.generic._
 import uk.gov.hmrc.securemessage.controllers.utils.EnrolmentHelper._
 import uk.gov.hmrc.securemessage.services.SecureMessageService
 
@@ -79,16 +79,33 @@ class SecureMessageController @Inject()(
       authorised()
         .retrieve(Retrievals.allEnrolments) { enrolments =>
           findEnrolment(enrolments, enrolmentKey, enrolmentName) match {
-            case Some(eoriEnrolment) =>
+            case Some(enrolment) =>
               secureMessageService
-                .getConversations(eoriEnrolment)
+                .getConversations(enrolment)
                 .flatMap { conversationDetails =>
                   Future.successful(Ok(Json.toJson(conversationDetails)))
                 }
-            case None => Future.successful(Unauthorized(Json.toJson("No EORI enrolment found")))
+            case None => Future.successful(Unauthorized(Json.toJson("No enrolment found")))
           }
         }
   }
+
+  def getMetadataForConversationsFiltered(
+    enrolmentKeys: Option[List[String]],
+    customerEnrolments: Option[List[CustomerEnrolment]],
+    tags: Option[List[Tag]]): Action[AnyContent] =
+    Action.async { implicit request =>
+      authorised()
+        .retrieve(Retrievals.allEnrolments) { authEnrolments =>
+          filterEnrolments(authEnrolments, enrolmentKeys, customerEnrolments) match {
+            case results if results.isEmpty => Future.successful(Unauthorized(Json.toJson("No enrolment found")))
+            case filteredEnrolments =>
+              secureMessageService.getConversationsFiltered(filteredEnrolments, tags).flatMap { conversationDetails =>
+                Future.successful(Ok(Json.toJson(conversationDetails)))
+              }
+          }
+        }
+    }
 
   def getConversationContent(
     client: String,
@@ -98,9 +115,9 @@ class SecureMessageController @Inject()(
     authorised()
       .retrieve(Retrievals.allEnrolments) { enrolments =>
         findEnrolment(enrolments, enrolmentKey, enrolmentName) match {
-          case Some(eoriEnrolment) =>
+          case Some(enrolment) =>
             secureMessageService
-              .getConversation(client, conversationId, eoriEnrolment)
+              .getConversation(client, conversationId, enrolment)
               .map {
                 case Some(apiConversation) => Ok(Json.toJson(apiConversation))
                 case _                     => BadRequest(Json.toJson("No conversation found"))

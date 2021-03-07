@@ -18,12 +18,16 @@ package uk.gov.hmrc.securemessage.helpers
 
 import cats.data.NonEmptyList
 import org.joda.time.DateTime
-import uk.gov.hmrc.securemessage.controllers.models.generic._
+import uk.gov.hmrc.securemessage.controllers.models
+import uk.gov.hmrc.securemessage.controllers.models._
 import uk.gov.hmrc.securemessage.models.core.Language.English
 import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.emailaddress._
+import uk.gov.hmrc.securemessage.controllers.models.generic.{ ConversationRequest, Customer, CustomerEnrolment, Recipient, Sender, System, SystemIdentifier }
+import uk.gov.hmrc.securemessage.models.core
 
 object ConversationUtil {
+  val alert: core.Alert = core.Alert("emailTemplateId", Some(Map("param1" -> "value1", "param2" -> "value2")))
 
   def getConversationRequest(withEmailAddress: Boolean, content: String): ConversationRequest =
     ConversationRequest(
@@ -34,7 +38,7 @@ object ConversationUtil {
             CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890"),
             Some("Joe Bloggs"),
             if (withEmailAddress) Some(EmailAddress("joebloggs@test.com")) else None))),
-      Alert("templateId", None),
+      models.generic.Alert(alert.templateId, alert.parameters),
       None,
       "Test",
       content,
@@ -50,7 +54,7 @@ object ConversationUtil {
             CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890"),
             Some("Joe Bloggs"),
             if (withEmailAddress) Some(EmailAddress("joebloggs@test.com")) else None))),
-      Alert("templateId", None),
+      generic.Alert("templateId", None),
       None,
       "Test",
       "PG1hdHQ+Q2FuIEkgaGF2ZSBteSB0YXggbW9uZXkgcGxlYXNlPzwvbWF0dD4=",
@@ -66,26 +70,34 @@ object ConversationUtil {
             CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890"),
             Some("Joe Bloggs"),
             if (withEmailAddress) Some(EmailAddress("joebloggs@test.com")) else None))),
-      Alert("templateId", None),
+      generic.Alert("templateId", None),
       None,
       "Test",
       "aGV%sb-G8sIHdvcmxkIQ==",
       None
     )
 
-  def getFullConversation(id: String): Conversation =
+  @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
+  def getFullConversation(
+    id: String,
+    enrolmentKey: String,
+    enrolmentName: String,
+    enrolmentValue: String,
+    tags: Option[Map[String, String]] = Some(
+      Map(
+        "sourceId"         -> "CDCM",
+        "caseId"           -> "D-80542",
+        "queryId"          -> "D-80542-20201120",
+        "mrn"              -> "DMS7324874993",
+        "notificationType" -> "CDS Exports"
+      )),
+    alert: core.Alert = alert
+  ): Conversation =
     Conversation(
       "cdcm",
       id,
       ConversationStatus.Open,
-      Some(
-        Map(
-          "sourceId"         -> "CDCM",
-          "caseId"           -> "D-80542",
-          "queryId"          -> "D-80542-20201120",
-          "mrn"              -> "DMS7324874993",
-          "notificationType" -> "CDS Exports"
-        )),
+      tags,
       "MRN: 19GB4S24GC3PPFGVR7",
       English,
       List(
@@ -101,7 +113,7 @@ object ConversationUtil {
         Participant(
           2,
           ParticipantType.Customer,
-          Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")),
+          Identifier(enrolmentName, enrolmentValue, Some(enrolmentKey)),
           Some("Joe Bloggs"),
           Some(EmailAddress("joebloggs@test.com")),
           None,
@@ -115,7 +127,8 @@ object ConversationUtil {
           "QmxhaCBibGFoIGJsYWg=",
           None
         )
-      )
+      ),
+      alert
     )
 
   def getMinimalConversation(id: String): Conversation =
@@ -151,7 +164,8 @@ object ConversationUtil {
           "QmxhaCBibGFoIGJsYWg=",
           None
         )
-      )
+      ),
+      alert.copy(parameters = None)
     )
 
 }

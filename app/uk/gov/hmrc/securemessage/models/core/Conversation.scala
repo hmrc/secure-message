@@ -28,7 +28,8 @@ final case class Conversation(
   subject: String,
   language: Language,
   participants: List[Participant],
-  messages: NonEmptyList[Message]
+  messages: NonEmptyList[Message],
+  alert: Alert
 )
 
 object Conversation {

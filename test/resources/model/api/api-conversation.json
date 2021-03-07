@@ -15,7 +15,8 @@
     {
       "senderInformation": {
         "name": "CDS Exports Team",
-        "created": "2020-11-10T15:00:01.000+0000"
+        "sent": "2020-11-10T15:00:01.000+0000",
+        "self":false
       },
       "read": "2020-11-10T15:00:01.000+0000",
       "content": "QmxhaCBibGFoIGJsYWg="
@@ -31,7 +32,8 @@
     {
       "senderInformation": {
         "name": "James Smith",
-        "created": "2020-11-10T15:00:12.000+0000"
+        "sent": "2020-11-10T15:00:12.000+0000",
+        "self":false
       },
       "read": "2020-11-10T15:00:01.000+0000",
       "firstReader": {
@@ -55,14 +57,16 @@
     {
       "senderInformation": {
         "name": "James Smith",
-        "created": "2020-11-10T15:00:18.000+0000"
+        "sent": "2020-11-10T15:00:18.000+0000",
+        "self":false
       },
       "content": "QmxhaCBibGFoIGJsYWg="
     },
     {
       "senderInformation": {
         "name": "CDS Exports Team",
-        "created": "2020-11-10T15:00:18.000+0000"
+        "sent": "2020-11-10T15:00:18.000+0000",
+        "self":false
       },
       "content": "QmxhaCBibGFoIGJsYWg="
     }

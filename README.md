@@ -27,7 +27,7 @@ Ensure you have service-manager python environment setup:
 
 `sm --stop SECURE_MESSAGE`
 
-`sbt run "9051 -Dplay.http.router=testOnlyDoNotUseInAppConf.Routes"`
+`sbt "run 9051 -Dplay.http.router=testOnlyDoNotUseInAppConf.Routes"`
 
 ## Run the tests and sbt fmt before raising a PR
 
@@ -46,14 +46,15 @@ Then run the tests and coverage report:
 If your build fails due to poor test coverage, *DO NOT* lower the test coverage threshold, instead inspect the generated report located here on your local repo: `/target/scala-2.12/scoverage-report/index.html`
 
 Then run the integration tests:
+NOTE: for integration tests to work make sure to execute command: `smserver` in a separate terminal window.
 
 `sbt it:test`
 
-## Swagger endpoint
+## Swagger schema
 
 Available locally here: http://localhost:9051/assets/schema.json
 
-## Swagger-UI endpoint
+## Swagger-UI
 
 Available locally here: http://localhost:9051/docs/swagger-ui/index.html?url=/assets/schema.json
 

@@ -38,6 +38,9 @@ import uk.gov.hmrc.securemessage.repository.ConversationRepository
 import uk.gov.hmrc.securemessage.services.utils.HtmlValidator
 
 import scala.concurrent.{ ExecutionContext, Future }
+/*
+TODO: refactor so that service has no play dependencies, only core classes.
+ */
 
 @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
 class SecureMessageService @Inject()(repo: ConversationRepository, emailConnector: EmailConnector) {
@@ -78,10 +81,20 @@ class SecureMessageService @Inject()(repo: ConversationRepository, emailConnecto
     implicit ec: ExecutionContext): Future[List[ConversationMetadata]] = {
     val enrolmentToIdentifier = Identifier(enrolment.name, enrolment.value, Some(enrolment.key))
     repo.getConversations(enrolment).map { coreConversations =>
-      coreConversations.map(conversations =>
-        ConversationMetadata.coreToConversationMetadata(conversations, enrolmentToIdentifier))
+      coreConversations.map(conversation =>
+        ConversationMetadata.coreToConversationMetadata(conversation, enrolmentToIdentifier))
     }
   }
+
+  def getConversationsFiltered(customerEnrolments: Set[CustomerEnrolment], tags: Option[List[Tag]])(
+    implicit ec: ExecutionContext): Future[List[ConversationMetadata]] =
+    repo.getConversationsFiltered(customerEnrolments, tags).map { coreConversations =>
+      coreConversations.map(conversation => {
+        val enrolmentToIdentifiers = customerEnrolments.map(customerEnrolment =>
+          Identifier(customerEnrolment.name, customerEnrolment.value, Some(customerEnrolment.key)))
+        ConversationMetadata.coreToConversationMetadata(conversation, enrolmentToIdentifiers)
+      })
+    }
 
   def getConversation(client: String, conversationId: String, enrolment: CustomerEnrolment)(
     implicit ec: ExecutionContext): Future[Option[ApiConversation]] = {
