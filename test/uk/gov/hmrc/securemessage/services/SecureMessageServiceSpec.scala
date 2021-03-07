@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.securemessage.services
 
+import java.text.ParseException
+
 import akka.stream.Materializer
 import cats.data.NonEmptyList
 import org.joda.time.DateTime
@@ -37,6 +39,7 @@ import uk.gov.hmrc.securemessage.helpers.ConversationUtil
 import uk.gov.hmrc.securemessage.models.EmailRequest
 import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -252,7 +255,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
       when(mockRepository.conversationExists(any[String], any[String])(any[ExecutionContext])).thenReturn(Future(true))
       when(mockRepository.getConversationParticipants(any[String], any[String])(any[ExecutionContext]))
         .thenReturn(Future(None))
-      assertThrows[Exception] {
+      assertThrows[ParseException] {
         await(service.addCustomerMessageToConversation("cdcm", "D-80542-20201120", customerMessage, mockEnrolments))
       }
     }
@@ -264,7 +267,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
       when(mockRepository.conversationExists(any[String], any[String])(any[ExecutionContext])).thenReturn(Future(true))
       when(mockRepository.getConversationParticipants(any[String], any[String])(any[ExecutionContext]))
         .thenReturn(Future(None))
-      assertThrows[Exception] {
+      assertThrows[ParseException] {
         await(service.addCustomerMessageToConversation("cdcm", "D-80542-20201120", customerMessage, mockEnrolments))
       }
     }
@@ -275,7 +278,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
       when(mockRepository.conversationExists(any[String], any[String])(any[ExecutionContext])).thenReturn(Future(true))
       when(mockRepository.getConversationParticipants(any[String], any[String])(any[ExecutionContext]))
         .thenReturn(Future(None))
-      assertThrows[Exception] {
+      assertThrows[ParseException] {
         await(service.addCustomerMessageToConversation("cdcm", "D-80542-20201120", customerMessage, mockEnrolments))
       }
     }
@@ -346,7 +349,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
       when(mockRepository.conversationExists(any[String], any[String])(any[ExecutionContext])).thenReturn(Future(true))
       when(mockRepository.getConversationParticipants(any[String], any[String])(any[ExecutionContext]))
         .thenReturn(Future(None))
-      assertThrows[Exception] {
+      assertThrows[ParseException] {
         await(service.addCaseWorkerMessageToConversation("cdcm", "D-80542-20201120", caseworkerMessage))
       }
     }
@@ -360,7 +363,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
       when(mockRepository.conversationExists(any[String], any[String])(any[ExecutionContext])).thenReturn(Future(true))
       when(mockRepository.getConversationParticipants(any[String], any[String])(any[ExecutionContext]))
         .thenReturn(Future(None))
-      assertThrows[Exception] {
+      assertThrows[ParseException] {
         await(service.addCaseWorkerMessageToConversation("cdcm", "D-80542-20201120", caseworkerMessage))
       }
     }
@@ -373,7 +376,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
       when(mockRepository.conversationExists(any[String], any[String])(any[ExecutionContext])).thenReturn(Future(true))
       when(mockRepository.getConversationParticipants(any[String], any[String])(any[ExecutionContext]))
         .thenReturn(Future(None))
-      assertThrows[Exception] {
+      assertThrows[ParseException] {
         await(service.addCaseWorkerMessageToConversation("cdcm", "D-80542-20201120", caseworkerMessage))
       }
     }
