@@ -25,6 +25,7 @@ import play.api.libs.ws.WSClient
 import play.api.test.Helpers._
 import uk.gov.hmrc.integration.ServiceSpec
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
+import utils.ConversationUtil
 
 import scala.concurrent.ExecutionContext
 
@@ -51,6 +52,7 @@ class CreateConversationISpec extends PlaySpec with ServiceSpec with BeforeAndAf
           .put(new File("./it/resources/create-conversation-full.json"))
           .futureValue
       response.status mustBe CREATED
+      response.body mustBe ""
     }
 
     "return CREATED when sent a minimal and valid JSON payload" in {
@@ -62,6 +64,7 @@ class CreateConversationISpec extends PlaySpec with ServiceSpec with BeforeAndAf
           .put(new File("./it/resources/create-conversation-minimal.json"))
           .futureValue
       response.status mustBe CREATED
+      response.body mustBe ""
     }
 
     "return BAD REQUEST when sent a conversation request with an no email address" in {
@@ -73,6 +76,7 @@ class CreateConversationISpec extends PlaySpec with ServiceSpec with BeforeAndAf
           .put(new File("./it/resources/create-conversation-no-email.json"))
           .futureValue
       response.status mustBe BAD_REQUEST
+      response.body mustBe "No recipient email addresses provided"
     }
 
     "return BAD REQUEST when sent a conversation request with an invalid email address" in {
@@ -110,7 +114,43 @@ class CreateConversationISpec extends PlaySpec with ServiceSpec with BeforeAndAf
         .put(new File("./it/resources/create-conversation-minimal.json"))
         .futureValue
       response.status mustBe CONFLICT
+      response.body mustBe "Duplicate of existing conversation"
+    }
+
+    "return BAD_REQUEST when the message content is not base64 encoded" in {
+      val wsClient = app.injector.instanceOf[WSClient]
+      val response =
+        wsClient
+          .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
+          .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
+          .put(ConversationUtil.getConversationRequest("aGV%sb-G8sIHdvcmxkIQ=="))
+          .futureValue
+      response.status mustBe BAD_REQUEST
+      response.body mustBe "Not valid base64 content"
+    }
+
+    "return BAD_REQUEST when the message content is not valid HTML" in {
+      val wsClient = app.injector.instanceOf[WSClient]
+      val response =
+        wsClient
+          .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
+          .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
+          .put(ConversationUtil.getConversationRequest("PG1hdHQ+Q2FuIEkgaGF2ZSBteSB0YXggbW9uZXkgcGxlYXNlPzwvbWF0dD4="))
+          .futureValue
+      response.status mustBe BAD_REQUEST
+      response.body mustBe "Not valid HTML content"
+    }
+
+    "return BAD REQUEST if message content is empty" in {
+      val wsClient = app.injector.instanceOf[WSClient]
+      val response =
+        wsClient
+          .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
+          .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
+          .put(ConversationUtil.getConversationRequest(""))
+          .futureValue
+      response.status mustBe BAD_REQUEST
+      response.body mustBe "Not valid HTML content"
     }
   }
-
 }
