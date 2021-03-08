@@ -16,11 +16,5 @@
 
 package uk.gov.hmrc.securemessage.services.exception
 
-trait SecureMessageException {
-  val message: String
-  val throwable: Option[Throwable] = None
-}
-
-trait HttpException extends SecureMessageException {
-  def code: Int
-}
+@SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
+class SecureMessageError(val message: String, val throwable: Option[Throwable] = None)

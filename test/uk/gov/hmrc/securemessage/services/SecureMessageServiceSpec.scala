@@ -28,18 +28,17 @@ import org.scalatestplus.play.PlaySpec
 import play.api.test.Helpers._
 import play.api.test.NoMaterializer
 import uk.gov.hmrc.auth.core.{ AuthorisationException, Enrolment, EnrolmentIdentifier, Enrolments }
-import uk.gov.hmrc.securemessage.connectors.EmailLookupException
+import uk.gov.hmrc.securemessage.connectors.EmailLookupError
 import uk.gov.hmrc.securemessage.models.EmailRequest
-import play.api.http.Status.{ CONFLICT, FAILED_DEPENDENCY }
-import uk.gov.hmrc.securemessage.repository.StoreException
-import uk.gov.hmrc.securemessage.services.exception.SecureMessageException
+import play.api.http.Status.{ CONFLICT }
+import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, DuplicateConversationError }
+import uk.gov.hmrc.securemessage.services.exception.SecureMessageError
 import uk.gov.hmrc.emailaddress.EmailAddress
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.securemessage.controllers.models.generic
 import uk.gov.hmrc.securemessage.controllers.models.generic._
 import uk.gov.hmrc.securemessage.helpers.ConversationUtil
 import uk.gov.hmrc.securemessage.models.core._
-import uk.gov.hmrc.securemessage.repository.ConversationRepository
 import uk.gov.hmrc.securemessage.connectors.{ ChannelPreferencesConnector, EmailConnector }
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -69,7 +68,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
       reset(mockRepository)
       when(mockRepository.insertIfUnique(cnvWithNoEmail)(global)).thenReturn(Future(Right(true)))
       when(mockChannelPreferencesConnector.getEmailForEnrolment(any[Identifier])(any[HeaderCarrier]))
-        .thenReturn(Future(Left(EmailLookupException(FAILED_DEPENDENCY, ""))))
+        .thenReturn(Future(Left(EmailLookupError(""))))
       private val result = service.createConversation(cnvWithNoEmail).futureValue
       result.swap.toOption.get.message mustBe "Verified email address could not be found"
     }
@@ -86,12 +85,12 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
     }
     s"return CONFLICT ($CONFLICT) when a conversation already exists for this client and conversation ID" in new TestCase {
       when(mockRepository.insertIfUnique(any[Conversation])(any[ExecutionContext]))
-        .thenReturn(Future(Left(StoreException(CONFLICT, "errMsg", None))))
-      private val result: Either[SecureMessageException, Int] = service.createConversation(cnvWithEmail).futureValue
+        .thenReturn(Future(Left(DuplicateConversationError("errMsg", None))))
+      private val result: Either[SecureMessageError, Int] = service.createConversation(cnvWithEmail).futureValue
       (result.swap.toOption.get match {
-        case StoreException(c, _, _) => c
-        case _                       => 0
-      }) mustBe CONFLICT
+        case DuplicateConversationError(m, _) => m
+        case _                                => ""
+      }) mustBe "errMsg"
     }
   }
 

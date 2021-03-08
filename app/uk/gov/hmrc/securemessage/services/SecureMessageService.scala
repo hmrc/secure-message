@@ -26,62 +26,61 @@ import uk.gov.hmrc.securemessage.controllers.models.generic._
 import uk.gov.hmrc.securemessage.models.EmailRequest
 import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.{ Customer => PCustomer, System => PSystem }
+import PCustomer.eqCustomer
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
-import uk.gov.hmrc.securemessage.services.exception.SecureMessageException
+import uk.gov.hmrc.securemessage.services.exception.SecureMessageError
 import cats.data._
-import cats.implicits._
 import uk.gov.hmrc.emailaddress.EmailAddress
+import cats.implicits._
 
 import scala.concurrent.{ ExecutionContext, Future }
 
-@SuppressWarnings(
-  Array(
-    "org.wartremover.warts.Nothing",
-    "org.wartremover.warts.ImplicitParameter",
-    "org.wartremover.warts.Equals",
-    "org.wartremover.warts.Any"))
 class SecureMessageService @Inject()(
   repo: ConversationRepository,
   emailConnector: EmailConnector,
   channelPrefConnector: ChannelPreferencesConnector) {
 
-  //TODO: use EitherT everywhere
+  @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
   def createConversation(conversation: Conversation)(
     implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Future[Either[SecureMessageException, Int]] =
+    ec: ExecutionContext): Future[Either[SecureMessageError, Int]] =
     (for {
-      cnv <- EitherT.right[SecureMessageException](getConversationWithEmailFromCds(conversation))
+      cnv <- EitherT.right[SecureMessageError](addMissingEmails(conversation))
       _   <- EitherT(repo.insertIfUnique(cnv))
-      res <- emailParticipants(cnv)
+      res <- sendEmail(cnv.participants, cnv.alert.templateId)
     } yield res).value
 
   val hasEmail: Participant => Boolean = p =>
-    p.participantType == PSystem || (p.participantType == PCustomer && p.email.isDefined)
+    p.participantType === PSystem || (p.participantType === PCustomer && p.email.isDefined)
 
-  private def emailParticipants(cnv: Conversation)(
+  @SuppressWarnings(
+    Array("org.wartremover.warts.Nothing", "org.wartremover.warts.Any", "org.wartremover.warts.ImplicitParameter"))
+  private def sendEmail(customers: List[Participant], templateId: String)(
     implicit hc: HeaderCarrier,
-    ec: ExecutionContext): EitherT[Future, SecureMessageException, Int] = {
-    val fEmails: EitherT[Future, SecureMessageException, List[EmailAddress]] = EitherT(
-      Future.successful(
-        cnv.participants
-          .filter(p => p.participantType == PCustomer && p.email.isDefined)
-          .map(_.email.fold(EmailAddress("dummy@dummy.com"))(identity)) match {
+    ec: ExecutionContext): EitherT[Future, SecureMessageError, Int] = {
+    val fEmails: EitherT[Future, SecureMessageError, List[EmailAddress]] = {
+      val filteredEmails: List[List[EmailAddress]] =
+        for (p <- customers if p.participantType === PCustomer && p.email.isDefined) yield p.email.toList
+      val emails =
+        filteredEmails match {
           case List() =>
-            Left(new SecureMessageException { val message = "Verified email address could not be found" })
-          case emails =>
-            Right(emails)
-        }))
+            Left(NoReceiverEmailError("Verified email address could not be found"))
+          case emails => Right(emails.flatten)
+        }
+      EitherT(Future.successful(emails))
+    }
     for {
       emails <- fEmails
-      res    <- EitherT(emailConnector.send(EmailRequest(emails, cnv.alert.templateId))).leftWiden[SecureMessageException]
+      res    <- EitherT(emailConnector.send(EmailRequest(emails, templateId))).leftWiden[SecureMessageError]
     } yield res
   }
 
-  private def getConversationWithEmailFromCds(
+  @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
+  private def addMissingEmails(
     cnv: Conversation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Conversation] =
     Future
       .sequence(cnv.participants.map(p => {
-        if (p.participantType == PSystem || (p.participantType == PCustomer && p.email.isDefined)) {
+        if (p.participantType === PSystem || (p.participantType === PCustomer && p.email.isDefined)) {
           Future.successful(p)
         } else {
           channelPrefConnector
@@ -93,15 +92,7 @@ class SecureMessageService @Inject()(
       }))
       .map(ps => cnv.copy(participants = ps))
 
-  def getConversations(enrolment: CustomerEnrolment)(
-    implicit ec: ExecutionContext): Future[List[ConversationMetadata]] = {
-    val enrolmentToIdentifier = Identifier(enrolment.name, enrolment.value, Some(enrolment.key))
-    repo.getConversations(enrolment).map { coreConversations =>
-      coreConversations.map(conversation =>
-        ConversationMetadata.coreToConversationMetadata(conversation, enrolmentToIdentifier))
-    }
-  }
-
+  @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
   def getConversationsFiltered(customerEnrolments: Set[CustomerEnrolment], tags: Option[List[Tag]])(
     implicit ec: ExecutionContext): Future[List[ConversationMetadata]] =
     repo.getConversationsFiltered(customerEnrolments, tags).map { coreConversations =>
@@ -112,6 +103,7 @@ class SecureMessageService @Inject()(
       })
     }
 
+  @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
   def getConversation(client: String, conversationId: String, enrolment: CustomerEnrolment)(
     implicit ec: ExecutionContext): Future[Option[ApiConversation]] = {
     val enrolmentToIdentifier = Identifier(enrolment.name, enrolment.value, Some(enrolment.key))
@@ -122,6 +114,7 @@ class SecureMessageService @Inject()(
     }
   }
 
+  @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
   def addMessageToConversation(
     client: String,
     conversationId: String,
@@ -145,6 +138,7 @@ class SecureMessageService @Inject()(
     val participantIdentifiers = getIdentifiersFromParticipants(participants).toList
     getIdentifiersFromEnrolments(enrolments).intersect(participantIdentifiers).headOption
   }
+  @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
   def updateReadTime(client: String, conversationId: String, enrolments: Enrolments, readTime: DateTime)(
     implicit ec: ExecutionContext): Future[Boolean] =
     getParticipantId(client, conversationId, enrolments).flatMap {
@@ -165,6 +159,7 @@ class SecureMessageService @Inject()(
   private def getIdentifiersFromParticipants(participants: Participants): NonEmptyList[Identifier] =
     participants.participants.map(p1 => p1.identifier)
 
+  @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
   private def getParticipantId(client: String, conversationId: String, enrolments: Enrolments)(
     implicit ec: ExecutionContext): Future[Option[Int]] =
     repo.getConversationParticipants(client, conversationId).map {
@@ -175,5 +170,5 @@ class SecureMessageService @Inject()(
         firstMatching.map(f => f.id)
       case _ => None
     }
-
 }
+final case class NoReceiverEmailError(override val message: String) extends SecureMessageError(message)

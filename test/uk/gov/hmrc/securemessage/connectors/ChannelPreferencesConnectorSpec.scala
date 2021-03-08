@@ -23,7 +23,7 @@ import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
 import uk.gov.hmrc.http.{ HeaderCarrier, HttpClient, HttpResponse }
-import play.api.http.Status.{ BAD_REQUEST, FAILED_DEPENDENCY, OK }
+import play.api.http.Status.{ BAD_REQUEST, OK }
 import uk.gov.hmrc.emailaddress.EmailAddress
 import uk.gov.hmrc.securemessage.models.core.Identifier
 
@@ -44,14 +44,7 @@ class ChannelPreferencesConnectorSpec extends PlaySpec with ScalaFutures with Mo
   "getEmailForEnrolment" should {
     "return the email address if found by CDS" in new TestCase {
       private val connector = new ChannelPreferencesConnector(configuration, mockHttpClient)
-      when(
-        mockHttpClient
-          .GET[HttpResponse](any[String], any[Seq[(String, String)]], any[Seq[(String, String)]])(
-            any[uk.gov.hmrc.http.HttpReads[uk.gov.hmrc.http.HttpResponse]],
-            any[uk.gov.hmrc.http.HeaderCarrier],
-            any[scala.concurrent.ExecutionContext]))
-        .thenReturn(Future.successful(mockHttpResponse))
-      when(mockHttpResponse.status).thenReturn(OK)
+
       when(mockHttpResponse.body).thenReturn(validEmailVerification)
       Await.result(
         connector.getEmailForEnrolment(Identifier("EORINumber", "eoriid", Some("HMRC-CUS-ORG"))),
@@ -59,50 +52,26 @@ class ChannelPreferencesConnectorSpec extends PlaySpec with ScalaFutures with Mo
     }
     "return FAILED_DEPENDENCY if the json does not have a valid email address" in new TestCase {
       private val connector = new ChannelPreferencesConnector(configuration, mockHttpClient)
-      when(
-        mockHttpClient
-          .GET[HttpResponse](any[String], any[Seq[(String, String)]], any[Seq[(String, String)]])(
-            any[uk.gov.hmrc.http.HttpReads[uk.gov.hmrc.http.HttpResponse]],
-            any[uk.gov.hmrc.http.HeaderCarrier],
-            any[scala.concurrent.ExecutionContext]))
-        .thenReturn(Future.successful(mockHttpResponse))
-      when(mockHttpResponse.status).thenReturn(OK)
+
       when(mockHttpResponse.body).thenReturn(inValidEmailVerification)
       connector.getEmailForEnrolment(Identifier("EORINumber", "eoriid", Some("HMRC-CUS-ORG"))).futureValue mustBe
-        Left(
-          EmailLookupException(
-            FAILED_DEPENDENCY,
-            s"""could not find an email address in the response: $inValidEmailVerification"""))
+        Left(EmailLookupError(s"""could not find an email address in the response: $inValidEmailVerification"""))
     }
     "return FAILED_DEPENDENCY if the json is invalid" in new TestCase {
       private val connector = new ChannelPreferencesConnector(configuration, mockHttpClient)
-      when(
-        mockHttpClient
-          .GET[HttpResponse](any[String], any[Seq[(String, String)]], any[Seq[(String, String)]])(
-            any[uk.gov.hmrc.http.HttpReads[uk.gov.hmrc.http.HttpResponse]],
-            any[uk.gov.hmrc.http.HeaderCarrier],
-            any[scala.concurrent.ExecutionContext]))
-        .thenReturn(Future.successful(mockHttpResponse))
-      when(mockHttpResponse.status).thenReturn(OK)
+
       when(mockHttpResponse.body).thenReturn(inValidJson)
       val res = connector
         .getEmailForEnrolment(Identifier("EORINumber", "eoriid", Some("HMRC-CUS-ORG")))
         .futureValue
         .swap
         .toOption
-        .fold(EmailLookupException(1, ""))(identity)
-      res.code mustBe FAILED_DEPENDENCY
+        .fold(EmailLookupError(""))(identity)
       res.message must startWith(s"""channel-preferences response was an invalid json: $inValidJson""")
     }
     "forward the status from CDS if not OK" in new TestCase {
       private val connector = new ChannelPreferencesConnector(configuration, mockHttpClient)
-      when(
-        mockHttpClient
-          .GET[HttpResponse](any[String], any[Seq[(String, String)]], any[Seq[(String, String)]])(
-            any[uk.gov.hmrc.http.HttpReads[uk.gov.hmrc.http.HttpResponse]],
-            any[uk.gov.hmrc.http.HeaderCarrier],
-            any[scala.concurrent.ExecutionContext]))
-        .thenReturn(Future.successful(mockHttpResponse))
+
       when(mockHttpResponse.status).thenReturn(BAD_REQUEST)
       when(mockHttpResponse.body).thenReturn("")
       val res = connector
@@ -110,8 +79,7 @@ class ChannelPreferencesConnectorSpec extends PlaySpec with ScalaFutures with Mo
         .futureValue
         .swap
         .toOption
-        .fold(EmailLookupException(1, ""))(identity)
-      res.code mustBe BAD_REQUEST
+        .fold(EmailLookupError(""))(identity)
       res.message mustBe s"""channel-preferences returned status: $BAD_REQUEST body: """
     }
 
@@ -120,6 +88,14 @@ class ChannelPreferencesConnectorSpec extends PlaySpec with ScalaFutures with Mo
   trait TestCase {
     val mockHttpClient: HttpClient = mock[HttpClient]
     val mockHttpResponse: HttpResponse = mock[HttpResponse]
+    when(
+      mockHttpClient
+        .GET[HttpResponse](any[String], any[Seq[(String, String)]], any[Seq[(String, String)]])(
+          any[uk.gov.hmrc.http.HttpReads[uk.gov.hmrc.http.HttpResponse]],
+          any[uk.gov.hmrc.http.HeaderCarrier],
+          any[scala.concurrent.ExecutionContext]))
+      .thenReturn(Future.successful(mockHttpResponse))
+    when(mockHttpResponse.status).thenReturn(OK)
   }
 
   val configuration: Configuration = Configuration(

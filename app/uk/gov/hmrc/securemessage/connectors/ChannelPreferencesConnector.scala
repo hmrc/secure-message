@@ -17,7 +17,7 @@
 package uk.gov.hmrc.securemessage.connectors
 
 import play.api.{ Configuration, Logging }
-import play.api.http.Status.{ FAILED_DEPENDENCY, OK }
+import play.api.http.Status.{ OK }
 import play.api.libs.json.{ JsSuccess, Json }
 import uk.gov.hmrc.emailaddress.EmailAddress
 import uk.gov.hmrc.emailaddress.PlayJsonFormats.emailAddressReads
@@ -25,20 +25,20 @@ import uk.gov.hmrc.http.{ HeaderCarrier, HttpClient, HttpResponse }
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.securemessage.models.core.Identifier
-import uk.gov.hmrc.securemessage.services.exception.HttpException
+import uk.gov.hmrc.securemessage.services.exception.SecureMessageError
 
 import javax.inject.{ Inject, Singleton }
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success, Try }
 
 @Singleton
-@SuppressWarnings(Array("org.wartremover.warts.Nothing", "org.wartremover.warts.ImplicitParameter"))
+@SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
 class ChannelPreferencesConnector @Inject()(config: Configuration, httpClient: HttpClient)(
   implicit ec: ExecutionContext)
     extends ServicesConfig(config) with Logging {
 
-  def getEmailForEnrolment(id: Identifier)(
-    implicit hc: HeaderCarrier): Future[Either[EmailLookupException, EmailAddress]] =
+  @SuppressWarnings(Array("org.wartremover.warts.Nothing"))
+  def getEmailForEnrolment(id: Identifier)(implicit hc: HeaderCarrier): Future[Either[EmailLookupError, EmailAddress]] =
     httpClient
       .GET[HttpResponse](
         url = s"""${baseUrl("channel-preferences")}/channel-preferences/preference/email""",
@@ -51,11 +51,12 @@ class ChannelPreferencesConnector @Inject()(config: Configuration, httpClient: H
           case s =>
             val errMsg = s"channel-preferences returned status: $s body: ${resp.body}"
             logger.error(errMsg)
-            Left(EmailLookupException(s, errMsg))
+            Left(EmailLookupError(errMsg))
         }
       }
 
-  private def parseEmail(body: String): Either[EmailLookupException, EmailAddress] =
+  @SuppressWarnings(Array("org.wartremover.warts.Nothing"))
+  private def parseEmail(body: String): Either[EmailLookupError, EmailAddress] =
     Try(Json.parse(body)) match {
       case Success(v) =>
         (v \ "address").validate[EmailAddress] match {
@@ -63,14 +64,14 @@ class ChannelPreferencesConnector @Inject()(config: Configuration, httpClient: H
           case _ =>
             val errMsg = s"could not find an email address in the response: $body"
             logger.error(errMsg)
-            Left(EmailLookupException(FAILED_DEPENDENCY, errMsg))
+            Left(EmailLookupError(errMsg))
         }
       case Failure(e) =>
         val errMsg = s"channel-preferences response was an invalid json: $body, error: ${e.getMessage}"
         logger.error(errMsg, e)
-        Left(EmailLookupException(FAILED_DEPENDENCY, errMsg))
+        Left(EmailLookupError(errMsg))
     }
 
 }
 
-final case class EmailLookupException(code: Int, message: String) extends HttpException
+final case class EmailLookupError(override val message: String) extends SecureMessageError(message)

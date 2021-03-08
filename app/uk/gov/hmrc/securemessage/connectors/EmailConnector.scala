@@ -24,8 +24,8 @@ import uk.gov.hmrc.http.{ HeaderCarrier, HttpClient, HttpResponse }
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.securemessage.models.EmailRequest
 import uk.gov.hmrc.securemessage.models.EmailRequest.emailRequestWrites
-import uk.gov.hmrc.securemessage.services.exception.{ HttpException }
-import play.api.http.Status.{ BAD_GATEWAY, CREATED }
+import uk.gov.hmrc.securemessage.services.exception.{ SecureMessageError }
+import play.api.http.Status.{ CREATED }
 
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -36,15 +36,17 @@ class EmailConnector @Inject()(httpClient: HttpClient, servicesConfig: ServicesC
 
   private val emailBaseUrl = servicesConfig.baseUrl("email")
 
-  def send(emailRequest: EmailRequest)(implicit hc: HeaderCarrier): Future[Either[EmailException, Int]] =
+  def send(emailRequest: EmailRequest)(implicit hc: HeaderCarrier): Future[Either[EmailError, Int]] =
     httpClient.POST[EmailRequest, HttpResponse](s"$emailBaseUrl/hmrc/email", emailRequest).map { response =>
       response.status match {
         case CREATED => Right(CREATED)
         case status =>
           val errMsg = s"Email request failed: got response status $status from email service"
           logger.error(errMsg)
-          Left(EmailException(BAD_GATEWAY, errMsg))
+          Left(EmailError(errMsg))
       }
     }
 
 }
+
+final case class EmailError(override val message: String) extends SecureMessageError(message)

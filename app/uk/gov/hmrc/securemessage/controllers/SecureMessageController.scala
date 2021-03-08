@@ -16,38 +16,45 @@
 
 package uk.gov.hmrc.securemessage.controllers
 
+import play.api.Logging
+
 import javax.inject.Inject
 import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc.{ Action, AnyContent, ControllerComponents }
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.securemessage.connectors.EmailException
+import uk.gov.hmrc.securemessage.connectors.EmailError
 import uk.gov.hmrc.securemessage.controllers.models.generic._
 import uk.gov.hmrc.securemessage.controllers.utils.EnrolmentHelper._
-import uk.gov.hmrc.securemessage.repository.StoreException
-import uk.gov.hmrc.securemessage.services.SecureMessageService
-import uk.gov.hmrc.securemessage.services.exception.SecureMessageException
+import uk.gov.hmrc.securemessage.repository.{ DuplicateConversationError, StoreError }
+import uk.gov.hmrc.securemessage.services.{ NoReceiverEmailError, SecureMessageService }
+import uk.gov.hmrc.securemessage.services.exception.SecureMessageError
 
 import scala.concurrent.{ ExecutionContext, Future }
-//import scala.util.Failure
-
 @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
 class SecureMessageController @Inject()(
   cc: ControllerComponents,
   val authConnector: AuthConnector,
   secureMessageService: SecureMessageService)(implicit ec: ExecutionContext)
-    extends BackendController(cc) with AuthorisedFunctions {
+    extends BackendController(cc) with AuthorisedFunctions with Logging {
 
   def createConversation(client: String, conversationId: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
       withJsonBody[ConversationRequest] { conversationRequest =>
         secureMessageService.createConversation(conversationRequest.asConversation(client, conversationId)).map {
-          case Right(_)                          => Created
-          case Left(ee: EmailException)          => Created(ee.message)
-          case Left(se: StoreException)          => Conflict(se.message)
-          case Left(sme: SecureMessageException) => Created(sme.message)
+          case Right(_)                             => Created
+          case Left(ee: EmailError)                 => Created(Json.toJson(ee.message))
+          case Left(ee: NoReceiverEmailError)       => Created(Json.toJson(ee.message))
+          case Left(de: DuplicateConversationError) => Conflict(Json.toJson(de.message))
+          case Left(se: StoreError)                 => InternalServerError(Json.toJson(se.message))
+          case Left(sme: SecureMessageError)        => InternalServerError(Json.toJson(sme.message)) //will never get here
         }
+      }.recover {
+        case t: Throwable =>
+          val errMsg = s"error trying to create conversation for $conversationId"
+          logger.error(errMsg, t)
+          InternalServerError(Json.toJson(errMsg))
       }
   }
 

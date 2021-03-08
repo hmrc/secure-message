@@ -21,7 +21,6 @@ import org.joda.time.DateTime
 import play.api.libs.json.JodaWrites.{ JodaDateTimeWrites => _ }
 import play.api.libs.json.Json.JsValueWrapper
 import play.api.libs.json.{ JsArray, JsObject, JsString, Json }
-import play.api.http.Status.{ CONFLICT }
 import reactivemongo.api.Cursor.ErrorHandler
 import reactivemongo.api.indexes.{ Index, IndexType }
 import reactivemongo.api.{ Cursor, WriteConcern }
@@ -32,14 +31,16 @@ import uk.gov.hmrc.mongo.{ MongoConnector, ReactiveRepository }
 import uk.gov.hmrc.securemessage.controllers.models.generic.{ CustomerEnrolment, Tag }
 import uk.gov.hmrc.securemessage.models.core.Message.dateFormat
 import uk.gov.hmrc.securemessage.models.core.{ Conversation, Message, Participants }
-import uk.gov.hmrc.securemessage.services.exception.{ HttpException }
+import uk.gov.hmrc.securemessage.services.exception.{ SecureMessageError }
 
 import javax.inject.{ Inject, Singleton }
 import scala.collection.Seq
 import scala.concurrent.{ ExecutionContext, Future }
 
-final case class StoreException(code: Int, message: String, override val throwable: Option[Throwable])
-    extends HttpException
+final case class StoreError(override val message: String, override val throwable: Option[Throwable])
+    extends SecureMessageError(message, throwable)
+final case class DuplicateConversationError(override val message: String, override val throwable: Option[Throwable])
+    extends SecureMessageError(message, throwable)
 
 @Singleton
 @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.Nothing"))
@@ -61,14 +62,17 @@ class ConversationRepository @Inject()(implicit connector: MongoConnector)
         sparse = true))
 
   def insertIfUnique(conversation: Conversation)(
-    implicit ec: ExecutionContext): Future[Either[StoreException, Boolean]] =
+    implicit ec: ExecutionContext): Future[Either[SecureMessageError, Boolean]] =
     insert(conversation)
       .map(_ => Right(true))
       .recoverWith {
         case e: DatabaseException if e.code.contains(DuplicateKey) =>
           val errMsg = "Ignoring duplicate found on insertion to conversation collection: " + e.getMessage()
           logger.error(errMsg, e)
-          Future.successful(Left(StoreException(CONFLICT, errMsg, Some(e))))
+          Future.successful(Left(DuplicateConversationError(errMsg, Some(e))))
+        case e: DatabaseException =>
+          val errMsg = s"Database error trying to store conversation ${conversation.conversationId}: " + e.getMessage()
+          Future.successful(Left(StoreError(errMsg, Some(e))))
       }
 
   def getConversationsFiltered(enrolments: Set[CustomerEnrolment], tags: Option[List[Tag]])(
