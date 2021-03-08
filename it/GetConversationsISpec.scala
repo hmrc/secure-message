@@ -41,30 +41,6 @@ class GetConversationsISpec extends PlaySpec with ServiceSpec with BeforeAndAfte
     val _ = await(repository.removeAll()(ec))
   }
 
-  "Deprecated - A GET request to /secure-messaging/conversations/<enrolment_key>/<enrolment_name>" should {
-
-    "return a JSON body of conversation metadata" in {
-      createConversation
-      val response =
-        wsClient
-          .url(resource("/secure-messaging/conversations/hmrc-cus-org/eorinumber"))
-          .withHttpHeaders(buildEoriToken(VALID_EORI))
-          .get()
-          .futureValue
-      response.body must include("""senderName":"CDS Exports Team""")
-    }
-
-    "return a JSON body of [No enrolment found] when there's an auth session, but no enrolment" in {
-      val response =
-        wsClient
-          .url(resource("/secure-messaging/conversations/hmrc-cus-org/eorinumber"))
-          .withHttpHeaders(buildNonEoriToken)
-          .get()
-          .futureValue
-      response.body mustBe "\"No enrolment found\""
-    }
-  }
-
   "A GET request to /secure-messaging/conversations for a filtered query" should {
 
     "return a JSON body of conversation metadata when no filters are provided by leveraging auth enrolments" in {

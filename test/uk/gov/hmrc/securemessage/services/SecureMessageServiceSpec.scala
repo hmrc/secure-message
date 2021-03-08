@@ -67,28 +67,6 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
     }
   }
 
-  "getConversations" must {
-
-    "return a list of ConversationMetaData" in new TestCase {
-      private val listOfCoreConversation =
-        List(ConversationUtil.getFullConversation("D-80542-20201120", "HMRC-CUS-ORG", "EORINumber", "GB1234567890"))
-      when(mockRepository.getConversations(any[generic.CustomerEnrolment])(any[ExecutionContext]))
-        .thenReturn(Future.successful(listOfCoreConversation))
-      private val result =
-        await(service.getConversations(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777")))
-      result mustBe
-        List(
-          ConversationMetadata(
-            "cdcm",
-            "D-80542-20201120",
-            "MRN: 19GB4S24GC3PPFGVR7",
-            DateTime.parse("2020-11-10T15:00:01.000"),
-            Some("CDS Exports Team"),
-            unreadMessages = false,
-            1))
-    }
-  }
-
   "getConversationsFiltered" must {
 
     "return a list of ConversationMetaData when presented with one customer enrolment and no tags for a filter" in new TestCase {

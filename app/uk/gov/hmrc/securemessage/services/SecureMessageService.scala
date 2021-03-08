@@ -64,15 +64,6 @@ class SecureMessageService @Inject()(repo: ConversationRepository, emailConnecto
     }
   }
 
-  def getConversations(enrolment: CustomerEnrolment)(
-    implicit ec: ExecutionContext): Future[List[ConversationMetadata]] = {
-    val enrolmentToIdentifier = Identifier(enrolment.name, enrolment.value, Some(enrolment.key))
-    repo.getConversations(enrolment).map { coreConversations =>
-      coreConversations.map(conversation =>
-        ConversationMetadata.coreToConversationMetadata(conversation, enrolmentToIdentifier))
-    }
-  }
-
   def getConversationsFiltered(customerEnrolments: Set[CustomerEnrolment], tags: Option[List[Tag]])(
     implicit ec: ExecutionContext): Future[List[ConversationMetadata]] =
     repo.getConversationsFiltered(customerEnrolments, tags).map { coreConversations =>

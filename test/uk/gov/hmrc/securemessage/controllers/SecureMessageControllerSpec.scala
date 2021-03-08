@@ -78,25 +78,6 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     }
   }
 
-  "getConversations" must {
-    "return an OK (200) with a JSON body of a list of conversations" in new GetConversationsTestCase(
-      storedConversationsMetadata = Resources.readJson("model/api/conversations-metadata.json")) {
-      val response: Future[Result] =
-        controller.getMetadataForConversations("HMRC-CUS-ORG", "EORINumber").apply(FakeRequest("GET", "/"))
-      status(response) mustBe OK
-      contentAsJson(response).as[List[ConversationMetadata]] must be(conversationsMetadata)
-    }
-
-    "return a 401 (UNAUTHORISED) error when no EORI enrolment found" in new TestCase(
-      "some other key",
-      "another enrolment") {
-      val response: Future[Result] =
-        controller.getMetadataForConversations("HMRC-CUS-ORG", "EORINumber").apply(FakeRequest("GET", "/"))
-      status(response) mustBe UNAUTHORIZED
-      contentAsString(response) mustBe "\"No enrolment found\""
-    }
-  }
-
   "getConversationsFiltered" must {
     "return an OK (200) with a JSON body of a list of conversations when provided with a list of valid query parameters" in new GetConversationsTestCase(
       storedConversationsMetadata = Resources.readJson("model/api/conversations-metadata.json")) {
@@ -250,8 +231,6 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     val conversationsMetadata: List[ConversationMetadata] = storedConversationsMetadata.as[List[ConversationMetadata]]
 
     private val eORINumber: CustomerEnrolment = generic.CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789")
-    when(mockSecureMessageService.getConversations(eORINumber))
-      .thenReturn(Future(conversationsMetadata))
 
     when(mockSecureMessageService.getConversationsFiltered(Set(eORINumber), None))
       .thenReturn(Future(conversationsMetadata))
