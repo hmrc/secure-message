@@ -52,7 +52,6 @@ class CreateConversationISpec extends PlaySpec with ServiceSpec with BeforeAndAf
           .put(new File("./it/resources/create-conversation-full.json"))
           .futureValue
       response.status mustBe CREATED
-      response.body mustBe ""
     }
 
     "return CREATED when sent a minimal and valid JSON payload" in {
@@ -64,7 +63,6 @@ class CreateConversationISpec extends PlaySpec with ServiceSpec with BeforeAndAf
           .put(new File("./it/resources/create-conversation-minimal.json"))
           .futureValue
       response.status mustBe CREATED
-      response.body mustBe ""
     }
 
     "return BAD REQUEST when sent a conversation request with an no email address" in {

@@ -45,38 +45,6 @@ object ConversationUtil {
       None
     )
 
-  def getConversationRequestWithInvalidHtmlContent(withEmailAddress: Boolean): ConversationRequest =
-    ConversationRequest(
-      Sender(System(SystemIdentifier("cdcm", "123"), "CDS Exports", None)),
-      List(
-        Recipient(
-          Customer(
-            CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890"),
-            Some("Joe Bloggs"),
-            if (withEmailAddress) Some(EmailAddress("joebloggs@test.com")) else None))),
-      generic.Alert("templateId", None),
-      None,
-      "Test",
-      "PG1hdHQ+Q2FuIEkgaGF2ZSBteSB0YXggbW9uZXkgcGxlYXNlPzwvbWF0dD4=",
-      None
-    )
-
-  def getConversationRequestWithInvalidBase64Content(withEmailAddress: Boolean): ConversationRequest =
-    ConversationRequest(
-      Sender(System(SystemIdentifier("cdcm", "123"), "CDS Exports", None)),
-      List(
-        Recipient(
-          Customer(
-            CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890"),
-            Some("Joe Bloggs"),
-            if (withEmailAddress) Some(EmailAddress("joebloggs@test.com")) else None))),
-      generic.Alert("templateId", None),
-      None,
-      "Test",
-      "aGV%sb-G8sIHdvcmxkIQ==",
-      None
-    )
-
   @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
   def getFullConversation(
     id: String,
