@@ -68,18 +68,6 @@ POST        /conversation/:client/:conversationId/caseworker-message            
 POST        /conversation/:client/:conversationId/customer-message                    uk.gov.hmrc.securemessage.controllers.SecureMessageController.createCustomerMessage(client: String, conversationId: String)
 
 ###
-# summary: DEPRECATED - Gets a list of conversations via enrolmentKey and enrolmentName
-# security:
-#   - bearerToken: []
-# responses:
-#   200:
-#     description: list of conversations was recieved
-#   401:
-#     description: unauthorised customer when they don't have an enrolment
-###
-GET         /conversations/:enrolmentKey/:enrolmentName                               uk.gov.hmrc.securemessage.controllers.SecureMessageController.getMetadataForConversations(enrolmentKey: String, enrolmentName: String)
-
-###
 # summary: Gets a list of conversations via enrolmentKeys, enrolments and tags filters
 # security:
 #   - bearerToken: []
