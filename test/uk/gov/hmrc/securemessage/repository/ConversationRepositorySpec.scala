@@ -52,17 +52,6 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
     }
   }
 
-  "A list of two conversations" should {
-    "be returned for a participating enrolment" in {
-      val conversation1 = ConversationUtil.getMinimalConversation("123")
-      await(repository.insert(conversation1))
-      val conversation2 = ConversationUtil.getMinimalConversation("234")
-      await(repository.insert(conversation2))
-      val result = await(repository.getConversations(CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890")))
-      result.size mustBe 2
-    }
-  }
-
   "A list of filtered conversations" should {
 
     val conversation1 = ConversationUtil.getFullConversation("123", "HMRC-CUS-ORG", "EORINumber", "GB1234567890")
@@ -190,13 +179,6 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
           Some(List(Tag("sourceId", "self-assessment"), Tag("caseId", "CT-11345")))
         ))
       result.map(_.conversationId) mustBe List("456", "345")
-    }
-  }
-
-  "No conversations" should {
-    "be returned if the enrolment is not participating in any" in {
-      val result = await(repository.getConversations(CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890")))
-      result.size mustBe 0
     }
   }
 

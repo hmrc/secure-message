@@ -64,22 +64,6 @@ class SecureMessageController @Inject()(
       }
   }
 
-  def getMetadataForConversations(enrolmentKey: String, enrolmentName: String): Action[AnyContent] = Action.async {
-    implicit request =>
-      authorised()
-        .retrieve(Retrievals.allEnrolments) { enrolments =>
-          findEnrolment(enrolments, enrolmentKey, enrolmentName) match {
-            case Some(enrolment) =>
-              secureMessageService
-                .getConversations(enrolment)
-                .flatMap { conversationDetails =>
-                  Future.successful(Ok(Json.toJson(conversationDetails)))
-                }
-            case None => Future.successful(Unauthorized(Json.toJson("No enrolment found")))
-          }
-        }
-  }
-
   def getMetadataForConversationsFiltered(
     enrolmentKeys: Option[List[String]],
     customerEnrolments: Option[List[CustomerEnrolment]],

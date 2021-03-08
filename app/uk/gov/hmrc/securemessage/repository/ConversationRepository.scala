@@ -63,15 +63,6 @@ class ConversationRepository @Inject()(implicit connector: MongoConnector)
           Future.successful(false)
       }
 
-  def getConversations(enrolment: CustomerEnrolment)(implicit ec: ExecutionContext): Future[List[Conversation]] = {
-    import uk.gov.hmrc.securemessage.models.core.Conversation.conversationFormat
-    collection
-      .find[JsObject, Conversation](selector = Json.obj(findByEnrolmentQuery(enrolment): _*), None)
-      .sort(Json.obj("_id" -> -1))
-      .cursor[Conversation]()
-      .collect[List](-1, Cursor.FailOnError[List[Conversation]]())
-  }
-
   def getConversationsFiltered(enrolments: Set[CustomerEnrolment], tags: Option[List[Tag]])(
     implicit ec: ExecutionContext): Future[List[Conversation]] = {
     import uk.gov.hmrc.securemessage.models.core.Conversation.conversationFormat
