@@ -24,8 +24,8 @@ import uk.gov.hmrc.http.{ HeaderCarrier, HttpClient, HttpResponse }
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.securemessage.models.EmailRequest
 import uk.gov.hmrc.securemessage.models.EmailRequest.emailRequestWrites
-import uk.gov.hmrc.securemessage.services.exception.{ SecureMessageError }
-import play.api.http.Status.{ CREATED }
+import play.api.http.Status.CREATED
+import uk.gov.hmrc.securemessage.EmailError
 
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -47,5 +47,3 @@ class EmailConnector @Inject()(httpClient: HttpClient, servicesConfig: ServicesC
     }
 
 }
-
-final case class EmailError(override val message: String) extends SecureMessageError(message)

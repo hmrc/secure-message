@@ -17,15 +17,15 @@
 package uk.gov.hmrc.securemessage.connectors
 
 import play.api.{ Configuration, Logging }
-import play.api.http.Status.{ OK }
+import play.api.http.Status.OK
 import play.api.libs.json.{ JsSuccess, Json }
 import uk.gov.hmrc.emailaddress.EmailAddress
 import uk.gov.hmrc.emailaddress.PlayJsonFormats.emailAddressReads
 import uk.gov.hmrc.http.{ HeaderCarrier, HttpClient, HttpResponse }
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import uk.gov.hmrc.securemessage.EmailLookupError
 import uk.gov.hmrc.securemessage.models.core.Identifier
-import uk.gov.hmrc.securemessage.services.exception.SecureMessageError
 
 import javax.inject.{ Inject, Singleton }
 import scala.concurrent.{ ExecutionContext, Future }
@@ -70,5 +70,3 @@ class ChannelPreferencesConnector @Inject()(config: Configuration, httpClient: H
     }
 
 }
-
-final case class EmailLookupError(override val message: String) extends SecureMessageError(message)

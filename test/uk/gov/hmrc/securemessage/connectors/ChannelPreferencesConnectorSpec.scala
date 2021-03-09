@@ -25,6 +25,7 @@ import play.api.Configuration
 import uk.gov.hmrc.http.{ HeaderCarrier, HttpClient, HttpResponse }
 import play.api.http.Status.{ BAD_REQUEST, OK }
 import uk.gov.hmrc.emailaddress.EmailAddress
+import uk.gov.hmrc.securemessage.EmailLookupError
 import uk.gov.hmrc.securemessage.models.core.Identifier
 
 import scala.concurrent.ExecutionContext.Implicits.global

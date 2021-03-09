@@ -21,20 +21,19 @@ import cats.data.NonEmptyList
 import org.joda.time.DateTime
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.{ reset, times, verify, when }
+import org.mockito.Mockito.{ times, verify, when }
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.test.Helpers._
 import play.api.test.NoMaterializer
 import uk.gov.hmrc.auth.core.{ AuthorisationException, Enrolment, EnrolmentIdentifier, Enrolments }
-import uk.gov.hmrc.securemessage.connectors.EmailLookupError
 import uk.gov.hmrc.securemessage.models.EmailRequest
-import play.api.http.Status.{ CONFLICT }
-import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, DuplicateConversationError }
-import uk.gov.hmrc.securemessage.services.exception.SecureMessageError
+import play.api.http.Status.CONFLICT
+import uk.gov.hmrc.securemessage.repository.ConversationRepository
 import uk.gov.hmrc.emailaddress.EmailAddress
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.securemessage.{ DuplicateConversationError, EmailLookupError, SecureMessageError }
 import uk.gov.hmrc.securemessage.controllers.models.generic
 import uk.gov.hmrc.securemessage.controllers.models.generic._
 import uk.gov.hmrc.securemessage.helpers.ConversationUtil
@@ -58,14 +57,11 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
   "createConversation" must {
 
     s"return CREATED ($CREATED) when an email address is provided" in new TestCase {
-      reset(mockRepository)
       when(mockRepository.insertIfUnique(cnvWithEmail)(global)).thenReturn(Future(Right(true)))
-      when(mockEmailConnector.send(any[EmailRequest])(any[HeaderCarrier])).thenReturn(Future.successful(Right(CREATED)))
       private val result = service.createConversation(cnvWithEmail)
       result.futureValue mustBe Right(CREATED)
     }
     "return SecureMessageException when no email address is provided and cannot be found in cds" in new TestCase {
-      reset(mockRepository)
       when(mockRepository.insertIfUnique(cnvWithNoEmail)(global)).thenReturn(Future(Right(true)))
       when(mockChannelPreferencesConnector.getEmailForEnrolment(any[Identifier])(any[HeaderCarrier]))
         .thenReturn(Future(Left(EmailLookupError(""))))
@@ -73,13 +69,11 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
       result.swap.toOption.get.message mustBe "Verified email address could not be found"
     }
     s"return CREATED ($CREATED) when no email address is provided but is found in the CDS lookup" in new TestCase {
-      reset(mockRepository)
       val cnv = cnvWithNoEmail.copy(participants = cnvWithNoEmail.participants.map(p =>
         if (p.id == 2) p.copy(email = Some(EmailAddress("joeblogs@yahoo.com"))) else p))
       when(mockRepository.insertIfUnique(cnv)(global)).thenReturn(Future(Right(true)))
       when(mockChannelPreferencesConnector.getEmailForEnrolment(any[Identifier])(any[HeaderCarrier]))
         .thenReturn(Future(Right(EmailAddress("joeblogs@yahoo.com"))))
-      when(mockEmailConnector.send(any[EmailRequest])(any[HeaderCarrier])).thenReturn(Future.successful(Right(CREATED)))
       private val result = service.createConversation(cnvWithNoEmail).futureValue
       result.toOption.get mustBe CREATED
     }
@@ -275,6 +269,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
     import uk.gov.hmrc.auth.core.Enrolment
     val mockRepository: ConversationRepository = mock[ConversationRepository]
     val mockEmailConnector: EmailConnector = mock[EmailConnector]
+    when(mockEmailConnector.send(any[EmailRequest])(any[HeaderCarrier])).thenReturn(Future.successful(Right(CREATED)))
     val mockChannelPreferencesConnector: ChannelPreferencesConnector = mock[ChannelPreferencesConnector]
     val service: SecureMessageService =
       new SecureMessageService(mockRepository, mockEmailConnector, mockChannelPreferencesConnector)

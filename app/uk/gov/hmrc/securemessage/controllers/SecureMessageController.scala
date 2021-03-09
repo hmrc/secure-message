@@ -24,12 +24,10 @@ import play.api.mvc.{ Action, AnyContent, ControllerComponents, Result }
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.securemessage.connectors.EmailError
+import uk.gov.hmrc.securemessage.{ DuplicateConversationError, EmailError, NoReceiverEmailError, SecureMessageError, StoreError }
 import uk.gov.hmrc.securemessage.controllers.models.generic._
 import uk.gov.hmrc.securemessage.controllers.utils.EnrolmentHelper._
-import uk.gov.hmrc.securemessage.repository.{ DuplicateConversationError, StoreError }
-import uk.gov.hmrc.securemessage.services.{ NoReceiverEmailError, SecureMessageService }
-import uk.gov.hmrc.securemessage.services.exception.SecureMessageError
+import uk.gov.hmrc.securemessage.services.SecureMessageService
 
 import scala.concurrent.{ ExecutionContext, Future }
 @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))

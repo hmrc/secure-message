@@ -28,20 +28,14 @@ import reactivemongo.bson.BSONObjectID
 import reactivemongo.core.errors.DatabaseException
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.mongo.{ MongoConnector, ReactiveRepository }
+import uk.gov.hmrc.securemessage.{ DuplicateConversationError, SecureMessageError, StoreError }
 import uk.gov.hmrc.securemessage.controllers.models.generic.{ CustomerEnrolment, Tag }
 import uk.gov.hmrc.securemessage.models.core.Message.dateFormat
 import uk.gov.hmrc.securemessage.models.core.{ Conversation, Message, Participants }
-import uk.gov.hmrc.securemessage.services.exception.{ SecureMessageError }
 
 import javax.inject.{ Inject, Singleton }
 import scala.collection.Seq
 import scala.concurrent.{ ExecutionContext, Future }
-
-final case class StoreError(override val message: String, override val throwable: Option[Throwable])
-    extends SecureMessageError(message, throwable)
-final case class DuplicateConversationError(override val message: String, override val throwable: Option[Throwable])
-    extends SecureMessageError(message, throwable)
-
 @Singleton
 @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.Nothing"))
 class ConversationRepository @Inject()(implicit connector: MongoConnector)
