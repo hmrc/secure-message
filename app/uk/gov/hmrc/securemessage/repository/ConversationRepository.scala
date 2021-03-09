@@ -68,7 +68,6 @@ class ConversationRepository @Inject()(implicit connector: MongoConnector)
       .recoverWith {
         case e: DatabaseException if e.code.contains(DuplicateKey) =>
           val errMsg = "Ignoring duplicate found on insertion to conversation collection: " + e.getMessage()
-          logger.error(errMsg, e)
           Future.successful(Left(DuplicateConversationError(errMsg, Some(e))))
         case e: DatabaseException =>
           val errMsg = s"Database error trying to store conversation ${conversation.conversationId}: " + e.getMessage()

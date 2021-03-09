@@ -16,5 +16,6 @@
 
 package uk.gov.hmrc.securemessage.services.exception
 
-@SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
+@SuppressWarnings(Array("org.wartremover.warts.DefaultArguments", "org.wartremover.warts.Null"))
 class SecureMessageError(val message: String, val throwable: Option[Throwable] = None)
+    extends Exception(message, throwable.orNull)

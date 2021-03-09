@@ -42,7 +42,6 @@ class EmailConnector @Inject()(httpClient: HttpClient, servicesConfig: ServicesC
         case CREATED => Right(CREATED)
         case status =>
           val errMsg = s"Email request failed: got response status $status from email service"
-          logger.error(errMsg)
           Left(EmailError(errMsg))
       }
     }

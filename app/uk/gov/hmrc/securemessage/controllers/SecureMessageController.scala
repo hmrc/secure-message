@@ -20,7 +20,7 @@ import play.api.Logging
 
 import javax.inject.Inject
 import play.api.libs.json.{ JsValue, Json }
-import play.api.mvc.{ Action, AnyContent, ControllerComponents }
+import play.api.mvc.{ Action, AnyContent, ControllerComponents, Result }
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
@@ -43,19 +43,24 @@ class SecureMessageController @Inject()(
     implicit request =>
       withJsonBody[ConversationRequest] { conversationRequest =>
         secureMessageService.createConversation(conversationRequest.asConversation(client, conversationId)).map {
-          case Right(_)                             => Created
-          case Left(ee: EmailError)                 => Created(Json.toJson(ee.message))
-          case Left(ee: NoReceiverEmailError)       => Created(Json.toJson(ee.message))
-          case Left(de: DuplicateConversationError) => Conflict(Json.toJson(de.message))
-          case Left(se: StoreError)                 => InternalServerError(Json.toJson(se.message))
-          case Left(sme: SecureMessageError)        => InternalServerError(Json.toJson(sme.message)) //will never get here
+          case Right(_)                        => Created
+          case Left(error: SecureMessageError) => handleCreateConversationErrors(conversationId, error)
         }
       }.recover {
-        case t: Throwable =>
-          val errMsg = s"error trying to create conversation for $conversationId"
-          logger.error(errMsg, t)
-          InternalServerError(Json.toJson(errMsg))
+        case error: Exception => handleCreateConversationErrors(conversationId, error)
       }
+  }
+
+  private def handleCreateConversationErrors(conversationId: String, error: Exception): Result = {
+    val errMsg = s"Error on conversation with id $conversationId: ${error.getMessage}"
+    logger.error(error.getMessage, error.getCause)
+    error match {
+      case ee: EmailError                 => Created(Json.toJson(ee.message))
+      case ee: NoReceiverEmailError       => Created(Json.toJson(ee.message))
+      case de: DuplicateConversationError => Conflict(Json.toJson(de.message))
+      case se: StoreError                 => InternalServerError(Json.toJson(se.message))
+      case _                              => InternalServerError(Json.toJson(errMsg))
+    }
   }
 
   def createCaseworkerMessage(client: String, conversationId: String): Action[JsValue] = Action.async(parse.json) {

@@ -50,7 +50,6 @@ class ChannelPreferencesConnector @Inject()(config: Configuration, httpClient: H
           case OK => parseEmail(resp.body)
           case s =>
             val errMsg = s"channel-preferences returned status: $s body: ${resp.body}"
-            logger.error(errMsg)
             Left(EmailLookupError(errMsg))
         }
       }
@@ -63,12 +62,10 @@ class ChannelPreferencesConnector @Inject()(config: Configuration, httpClient: H
           case JsSuccess(ev, _) => Right(ev)
           case _ =>
             val errMsg = s"could not find an email address in the response: $body"
-            logger.error(errMsg)
             Left(EmailLookupError(errMsg))
         }
       case Failure(e) =>
         val errMsg = s"channel-preferences response was an invalid json: $body, error: ${e.getMessage}"
-        logger.error(errMsg, e)
         Left(EmailLookupError(errMsg))
     }
 

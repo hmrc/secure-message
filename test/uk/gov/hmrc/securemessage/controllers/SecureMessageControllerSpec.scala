@@ -121,16 +121,16 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
         .thenReturn(Future(Left(new SecureMessageError("some unknown err"))))
       private val response = controller.createConversation("cdcm", "123")(fakeRequest)
       status(response) mustBe INTERNAL_SERVER_ERROR
-      contentAsJson(response) mustBe Json.toJson("some unknown err")
+      contentAsJson(response) mustBe Json.toJson("Error on conversation with id 123: some unknown err")
     }
 
-    s"return InternalServerError ($INTERNAL_SERVER_ERROR) if an unexpected excpetion is thrown" in new CreateConversationTestCase(
+    s"return InternalServerError ($INTERNAL_SERVER_ERROR) if an unexpected exception is thrown" in new CreateConversationTestCase(
       requestBody = Resources.readJson("model/api/create-conversation-full.json")) {
       when(mockSecureMessageService.createConversation(any[Conversation])(any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(Future.failed(new Throwable("some error")))
+        .thenReturn(Future.failed(new Exception("some error")))
       private val response = controller.createConversation("cdcm", "123")(fakeRequest)
       status(response) mustBe INTERNAL_SERVER_ERROR
-      contentAsJson(response) mustBe Json.toJson("error trying to create conversation for 123")
+      contentAsJson(response) mustBe Json.toJson("Error on conversation with id 123: some error")
     }
 
   }
