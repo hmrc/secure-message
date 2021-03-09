@@ -17,6 +17,7 @@
 package uk.gov.hmrc.securemessage.controllers
 
 import javax.inject.Inject
+import cats.implicits._
 import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc.{ Action, AnyContent, ControllerComponents }
 import uk.gov.hmrc.auth.core._
@@ -69,17 +70,27 @@ class SecureMessageController @Inject()(
     customerEnrolments: Option[List[CustomerEnrolment]],
     tags: Option[List[Tag]]): Action[AnyContent] =
     Action.async { implicit request =>
-      authorised()
-        .retrieve(Retrievals.allEnrolments) { authEnrolments =>
-          filterEnrolments(authEnrolments, enrolmentKeys, customerEnrolments) match {
-            case results if results.isEmpty => Future.successful(Unauthorized(Json.toJson("No enrolment found")))
-            case filteredEnrolments =>
-              secureMessageService.getConversationsFiltered(filteredEnrolments, tags).flatMap { conversationDetails =>
-                Future.successful(Ok(Json.toJson(conversationDetails)))
+      {
+        hasUnknownParams(request.queryString) match {
+          case true => Future.successful(BadRequest(Json.toJson("Invalid query parameter(s)")))
+          case _ =>
+            authorised()
+              .retrieve(Retrievals.allEnrolments) { authEnrolments =>
+                filterEnrolments(authEnrolments, enrolmentKeys, customerEnrolments) match {
+                  case results if results.isEmpty => Future.successful(Unauthorized(Json.toJson("No enrolment found")))
+                  case filteredEnrolments =>
+                    secureMessageService.getConversationsFiltered(filteredEnrolments, tags).flatMap {
+                      conversationDetails =>
+                        Future.successful(Ok(Json.toJson(conversationDetails)))
+                    }
+                }
               }
-          }
         }
+      }
     }
+
+  private def hasUnknownParams(queryString: Map[String, Seq[String]]) =
+    queryString.filterNot(q => (q._1 === "enrolment") || (q._1 === "enrolmentKey") || (q._1 === "tag")).size > 0
 
   def getConversationContent(
     client: String,
