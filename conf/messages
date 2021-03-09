@@ -1,0 +1,2 @@
+conversation.inbox.default.system.sender = HMRC Digital
+conversation.inbox.default.customer.sender = Me (name unavailable)
