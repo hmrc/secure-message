@@ -128,6 +128,16 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       contentAsJson(response).as[ApiConversation] must be(conversation.value)
     }
 
+    "return an BadRequest (400) with a JSON body of No conversation found" in new GetConversationTestCase(
+      storedConversation = None) {
+      val response: Future[Result] = controller
+        .getConversationContent("cdcm", "D-80542-20201120", "HMRC-CUS-ORG", "EORINumber")
+        .apply(FakeRequest("GET", "/"))
+      status(response) mustBe BAD_REQUEST
+      contentAsString(response) mustBe
+        "\"No conversation found\""
+    }
+
     "return a 401 (UNAUTHORISED) error when no EORI enrolment found" in new TestCase(
       enrolmentKey = "some other key",
       enrolmentIdentifierKey = "another enrolment") {
