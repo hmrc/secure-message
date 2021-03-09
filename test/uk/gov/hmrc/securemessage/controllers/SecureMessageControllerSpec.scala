@@ -264,7 +264,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     )
 
     when(mockSecureMessageService.createConversation(any[Conversation])(any[HeaderCarrier], any[ExecutionContext]))
-      .thenReturn(Future(Right(CREATED)))
+      .thenReturn(Future(Right(true)))
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))

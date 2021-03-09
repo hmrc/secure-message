@@ -59,14 +59,14 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
     s"return CREATED ($CREATED) when an email address is provided" in new TestCase {
       when(mockRepository.insertIfUnique(cnvWithEmail)(global)).thenReturn(Future(Right(true)))
       private val result = service.createConversation(cnvWithEmail)
-      result.futureValue mustBe Right(CREATED)
+      result.futureValue mustBe Right(true)
     }
     "return SecureMessageException when no email address is provided and cannot be found in cds" in new TestCase {
       when(mockRepository.insertIfUnique(cnvWithNoEmail)(global)).thenReturn(Future(Right(true)))
       when(mockChannelPreferencesConnector.getEmailForEnrolment(any[Identifier])(any[HeaderCarrier]))
         .thenReturn(Future(Left(EmailLookupError(""))))
       private val result = service.createConversation(cnvWithNoEmail).futureValue
-      result.swap.toOption.get.message mustBe "Verified email address could not be found"
+      result.swap.toOption.get.message must startWith("Email lookup failed for:")
     }
     s"return CREATED ($CREATED) when no email address is provided but is found in the CDS lookup" in new TestCase {
       val cnv = cnvWithNoEmail.copy(participants = cnvWithNoEmail.participants.map(p =>
@@ -75,12 +75,12 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
       when(mockChannelPreferencesConnector.getEmailForEnrolment(any[Identifier])(any[HeaderCarrier]))
         .thenReturn(Future(Right(EmailAddress("joeblogs@yahoo.com"))))
       private val result = service.createConversation(cnvWithNoEmail).futureValue
-      result.toOption.get mustBe CREATED
+      result mustBe Right(true)
     }
     s"return CONFLICT ($CONFLICT) when a conversation already exists for this client and conversation ID" in new TestCase {
       when(mockRepository.insertIfUnique(any[Conversation])(any[ExecutionContext]))
         .thenReturn(Future(Left(DuplicateConversationError("errMsg", None))))
-      private val result: Either[SecureMessageError, Int] = service.createConversation(cnvWithEmail).futureValue
+      private val result: Either[SecureMessageError, Boolean] = service.createConversation(cnvWithEmail).futureValue
       (result.swap.toOption.get match {
         case DuplicateConversationError(m, _) => m
         case _                                => ""

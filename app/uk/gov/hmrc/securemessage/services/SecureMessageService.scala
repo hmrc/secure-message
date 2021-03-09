@@ -21,20 +21,23 @@ import cats.implicits._
 import com.google.inject.Inject
 import org.joda.time.DateTime
 import uk.gov.hmrc.auth.core.{ AuthorisationException, Enrolments }
-import uk.gov.hmrc.emailaddress.EmailAddress
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.securemessage.{ NoReceiverEmailError, SecureMessageError }
 import uk.gov.hmrc.securemessage.connectors.{ ChannelPreferencesConnector, EmailConnector }
 import uk.gov.hmrc.securemessage.controllers.models.generic._
-import uk.gov.hmrc.securemessage.models.EmailRequest
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.Customer.eqCustomer
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.{ Customer => PCustomer, System => PSystem }
 import uk.gov.hmrc.securemessage.models.core._
+import uk.gov.hmrc.securemessage.models.{ EmailRequest, core }
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
+import uk.gov.hmrc.securemessage.{ EmailLookupError, NoReceiverEmailError, SecureMessageError }
 
 import scala.concurrent.{ ExecutionContext, Future }
 
-@SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
+@SuppressWarnings(
+  Array(
+    "org.wartremover.warts.ImplicitParameter",
+    "org.wartremover.warts.Product",
+    "org.wartremover.warts.Serializable"))
 class SecureMessageService @Inject()(
   repo: ConversationRepository,
   emailConnector: EmailConnector,
@@ -42,52 +45,65 @@ class SecureMessageService @Inject()(
 
   def createConversation(conversation: Conversation)(
     implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Future[Either[SecureMessageError, Int]] =
+    ec: ExecutionContext): Future[Either[SecureMessageError, Boolean]] =
     (for {
-      cnv <- EitherT.right[SecureMessageError](addMissingEmails(conversation))
-      _   <- EitherT(repo.insertIfUnique(cnv))
-      res <- sendEmail(cnv.participants, cnv.alert.templateId)
+      participantsWithEmail <- addMissingEmails(conversation.participants)
+      _                     <- EitherT(repo.insertIfUnique(conversation.copy(participants = participantsWithEmail.all.toList)))
+      _ <- validateCustomerParticipants(participantsWithEmail)(
+            errorCondition = participantsWithEmail.customer.success.isEmpty)
+      _ <- sendEmail(participantsWithEmail.customer.success, conversation.alert.templateId)
+      res <- validateCustomerParticipants(participantsWithEmail)(
+              errorCondition = participantsWithEmail.customer.failure.nonEmpty)
+
     } yield res).value
+
+  private def validateCustomerParticipants(participants: GroupedParticipants)(errorCondition: => Boolean)(
+    implicit ec: ExecutionContext): EitherT[Future, SecureMessageError, Boolean] =
+    EitherT(Future {
+      if (errorCondition) {
+        Left(NoReceiverEmailError(s"Email lookup failed for: ${participants.customer.failure}"))
+      } else {
+        Right(true)
+      }
+    })
 
   val hasEmail: Participant => Boolean = p =>
     p.participantType === PSystem || (p.participantType === PCustomer && p.email.isDefined)
 
-  @SuppressWarnings(Array("org.wartremover.warts.Nothing", "org.wartremover.warts.Any"))
-  private def sendEmail(customers: List[Participant], templateId: String)(
+  @SuppressWarnings(
+    Array("org.wartremover.warts.Nothing", "org.wartremover.warts.Any", "org.wartremover.warts.Product"))
+  private def sendEmail(customers: Seq[Participant], templateId: String)(
     implicit hc: HeaderCarrier,
-    ec: ExecutionContext): EitherT[Future, SecureMessageError, Int] = {
-    val fEmails: EitherT[Future, SecureMessageError, List[EmailAddress]] = {
-      val filteredEmails: List[List[EmailAddress]] =
-        for (p <- customers if p.participantType === PCustomer && p.email.isDefined) yield p.email.toList
-      val emails =
-        filteredEmails match {
-          case List() =>
-            Left(NoReceiverEmailError("Verified email address could not be found"))
-          case emails => Right(emails.flatten)
-        }
-      EitherT(Future.successful(emails))
-    }
+    ec: ExecutionContext): EitherT[Future, SecureMessageError, Int] =
     for {
-      emails <- fEmails
+      emails <- EitherT.right[SecureMessageError](Future { customers.flatMap(_.email).toList })
       res    <- EitherT(emailConnector.send(EmailRequest(emails, templateId))).leftWiden[SecureMessageError]
     } yield res
+
+  private def addMissingEmails(participants: Seq[Participant])(
+    implicit hc: HeaderCarrier,
+    ec: ExecutionContext): EitherT[Future, SecureMessageError, GroupedParticipants] = {
+    val (customers, systems) = participants.partition(_.participantType === PCustomer)
+    val (noEmailCustomers, emailCustomers) = customers.partition(_.email.isEmpty)
+    val result = for {
+      customersWithEmail <- Future.sequence(lookupEmail(noEmailCustomers))
+      success = customersWithEmail.collect { case e: core.Participant   => e }
+      failure = customersWithEmail.collect { case e: CustomerEmailError => e }
+    } yield GroupedParticipants(systems, CustomerParticipants(emailCustomers ++ success, failure))
+    EitherT.right[SecureMessageError](result)
   }
 
-  private def addMissingEmails(
-    cnv: Conversation)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Conversation] =
-    Future
-      .sequence(cnv.participants.map(p => {
-        if (p.participantType === PSystem || (p.participantType === PCustomer && p.email.isDefined)) {
-          Future.successful(p)
-        } else {
-          channelPrefConnector
-            .getEmailForEnrolment(p.identifier)
-            .map(
-              _.fold(_ => p, e => p.copy(email = Some(e)))
-            )
-        }
-      }))
-      .map(ps => cnv.copy(participants = ps))
+  /**
+    * @return a sequence of customer [[Participant]] with email or a [[CustomerEmailError]]
+    *         when we move to scala 3 (Dotty) we can use a type Union, until then we are forced to live with this.
+    * */
+  private def lookupEmail(
+    noEmailCustomers: Seq[Participant])(implicit hc: HeaderCarrier, ec: ExecutionContext): Seq[Future[Product]] =
+    noEmailCustomers.map(customerParticipant =>
+      channelPrefConnector.getEmailForEnrolment(customerParticipant.identifier).map {
+        case Right(email) => customerParticipant.copy(email = Some(email))
+        case Left(elr)    => CustomerEmailError(customerParticipant, elr)
+    })
 
   def getConversationsFiltered(customerEnrolments: Set[CustomerEnrolment], tags: Option[List[Tag]])(
     implicit ec: ExecutionContext): Future[List[ConversationMetadata]] =
@@ -163,4 +179,12 @@ class SecureMessageService @Inject()(
         firstMatching.map(f => f.id)
       case _ => None
     }
+
+  case class GroupedParticipants(system: Seq[Participant], customer: CustomerParticipants) {
+    def all: Seq[Participant] = system ++ customer.all
+  }
+  case class CustomerParticipants(success: Seq[Participant], failure: Seq[CustomerEmailError]) {
+    def all: Seq[Participant] = success ++ failure.map(_.customer)
+  }
+  case class CustomerEmailError(customer: Participant, error: EmailLookupError)
 }
