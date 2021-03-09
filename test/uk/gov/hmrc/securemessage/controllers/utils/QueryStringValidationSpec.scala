@@ -18,6 +18,7 @@ package uk.gov.hmrc.securemessage.controllers.utils
 
 import org.scalatestplus.play.PlaySpec
 
+@SuppressWarnings(Array("org.wartremover.warts.IsInstanceOf", "org.wartremover.warts.NonUnitStatements"))
 class QueryStringValidationSpec extends PlaySpec with QueryStringValidation {
 
   "InvalidQueryParameterException class" must {
@@ -41,14 +42,10 @@ class QueryStringValidationSpec extends PlaySpec with QueryStringValidation {
       result mustBe Right(ValidQueryParameters)
     }
 
-    // TODO: FIX TEST
-    // This test fails with:
-    // Left(uk.gov.hmrc.securemessage.controllers.utils.InvalidQueryParameterException: Invalid query parameter(s) found: [c, d, e]) was not equal to
-    // Left(uk.gov.hmrc.securemessage.controllers.utils.InvalidQueryParameterException: Invalid query parameter(s) found: [c, d, e])
-    //
-    //    "return an invalid result when unknown parameters are present in the query string" in {
-    //      val result = validateQueryParameters(queryString, "b", "a")
-    //      result mustBe Left(InvalidQueryParameterException(List("c", "d", "e")))
-    //    }
+    "return an invalid result when unknown parameters are present in the query string" in {
+      val result = validateQueryParameters(queryString, "b", "a").left.getOrElse(new Exception())
+      result.getMessage mustBe "Invalid query parameter(s) found: [c, d, e]"
+      result.isInstanceOf[InvalidQueryParameterException] mustBe true
+    }
   }
 }
