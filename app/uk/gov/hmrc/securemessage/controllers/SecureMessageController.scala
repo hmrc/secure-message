@@ -24,6 +24,7 @@ import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.securemessage.controllers.models.generic._
 import uk.gov.hmrc.securemessage.controllers.utils.EnrolmentHelper._
+import uk.gov.hmrc.securemessage.controllers.utils.QueryStringValidation
 import uk.gov.hmrc.securemessage.services.SecureMessageService
 
 import scala.concurrent.{ ExecutionContext, Future }
@@ -33,7 +34,7 @@ class SecureMessageController @Inject()(
   cc: ControllerComponents,
   val authConnector: AuthConnector,
   secureMessageService: SecureMessageService)(implicit ec: ExecutionContext)
-    extends BackendController(cc) with AuthorisedFunctions {
+    extends BackendController(cc) with AuthorisedFunctions with QueryStringValidation {
 
   def createConversation(client: String, conversationId: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
@@ -69,16 +70,23 @@ class SecureMessageController @Inject()(
     customerEnrolments: Option[List[CustomerEnrolment]],
     tags: Option[List[Tag]]): Action[AnyContent] =
     Action.async { implicit request =>
-      authorised()
-        .retrieve(Retrievals.allEnrolments) { authEnrolments =>
-          filterEnrolments(authEnrolments, enrolmentKeys, customerEnrolments) match {
-            case results if results.isEmpty => Future.successful(Unauthorized(Json.toJson("No enrolment found")))
-            case filteredEnrolments =>
-              secureMessageService.getConversationsFiltered(filteredEnrolments, tags).flatMap { conversationDetails =>
-                Future.successful(Ok(Json.toJson(conversationDetails)))
+      {
+        validateQueryParameters(request.queryString, "enrolment", "enrolmentKey", "tag") match {
+          case Left(e) => Future.successful(BadRequest(Json.toJson(e.getMessage)))
+          case _ =>
+            authorised()
+              .retrieve(Retrievals.allEnrolments) { authEnrolments =>
+                filterEnrolments(authEnrolments, enrolmentKeys, customerEnrolments) match {
+                  case results if results.isEmpty => Future.successful(Unauthorized(Json.toJson("No enrolment found")))
+                  case filteredEnrolments =>
+                    secureMessageService.getConversationsFiltered(filteredEnrolments, tags).flatMap {
+                      conversationDetails =>
+                        Future.successful(Ok(Json.toJson(conversationDetails)))
+                    }
+                }
               }
-          }
         }
+      }
     }
 
   def getConversationContent(
@@ -94,7 +102,7 @@ class SecureMessageController @Inject()(
               .getConversation(client, conversationId, enrolment)
               .map {
                 case Some(apiConversation) => Ok(Json.toJson(apiConversation))
-                case _                     => BadRequest(Json.toJson("No conversation found"))
+                case _                     => NotFound(Json.toJson("No conversation found"))
               }
           case None => Future.successful(Unauthorized(Json.toJson("No EORI enrolment found")))
         }
