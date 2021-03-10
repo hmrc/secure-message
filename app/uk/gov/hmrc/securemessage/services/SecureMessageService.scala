@@ -25,9 +25,9 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.securemessage.connectors.{ ChannelPreferencesConnector, EmailConnector }
 import uk.gov.hmrc.securemessage.controllers.models.generic._
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.Customer.eqCustomer
-import uk.gov.hmrc.securemessage.models.core.ParticipantType.{ Customer => PCustomer, System => PSystem }
+import uk.gov.hmrc.securemessage.models.core.ParticipantType.{ Customer => PCustomer }
 import uk.gov.hmrc.securemessage.models.core._
-import uk.gov.hmrc.securemessage.models.{ EmailRequest, core }
+import uk.gov.hmrc.securemessage.models.{ EmailRequest }
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
 import uk.gov.hmrc.securemessage.{ EmailLookupError, NoReceiverEmailError, SecureMessageError }
 
@@ -67,9 +67,6 @@ class SecureMessageService @Inject()(
       }
     })
 
-  val hasEmail: Participant => Boolean = p =>
-    p.participantType === PSystem || (p.participantType === PCustomer && p.email.isDefined)
-
   @SuppressWarnings(
     Array("org.wartremover.warts.Nothing", "org.wartremover.warts.Any", "org.wartremover.warts.Product"))
   private def sendEmail(customers: Seq[Participant], templateId: String)(
@@ -86,24 +83,21 @@ class SecureMessageService @Inject()(
     val (customers, systems) = participants.partition(_.participantType === PCustomer)
     val (noEmailCustomers, emailCustomers) = customers.partition(_.email.isEmpty)
     val result = for {
-      customersWithEmail <- Future.sequence(lookupEmail(noEmailCustomers))
-      success = customersWithEmail.collect { case e: core.Participant   => e }
-      failure = customersWithEmail.collect { case e: CustomerEmailError => e }
+      customersWithEmail <- lookupEmail(noEmailCustomers)
+      success = customersWithEmail.collect { case Right(v) => v }
+      failure = customersWithEmail.collect { case Left(v)  => v }
     } yield GroupedParticipants(systems, CustomerParticipants(emailCustomers ++ success, failure))
     EitherT.right[SecureMessageError](result)
   }
 
-  /**
-    * @return a sequence of customer [[Participant]] with email or a [[CustomerEmailError]]
-    *         when we move to scala 3 (Dotty) we can use a type Union, until then we are forced to live with this.
-    * */
-  private def lookupEmail(
-    noEmailCustomers: Seq[Participant])(implicit hc: HeaderCarrier, ec: ExecutionContext): Seq[Future[Product]] =
-    noEmailCustomers.map(customerParticipant =>
+  private def lookupEmail(noEmailCustomers: Seq[Participant])(
+    implicit hc: HeaderCarrier,
+    ec: ExecutionContext): Future[Seq[Either[CustomerEmailError, Participant]]] =
+    Future.sequence(noEmailCustomers.map(customerParticipant =>
       channelPrefConnector.getEmailForEnrolment(customerParticipant.identifier).map {
-        case Right(email) => customerParticipant.copy(email = Some(email))
-        case Left(elr)    => CustomerEmailError(customerParticipant, elr)
-    })
+        case Right(email) => Right(customerParticipant.copy(email = Some(email)))
+        case Left(elr)    => Left(CustomerEmailError(customerParticipant, elr))
+    }))
 
   def getConversationsFiltered(customerEnrolments: Set[CustomerEnrolment], tags: Option[List[Tag]])(
     implicit ec: ExecutionContext): Future[List[ConversationMetadata]] =
