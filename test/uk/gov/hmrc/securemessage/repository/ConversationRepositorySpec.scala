@@ -229,11 +229,12 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
       await(repository.insert(conversation))
       val message = Message(2, new DateTime(), "test", isForwarded = Some(false))
       await(repository.addMessageToConversation("cdcm", aConversationId, message))
+      await(repository.addMessageToConversation("cdcm", aConversationId, message))
       val updated = await(
         repository
           .getConversation("cdcm", aConversationId, CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890")))
       updated match {
-        case Some(c) => c.messages.size mustBe 2
+        case Some(c) => c.messages.size mustBe 3
         case _       => fail("No conversation found")
       }
     }

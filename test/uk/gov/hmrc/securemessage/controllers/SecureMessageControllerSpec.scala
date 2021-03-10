@@ -80,36 +80,22 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     }
 
     "return BAD_REQUEST (400) when the message content is not base64 encoded" in new TestCase {
-      private val fullConversationJson = Resources.readJson("model/api/create-conversation-full.json")
-      private val fakeRequest = FakeRequest(
-        method = PUT,
-        uri = routes.SecureMessageController.createConversation("cdcm", "123").url,
-        headers = FakeHeaders(Seq(CONTENT_TYPE -> JSON)),
-        body = fullConversationJson
-      )
       when(
         mockSecureMessageService.createConversation(any[ConversationRequest], any[String], any[String])(
           any[HeaderCarrier],
           any[ExecutionContext]))
         .thenReturn(Future(Result(new ResponseHeader(BAD_REQUEST), HttpEntity.NoEntity)))
-      private val response = controller.createConversation("cdcm", "123")(fakeRequest)
+      private val response = controller.createConversation("cdcm", "123")(fullConversationfakeRequest)
       status(response) mustBe BAD_REQUEST
     }
 
     "return BAD_REQUEST (400) when the message content is not valid HTML" in new TestCase {
-      private val fullConversationJson = Resources.readJson("model/api/create-conversation-full.json")
-      private val fakeRequest = FakeRequest(
-        method = PUT,
-        uri = routes.SecureMessageController.createConversation("cdcm", "123").url,
-        headers = FakeHeaders(Seq(CONTENT_TYPE -> JSON)),
-        body = fullConversationJson
-      )
       when(
         mockSecureMessageService.createConversation(any[ConversationRequest], any[String], any[String])(
           any[HeaderCarrier],
           any[ExecutionContext]))
         .thenReturn(Future(Result(ResponseHeader(BAD_REQUEST), HttpEntity.NoEntity)))
-      private val response = controller.createConversation("cdcm", "123")(fakeRequest)
+      private val response = controller.createConversation("cdcm", "123")(fullConversationfakeRequest)
       status(response) mustBe BAD_REQUEST
     }
   }
@@ -285,6 +271,14 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       mockAuthConnector
         .authorise(any[Predicate], any[Retrieval[Enrolments]])(any[HeaderCarrier], any[ExecutionContext]))
       .thenReturn(Future.successful(Enrolments(Set(enrolment))))
+
+    private val fullConversationJson = Resources.readJson("model/api/create-conversation-full.json")
+    val fullConversationfakeRequest: FakeRequest[JsValue] = FakeRequest(
+      method = PUT,
+      uri = routes.SecureMessageController.createConversation("cdcm", "123").url,
+      headers = FakeHeaders(Seq(CONTENT_TYPE -> JSON)),
+      body = fullConversationJson
+    )
   }
 
   class CreateConversationTestCase(requestBody: JsValue) extends TestCase {

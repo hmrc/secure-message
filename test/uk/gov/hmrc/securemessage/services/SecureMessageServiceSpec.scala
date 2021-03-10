@@ -200,20 +200,9 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
 
     "update the database when the customer has a participating enrolment" in new TestCase {
       private val customerMessage = CustomerMessageRequest("PGRpdj5IZWxsbzwvZGl2Pg==")
-      private val mockEnrolments = mock[Enrolments]
       when(mockRepository.conversationExists(any[String], any[String])(any[ExecutionContext])).thenReturn(Future(true))
       when(mockEnrolments.enrolments)
         .thenReturn(Set(Enrolment("HMRC-CUS-ORG", Seq(EnrolmentIdentifier("EORINumber", "GB123456789000000")), "")))
-      private val identifier: Identifier = Identifier("EORINumber", "GB123456789000000", Some("HMRC-CUS-ORG"))
-      private val participant = Participant(1, ParticipantType.System, identifier, None, None, None, None)
-      private val customerParticipant = Participant(
-        2,
-        ParticipantType.Customer,
-        Identifier("EORINumber", "GB123456789000000", Some("HMRC-CUS-ORG")),
-        None,
-        Some(EmailAddress("test@test.com")),
-        None,
-        None)
       when(mockRepository.getConversationParticipants(any[String], any[String])(any[ExecutionContext]))
         .thenReturn(Future(Some(Participants(NonEmptyList(participant, List(customerParticipant))))))
       when(mockRepository.addMessageToConversation(any[String], any[String], any[Message])(any[ExecutionContext]))
@@ -225,13 +214,10 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
 
     "throw an AuthorisationException if the customer does not have a participating enrolment" in new TestCase {
       private val customerMessage = CustomerMessageRequest("PGRpdj5IZWxsbzwvZGl2Pg==")
-      private val mockEnrolments = mock[Enrolments]
       when(mockRepository.conversationExists(any[String], any[String])(any[ExecutionContext]))
         .thenReturn(Future.successful(true))
       when(mockEnrolments.enrolments)
         .thenReturn(Set(Enrolment("HMRC-CUS-ORG", Seq(EnrolmentIdentifier("EORINumber", "GB123456789000001")), "")))
-      private val eORINumber: Identifier = Identifier("EORINumber", "GB123456789000000", Some("HMRC-CUS-ORG"))
-      private val participant = Participant(1, ParticipantType.Customer, eORINumber, None, None, None, None)
       when(mockRepository.getConversationParticipants(any[String], any[String])(any[ExecutionContext]))
         .thenReturn(Future(Some(Participants(NonEmptyList.one(participant)))))
       assertThrows[AuthorisationException] {
@@ -241,7 +227,6 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
 
     "throw an IllegalArgumentException if the conversation ID is not found" in new TestCase {
       private val customerMessage = CustomerMessageRequest("PGRpdj5IZWxsbzwvZGl2Pg==")
-      private val mockEnrolments = mock[Enrolments]
       when(mockRepository.conversationExists(any[String], any[String])(any[ExecutionContext]))
         .thenReturn(Future.successful(false))
       assertThrows[IllegalArgumentException] {
@@ -251,7 +236,6 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
 
     "throw an Exception if message content is not Base64 encoded" in new TestCase {
       private val customerMessage = CustomerMessageRequest("aGV%sb-G8sIHdvcmxkIQ==")
-      private val mockEnrolments = mock[Enrolments]
       when(mockRepository.conversationExists(any[String], any[String])(any[ExecutionContext])).thenReturn(Future(true))
       when(mockRepository.getConversationParticipants(any[String], any[String])(any[ExecutionContext]))
         .thenReturn(Future(None))
@@ -263,7 +247,6 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
     "throw an Exception if message content is not valid HTML" in new TestCase {
       private val customerMessage =
         CustomerMessageRequest("PG1hdHQ+Q2FuIEkgaGF2ZSBteSB0YXggbW9uZXkgcGxlYXNlPzwvbWF0dD4=")
-      private val mockEnrolments = mock[Enrolments]
       when(mockRepository.conversationExists(any[String], any[String])(any[ExecutionContext])).thenReturn(Future(true))
       when(mockRepository.getConversationParticipants(any[String], any[String])(any[ExecutionContext]))
         .thenReturn(Future(None))
@@ -274,7 +257,6 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
 
     "throw an Exception if message content is an empty string" in new TestCase {
       private val customerMessage = CustomerMessageRequest("")
-      private val mockEnrolments = mock[Enrolments]
       when(mockRepository.conversationExists(any[String], any[String])(any[ExecutionContext])).thenReturn(Future(true))
       when(mockRepository.getConversationParticipants(any[String], any[String])(any[ExecutionContext]))
         .thenReturn(Future(None))
@@ -444,5 +426,17 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
     val service: SecureMessageService = new SecureMessageService(mockRepository, mockEmailConnector)
     val enrolments: Enrolments = Enrolments(
       Set(Enrolment("HMRC-CUS-ORG", Vector(EnrolmentIdentifier("EORINumber", "GB7777777777")), "Activated", None)))
+    val identifier: Identifier = Identifier("EORINumber", "GB123456789000000", Some("HMRC-CUS-ORG"))
+    val systemIdentifier: Identifier = Identifier("CDCM", "D-80542-20201120", None)
+    val participant: Participant = Participant(1, ParticipantType.System, identifier, None, None, None, None)
+    val customerParticipant: Participant = Participant(
+      2,
+      ParticipantType.Customer,
+      Identifier("EORINumber", "GB123456789000000", Some("HMRC-CUS-ORG")),
+      None,
+      Some(EmailAddress("test@test.com")),
+      None,
+      None)
+    val mockEnrolments: Enrolments = mock[Enrolments]
   }
 }

@@ -18,13 +18,12 @@ package uk.gov.hmrc.securemessage.helpers
 
 import cats.data.NonEmptyList
 import org.joda.time.DateTime
+import uk.gov.hmrc.emailaddress._
 import uk.gov.hmrc.securemessage.controllers.models
-import uk.gov.hmrc.securemessage.controllers.models._
+import uk.gov.hmrc.securemessage.controllers.models.generic._
+import uk.gov.hmrc.securemessage.models.core
 import uk.gov.hmrc.securemessage.models.core.Language.English
 import uk.gov.hmrc.securemessage.models.core._
-import uk.gov.hmrc.emailaddress._
-import uk.gov.hmrc.securemessage.controllers.models.generic.{ ConversationRequest, Customer, CustomerEnrolment, Recipient, Sender, System, SystemIdentifier }
-import uk.gov.hmrc.securemessage.models.core
 
 object ConversationUtil {
   val alert: core.Alert = core.Alert("emailTemplateId", Some(Map("param1" -> "value1", "param2" -> "value2")))

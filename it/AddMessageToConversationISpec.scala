@@ -19,7 +19,7 @@ import org.scalatestplus.play.PlaySpec
 import play.api.http.Status.CREATED
 import play.api.http.{ ContentTypes, HeaderNames }
 import play.api.libs.json.Json
-import play.api.libs.ws.WSClient
+import play.api.libs.ws.{ WSClient, WSResponse }
 import play.api.test.Helpers._
 import uk.gov.hmrc.integration.ServiceSpec
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
@@ -43,22 +43,11 @@ class AddMessageToConversationISpec extends PlaySpec with ServiceSpec with Befor
   }
 
   "A POST request to /secure-messaging/conversation/{client}/{conversationId}/customer-message" must {
-    "return CREATED when the message is successfully added to the conversation" in {
-      val client = "cdcm"
-      val conversationId = "D-80542-20201120"
-      await(
-        wsClient
-          .url(resource(s"/secure-messaging/conversation/$client/$conversationId"))
-          .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
-          .put(new File("./it/resources/create-conversation-minimal.json")))
-      val response =
-        wsClient
-          .url(resource(s"/secure-messaging/conversation/$client/$conversationId/customer-message"))
-          .withHttpHeaders(buildEoriToken(VALID_EORI))
-          .post(Json.obj("content" -> "PGRpdj5IZWxsbzwvZGl2Pg=="))
-          .futureValue
+    "return CREATED when the message is successfully added to the conversation" in new CustomerTestCase(
+      "PGRpdj5IZWxsbzwvZGl2Pg==",
+      VALID_EORI) {
       response.status mustBe CREATED
-      response.body mustBe "Created for client cdcm and conversationId D-80542-20201120"
+      response.body mustBe "Created for client CDCM and conversationId D-80542-20201120"
     }
     "return NOT FOUND when the conversation ID is not recognised" in {
       val client = "cdcm"
@@ -72,91 +61,33 @@ class AddMessageToConversationISpec extends PlaySpec with ServiceSpec with Befor
       response.status mustBe NOT_FOUND
       response.body mustBe "Conversation ID not known"
     }
-    "return UNAUTHORIZED when the customer is not a participant" in {
-      val client = "cdcm"
-      val conversationId = "D-80542-20201120"
-      await(
-        wsClient
-          .url(resource(s"/secure-messaging/conversation/$client/$conversationId"))
-          .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
-          .put(new File("./it/resources/create-conversation-minimal.json")))
-      val response =
-        wsClient
-          .url(resource(s"/secure-messaging/conversation/$client/$conversationId/customer-message"))
-          .withHttpHeaders(buildEoriToken("GB1234567891"))
-          .post(Json.obj("content" -> "PGRpdj5IZWxsbzwvZGl2Pg=="))
-          .futureValue
+    "return UNAUTHORIZED when the customer is not a participant" in new CustomerTestCase(
+      "PGRpdj5IZWxsbzwvZGl2Pg==",
+      "GB1234567891") {
       response.status mustBe UNAUTHORIZED
       response.body mustBe "Insufficient Enrolments"
     }
-    "return BAD_REQUEST when the message content is not base64 encoded" in {
-      val client = "cdcm"
-      val conversationId = "D-80542-20201120"
-      await(
-        wsClient
-          .url(resource(s"/secure-messaging/conversation/$client/$conversationId"))
-          .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
-          .put(new File("./it/resources/create-conversation-minimal.json")))
-      val response =
-        wsClient
-          .url(resource(s"/secure-messaging/conversation/$client/$conversationId/customer-message"))
-          .withHttpHeaders(buildEoriToken(VALID_EORI))
-          .post(Json.obj("content" -> "aGV%sb-G8sIHdvcmxkIQ=="))
-          .futureValue
+    "return BAD_REQUEST when the message content is not base64 encoded" in new CustomerTestCase(
+      "aGV%sb-G8sIHdvcmxkIQ==",
+      VALID_EORI) {
       response.status mustBe BAD_REQUEST
       response.body mustBe "Not valid base64 content"
     }
-    "return BAD_REQUEST when the message content is not valid HTML" in {
-      val client = "cdcm"
-      val conversationId = "D-80542-20201120"
-      await(
-        wsClient
-          .url(resource(s"/secure-messaging/conversation/$client/$conversationId"))
-          .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
-          .put(new File("./it/resources/create-conversation-minimal.json")))
-      val response =
-        wsClient
-          .url(resource(s"/secure-messaging/conversation/$client/$conversationId/customer-message"))
-          .withHttpHeaders(buildEoriToken(VALID_EORI))
-          .post(Json.obj("content" -> "PG1hdHQ+Q2FuIEkgaGF2ZSBteSB0YXggbW9uZXkgcGxlYXNlPzwvbWF0dD4="))
-          .futureValue
+    "return BAD_REQUEST when the message content is not valid HTML" in new CustomerTestCase(
+      "PG1hdHQ+Q2FuIEkgaGF2ZSBteSB0YXggbW9uZXkgcGxlYXNlPzwvbWF0dD4=",
+      VALID_EORI) {
       response.status mustBe BAD_REQUEST
       response.body mustBe "Not valid HTML content"
     }
-    "return BAD REQUEST if message content is empty" in {
-      val client = "cdcm"
-      val conversationId = "D-80542-20201120"
-      await(
-        wsClient
-          .url(resource(s"/secure-messaging/conversation/$client/$conversationId"))
-          .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
-          .put(new File("./it/resources/create-conversation-minimal.json")))
-      val response =
-        wsClient
-          .url(resource(s"/secure-messaging/conversation/$client/$conversationId/customer-message"))
-          .withHttpHeaders(buildEoriToken(VALID_EORI))
-          .post(Json.obj("content" -> ""))
-          .futureValue
+    "return BAD REQUEST if message content is empty" in new CustomerTestCase("", VALID_EORI) {
       response.status mustBe BAD_REQUEST
       response.body mustBe "Not valid HTML content"
     }
   }
 
   "A POST request to /secure-messaging/conversation/{client}/{conversationId}/caseworker-message" must {
-    "return CREATED when the message is successfully added to the conversation" in {
-      val client = "CDCM"
-      val conversationId = "D-80542-20201120"
-      await(
-        wsClient
-          .url(resource(s"/secure-messaging/conversation/$client/$conversationId"))
-          .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
-          .put(new File("./it/resources/create-conversation-minimal.json")))
-      val response =
-        wsClient
-          .url(resource(s"/secure-messaging/conversation/$client/$conversationId/caseworker-message"))
-          .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
-          .post(new File("./it/resources/caseworker-message.json"))
-          .futureValue
+    "return CREATED when the message is successfully added to the conversation" in new CaseworkerTestCase(
+      "QmxhaCBibGFoIGJsYWg=") {
       response.status mustBe CREATED
       response.body mustBe "Created for client CDCM and conversationId D-80542-20201120"
     }
@@ -172,56 +103,51 @@ class AddMessageToConversationISpec extends PlaySpec with ServiceSpec with Befor
       response.status mustBe NOT_FOUND
       response.body mustBe "Conversation ID not known"
     }
-    "return BAD_REQUEST when the message content is not base64 encoded" in {
-      val client = "cdcm"
-      val conversationId = "D-80542-20201120"
-      await(
-        wsClient
-          .url(resource(s"/secure-messaging/conversation/$client/$conversationId"))
-          .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
-          .put(new File("./it/resources/create-conversation-minimal.json")))
-      val response =
-        wsClient
-          .url(resource(s"/secure-messaging/conversation/$client/$conversationId/caseworker-message"))
-          .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
-          .post(ConversationUtil.getCaseWorkerMessage("aGV%sb-G8sIHdvcmxkIQ=="))
-          .futureValue
+    "return BAD_REQUEST when the message content is not base64 encoded" in new CaseworkerTestCase(
+      "aGV%sb-G8sIHdvcmxkIQ==") {
       response.status mustBe BAD_REQUEST
       response.body mustBe "Not valid base64 content"
     }
-    "return BAD_REQUEST when the message content is not valid HTML" in {
-      val client = "cdcm"
-      val conversationId = "D-80542-20201120"
-      await(
-        wsClient
-          .url(resource(s"/secure-messaging/conversation/$client/$conversationId"))
-          .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
-          .put(new File("./it/resources/create-conversation-minimal.json")))
-      val response =
-        wsClient
-          .url(resource(s"/secure-messaging/conversation/$client/$conversationId/caseworker-message"))
-          .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
-          .post(ConversationUtil.getCaseWorkerMessage("PG1hdHQ+Q2FuIEkgaGF2ZSBteSB0YXggbW9uZXkgcGxlYXNlPzwvbWF0dD4="))
-          .futureValue
+    "return BAD_REQUEST when the message content is not valid HTML" in new CaseworkerTestCase(
+      "PG1hdHQ+Q2FuIEkgaGF2ZSBteSB0YXggbW9uZXkgcGxlYXNlPzwvbWF0dD4=") {
       response.status mustBe BAD_REQUEST
       response.body mustBe "Not valid HTML content"
     }
-    "return BAD REQUEST if message content is empty" in {
-      val client = "cdcm"
-      val conversationId = "D-80542-20201120"
-      await(
-        wsClient
-          .url(resource(s"/secure-messaging/conversation/$client/$conversationId"))
-          .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
-          .put(new File("./it/resources/create-conversation-minimal.json")))
-      val response =
-        wsClient
-          .url(resource(s"/secure-messaging/conversation/$client/$conversationId/caseworker-message"))
-          .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
-          .post(ConversationUtil.getCaseWorkerMessage(""))
-          .futureValue
+    "return BAD REQUEST if message content is empty" in new CaseworkerTestCase("") {
       response.status mustBe BAD_REQUEST
       response.body mustBe "Not valid HTML content"
     }
+  }
+
+  class CaseworkerTestCase(content: String) {
+    val client = "CDCM"
+    val conversationId = "D-80542-20201120"
+    await(
+      wsClient
+        .url(resource(s"/secure-messaging/conversation/$client/$conversationId"))
+        .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
+        .put(new File("./it/resources/create-conversation-minimal.json")))
+    val response: WSResponse =
+      wsClient
+        .url(resource(s"/secure-messaging/conversation/$client/$conversationId/caseworker-message"))
+        .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
+        .post(ConversationUtil.getCaseWorkerMessage(content))
+        .futureValue
+  }
+
+  class CustomerTestCase(content: String, eori: String) {
+    val client = "CDCM"
+    val conversationId = "D-80542-20201120"
+    await(
+      wsClient
+        .url(resource(s"/secure-messaging/conversation/$client/$conversationId"))
+        .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
+        .put(new File("./it/resources/create-conversation-minimal.json")))
+    val response: WSResponse =
+      wsClient
+        .url(resource(s"/secure-messaging/conversation/$client/$conversationId/customer-message"))
+        .withHttpHeaders(buildEoriToken(eori))
+        .post(Json.obj("content" -> content))
+        .futureValue
   }
 }
