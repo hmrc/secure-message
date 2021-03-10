@@ -26,11 +26,10 @@ import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.http.ContentTypes._
 import play.api.http.HeaderNames._
-import play.api.http.HttpEntity
 import play.api.http.Status._
 import play.api.i18n.Messages
 import play.api.libs.json.{ JsObject, JsValue, Json }
-import play.api.mvc.{ ResponseHeader, Result }
+import play.api.mvc.Result
 import play.api.test.Helpers.{ POST, PUT, contentAsJson, contentAsString, defaultAwaitTimeout, status, stubMessages }
 import play.api.test.{ FakeHeaders, FakeRequest, Helpers, NoMaterializer }
 import uk.gov.hmrc.auth.core._
@@ -43,6 +42,7 @@ import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core.Conversation
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
 import uk.gov.hmrc.securemessage.services.SecureMessageService
+import uk.gov.hmrc.securemessage._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ ExecutionContext, Future }
@@ -79,6 +79,61 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       private val response = controller.createConversation("cdcm", "123")(fakeRequest)
       status(response) mustBe BAD_REQUEST
     }
+
+    "return CONFLICT (409) when the conversation already exists" in new CreateConversationTestCase(
+      requestBody = Resources.readJson("model/api/create-conversation-full.json")) {
+      when(mockSecureMessageService.createConversation(any[Conversation])(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(Future(Left(DuplicateConversationError("conflict error", None))))
+      private val response = controller.createConversation("cdcm", "123")(fakeRequest)
+      status(response) mustBe CONFLICT
+      contentAsJson(response) mustBe Json.toJson("conflict error")
+    }
+
+    "return InternalServerError (500) when there is an error storing the conversation" in new CreateConversationTestCase(
+      requestBody = Resources.readJson("model/api/create-conversation-full.json")) {
+      when(mockSecureMessageService.createConversation(any[Conversation])(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(Future(Left(StoreError("mongo error", None))))
+      private val response = controller.createConversation("cdcm", "123")(fakeRequest)
+      status(response) mustBe INTERNAL_SERVER_ERROR
+      contentAsJson(response) mustBe Json.toJson("mongo error")
+    }
+
+    "return CREATED (201) when there is an error sending the email" in new CreateConversationTestCase(
+      requestBody = Resources.readJson("model/api/create-conversation-full.json")) {
+      when(mockSecureMessageService.createConversation(any[Conversation])(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(Future(Left(EmailError("email error"))))
+      private val response = controller.createConversation("cdcm", "123")(fakeRequest)
+      status(response) mustBe CREATED
+      contentAsJson(response) mustBe Json.toJson("email error")
+    }
+
+    "return CREATED (201) when no email can be found" in new CreateConversationTestCase(
+      requestBody = Resources.readJson("model/api/create-conversation-full.json")) {
+      when(mockSecureMessageService.createConversation(any[Conversation])(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(Future(Left(NoReceiverEmailError("Verified email address could not be found"))))
+      private val response = controller.createConversation("cdcm", "123")(fakeRequest)
+      status(response) mustBe CREATED
+      contentAsJson(response) mustBe Json.toJson("Verified email address could not be found")
+    }
+
+    "return InternalServerError (500) if unexpected SecureMessageError returned" in new CreateConversationTestCase(
+      requestBody = Resources.readJson("model/api/create-conversation-full.json")) {
+      when(mockSecureMessageService.createConversation(any[Conversation])(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(Future(Left(new SecureMessageError("some unknown err"))))
+      private val response = controller.createConversation("cdcm", "123")(fakeRequest)
+      status(response) mustBe INTERNAL_SERVER_ERROR
+      contentAsJson(response) mustBe Json.toJson("Error on conversation with id 123: some unknown err")
+    }
+
+    "return InternalServerError (500) if an unexpected exception is thrown" in new CreateConversationTestCase(
+      requestBody = Resources.readJson("model/api/create-conversation-full.json")) {
+      when(mockSecureMessageService.createConversation(any[Conversation])(any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(Future.failed(new Exception("some error")))
+      private val response = controller.createConversation("cdcm", "123")(fakeRequest)
+      status(response) mustBe INTERNAL_SERVER_ERROR
+      contentAsJson(response) mustBe Json.toJson("Error on conversation with id 123: some error")
+    }
+
   }
 
   "getConversationsFiltered" must {
@@ -198,7 +253,8 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     val mockRepository: ConversationRepository = mock[ConversationRepository]
     val mockAuthConnector: AuthConnector = mock[AuthConnector]
     val mockSecureMessageService: SecureMessageService = mock[SecureMessageService]
-    when(mockRepository.insertIfUnique(any[Conversation])(any[ExecutionContext])).thenReturn(Future.successful(true))
+    when(mockRepository.insertIfUnique(any[Conversation])(any[ExecutionContext]))
+      .thenReturn(Future.successful(Right(true)))
     val controller =
       new SecureMessageController(Helpers.stubControllerComponents(), mockAuthConnector, mockSecureMessageService)
 
@@ -221,11 +277,8 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       body = requestBody
     )
 
-    when(
-      mockSecureMessageService.createConversation(any[ConversationRequest], any[String], any[String])(
-        any[HeaderCarrier],
-        any[ExecutionContext]))
-      .thenReturn(Future(Result(new ResponseHeader(CREATED), HttpEntity.NoEntity)))
+    when(mockSecureMessageService.createConversation(any[Conversation])(any[HeaderCarrier], any[ExecutionContext]))
+      .thenReturn(Future(Right(true)))
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
