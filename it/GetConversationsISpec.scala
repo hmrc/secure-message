@@ -159,6 +159,17 @@ class GetConversationsISpec extends PlaySpec with ServiceSpec with BeforeAndAfte
           .futureValue
       response.body mustBe "\"No enrolment found\""
     }
+
+    "return a JSON body of [Invalid query parameter(s)] when there's an invalid parameter supplied in the query string" in {
+      val response =
+        wsClient
+          .url(resource("/secure-messaging/conversations?abc=SOME_VALUE&a=1&b=2&c=3&d=4&e=5&f=6"))
+          .withHttpHeaders(buildNonEoriToken)
+          .get()
+          .futureValue
+      response.body mustBe "\"Invalid query parameter(s) found: [a, abc, b, c, d, e, f]\""
+      response.status mustBe BAD_REQUEST
+    }
   }
 
   def createConversation: Future[WSResponse] = {

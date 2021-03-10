@@ -20,14 +20,15 @@ import cats.data.{ NonEmptyList, _ }
 import cats.implicits._
 import com.google.inject.Inject
 import org.joda.time.DateTime
+import play.api.i18n.Messages
 import uk.gov.hmrc.auth.core.{ AuthorisationException, Enrolments }
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.securemessage.connectors.{ ChannelPreferencesConnector, EmailConnector }
 import uk.gov.hmrc.securemessage.controllers.models.generic._
+import uk.gov.hmrc.securemessage.models.EmailRequest
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.Customer.eqCustomer
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.{ Customer => PCustomer }
 import uk.gov.hmrc.securemessage.models.core._
-import uk.gov.hmrc.securemessage.models.{ EmailRequest }
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
 import uk.gov.hmrc.securemessage.{ EmailLookupError, NoReceiverEmailError, SecureMessageError }
 
@@ -100,7 +101,8 @@ class SecureMessageService @Inject()(
     }))
 
   def getConversationsFiltered(customerEnrolments: Set[CustomerEnrolment], tags: Option[List[Tag]])(
-    implicit ec: ExecutionContext): Future[List[ConversationMetadata]] =
+    implicit ec: ExecutionContext,
+    messages: Messages): Future[List[ConversationMetadata]] =
     repo.getConversationsFiltered(customerEnrolments, tags).map { coreConversations =>
       coreConversations.map(conversation => {
         val enrolmentToIdentifiers = customerEnrolments.map(customerEnrolment =>

@@ -18,7 +18,7 @@ package uk.gov.hmrc.securemessage.controllers
 
 import akka.stream.Materializer
 import org.joda.time.DateTime
-import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.{ any, eq => eqTo }
 import org.mockito.Mockito.when
 import org.scalatest.OptionValues
 import org.scalatest.concurrent.ScalaFutures
@@ -27,21 +27,22 @@ import org.scalatestplus.play.PlaySpec
 import play.api.http.ContentTypes._
 import play.api.http.HeaderNames._
 import play.api.http.Status._
+import play.api.i18n.Messages
 import play.api.libs.json.{ JsObject, JsValue, Json }
 import play.api.mvc.Result
-import play.api.test.Helpers.{ POST, PUT, contentAsJson, contentAsString, defaultAwaitTimeout, status }
+import play.api.test.Helpers.{ POST, PUT, contentAsJson, contentAsString, defaultAwaitTimeout, status, stubMessages }
 import play.api.test.{ FakeHeaders, FakeRequest, Helpers, NoMaterializer }
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.authorise.Predicate
 import uk.gov.hmrc.auth.core.retrieve.Retrieval
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.securemessage.{ DuplicateConversationError, EmailError, NoReceiverEmailError, SecureMessageError, StoreError }
 import uk.gov.hmrc.securemessage.controllers.models.generic
 import uk.gov.hmrc.securemessage.controllers.models.generic._
 import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core.Conversation
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
 import uk.gov.hmrc.securemessage.services.SecureMessageService
+import uk.gov.hmrc.securemessage._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ ExecutionContext, Future }
@@ -51,6 +52,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
 
   implicit val mat: Materializer = NoMaterializer
   implicit val hc: HeaderCarrier = HeaderCarrier()
+  implicit val messages: Messages = stubMessages()
 
   "createConversation" must {
 
@@ -159,6 +161,19 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       status(response) mustBe UNAUTHORIZED
       contentAsString(response) mustBe "\"No enrolment found\""
     }
+
+    "return a 400 (BAD_REQUEST) error when invalid query parameters are provided" in new TestCase(
+      "some other key",
+      "another enrolment") {
+      val response: Future[Result] = controller
+        .getMetadataForConversationsFiltered(
+          None,
+          Some(List(CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789"))),
+          None)
+        .apply(FakeRequest("GET", "/some?x=123&Z=12&a=abc&test=ABCDEF"))
+      status(response) mustBe BAD_REQUEST
+      contentAsString(response) mustBe "\"Invalid query parameter(s) found: [Z, a, test, x]\""
+    }
   }
 
   "getConversation" must {
@@ -171,14 +186,13 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       contentAsJson(response).as[ApiConversation] must be(conversation.value)
     }
 
-    "return an BadRequest (400) with a JSON body of No conversation found" in new GetConversationTestCase(
+    "return an NotFound (404) with a JSON body of No conversation found" in new GetConversationTestCase(
       storedConversation = None) {
       val response: Future[Result] = controller
         .getConversationContent("cdcm", "D-80542-20201120", "HMRC-CUS-ORG", "EORINumber")
         .apply(FakeRequest("GET", "/"))
-      status(response) mustBe BAD_REQUEST
-      contentAsString(response) mustBe
-        "\"No conversation found\""
+      status(response) mustBe NOT_FOUND
+      contentAsString(response) mustBe "\"No conversation found\""
     }
 
     "return a 401 (UNAUTHORISED) error when no EORI enrolment found" in new TestCase(
@@ -286,7 +300,9 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
 
     private val eORINumber: CustomerEnrolment = generic.CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789")
 
-    when(mockSecureMessageService.getConversationsFiltered(Set(eORINumber), None))
+    when(
+      mockSecureMessageService
+        .getConversationsFiltered(eqTo(Set(eORINumber)), any[Option[List[Tag]]])(any[ExecutionContext], any[Messages]))
       .thenReturn(Future(conversationsMetadata))
   }
 

@@ -46,6 +46,7 @@ import scala.concurrent.{ ExecutionContext, Future }
 class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar {
 
   implicit val mat: Materializer = NoMaterializer
+  implicit val messages = stubMessages()
   val listOfCoreConversation = List(
     ConversationUtil.getFullConversation("D-80542-20201120", "HMRC-CUS-ORG", "EORINumber", "GB1234567890"))
   val cnvWithEmail = ConversationUtil.getConversationRequest(true).asConversation("cdcm", "123")
