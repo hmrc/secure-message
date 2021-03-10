@@ -19,6 +19,7 @@ package uk.gov.hmrc.securemessage.services
 import cats.data.NonEmptyList
 import com.google.inject.Inject
 import org.joda.time.DateTime
+import play.api.i18n.Messages
 import play.api.mvc.Result
 import play.api.mvc.Results.{ BadRequest, Conflict, Created }
 import uk.gov.hmrc.auth.core.{ AuthorisationException, Enrolments }
@@ -65,7 +66,8 @@ class SecureMessageService @Inject()(repo: ConversationRepository, emailConnecto
   }
 
   def getConversationsFiltered(customerEnrolments: Set[CustomerEnrolment], tags: Option[List[Tag]])(
-    implicit ec: ExecutionContext): Future[List[ConversationMetadata]] =
+    implicit ec: ExecutionContext,
+    messages: Messages): Future[List[ConversationMetadata]] =
     repo.getConversationsFiltered(customerEnrolments, tags).map { coreConversations =>
       coreConversations.map(conversation => {
         val enrolmentToIdentifiers = customerEnrolments.map(customerEnrolment =>
