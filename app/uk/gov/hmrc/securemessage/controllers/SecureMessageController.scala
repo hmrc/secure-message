@@ -17,6 +17,7 @@
 package uk.gov.hmrc.securemessage.controllers
 
 import javax.inject.Inject
+import play.api.i18n.I18nSupport
 import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc.{ Action, AnyContent, ControllerComponents }
 import uk.gov.hmrc.auth.core._
@@ -34,7 +35,7 @@ class SecureMessageController @Inject()(
   cc: ControllerComponents,
   val authConnector: AuthConnector,
   secureMessageService: SecureMessageService)(implicit ec: ExecutionContext)
-    extends BackendController(cc) with AuthorisedFunctions with QueryStringValidation {
+    extends BackendController(cc) with AuthorisedFunctions with QueryStringValidation with I18nSupport {
 
   def createConversation(client: String, conversationId: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>

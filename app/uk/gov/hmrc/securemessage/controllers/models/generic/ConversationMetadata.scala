@@ -19,10 +19,11 @@ package uk.gov.hmrc.securemessage.controllers.models.generic
 import cats.implicits._
 import cats.kernel.Eq
 import org.joda.time.DateTime
+import play.api.i18n.Messages
 import play.api.libs.json.JodaReads.jodaDateReads
 import play.api.libs.json.JodaWrites.jodaDateWrites
 import play.api.libs.json.{ Format, Json, OFormat }
-import uk.gov.hmrc.securemessage.models.core.{ Conversation, Identifier, Message, Participant }
+import uk.gov.hmrc.securemessage.models.core.{ Conversation, Identifier, Message, Participant, ParticipantType }
 
 final case class ConversationMetadata(
   client: String,
@@ -35,7 +36,9 @@ final case class ConversationMetadata(
 
 object ConversationMetadata {
 
-  def coreToConversationMetadata(coreConversation: Conversation, identifier: Identifier): ConversationMetadata = {
+  @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
+  def coreToConversationMetadata(coreConversation: Conversation, identifier: Identifier)(
+    implicit messages: Messages): ConversationMetadata = {
     val messageCount = coreConversation.messages.size
     ConversationMetadata(
       coreConversation.client,
@@ -48,8 +51,9 @@ object ConversationMetadata {
     )
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
-  def coreToConversationMetadata(coreConversation: Conversation, identifiers: Set[Identifier]): ConversationMetadata = {
+  @SuppressWarnings(Array("org.wartremover.warts.Overloading", "org.wartremover.warts.ImplicitParameter"))
+  def coreToConversationMetadata(coreConversation: Conversation, identifiers: Set[Identifier])(
+    implicit messages: Messages): ConversationMetadata = {
     val messageCount = coreConversation.messages.size
     ConversationMetadata(
       coreConversation.client,
@@ -68,9 +72,22 @@ object ConversationMetadata {
   private def findLatestMessageDate(coreConversation: Conversation): DateTime =
     findLatestMessage(coreConversation).created
 
-  private def findLatestMessageName(coreConversation: Conversation): Option[String] = {
-    val latestMessage = findLatestMessage(coreConversation)
-    coreConversation.participants.find(_.id === latestMessage.senderId).flatMap(_.name)
+  @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
+  private def findLatestMessageName(coreConversation: Conversation)(implicit messages: Messages): Option[String] =
+    findLatestParticipant(coreConversation).flatMap { participant =>
+      participant.name match {
+        case Some(name) => Some(name)
+        case _ =>
+          participant.participantType match {
+            case ParticipantType.Customer => Some(messages("conversation.inbox.default.customer.sender"))
+            case ParticipantType.System   => Some(messages("conversation.inbox.default.system.sender"))
+          }
+      }
+    }
+
+  private def findLatestParticipant(coreConversation: Conversation): Option[Participant] = {
+    val latestMessageSenderId = findLatestMessage(coreConversation).senderId
+    coreConversation.participants.find(_.id === latestMessageSenderId)
   }
 
   private def anyUnreadMessages(coreConversation: Conversation, identifier: Identifier): Boolean = {

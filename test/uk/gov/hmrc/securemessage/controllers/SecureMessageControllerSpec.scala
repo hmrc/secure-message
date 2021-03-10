@@ -18,7 +18,7 @@ package uk.gov.hmrc.securemessage.controllers
 
 import akka.stream.Materializer
 import org.joda.time.DateTime
-import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.{ any, eq => eqTo }
 import org.mockito.Mockito.when
 import org.scalatest.OptionValues
 import org.scalatest.concurrent.ScalaFutures
@@ -28,9 +28,10 @@ import play.api.http.ContentTypes._
 import play.api.http.HeaderNames._
 import play.api.http.HttpEntity
 import play.api.http.Status._
+import play.api.i18n.Messages
 import play.api.libs.json.{ JsObject, JsValue, Json }
 import play.api.mvc.{ ResponseHeader, Result }
-import play.api.test.Helpers.{ POST, PUT, contentAsJson, contentAsString, defaultAwaitTimeout, status }
+import play.api.test.Helpers.{ POST, PUT, contentAsJson, contentAsString, defaultAwaitTimeout, status, stubMessages }
 import play.api.test.{ FakeHeaders, FakeRequest, Helpers, NoMaterializer }
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.authorise.Predicate
@@ -42,6 +43,7 @@ import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core.Conversation
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
 import uk.gov.hmrc.securemessage.services.SecureMessageService
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -50,6 +52,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
 
   implicit val mat: Materializer = NoMaterializer
   implicit val hc: HeaderCarrier = HeaderCarrier()
+  implicit val messages: Messages = stubMessages()
 
   "createConversation" must {
 
@@ -244,7 +247,9 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
 
     private val eORINumber: CustomerEnrolment = generic.CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789")
 
-    when(mockSecureMessageService.getConversationsFiltered(Set(eORINumber), None))
+    when(
+      mockSecureMessageService
+        .getConversationsFiltered(eqTo(Set(eORINumber)), any[Option[List[Tag]]])(any[ExecutionContext], any[Messages]))
       .thenReturn(Future(conversationsMetadata))
   }
 
