@@ -18,6 +18,7 @@ package uk.gov.hmrc.securemessage.models.core
 
 import enumeratum.EnumEntry.Lowercase
 import enumeratum.{ Enum, EnumEntry, PlayJsonEnum }
+import cats.kernel.Eq
 
 import scala.collection.immutable
 
@@ -27,8 +28,12 @@ object ParticipantType extends Enum[ParticipantType] with PlayJsonEnum[Participa
 
   val values: immutable.IndexedSeq[ParticipantType] = findValues
 
-  case object System extends ParticipantType
+  case object System extends ParticipantType {
+    implicit val eqSystem: Eq[System] = Eq.fromUniversalEquals
+  }
 
-  case object Customer extends ParticipantType
+  case object Customer extends ParticipantType {
+    implicit val eqCustomer: Eq[ParticipantType] = Eq.fromUniversalEquals
+  }
 
 }

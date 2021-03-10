@@ -16,54 +16,89 @@
 
 package uk.gov.hmrc.securemessage.services
 
-import cats.data.NonEmptyList
+import cats.data.{ NonEmptyList, _ }
+import cats.implicits._
 import com.google.inject.Inject
 import org.joda.time.DateTime
 import play.api.i18n.Messages
-import play.api.mvc.Result
-import play.api.mvc.Results.{ BadRequest, Conflict, Created }
 import uk.gov.hmrc.auth.core.{ AuthorisationException, Enrolments }
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.securemessage.connectors.EmailConnector
+import uk.gov.hmrc.securemessage.connectors.{ ChannelPreferencesConnector, EmailConnector }
 import uk.gov.hmrc.securemessage.controllers.models.generic._
 import uk.gov.hmrc.securemessage.models.EmailRequest
+import uk.gov.hmrc.securemessage.models.core.ParticipantType.Customer.eqCustomer
+import uk.gov.hmrc.securemessage.models.core.ParticipantType.{ Customer => PCustomer }
 import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
+import uk.gov.hmrc.securemessage.{ EmailLookupError, NoReceiverEmailError, SecureMessageError }
 
 import scala.concurrent.{ ExecutionContext, Future }
-/*
-TODO: refactor so that service has no play dependencies, only core classes.
- */
 
-@SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
-class SecureMessageService @Inject()(repo: ConversationRepository, emailConnector: EmailConnector) {
+@SuppressWarnings(
+  Array(
+    "org.wartremover.warts.ImplicitParameter",
+    "org.wartremover.warts.Product",
+    "org.wartremover.warts.Serializable"))
+class SecureMessageService @Inject()(
+  repo: ConversationRepository,
+  emailConnector: EmailConnector,
+  channelPrefConnector: ChannelPreferencesConnector) {
 
-  def createConversation(conversationRequest: ConversationRequest, client: String, conversationId: String)(
+  def createConversation(conversation: Conversation)(
     implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Future[Result] = {
-    val conversation = conversationRequest.asConversation(client, conversationId)
-    repo.insertIfUnique(conversation).map { isUnique =>
-      if (isUnique) {
-        getEmailRequest(conversationRequest) match {
-          case Left(err) => BadRequest(err)
-          case Right(req) =>
-            val _ = emailConnector.send(req)
-            Created
-        }
+    ec: ExecutionContext): Future[Either[SecureMessageError, Boolean]] =
+    (for {
+      participantsWithEmail <- addMissingEmails(conversation.participants)
+      _                     <- EitherT(repo.insertIfUnique(conversation.copy(participants = participantsWithEmail.all.toList)))
+      _ <- validateCustomerParticipants(participantsWithEmail)(
+            errorCondition = participantsWithEmail.customer.success.isEmpty)
+      _ <- sendEmail(participantsWithEmail.customer.success, conversation.alert.templateId)
+      res <- validateCustomerParticipants(participantsWithEmail)(
+              errorCondition = participantsWithEmail.customer.failure.nonEmpty)
+
+    } yield res).value
+
+  private def validateCustomerParticipants(participants: GroupedParticipants)(errorCondition: => Boolean)(
+    implicit ec: ExecutionContext): EitherT[Future, SecureMessageError, Boolean] =
+    EitherT(Future {
+      if (errorCondition) {
+        Left(NoReceiverEmailError(s"Email lookup failed for: ${participants.customer.failure}"))
       } else {
-        Conflict("Duplicate of existing conversation")
+        Right(true)
       }
-    }
+    })
+
+  @SuppressWarnings(
+    Array("org.wartremover.warts.Nothing", "org.wartremover.warts.Any", "org.wartremover.warts.Product"))
+  private def sendEmail(customers: Seq[Participant], templateId: String)(
+    implicit hc: HeaderCarrier,
+    ec: ExecutionContext): EitherT[Future, SecureMessageError, Int] =
+    for {
+      emails <- EitherT.right[SecureMessageError](Future { customers.flatMap(_.email).toList })
+      res    <- EitherT(emailConnector.send(EmailRequest(emails, templateId))).leftWiden[SecureMessageError]
+    } yield res
+
+  private def addMissingEmails(participants: Seq[Participant])(
+    implicit hc: HeaderCarrier,
+    ec: ExecutionContext): EitherT[Future, SecureMessageError, GroupedParticipants] = {
+    val (customers, systems) = participants.partition(_.participantType === PCustomer)
+    val (noEmailCustomers, emailCustomers) = customers.partition(_.email.isEmpty)
+    val result = for {
+      customersWithEmail <- lookupEmail(noEmailCustomers)
+      success = customersWithEmail.collect { case Right(v) => v }
+      failure = customersWithEmail.collect { case Left(v)  => v }
+    } yield GroupedParticipants(systems, CustomerParticipants(emailCustomers ++ success, failure))
+    EitherT.right[SecureMessageError](result)
   }
 
-  private def getEmailRequest(request: ConversationRequest): Either[String, EmailRequest] = {
-    val emailAddresses = request.recipients.flatMap(r => r.customer.email.toList)
-    if (emailAddresses.nonEmpty) {
-      Right[String, EmailRequest](EmailRequest(emailAddresses, request.alert.templateId))
-    } else {
-      Left[String, EmailRequest]("No recipient email addresses provided")
-    }
-  }
+  private def lookupEmail(noEmailCustomers: Seq[Participant])(
+    implicit hc: HeaderCarrier,
+    ec: ExecutionContext): Future[Seq[Either[CustomerEmailError, Participant]]] =
+    Future.sequence(noEmailCustomers.map(customerParticipant =>
+      channelPrefConnector.getEmailForEnrolment(customerParticipant.identifier).map {
+        case Right(email) => Right(customerParticipant.copy(email = Some(email)))
+        case Left(elr)    => Left(CustomerEmailError(customerParticipant, elr))
+    }))
 
   def getConversationsFiltered(customerEnrolments: Set[CustomerEnrolment], tags: Option[List[Tag]])(
     implicit ec: ExecutionContext,
@@ -109,6 +144,7 @@ class SecureMessageService @Inject()(repo: ConversationRepository, emailConnecto
     val participantIdentifiers = getIdentifiersFromParticipants(participants).toList
     getIdentifiersFromEnrolments(enrolments).intersect(participantIdentifiers).headOption
   }
+
   def updateReadTime(client: String, conversationId: String, enrolments: Enrolments, readTime: DateTime)(
     implicit ec: ExecutionContext): Future[Boolean] =
     getParticipantId(client, conversationId, enrolments).flatMap {
@@ -140,4 +176,11 @@ class SecureMessageService @Inject()(repo: ConversationRepository, emailConnecto
       case _ => None
     }
 
+  case class GroupedParticipants(system: Seq[Participant], customer: CustomerParticipants) {
+    def all: Seq[Participant] = system ++ customer.all
+  }
+  case class CustomerParticipants(success: Seq[Participant], failure: Seq[CustomerEmailError]) {
+    def all: Seq[Participant] = success ++ failure.map(_.customer)
+  }
+  case class CustomerEmailError(customer: Participant, error: EmailLookupError)
 }
