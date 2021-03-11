@@ -44,7 +44,7 @@ PUT         /conversation/:client/:conversationId                               
 #   424:
 #     description: a dependency failed - e.g. client not recognised
 ###
-POST        /conversation/:client/:conversationId/caseworker-message                  uk.gov.hmrc.securemessage.controllers.SecureMessageController.createCaseworkerMessage(client: String, conversationId: String)
+POST        /conversation/:client/:conversationId/caseworker-message                  uk.gov.hmrc.securemessage.controllers.SecureMessageController.addCaseworkerMessage(client: String, conversationId: String)
 
 ###
 # summary: Adds a message from a customer to a conversation
@@ -65,7 +65,7 @@ POST        /conversation/:client/:conversationId/caseworker-message            
 #   401:
 #     description: user is not authorised to add a message
 ###
-POST        /conversation/:client/:conversationId/customer-message                    uk.gov.hmrc.securemessage.controllers.SecureMessageController.createCustomerMessage(client: String, conversationId: String)
+POST        /conversation/:client/:conversationId/customer-message                    uk.gov.hmrc.securemessage.controllers.SecureMessageController.addCustomerMessage(client: String, conversationId: String)
 
 ###
 # summary: Gets a list of conversations via enrolmentKeys, enrolments and tags filters

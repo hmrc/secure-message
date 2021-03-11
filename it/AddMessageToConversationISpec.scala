@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import java.io.File
+
 import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.play.PlaySpec
 import play.api.http.Status.CREATED
@@ -23,8 +25,7 @@ import play.api.libs.ws.{ WSClient, WSResponse }
 import play.api.test.Helpers._
 import uk.gov.hmrc.integration.ServiceSpec
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
-import utils.{ AuthHelper, ConversationUtil }
-import java.io.File
+import utils.AuthHelper
 
 import scala.concurrent.ExecutionContext
 
@@ -43,11 +44,9 @@ class AddMessageToConversationISpec extends PlaySpec with ServiceSpec with Befor
   }
 
   "A POST request to /secure-messaging/conversation/{client}/{conversationId}/customer-message" must {
-    "return CREATED when the message is successfully added to the conversation" in new CustomerTestCase(
-      "PGRpdj5IZWxsbzwvZGl2Pg==",
-      VALID_EORI) {
+    "return CREATED when the message is successfully added to the conversation" in new CustomerTestCase(VALID_EORI) {
       response.status mustBe CREATED
-      response.body mustBe "Created for client CDCM and conversationId D-80542-20201120"
+      response.body mustBe "\"Created customer message for client CDCM and conversationId D-80542-20201120\""
     }
     "return NOT FOUND when the conversation ID is not recognised" in {
       val client = "cdcm"
@@ -59,37 +58,18 @@ class AddMessageToConversationISpec extends PlaySpec with ServiceSpec with Befor
           .post(Json.obj("content" -> "PGRpdj5IZWxsbzwvZGl2Pg=="))
           .futureValue
       response.status mustBe NOT_FOUND
-      response.body mustBe "Conversation ID not known"
+      response.body mustBe "\"Conversation ID not known\""
     }
-    "return UNAUTHORIZED when the customer is not a participant" in new CustomerTestCase(
-      "PGRpdj5IZWxsbzwvZGl2Pg==",
-      "GB1234567891") {
+    "return UNAUTHORIZED when the customer is not a participant" in new CustomerTestCase("GB1234567891") {
       response.status mustBe UNAUTHORIZED
-      response.body mustBe "Insufficient Enrolments"
-    }
-    "return BAD_REQUEST when the message content is not base64 encoded" in new CustomerTestCase(
-      "aGV%sb-G8sIHdvcmxkIQ==",
-      VALID_EORI) {
-      response.status mustBe BAD_REQUEST
-      response.body mustBe "Not valid base64 content"
-    }
-    "return BAD_REQUEST when the message content is not valid HTML" in new CustomerTestCase(
-      "PG1hdHQ+Q2FuIEkgaGF2ZSBteSB0YXggbW9uZXkgcGxlYXNlPzwvbWF0dD4=",
-      VALID_EORI) {
-      response.status mustBe BAD_REQUEST
-      response.body mustBe "Not valid HTML content"
-    }
-    "return BAD REQUEST if message content is empty" in new CustomerTestCase("", VALID_EORI) {
-      response.status mustBe BAD_REQUEST
-      response.body mustBe "Not valid HTML content"
+      response.body mustBe "\"InsufficientEnrolments\""
     }
   }
 
   "A POST request to /secure-messaging/conversation/{client}/{conversationId}/caseworker-message" must {
     "return CREATED when the message is successfully added to the conversation" in new CaseworkerTestCase(
-      "QmxhaCBibGFoIGJsYWg=") {
+      "./it/resources/caseworker-message.json") {
       response.status mustBe CREATED
-      response.body mustBe "Created for client CDCM and conversationId D-80542-20201120"
     }
     "return NOT FOUND when the conversation ID is not recognised" in {
       val client = "cdcm"
@@ -101,25 +81,26 @@ class AddMessageToConversationISpec extends PlaySpec with ServiceSpec with Befor
           .post(new File("./it/resources/caseworker-message.json"))
           .futureValue
       response.status mustBe NOT_FOUND
-      response.body mustBe "Conversation ID not known"
+      response.body mustBe "\"Conversation ID not known\""
     }
     "return BAD_REQUEST when the message content is not base64 encoded" in new CaseworkerTestCase(
-      "aGV%sb-G8sIHdvcmxkIQ==") {
+      "./it/resources/caseworker-message-invalid-base64.json") {
       response.status mustBe BAD_REQUEST
-      response.body mustBe "Not valid base64 content"
+      response.body mustBe "\"Not valid base64 content\""
     }
     "return BAD_REQUEST when the message content is not valid HTML" in new CaseworkerTestCase(
-      "PG1hdHQ+Q2FuIEkgaGF2ZSBteSB0YXggbW9uZXkgcGxlYXNlPzwvbWF0dD4=") {
+      "./it/resources/caseworker-message-invalid-html.json") {
       response.status mustBe BAD_REQUEST
-      response.body mustBe "Not valid HTML content"
+      response.body mustBe "\"Not valid html content\""
     }
-    "return BAD REQUEST if message content is empty" in new CaseworkerTestCase("") {
+    "return BAD REQUEST if message content is empty" in new CaseworkerTestCase(
+      "./it/resources/caseworker-message-empty-content.json") {
       response.status mustBe BAD_REQUEST
-      response.body mustBe "Not valid HTML content"
+      response.body mustBe "\"Not valid html content\""
     }
   }
 
-  class CaseworkerTestCase(content: String) {
+  class CaseworkerTestCase(file: String) {
     val client = "CDCM"
     val conversationId = "D-80542-20201120"
     await(
@@ -131,11 +112,11 @@ class AddMessageToConversationISpec extends PlaySpec with ServiceSpec with Befor
       wsClient
         .url(resource(s"/secure-messaging/conversation/$client/$conversationId/caseworker-message"))
         .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
-        .post(ConversationUtil.getCaseWorkerMessage(content))
+        .post(new File(file))
         .futureValue
   }
 
-  class CustomerTestCase(content: String, eori: String) {
+  class CustomerTestCase(eori: String) {
     val client = "CDCM"
     val conversationId = "D-80542-20201120"
     await(
@@ -147,7 +128,7 @@ class AddMessageToConversationISpec extends PlaySpec with ServiceSpec with Befor
       wsClient
         .url(resource(s"/secure-messaging/conversation/$client/$conversationId/customer-message"))
         .withHttpHeaders(buildEoriToken(eori))
-        .post(Json.obj("content" -> content))
+        .post(Json.obj("content" -> "PGRpdj5IZWxsbzwvZGl2Pg=="))
         .futureValue
   }
 }

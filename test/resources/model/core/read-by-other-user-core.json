@@ -51,14 +51,12 @@
     {
       "senderId" : 2,
       "created" : "2021-02-02T09:18:45.308+0000",
-      "content" : "customer message content!!",
-      "isForwarded" : false
+      "content" : "customer message content!!"
     },
     {
       "senderId" : 3,
       "created" : "2021-02-03T09:18:45.308+0000",
-      "content" : "customer message content!!",
-      "isForwarded" : false
+      "content" : "customer message content!!"
     }
   ],
   "alert": {

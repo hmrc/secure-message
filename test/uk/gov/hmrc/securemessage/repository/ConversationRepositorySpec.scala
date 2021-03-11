@@ -22,13 +22,14 @@ import org.scalatestplus.play.PlaySpec
 import play.api.test.Helpers._
 import reactivemongo.api.commands.WriteResult
 import uk.gov.hmrc.mongo.MongoSpecSupport
-import uk.gov.hmrc.securemessage.controllers.models.generic.{ CustomerEnrolment, Tag }
+import uk.gov.hmrc.securemessage.ConversationNotFound
+import uk.gov.hmrc.securemessage.controllers.models.generic.Tag
 import uk.gov.hmrc.securemessage.helpers.ConversationUtil
-import uk.gov.hmrc.securemessage.models.core.Message
+import uk.gov.hmrc.securemessage.models.core.{ Identifier, Message }
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
+@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.EitherProjectionPartial"))
 class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with BeforeAndAfterEach {
 
   private val repository = new ConversationRepository()
@@ -72,7 +73,7 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
     "be returned for a single specific enrolment filter and no tag filter" in {
       repoSetup()
       val result = await(
-        repository.getConversationsFiltered(Set(CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890")), None))
+        repository.getConversationsFiltered(Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))), None))
       result.map(_.conversationId) mustBe List("234", "123")
     }
 
@@ -80,7 +81,7 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
       repoSetup()
       val result = await(
         repository
-          .getConversationsFiltered(Set(CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890")), Some(List())))
+          .getConversationsFiltered(Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))), Some(List())))
       result.map(_.conversationId) mustBe List("234", "123")
     }
 
@@ -89,8 +90,8 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
       val result = await(
         repository.getConversationsFiltered(
           Set(
-            CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890"),
-            CustomerEnrolment("IR-SA", "UTR", "123456789")),
+            Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")),
+            Identifier("UTR", "123456789", Some("IR-SA"))),
           None))
       result.map(_.conversationId) mustBe List("345", "234", "123")
     }
@@ -100,8 +101,8 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
       val result = await(
         repository.getConversationsFiltered(
           Set(
-            CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890"),
-            CustomerEnrolment("IR-SA", "UTR", "123456789")),
+            Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")),
+            Identifier("UTR", "123456789", Some("IR-SA"))),
           Some(List())))
       result.map(_.conversationId) mustBe List("345", "234", "123")
     }
@@ -128,7 +129,7 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
       repoSetup()
       val result = await(
         repository.getConversationsFiltered(
-          Set(CustomerEnrolment("IR-CT", "UTR", "345678901")),
+          Set(Identifier("UTR", "345678901", Some("IR-CT"))),
           Some(List(Tag("sourceId", "self-assessment")))))
       result.size mustBe 0
     }
@@ -137,7 +138,7 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
       repoSetup()
       val result = await(
         repository.getConversationsFiltered(
-          Set(CustomerEnrolment("IR-SA", "UTR", "123456789")),
+          Set(Identifier("UTR", "123456789", Some("IR-SA"))),
           Some(List(Tag("sourceId", "self-assessment")))))
       result.size mustBe 1
       result(0).conversationId mustBe "345"
@@ -148,9 +149,9 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
       val result = await(
         repository.getConversationsFiltered(
           Set(
-            CustomerEnrolment("IR-SA", "UTR", "123456789"),
-            CustomerEnrolment("IR-CT", "UTR", "345678901"),
-            CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890")
+            Identifier("UTR", "123456789", Some("IR-SA")),
+            Identifier("UTR", "345678901", Some("IR-CT")),
+            Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")),
           ),
           Some(List(Tag("caseId", "CT-11345")))
         ))
@@ -162,7 +163,7 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
       repoSetup()
       val result = await(
         repository.getConversationsFiltered(
-          Set(CustomerEnrolment("IR-SA", "UTR", "123456789")),
+          Set(Identifier("UTR", "123456789", Some("IR-SA"))),
           Some(List(Tag("sourceId", "self-assessment"), Tag("caseId", "CT-11345")))))
       result.size mustBe 1
       result(0).conversationId mustBe "345"
@@ -173,8 +174,8 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
       val result = await(
         repository.getConversationsFiltered(
           Set(
-            CustomerEnrolment("IR-SA", "UTR", "123456789"),
-            CustomerEnrolment("IR-CT", "UTR", "345678901")
+            Identifier("UTR", "123456789", Some("IR-SA")),
+            Identifier("UTR", "345678901", Some("IR-CT"))
           ),
           Some(List(Tag("sourceId", "self-assessment"), Tag("caseId", "CT-11345")))
         ))
@@ -188,8 +189,9 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
       await(repository.insert(conversation))
       val result =
         await(
-          repository.getConversation("cdcm", "123", CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890")))
-      result.size mustBe 1
+          repository
+            .getConversation("cdcm", "123", Some(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")))))
+      result.right.get mustBe conversation
     }
   }
 
@@ -199,8 +201,12 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
       await(repository.insert(conversation))
       val result = await(
         repository
-          .getConversation("cdcm", "D-80542-20201120", CustomerEnrolment("HMRC-CUS-ORF", "EORINumber", "GB1234567890")))
-      result.size mustBe 0
+          .getConversation(
+            "cdcm",
+            "D-80542-20201120",
+            Some(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORF")))))
+      result mustBe Left(ConversationNotFound(
+        "Conversation not found for client: cdcm, conversationId: D-80542-20201120, identifier: Some(Identifier(EORINumber,GB1234567890,Some(HMRC-CUS-ORF)))"))
     }
   }
 
@@ -209,44 +215,13 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
       val aConversationId = "D-80542-20201120"
       val conversation = ConversationUtil.getMinimalConversation(aConversationId)
       await(repository.insert(conversation))
-      val message = Message(2, new DateTime(), "test", isForwarded = Some(false))
+      val message = Message(2, new DateTime(), "test")
       await(repository.addMessageToConversation("cdcm", aConversationId, message))
       await(repository.addMessageToConversation("cdcm", aConversationId, message))
-      val updated = await(
-        repository
-          .getConversation("cdcm", aConversationId, CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890")))
-      updated match {
-        case Some(c) => c.messages.size mustBe 3
-        case _       => fail("No conversation found")
-      }
-    }
-  }
-
-  "Getting the participants from a conversation" must {
-    "return the correct number of participants" in {
-      val aConversationId = "D-80542-20201120"
-      val conversation = ConversationUtil.getMinimalConversation(aConversationId)
-      await(repository.insert(conversation))
-      val participants = await(repository.getConversationParticipants("cdcm", aConversationId))
-      participants match {
-        case Some(p) => p.participants.size mustBe 2
-        case _       => fail("No participants found")
-      }
-    }
-  }
-
-  "Checking if a conversation ID exists" must {
-    "return true when it does" in {
-      val aConversationId = "D-80542-20201120"
-      val conversation = ConversationUtil.getMinimalConversation(aConversationId)
-      await(repository.insert(conversation))
-      val exists = await(repository.conversationExists("cdcm", aConversationId))
-      exists mustBe true
-    }
-    "return false when it does not" in {
-      val aConversationId = "D-80542-20201120"
-      val exists = await(repository.conversationExists("cdcm", aConversationId))
-      exists mustBe false
+      val updated = await(repository
+        .getConversation("cdcm", aConversationId, Some(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")))))
+      val result = updated.right.get
+      result.messages.size mustBe 3
     }
   }
 
@@ -254,8 +229,8 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
     "return true when a conversation has been successfully update with a new read time" in {
       val conversation = ConversationUtil.getFullConversation("123", "HMRC-CUS-ORG", "EORINumber", "GB1234567890")
       await(repository.insert(conversation))
-      val result = await(repository.updateConversationWithReadTime("cdcm", "D-80542-20201120", 2, DateTime.now))
-      result mustBe true
+      val result = await(repository.addReadTime("cdcm", "D-80542-20201120", 2, DateTime.now))
+      result mustBe Right(())
     }
   }
 

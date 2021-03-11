@@ -21,7 +21,7 @@ import play.api.libs.json.JodaReads.jodaDateReads
 import play.api.libs.json.JodaWrites.jodaDateWrites
 import play.api.libs.json.{ Format, Json, OFormat }
 
-final case class Message(senderId: Int, created: DateTime, content: String, isForwarded: Option[Boolean])
+final case class Message(senderId: Int, created: DateTime, content: String)
 object Message {
 
   private val dateFormatString = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"

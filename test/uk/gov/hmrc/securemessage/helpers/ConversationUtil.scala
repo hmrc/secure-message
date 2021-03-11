@@ -19,7 +19,6 @@ package uk.gov.hmrc.securemessage.helpers
 import cats.data.NonEmptyList
 import org.joda.time.DateTime
 import uk.gov.hmrc.emailaddress._
-import uk.gov.hmrc.securemessage.controllers.models
 import uk.gov.hmrc.securemessage.controllers.models.generic._
 import uk.gov.hmrc.securemessage.models.core
 import uk.gov.hmrc.securemessage.models.core.Language.English
@@ -28,24 +27,8 @@ import uk.gov.hmrc.securemessage.models.core._
 object ConversationUtil {
   val alert: core.Alert = core.Alert("emailTemplateId", Some(Map("param1" -> "value1", "param2" -> "value2")))
 
-  def getConversationRequest(withEmailAddress: Boolean, content: String): ConversationRequest =
-    ConversationRequest(
-      Sender(System(SystemIdentifier("cdcm", "123"), "CDS Exports", None)),
-      List(
-        Recipient(
-          Customer(
-            CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890"),
-            Some("Joe Bloggs"),
-            if (withEmailAddress) Some(EmailAddress("joebloggs@test.com")) else None))),
-      models.generic.Alert(alert.templateId, alert.parameters),
-      None,
-      "Test",
-      content,
-      None
-    )
-
   def getConversationRequestWithMultipleCustomers: ConversationRequest = {
-    val cnv = getConversationRequest(true, "QmxhaCBibGFoIGJsYWg=")
+    val cnv: ConversationRequest = Resources.readJson("model/api/create-conversation-full.json").as[ConversationRequest]
     cnv.copy(
       recipients = Recipient(Customer(
         CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890"),
@@ -99,8 +82,7 @@ object ConversationUtil {
         Message(
           1,
           new DateTime("2020-11-10T15:00:01.000"),
-          "QmxhaCBibGFoIGJsYWg=",
-          None
+          "QmxhaCBibGFoIGJsYWg="
         )
       ),
       alert
@@ -136,8 +118,7 @@ object ConversationUtil {
         Message(
           1,
           new DateTime("2020-11-10T15:00:01.000"),
-          "QmxhaCBibGFoIGJsYWg=",
-          None
+          "QmxhaCBibGFoIGJsYWg="
         )
       ),
       alert.copy(parameters = None)

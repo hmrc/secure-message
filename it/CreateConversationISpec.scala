@@ -25,7 +25,6 @@ import play.api.libs.ws.WSClient
 import play.api.test.Helpers._
 import uk.gov.hmrc.integration.ServiceSpec
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
-import utils.ConversationUtil
 
 import scala.concurrent.ExecutionContext
 
@@ -43,8 +42,7 @@ class CreateConversationISpec extends PlaySpec with ServiceSpec with BeforeAndAf
 
   "A PUT request to /secure-messaging/conversation/{client}/{conversationId}" should {
 
-    "return CREATED when sent a full and valid JSON payload" in {
-      val wsClient = app.injector.instanceOf[WSClient]
+    "return CREATED when sent a full and valid JSON payload" in new TestContent {
       val response =
         wsClient
           .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
@@ -54,8 +52,7 @@ class CreateConversationISpec extends PlaySpec with ServiceSpec with BeforeAndAf
       response.status mustBe CREATED
     }
 
-    "return CREATED when sent a minimal and valid JSON payload" in {
-      val wsClient = app.injector.instanceOf[WSClient]
+    "return CREATED when sent a minimal and valid JSON payload" in new TestContent {
       val response =
         wsClient
           .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
@@ -65,8 +62,7 @@ class CreateConversationISpec extends PlaySpec with ServiceSpec with BeforeAndAf
       response.status mustBe CREATED
     }
 
-    "return CREATED when sent a conversation request with no email address and it is found in CDS" in {
-      val wsClient = app.injector.instanceOf[WSClient]
+    "return CREATED when sent a conversation request with no email address and it is found in CDS" in new TestContent {
       val response =
         wsClient
           .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
@@ -76,8 +72,7 @@ class CreateConversationISpec extends PlaySpec with ServiceSpec with BeforeAndAf
       response.status mustBe CREATED
     }
 
-    "return BAD REQUEST when sent a conversation request with an invalid email address" in {
-      val wsClient = app.injector.instanceOf[WSClient]
+    "return BAD REQUEST when sent a conversation request with an invalid email address" in new TestContent {
       val response =
         wsClient
           .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
@@ -87,8 +82,7 @@ class CreateConversationISpec extends PlaySpec with ServiceSpec with BeforeAndAf
       response.status mustBe BAD_REQUEST
     }
 
-    "return BAD REQUEST when sent a minimal and invalid JSON payload" in {
-      val wsClient = app.injector.instanceOf[WSClient]
+    "return BAD REQUEST when sent a minimal and invalid JSON payload" in new TestContent {
       val response =
         wsClient
           .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
@@ -98,8 +92,7 @@ class CreateConversationISpec extends PlaySpec with ServiceSpec with BeforeAndAf
       response.status mustBe BAD_REQUEST
     }
 
-    "return CONFLICT when a conversation with the given conversationId already exists" in {
-      val wsClient = app.injector.instanceOf[WSClient]
+    "return CONFLICT when a conversation with the given conversationId already exists" in new TestContent {
       val _ = wsClient
         .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
         .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
@@ -111,43 +104,43 @@ class CreateConversationISpec extends PlaySpec with ServiceSpec with BeforeAndAf
         .put(new File("./it/resources/create-conversation-minimal.json"))
         .futureValue
       response.status mustBe CONFLICT
-      response.body mustBe "Duplicate of existing conversation"
     }
 
-    "return BAD_REQUEST when the message content is not base64 encoded" in {
-      val wsClient = app.injector.instanceOf[WSClient]
+    "return BAD_REQUEST when the message content is not base64 encoded" in new TestContent {
       val response =
         wsClient
           .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
           .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
-          .put(ConversationUtil.getConversationRequest("aGV%sb-G8sIHdvcmxkIQ=="))
+          .put(new File("./it/resources/conversation-request-invalid-base64.json"))
           .futureValue
       response.status mustBe BAD_REQUEST
-      response.body mustBe "Not valid base64 content"
+      response.body mustBe "\"Not valid base64 content\""
     }
 
-    "return BAD_REQUEST when the message content is not valid HTML" in {
-      val wsClient = app.injector.instanceOf[WSClient]
+    "return BAD_REQUEST when the message content is not valid HTML" in new TestContent {
       val response =
         wsClient
           .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
           .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
-          .put(ConversationUtil.getConversationRequest("PG1hdHQ+Q2FuIEkgaGF2ZSBteSB0YXggbW9uZXkgcGxlYXNlPzwvbWF0dD4="))
+          .put(new File("./it/resources/conversation-request-invalid-html.json"))
           .futureValue
       response.status mustBe BAD_REQUEST
-      response.body mustBe "Not valid HTML content"
+      response.body mustBe "\"Not valid html content\""
     }
 
-    "return BAD REQUEST if message content is empty" in {
-      val wsClient = app.injector.instanceOf[WSClient]
+    "return BAD REQUEST if message content is empty" in new TestContent {
       val response =
         wsClient
           .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
           .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
-          .put(ConversationUtil.getConversationRequest(""))
+          .put(new File("./it/resources/conversation-request-empty-message-content.json"))
           .futureValue
       response.status mustBe BAD_REQUEST
-      response.body mustBe "Not valid HTML content"
+      response.body mustBe "\"Not valid html content\""
     }
+  }
+
+  class TestContent {
+    val wsClient = app.injector.instanceOf[WSClient]
   }
 }

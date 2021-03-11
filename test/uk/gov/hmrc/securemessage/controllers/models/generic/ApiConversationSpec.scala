@@ -29,7 +29,7 @@ class ApiConversationSpec extends PlaySpec {
       val identifier = Identifier(name = "EORINumber", value = "GB1234567890", enrolment = Some("HMRC-CUS-ORG"))
       val conversationJson: JsValue = Resources.readJson("model/core/hmrc-sent-first-message-core.json")
       val coreConversation: Conversation = conversationJson.validate[Conversation].get
-      val apiConversation = ApiConversation.coreConversationToApiConversation(coreConversation, identifier)
+      val apiConversation = ApiConversation.fromCore(coreConversation, identifier)
       apiConversation mustBe a[ApiConversation]
       Json.toJson(apiConversation) mustBe Json.parse("""{
                                                        |    "client": "cdcn",
@@ -62,7 +62,7 @@ class ApiConversationSpec extends PlaySpec {
       val identifier = Identifier(name = "EORINumber", value = "GB1234567890", enrolment = Some("HMRC-CUS-ORG"))
       val conversationJson: JsValue = Resources.readJson("model/core/customer-first-read-core.json")
       val coreConversation: Conversation = conversationJson.validate[Conversation].get
-      val apiConversation = ApiConversation.coreConversationToApiConversation(coreConversation, identifier)
+      val apiConversation = ApiConversation.fromCore(coreConversation, identifier)
       apiConversation mustBe a[ApiConversation]
       Json.toJson(apiConversation) mustBe Json.parse("""{
                                                        |    "client": "cdcm",
@@ -88,7 +88,7 @@ class ApiConversationSpec extends PlaySpec {
       val identifier = Identifier(name = "EORINumber", value = "GB1234567890", enrolment = Some("HMRC-CUS-ORG"))
       val conversationJson: JsValue = Resources.readJson("model/core/customer-sent-message-core.json")
       val coreConversation: Conversation = conversationJson.validate[Conversation].get
-      val apiConversation = ApiConversation.coreConversationToApiConversation(coreConversation, identifier)
+      val apiConversation = ApiConversation.fromCore(coreConversation, identifier)
       apiConversation mustBe a[ApiConversation]
       Json.toJson(apiConversation) mustBe Json.parse("""{
                                                        |    "client": "cdcm",
@@ -122,7 +122,7 @@ class ApiConversationSpec extends PlaySpec {
       val identifier = Identifier(name = "EORINumber", value = "GB1234567890", enrolment = Some("HMRC-CUS-ORG"))
       val conversationJson: JsValue = Resources.readJson("model/core/read-by-other-user-core.json")
       val coreConversation: Conversation = conversationJson.validate[Conversation].get
-      val apiConversation = ApiConversation.coreConversationToApiConversation(coreConversation, identifier)
+      val apiConversation = ApiConversation.fromCore(coreConversation, identifier)
       apiConversation mustBe a[ApiConversation]
       Json.toJson(apiConversation) mustBe Json.parse("""{
                                                        |    "client": "cdcm",
@@ -169,7 +169,7 @@ class ApiConversationSpec extends PlaySpec {
       val identifier = Identifier(name = "EORINumber", value = "GB1234567890", enrolment = Some("HMRC-CUS-ORG"))
       val conversationJson: JsValue = Resources.readJson("model/core/conversation-full-extender.json")
       val coreConversation: Conversation = conversationJson.validate[Conversation].get
-      val apiConversation = ApiConversation.coreConversationToApiConversation(coreConversation, identifier)
+      val apiConversation = ApiConversation.fromCore(coreConversation, identifier)
       apiConversation mustBe a[ApiConversation]
       Json.toJson(apiConversation) mustBe Json.parse("""{
                                                        |  "client": "cdcm",

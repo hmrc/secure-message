@@ -21,10 +21,12 @@ import play.api.libs.json.{ JsValue, Json }
 import scala.io.Source
 
 object Resources {
-  def readJson(fileName: String): JsValue = {
+  def readString(fileName: String): String = {
     val resource = Source.fromURL(getClass.getResource("/" + fileName))
-    val json = Json.parse(resource.mkString)
+    val str = resource.mkString
     resource.close()
-    json
+    str
   }
+
+  def readJson(fileName: String): JsValue = Json.parse(readString(fileName))
 }

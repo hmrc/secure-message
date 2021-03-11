@@ -22,12 +22,20 @@ sealed class SecureMessageError(val message: String, val cause: Option[Throwable
 
 final case class StoreError(override val message: String, override val cause: Option[Throwable])
     extends SecureMessageError(message, cause)
+
 final case class DuplicateConversationError(override val message: String, override val cause: Option[Throwable])
     extends SecureMessageError(message, cause)
+
 final case class NoReceiverEmailError(override val message: String) extends SecureMessageError(message)
-final case class EmailError(override val message: String) extends SecureMessageError(message)
+
+final case class EmailSendingError(override val message: String) extends SecureMessageError(message)
+
 final case class EmailLookupError(override val message: String) extends SecureMessageError(message)
-final case class InvalidHtmlContent(override val message: String) extends SecureMessageError(message)
-final case class InvalidBase64Content(override val message: String) extends SecureMessageError(message)
-final case class NoCaseworkerIdFound(override val message: String) extends SecureMessageError(message)
-final case class ConversationIdNotFound(override val message: String) extends SecureMessageError(message)
+
+@SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
+final case class InvalidContent(override val message: String, override val cause: Option[Throwable] = None)
+    extends SecureMessageError(message, cause)
+
+final case class ConversationNotFound(override val message: String) extends SecureMessageError(message)
+
+final case class ParticipantNotFound(override val message: String) extends SecureMessageError(message)

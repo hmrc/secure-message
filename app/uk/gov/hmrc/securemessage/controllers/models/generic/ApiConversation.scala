@@ -36,7 +36,7 @@ final case class ApiConversation(
 
 object ApiConversation {
 
-  def coreConversationToApiConversation(conversation: Conversation, identifier: Identifier): ApiConversation =
+  def fromCore(conversation: Conversation, identifier: Identifier): ApiConversation =
     ApiConversation(
       client = conversation.client,
       conversationId = conversation.conversationId,
