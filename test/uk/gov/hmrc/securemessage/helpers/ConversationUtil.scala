@@ -44,6 +44,14 @@ object ConversationUtil {
       None
     )
 
+  def getConversationRequestWithMultipleCustomers: ConversationRequest = {
+    val cnv = getConversationRequest(true, "QmxhaCBibGFoIGJsYWg=")
+    cnv.copy(
+      recipients = Recipient(Customer(
+        CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890"),
+        Some("Jane Bloggs"),
+        None)) :: cnv.recipients)
+  }
   @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
   def getFullConversation(
     id: String,

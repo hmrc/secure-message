@@ -17,31 +17,50 @@
 package uk.gov.hmrc.securemessage.controllers
 
 import java.text.ParseException
-
+import play.api.Logging
 import javax.inject.Inject
+import play.api.i18n.I18nSupport
 import play.api.libs.json.{ JsValue, Json }
-import play.api.mvc.{ Action, AnyContent, ControllerComponents }
+import play.api.mvc.{ Action, AnyContent, ControllerComponents, Result }
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+import uk.gov.hmrc.securemessage.{ DuplicateConversationError, EmailError, NoReceiverEmailError, SecureMessageError, StoreError }
 import uk.gov.hmrc.securemessage.controllers.models.generic._
 import uk.gov.hmrc.securemessage.controllers.utils.EnrolmentHelper._
+import uk.gov.hmrc.securemessage.controllers.utils.QueryStringValidation
 import uk.gov.hmrc.securemessage.services.SecureMessageService
 
 import scala.concurrent.{ ExecutionContext, Future }
-
 @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
 class SecureMessageController @Inject()(
   cc: ControllerComponents,
   val authConnector: AuthConnector,
   secureMessageService: SecureMessageService)(implicit ec: ExecutionContext)
-    extends BackendController(cc) with AuthorisedFunctions {
+    extends BackendController(cc) with AuthorisedFunctions with QueryStringValidation with I18nSupport with Logging {
 
   def createConversation(client: String, conversationId: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
       withJsonBody[ConversationRequest] { conversationRequest =>
-        secureMessageService.createConversation(conversationRequest, client, conversationId)
+        secureMessageService.createConversation(conversationRequest.asConversation(client, conversationId)).map {
+          case Right(_)                        => Created
+          case Left(error: SecureMessageError) => handleCreateConversationErrors(conversationId, error)
+        }
+      }.recover {
+        case error: Exception => handleCreateConversationErrors(conversationId, error)
       }
+  }
+
+  private def handleCreateConversationErrors(conversationId: String, error: Exception): Result = {
+    val errMsg = s"Error on conversation with id $conversationId: ${error.getMessage}"
+    logger.error(error.getMessage, error.getCause)
+    error match {
+      case ee: EmailError                 => Created(Json.toJson(ee.message))
+      case ee: NoReceiverEmailError       => Created(Json.toJson(ee.message))
+      case de: DuplicateConversationError => Conflict(Json.toJson(de.message))
+      case se: StoreError                 => InternalServerError(Json.toJson(se.message))
+      case _                              => InternalServerError(Json.toJson(errMsg))
+    }
   }
 
   def createCaseworkerMessage(client: String, conversationId: String): Action[JsValue] = Action.async(parse.json) {
@@ -74,37 +93,29 @@ class SecureMessageController @Inject()(
         }
       }
   }
-  def getMetadataForConversations(enrolmentKey: String, enrolmentName: String): Action[AnyContent] = Action.async {
-    implicit request =>
-      authorised()
-        .retrieve(Retrievals.allEnrolments) { enrolments =>
-          findEnrolment(enrolments, enrolmentKey, enrolmentName) match {
-            case Some(enrolment) =>
-              secureMessageService
-                .getConversations(enrolment)
-                .flatMap { conversationDetails =>
-                  Future.successful(Ok(Json.toJson(conversationDetails)))
-                }
-            case None => Future.successful(Unauthorized(Json.toJson("No enrolment found")))
-          }
-        }
-  }
 
   def getMetadataForConversationsFiltered(
     enrolmentKeys: Option[List[String]],
     customerEnrolments: Option[List[CustomerEnrolment]],
     tags: Option[List[Tag]]): Action[AnyContent] =
     Action.async { implicit request =>
-      authorised()
-        .retrieve(Retrievals.allEnrolments) { authEnrolments =>
-          filterEnrolments(authEnrolments, enrolmentKeys, customerEnrolments) match {
-            case results if results.isEmpty => Future.successful(Unauthorized(Json.toJson("No enrolment found")))
-            case filteredEnrolments =>
-              secureMessageService.getConversationsFiltered(filteredEnrolments, tags).flatMap { conversationDetails =>
-                Future.successful(Ok(Json.toJson(conversationDetails)))
+      {
+        validateQueryParameters(request.queryString, "enrolment", "enrolmentKey", "tag") match {
+          case Left(e) => Future.successful(BadRequest(Json.toJson(e.getMessage)))
+          case _ =>
+            authorised()
+              .retrieve(Retrievals.allEnrolments) { authEnrolments =>
+                filterEnrolments(authEnrolments, enrolmentKeys, customerEnrolments) match {
+                  case results if results.isEmpty => Future.successful(Unauthorized(Json.toJson("No enrolment found")))
+                  case filteredEnrolments =>
+                    secureMessageService.getConversationsFiltered(filteredEnrolments, tags).flatMap {
+                      conversationDetails =>
+                        Future.successful(Ok(Json.toJson(conversationDetails)))
+                    }
+                }
               }
-          }
         }
+      }
     }
 
   def getConversationContent(
@@ -120,7 +131,7 @@ class SecureMessageController @Inject()(
               .getConversation(client, conversationId, enrolment)
               .map {
                 case Some(apiConversation) => Ok(Json.toJson(apiConversation))
-                case _                     => BadRequest(Json.toJson("No conversation found"))
+                case _                     => NotFound(Json.toJson("No conversation found"))
               }
           case None => Future.successful(Unauthorized(Json.toJson("No EORI enrolment found")))
         }

@@ -41,30 +41,6 @@ class GetConversationsISpec extends PlaySpec with ServiceSpec with BeforeAndAfte
     val _ = await(repository.removeAll()(ec))
   }
 
-  "Deprecated - A GET request to /secure-messaging/conversations/<enrolment_key>/<enrolment_name>" should {
-
-    "return a JSON body of conversation metadata" in {
-      createConversation
-      val response =
-        wsClient
-          .url(resource("/secure-messaging/conversations/hmrc-cus-org/eorinumber"))
-          .withHttpHeaders(buildEoriToken(VALID_EORI))
-          .get()
-          .futureValue
-      response.body must include("""senderName":"CDS Exports Team""")
-    }
-
-    "return a JSON body of [No enrolment found] when there's an auth session, but no enrolment" in {
-      val response =
-        wsClient
-          .url(resource("/secure-messaging/conversations/hmrc-cus-org/eorinumber"))
-          .withHttpHeaders(buildNonEoriToken)
-          .get()
-          .futureValue
-      response.body mustBe "\"No enrolment found\""
-    }
-  }
-
   "A GET request to /secure-messaging/conversations for a filtered query" should {
 
     "return a JSON body of conversation metadata when no filters are provided by leveraging auth enrolments" in {
@@ -182,6 +158,17 @@ class GetConversationsISpec extends PlaySpec with ServiceSpec with BeforeAndAfte
           .get()
           .futureValue
       response.body mustBe "\"No enrolment found\""
+    }
+
+    "return a JSON body of [Invalid query parameter(s)] when there's an invalid parameter supplied in the query string" in {
+      val response =
+        wsClient
+          .url(resource("/secure-messaging/conversations?abc=SOME_VALUE&a=1&b=2&c=3&d=4&e=5&f=6"))
+          .withHttpHeaders(buildNonEoriToken)
+          .get()
+          .futureValue
+      response.body mustBe "\"Invalid query parameter(s) found: [a, abc, b, c, d, e, f]\""
+      response.status mustBe BAD_REQUEST
     }
   }
 

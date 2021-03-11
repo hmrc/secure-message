@@ -32,7 +32,8 @@ import play.api.test.NoMaterializer
 import uk.gov.hmrc.auth.core.{ AuthorisationException, Enrolment, EnrolmentIdentifier, Enrolments }
 import uk.gov.hmrc.emailaddress.EmailAddress
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.securemessage.connectors.EmailConnector
+import uk.gov.hmrc.securemessage._
+import uk.gov.hmrc.securemessage.connectors.{ ChannelPreferencesConnector, EmailConnector }
 import uk.gov.hmrc.securemessage.controllers.models.generic
 import uk.gov.hmrc.securemessage.controllers.models.generic._
 import uk.gov.hmrc.securemessage.helpers.ConversationUtil
@@ -47,76 +48,86 @@ import scala.concurrent.{ ExecutionContext, Future }
 class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar {
 
   implicit val mat: Materializer = NoMaterializer
+  implicit val messages = stubMessages()
   val listOfCoreConversation = List(
     ConversationUtil.getFullConversation("D-80542-20201120", "HMRC-CUS-ORG", "EORINumber", "GB1234567890"))
+  val cnvWithEmail: Conversation =
+    ConversationUtil.getConversationRequest(true, "QmxhaCBibGFoIGJsYWg=").asConversation("cdcm", "123")
+  val cnvWithNoEmail: Conversation =
+    ConversationUtil.getConversationRequest(false, "QmxhaCBibGFoIGJsYWg=").asConversation("cdcm", "123")
+  val cnvWithNoCustomer: Conversation = cnvWithNoEmail.copy(participants = List(cnvWithNoEmail.participants.head))
+  val cnvWithMultipleCustomers: Conversation =
+    ConversationUtil.getConversationRequestWithMultipleCustomers.asConversation("cdcm", "123")
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
   "createConversation" must {
 
-    "return CREATED (201) when an email address is provided" in new TestCase {
-      when(mockRepository.insertIfUnique(any[Conversation])(any[ExecutionContext])).thenReturn(Future(true))
-      private val result =
-        service.createConversation(ConversationUtil.getConversationRequest(true, "QmxhaCBibGFoIGJsYWg="), "cdcm", "123")
-      status(result) mustBe CREATED
+    "return true when an email address is provided in the conversation" in new TestCase {
+      when(mockRepository.insertIfUnique(cnvWithEmail)(global)).thenReturn(Future(Right(true)))
+      private val result = service.createConversation(cnvWithEmail)
+      result.futureValue mustBe Right(true)
     }
-    "return BAD REQUEST (400) when no email address is provided" in new TestCase {
-      when(mockRepository.insertIfUnique(any[Conversation])(any[ExecutionContext])).thenReturn(Future(true))
-      private val result =
-        service.createConversation(ConversationUtil.getConversationRequest(false, "base64 content"), "cdcm", "123")
-      status(result) mustBe BAD_REQUEST
+    "return SecureMessageException when no email address is provided and cannot be found in cds" in new TestCase {
+      when(mockRepository.insertIfUnique(cnvWithNoEmail)(global)).thenReturn(Future(Right(true)))
+      when(mockChannelPreferencesConnector.getEmailForEnrolment(any[Identifier])(any[HeaderCarrier]))
+        .thenReturn(Future(Left(EmailLookupError(""))))
+      private val result = service.createConversation(cnvWithNoEmail).futureValue
+      result.swap.toOption.get.message must startWith("Email lookup failed for:")
     }
-    "return CONFLICT (409) when a conversation already exists for this client and conversation ID" in new TestCase {
-      when(mockRepository.insertIfUnique(any[Conversation])(any[ExecutionContext])).thenReturn(Future(false))
-      private val result =
-        service.createConversation(ConversationUtil.getConversationRequest(true, "base64 content"), "cdcm", "123")
-      status(result) mustBe CONFLICT
+    "return true when no email address is provided but is found in the CDS lookup" in new TestCase {
+      val cnv = cnvWithNoEmail.copy(participants = cnvWithNoEmail.participants.map(p =>
+        if (p.id == 2) p.copy(email = Some(EmailAddress("joeblogs@yahoo.com"))) else p))
+      when(mockRepository.insertIfUnique(cnv)(global)).thenReturn(Future(Right(true)))
+      when(mockChannelPreferencesConnector.getEmailForEnrolment(any[Identifier])(any[HeaderCarrier]))
+        .thenReturn(Future(Right(EmailAddress("joeblogs@yahoo.com"))))
+      private val result = service.createConversation(cnvWithNoEmail).futureValue
+      result mustBe Right(true)
+    }
+    "return an error message when a conversation already exists for this client and conversation ID" in new TestCase {
+      when(mockRepository.insertIfUnique(any[Conversation])(any[ExecutionContext]))
+        .thenReturn(Future(Left(DuplicateConversationError("errMsg", None))))
+      private val result: Either[SecureMessageError, Boolean] = service.createConversation(cnvWithEmail).futureValue
+      result mustBe Left(DuplicateConversationError("errMsg", None))
+    }
+
+    "return NoReceiverEmailError if there are no customer participants" in new TestCase {
+      when(mockRepository.insertIfUnique(cnvWithNoCustomer)(global)).thenReturn(Future(Right(true)))
+      private val result: Either[SecureMessageError, Boolean] =
+        service.createConversation(cnvWithNoCustomer).futureValue
+      result mustBe Left(NoReceiverEmailError("Email lookup failed for: List()"))
+    }
+
+    "return NoReceiverEmailError for just the customer with no email when we have multiple customer participants" in new TestCase {
+      when(mockRepository.insertIfUnique(any[Conversation])(any[ExecutionContext])).thenReturn(Future(Right(true)))
+      when(mockChannelPreferencesConnector.getEmailForEnrolment(any[Identifier])(any[HeaderCarrier]))
+        .thenReturn(Future(Left(EmailLookupError("Some error"))))
+      private val result: Either[SecureMessageError, Boolean] =
+        service.createConversation(cnvWithMultipleCustomers).futureValue
+      result.swap.toOption.get.message must startWith("Email lookup failed for:")
     }
 
     "return BAD REQUEST (400) if message content is not Base64 encoded" in new TestCase {
-      when(mockRepository.insertIfUnique(any[Conversation])(any[ExecutionContext])).thenReturn(Future(true))
-      private val result = service
-        .createConversation(ConversationUtil.getConversationRequest(false, "aGV%sb-G8sIHdvcmxkIQ=="), "cdcm", "123")
-      status(result) mustBe BAD_REQUEST
-      contentAsString(result) mustBe "Not valid base64 content"
+      when(mockRepository.insertIfUnique(cnvWithEmail)(global)).thenReturn(Future(Right(true)))
+      private val result = service.createConversation(
+        ConversationUtil.getConversationRequest(true, "aGV%sb-G8sIHdvcmxkIQ==").asConversation("cdcm", "123"))
+      result.futureValue mustBe Left(InvalidBase64Content("Not valid base64 content"))
+    }
+
+    "return BAD REQUEST (400) if message content is not valid HTML" in new TestCase {
+      when(mockRepository.insertIfUnique(cnvWithEmail)(global)).thenReturn(Future(Right(true)))
+      private val result = service.createConversation(
+        ConversationUtil
+          .getConversationRequest(true, "PG1hdHQ+Q2FuIEkgaGF2ZSBteSB0YXggbW9uZXkgcGxlYXNlPzwvbWF0dD4=")
+          .asConversation("cdcm", "123"))
+      result.futureValue mustBe Left(InvalidHtmlContent("Not valid html content"))
     }
 
     "return BAD REQUEST (400) if message content is empty" in new TestCase {
-      when(mockRepository.insertIfUnique(any[Conversation])(any[ExecutionContext])).thenReturn(Future(true))
-      private val result = service.createConversation(ConversationUtil.getConversationRequest(false, ""), "cdcm", "123")
-      status(result) mustBe BAD_REQUEST
-    }
-
-    "return BAD REQUEST (400)if message content is not valid HTML" in new TestCase {
-      when(mockRepository.insertIfUnique(any[Conversation])(any[ExecutionContext])).thenReturn(Future(true))
-      private val result = service.createConversation(
-        ConversationUtil.getConversationRequest(false, "PG1hdHQ+Q2FuIEkgaGF2ZSBteSB0YXggbW9uZXkgcGxlYXNlPzwvbWF0dD4="),
-        "cdcm",
-        "123")
-      status(result) mustBe BAD_REQUEST
-      contentAsString(result) mustBe "Not valid HTML content"
-    }
-  }
-
-  "getConversations" must {
-
-    "return a list of ConversationMetaData" in new TestCase {
-      private val listOfCoreConversation =
-        List(ConversationUtil.getFullConversation("D-80542-20201120", "HMRC-CUS-ORG", "EORINumber", "GB1234567890"))
-      when(mockRepository.getConversations(any[generic.CustomerEnrolment])(any[ExecutionContext]))
-        .thenReturn(Future.successful(listOfCoreConversation))
+      when(mockRepository.insertIfUnique(cnvWithEmail)(global)).thenReturn(Future(Right(true)))
       private val result =
-        await(service.getConversations(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777")))
-      result mustBe
-        List(
-          ConversationMetadata(
-            "cdcm",
-            "D-80542-20201120",
-            "MRN: 19GB4S24GC3PPFGVR7",
-            DateTime.parse("2020-11-10T15:00:01.000"),
-            Some("CDS Exports Team"),
-            unreadMessages = false,
-            1))
+        service.createConversation(ConversationUtil.getConversationRequest(true, "").asConversation("cdcm", "123"))
+      result.futureValue mustBe Left(InvalidHtmlContent("Not valid html content"))
     }
   }
 
@@ -290,7 +301,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
         )))))
       when(mockRepository.addMessageToConversation(any[String], any[String], any[Message])(any[ExecutionContext]))
         .thenReturn(Future.successful(true))
-      when(mockEmailConnector.send(any[EmailRequest])(any[HeaderCarrier])).thenReturn(Future.successful(()))
+      when(mockEmailConnector.send(any[EmailRequest])(any[HeaderCarrier])).thenReturn(Future.successful(Right(CREATED)))
       await(service.addCaseWorkerMessageToConversation("cdcm", "D-80542-20201120", caseworkerMessage))
       verify(mockRepository, times(1))
         .addMessageToConversation(any[String], any[String], any[Message])(any[ExecutionContext])
@@ -305,9 +316,8 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
       when(mockRepository.conversationExists(any[String], any[String])(any[ExecutionContext])).thenReturn(Future(true))
       when(mockRepository.getConversationParticipants(any[String], any[String])(any[ExecutionContext]))
         .thenReturn(Future(None))
-      assertThrows[AuthorisationException] {
-        await(service.addCaseWorkerMessageToConversation("cdcm", "D-80542-20201120", caseworkerMessage))
-      }
+      await(service.addCaseWorkerMessageToConversation("cdcm", "D-80542-20201120", caseworkerMessage)) mustBe Left(
+        NoCaseworkerIdFound("Caseworker ID not found"))
     }
 
     "throw an IllegalArgumentException if the conversation ID is not found" in new TestCase {
@@ -317,9 +327,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
         "QmxhaCBibGFoIGJsYWg="
       )
       when(mockRepository.conversationExists(any[String], any[String])(any[ExecutionContext])).thenReturn(Future(false))
-      assertThrows[IllegalArgumentException] {
-        await(service.addCaseWorkerMessageToConversation("cdcm", "D-80542-20201120", caseworkerMessage))
-      }
+      await(service.addCaseWorkerMessageToConversation("cdcm", "D-80542-20201120", caseworkerMessage)) mustBe ""
     }
 
     "throw an Exception if message content is valid Base64 encoded" in new TestCase {
@@ -331,9 +339,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
       when(mockRepository.conversationExists(any[String], any[String])(any[ExecutionContext])).thenReturn(Future(true))
       when(mockRepository.getConversationParticipants(any[String], any[String])(any[ExecutionContext]))
         .thenReturn(Future(None))
-      assertThrows[ParseException] {
-        await(service.addCaseWorkerMessageToConversation("cdcm", "D-80542-20201120", caseworkerMessage))
-      }
+      await(service.addCaseWorkerMessageToConversation("cdcm", "D-80542-20201120", caseworkerMessage)) mustBe ""
     }
 
     "throw an Exception if message content is not valid HTML" in new TestCase {
@@ -345,9 +351,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
       when(mockRepository.conversationExists(any[String], any[String])(any[ExecutionContext])).thenReturn(Future(true))
       when(mockRepository.getConversationParticipants(any[String], any[String])(any[ExecutionContext]))
         .thenReturn(Future(None))
-      assertThrows[ParseException] {
-        await(service.addCaseWorkerMessageToConversation("cdcm", "D-80542-20201120", caseworkerMessage))
-      }
+      await(service.addCaseWorkerMessageToConversation("cdcm", "D-80542-20201120", caseworkerMessage)) mustBe ""
     }
 
     "throw an Exception if message content is an empty string" in new TestCase {
@@ -358,9 +362,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
       when(mockRepository.conversationExists(any[String], any[String])(any[ExecutionContext])).thenReturn(Future(true))
       when(mockRepository.getConversationParticipants(any[String], any[String])(any[ExecutionContext]))
         .thenReturn(Future(None))
-      assertThrows[ParseException] {
-        await(service.addCaseWorkerMessageToConversation("cdcm", "D-80542-20201120", caseworkerMessage))
-      }
+      await(service.addCaseWorkerMessageToConversation("cdcm", "D-80542-20201120", caseworkerMessage)) mustBe ""
     }
   }
 
@@ -423,7 +425,10 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
     import uk.gov.hmrc.auth.core.Enrolment
     val mockRepository: ConversationRepository = mock[ConversationRepository]
     val mockEmailConnector: EmailConnector = mock[EmailConnector]
-    val service: SecureMessageService = new SecureMessageService(mockRepository, mockEmailConnector)
+    when(mockEmailConnector.send(any[EmailRequest])(any[HeaderCarrier])).thenReturn(Future.successful(Right(CREATED)))
+    val mockChannelPreferencesConnector: ChannelPreferencesConnector = mock[ChannelPreferencesConnector]
+    val service: SecureMessageService =
+      new SecureMessageService(mockRepository, mockEmailConnector, mockChannelPreferencesConnector)
     val enrolments: Enrolments = Enrolments(
       Set(Enrolment("HMRC-CUS-ORG", Vector(EnrolmentIdentifier("EORINumber", "GB7777777777")), "Activated", None)))
     val identifier: Identifier = Identifier("EORINumber", "GB123456789000000", Some("HMRC-CUS-ORG"))

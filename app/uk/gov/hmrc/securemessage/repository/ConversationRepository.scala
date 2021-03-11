@@ -28,15 +28,16 @@ import reactivemongo.bson.BSONObjectID
 import reactivemongo.core.errors.DatabaseException
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.mongo.{ MongoConnector, ReactiveRepository }
+import uk.gov.hmrc.securemessage.{ DuplicateConversationError, SecureMessageError, StoreError }
 import uk.gov.hmrc.securemessage.controllers.models.generic.{ CustomerEnrolment, Tag }
 import uk.gov.hmrc.securemessage.models.core.Message.dateFormat
 import uk.gov.hmrc.securemessage.models.core.{ Conversation, Message, Participants }
+
 import javax.inject.{ Inject, Singleton }
 import scala.collection.Seq
 import scala.concurrent.{ ExecutionContext, Future }
-
 @Singleton
-@SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
+@SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.Nothing"))
 class ConversationRepository @Inject()(implicit connector: MongoConnector)
     extends ReactiveRepository[Conversation, BSONObjectID](
       "conversation",
@@ -54,23 +55,18 @@ class ConversationRepository @Inject()(implicit connector: MongoConnector)
         unique = true,
         sparse = true))
 
-  def insertIfUnique(conversation: Conversation)(implicit ec: ExecutionContext): Future[Boolean] =
+  def insertIfUnique(conversation: Conversation)(
+    implicit ec: ExecutionContext): Future[Either[SecureMessageError, Boolean]] =
     insert(conversation)
-      .map(_ => true)
+      .map(_ => Right(true))
       .recoverWith {
         case e: DatabaseException if e.code.contains(DuplicateKey) =>
-          logger.warn("Ignoring duplicate found on insertion to conversation collection: " + e.getMessage())
-          Future.successful(false)
+          val errMsg = "Ignoring duplicate found on insertion to conversation collection: " + e.getMessage()
+          Future.successful(Left(DuplicateConversationError(errMsg, Some(e))))
+        case e: DatabaseException =>
+          val errMsg = s"Database error trying to store conversation ${conversation.conversationId}: " + e.getMessage()
+          Future.successful(Left(StoreError(errMsg, Some(e))))
       }
-
-  def getConversations(enrolment: CustomerEnrolment)(implicit ec: ExecutionContext): Future[List[Conversation]] = {
-    import uk.gov.hmrc.securemessage.models.core.Conversation.conversationFormat
-    collection
-      .find[JsObject, Conversation](selector = Json.obj(findByEnrolmentQuery(enrolment): _*), None)
-      .sort(Json.obj("_id" -> -1))
-      .cursor[Conversation]()
-      .collect[List](-1, Cursor.FailOnError[List[Conversation]]())
-  }
 
   def getConversationsFiltered(enrolments: Set[CustomerEnrolment], tags: Option[List[Tag]])(
     implicit ec: ExecutionContext): Future[List[Conversation]] = {

@@ -178,7 +178,7 @@ class ApiConversationSpec extends PlaySpec {
                                                        |  "tags": {
                                                        |    "queryId": "D-80542-20201120",
                                                        |    "caseId": "D-80542",
-                                                       |    "notificationType": "CDS Exports",
+                                                       |    "notificationType": "CDS-EXPORTS",
                                                        |    "mrn": "DMS7324874993",
                                                        |    "sourceId": "CDCM"
                                                        |  },
