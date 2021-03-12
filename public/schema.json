@@ -203,7 +203,7 @@
             "description" : "conversations was recieved"
           },
           "401" : {
-            "description" : "unauthorised customer when they don't have an EORI enrolment"
+            "description" : "unauthorised customer when they don't have an enrolment"
           },
           "404" : {
             "description" : "conversation not found"
