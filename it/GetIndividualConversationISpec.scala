@@ -71,7 +71,7 @@ class GetIndividualConversationISpec extends PlaySpec with ServiceSpec with Befo
           .withHttpHeaders(AuthUtil.buildNonEoriToken)
           .get()
           .futureValue
-      response.status mustBe NOT_FOUND
+      response.status mustBe UNAUTHORIZED
       response.body mustBe "\"No enrolment found\""
     }
   }
