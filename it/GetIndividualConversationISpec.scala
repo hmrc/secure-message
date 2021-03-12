@@ -64,14 +64,15 @@ class GetIndividualConversationISpec extends PlaySpec with ServiceSpec with Befo
       response.body mustBe "\"No conversation found\""
     }
 
-    "return a JSON body of [No conversation found] when auth session enrolments do not match a conversation's participants identifiers" in {
+    "return a JSON body of [No enrolment found] when auth session enrolments do not match a conversation's participants identifiers" in {
       val response =
         wsClient
           .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
           .withHttpHeaders(AuthUtil.buildNonEoriToken)
           .get()
           .futureValue
-      response.body mustBe "\"No conversation found\""
+      response.status mustBe NOT_FOUND
+      response.body mustBe "\"No enrolment found\""
     }
   }
 

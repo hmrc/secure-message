@@ -113,18 +113,23 @@ class SecureMessageController @Inject()(
     implicit request =>
       authorised()
         .retrieve(Retrievals.allEnrolments) { authEnrolments =>
-          filterEnrolments(authEnrolments, None, None) match {
-            case results if results.isEmpty => Future.successful(Unauthorized(Json.toJson("No enrolment found")))
-            case filteredEnrolments =>
-              secureMessageService
-                .getConversation(client, conversationId, filteredEnrolments)
-                .map {
-                  case Some(apiConversation) => Ok(Json.toJson(apiConversation))
-                  case _                     => NotFound(Json.toJson("No conversation found"))
-                }
+          if (authEnrolments.enrolments.isEmpty) {
+            Future.successful(Unauthorized(Json.toJson("No enrolment found")))
+          } else {
+            val customerEnrolments = mapToCustomerEnrolments(authEnrolments)
+            secureMessageService
+              .getConversation(client, conversationId, customerEnrolments)
+              .map {
+                case Some(apiConversation) => Ok(Json.toJson(apiConversation))
+                case _                     => NotFound(Json.toJson("No conversation found"))
+              }
           }
         }
   }
+
+  private def mapToCustomerEnrolments(authEnrolments: Enrolments): Set[CustomerEnrolment] =
+    authEnrolments.enrolments
+      .flatMap(e => e.identifiers.map(i => CustomerEnrolment(e.key, i.key, i.value)))
 
   def addCustomerReadTime(client: String, conversationId: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
