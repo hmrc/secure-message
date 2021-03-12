@@ -111,15 +111,16 @@ class SecureMessageService @Inject()(
       })
     }
 
-  def getConversation(client: String, conversationId: String, enrolment: CustomerEnrolment)(
-    implicit ec: ExecutionContext): Future[Option[ApiConversation]] = {
-    val enrolmentToIdentifier = Identifier(enrolment.name, enrolment.value, Some(enrolment.key))
-    repo.getConversation(client, conversationId, enrolment).map {
-      case Some(conversation) =>
-        Some(ApiConversation.coreConversationToApiConversation(conversation, enrolmentToIdentifier))
+  def getConversation(client: String, conversationId: String, customerEnrolments: Set[CustomerEnrolment])(
+    implicit ec: ExecutionContext): Future[Option[ApiConversation]] =
+    repo.getConversation(client, conversationId, customerEnrolments).map {
+      case Some(conversation) => {
+        val enrolmentToIdentifiers = customerEnrolments.map(customerEnrolment =>
+          Identifier(customerEnrolment.name, customerEnrolment.value, Some(customerEnrolment.key)))
+        Some(ApiConversation.coreConversationToApiConversation(conversation, enrolmentToIdentifiers))
+      }
       case _ => None
     }
-  }
 
   def addMessageToConversation(
     client: String,

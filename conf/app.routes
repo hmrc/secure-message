@@ -91,7 +91,7 @@ GET         /conversations                                                      
 #   404:
 #     description: conversation not found
 ###
-GET         /conversation/:client/:conversationId/:enrolmentKey/:enrolmentName        uk.gov.hmrc.securemessage.controllers.SecureMessageController.getConversationContent(client: String, conversationId: String, enrolmentKey: String, enrolmentName: String)
+GET         /conversation/:client/:conversationId                                       uk.gov.hmrc.securemessage.controllers.SecureMessageController.getConversationContent(client: String, conversationId: String)
 
 ###
 # summary: Adds a date and time that a participant read the conversation

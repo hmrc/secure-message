@@ -158,12 +158,16 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
 
     "return a message with ApiConversation" in new TestCase {
       when(
-        mockRepository.getConversation(any[String], any[String], any[generic.CustomerEnrolment])(any[ExecutionContext]))
+        mockRepository.getConversation(any[String], any[String], any[Set[generic.CustomerEnrolment]])(
+          any[ExecutionContext]))
         .thenReturn(Future.successful(
           Some(ConversationUtil.getFullConversation("D-80542-20201120", "HMRC-CUS-ORG", "EORINumber", "GB1234567890"))))
       private val result = await(
         service
-          .getConversation("cdcm", "D-80542-20201120", CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777")))
+          .getConversation(
+            "cdcm",
+            "D-80542-20201120",
+            Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777"))))
       result.get.client mustBe "cdcm"
       result.get.messages.size mustBe 1
       result.get.subject mustBe "MRN: 19GB4S24GC3PPFGVR7"
@@ -171,11 +175,15 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with MockitoSu
 
     "return a None" in new TestCase {
       when(
-        mockRepository.getConversation(any[String], any[String], any[generic.CustomerEnrolment])(any[ExecutionContext]))
+        mockRepository.getConversation(any[String], any[String], any[Set[generic.CustomerEnrolment]])(
+          any[ExecutionContext]))
         .thenReturn(Future.successful(None))
       private val result = await(
         service
-          .getConversation("cdcm", "D-80542-20201120", CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777")))
+          .getConversation(
+            "cdcm",
+            "D-80542-20201120",
+            Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777"))))
       result mustBe None
     }
   }
