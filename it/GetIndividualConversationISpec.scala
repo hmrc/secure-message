@@ -53,7 +53,7 @@ class GetIndividualConversationISpec extends PlaySpec with ServiceSpec with Befo
       response.body must include("""{"senderInformation":{"name":"CDS Exports Team"""")
     }
 
-    "return a JSON body of [No Conversation found]" in {
+    "return a JSON body of [No conversation found] when a conversationId does not match" in {
       createConversation
       val response =
         wsClient
@@ -64,7 +64,7 @@ class GetIndividualConversationISpec extends PlaySpec with ServiceSpec with Befo
       response.body mustBe "\"No conversation found\""
     }
 
-    "return a JSON body of [No Conversation found] when auth session enrolments do not match participants identifiers" in {
+    "return a JSON body of [No conversation found] when auth session enrolments do not match a conversation's participants identifiers" in {
       val response =
         wsClient
           .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
