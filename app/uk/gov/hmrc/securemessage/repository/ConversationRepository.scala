@@ -121,12 +121,12 @@ class ConversationRepository @Inject()(implicit connector: MongoConnector)
       update = Json.obj("$push" -> Json.obj("messages" -> message))
     ).map(_ => ())
 
-  def getConversation(client: String, conversationId: String, enrolment: CustomerEnrolment)(
+  def getConversation(client: String, conversationId: String, enrolments: Set[CustomerEnrolment])(
     implicit ec: ExecutionContext): Future[Option[Conversation]] =
     collection
       .find[JsObject, Conversation](
         selector = Json.obj("client" -> client, "conversationId" -> conversationId)
-          deepMerge Json.obj(findByEnrolmentQuery(enrolment): _*),
+          deepMerge enrolmentQuery(enrolments),
         None)
       .one[Conversation]
 

@@ -191,6 +191,40 @@
   "openapi" : "3.0.3",
   "paths" : {
     "/secure-messaging/conversation/{client}/{conversationId}" : {
+      "get" : {
+        "operationId" : "getConversationContent",
+        "tags" : [ "app" ],
+        "summary" : "Gets a conversation via client ID and conversation ID",
+        "security" : [ {
+          "bearerToken" : [ ]
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "conversations was recieved"
+          },
+          "401" : {
+            "description" : "unauthorised customer when they don't have an enrolment"
+          },
+          "404" : {
+            "description" : "conversation not found"
+          }
+        },
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "client",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : true
+        }, {
+          "in" : "path",
+          "name" : "conversationId",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : true
+        } ]
+      },
       "put" : {
         "operationId" : "createConversation",
         "tags" : [ "app" ],
@@ -392,56 +426,6 @@
         } ]
       }
     },
-    "/secure-messaging/conversation/{client}/{conversationId}/{enrolmentKey}/{enrolmentName}" : {
-      "get" : {
-        "operationId" : "getConversationContent",
-        "tags" : [ "app" ],
-        "summary" : "Gets a conversation via client ID and conversation ID",
-        "security" : [ {
-          "bearerToken" : [ ]
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "conversations was recieved"
-          },
-          "401" : {
-            "description" : "unauthorised customer when they don't have an EORI enrolment"
-          },
-          "404" : {
-            "description" : "conversation not found"
-          }
-        },
-        "parameters" : [ {
-          "in" : "path",
-          "name" : "client",
-          "schema" : {
-            "type" : "string"
-          },
-          "required" : true
-        }, {
-          "in" : "path",
-          "name" : "conversationId",
-          "schema" : {
-            "type" : "string"
-          },
-          "required" : true
-        }, {
-          "in" : "path",
-          "name" : "enrolmentKey",
-          "schema" : {
-            "type" : "string"
-          },
-          "required" : true
-        }, {
-          "in" : "path",
-          "name" : "enrolmentName",
-          "schema" : {
-            "type" : "string"
-          },
-          "required" : true
-        } ]
-      }
-    },
     "/secure-messaging/conversation/{client}/{conversationId}/read-time" : {
       "post" : {
         "operationId" : "addCustomerReadTime",
@@ -489,7 +473,7 @@
   },
   "info" : {
     "title" : "Secure Message API",
-    "version" : "0.49.0-SNAPSHOT"
+    "version" : "0.53.0-SNAPSHOT"
   },
   "tags" : [ {
     "name" : "app"

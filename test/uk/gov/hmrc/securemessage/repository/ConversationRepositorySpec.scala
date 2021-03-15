@@ -188,7 +188,8 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
       await(repository.insert(conversation))
       val result =
         await(
-          repository.getConversation("cdcm", "123", CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890")))
+          repository
+            .getConversation("cdcm", "123", Set(CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890"))))
       result.size mustBe 1
     }
   }
@@ -199,7 +200,10 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
       await(repository.insert(conversation))
       val result = await(
         repository
-          .getConversation("cdcm", "D-80542-20201120", CustomerEnrolment("HMRC-CUS-ORF", "EORINumber", "GB1234567890")))
+          .getConversation(
+            "cdcm",
+            "D-80542-20201120",
+            Set(CustomerEnrolment("HMRC-CUS-ORF", "EORINumber", "GB1234567890"))))
       result.size mustBe 0
     }
   }
@@ -211,9 +215,8 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
       await(repository.insert(conversation))
       val message = Message(2, new DateTime(), "test", isForwarded = Some(false))
       await(repository.addMessageToConversation("cdcm", aConversationId, message))
-      val updated = await(
-        repository
-          .getConversation("cdcm", aConversationId, CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890")))
+      val updated = await(repository
+        .getConversation("cdcm", aConversationId, Set(CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890"))))
       updated match {
         case Some(c) => c.messages.size mustBe 2
         case _       => fail("No conversation found")

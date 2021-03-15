@@ -109,25 +109,27 @@ class SecureMessageController @Inject()(
       }
     }
 
-  def getConversationContent(
-    client: String,
-    conversationId: String,
-    enrolmentKey: String,
-    enrolmentName: String): Action[AnyContent] = Action.async { implicit request =>
-    authorised()
-      .retrieve(Retrievals.allEnrolments) { enrolments =>
-        findEnrolment(enrolments, enrolmentKey, enrolmentName) match {
-          case Some(enrolment) =>
+  def getConversationContent(client: String, conversationId: String): Action[AnyContent] = Action.async {
+    implicit request =>
+      authorised()
+        .retrieve(Retrievals.allEnrolments) { authEnrolments =>
+          if (authEnrolments.enrolments.isEmpty) {
+            Future.successful(Unauthorized(Json.toJson("No enrolment found")))
+          } else {
+            val customerEnrolments = mapToCustomerEnrolments(authEnrolments)
             secureMessageService
-              .getConversation(client, conversationId, enrolment)
+              .getConversation(client, conversationId, customerEnrolments)
               .map {
                 case Some(apiConversation) => Ok(Json.toJson(apiConversation))
                 case _                     => NotFound(Json.toJson("No conversation found"))
               }
-          case None => Future.successful(Unauthorized(Json.toJson("No EORI enrolment found")))
+          }
         }
-      }
   }
+
+  private def mapToCustomerEnrolments(authEnrolments: Enrolments): Set[CustomerEnrolment] =
+    authEnrolments.enrolments
+      .flatMap(e => e.identifiers.map(i => CustomerEnrolment(e.key, i.key, i.value)))
 
   def addCustomerReadTime(client: String, conversationId: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
