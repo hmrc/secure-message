@@ -24,8 +24,6 @@ import play.api.libs.json.{ JsValue, Json }
 import uk.gov.hmrc.securemessage.helpers.Resources
 import play.api.test.Helpers._
 import uk.gov.hmrc.securemessage.models.core._
-
-
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class ConversationMetadataSpec extends PlaySpec {
 
