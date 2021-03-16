@@ -16,19 +16,24 @@
 
 package uk.gov.hmrc.securemessage.services
 
+import java.util.UUID
+
 import cats.data.{ NonEmptyList, _ }
 import cats.implicits._
 import com.google.inject.Inject
+import javax.naming.CommunicationException
 import org.joda.time.DateTime
 import play.api.i18n.Messages
+import play.api.mvc.Request
 import uk.gov.hmrc.auth.core.{ AuthorisationException, Enrolments }
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.securemessage.connectors.{ ChannelPreferencesConnector, EmailConnector }
+import uk.gov.hmrc.securemessage.connectors.{ ChannelPreferencesConnector, EISConnector, EmailConnector }
+import uk.gov.hmrc.securemessage.controllers.models.generic.CustomerMessageRequest.asQueryReponse
 import uk.gov.hmrc.securemessage.controllers.models.generic._
-import uk.gov.hmrc.securemessage.models.EmailRequest
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.Customer.eqCustomer
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.{ Customer => PCustomer }
 import uk.gov.hmrc.securemessage.models.core._
+import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryResponseWrapper }
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
 import uk.gov.hmrc.securemessage.{ EmailLookupError, NoReceiverEmailError, SecureMessageError }
 
@@ -42,7 +47,8 @@ import scala.concurrent.{ ExecutionContext, Future }
 class SecureMessageService @Inject()(
   repo: ConversationRepository,
   emailConnector: EmailConnector,
-  channelPrefConnector: ChannelPreferencesConnector) {
+  channelPrefConnector: ChannelPreferencesConnector,
+  eisConnector: EISConnector) {
 
   def createConversation(conversation: Conversation)(
     implicit hc: HeaderCarrier,
@@ -126,14 +132,23 @@ class SecureMessageService @Inject()(
     client: String,
     conversationId: String,
     messagesRequest: CustomerMessageRequest,
-    enrolments: Enrolments)(implicit ec: ExecutionContext): Future[Unit] =
+    enrolments: Enrolments)(implicit ec: ExecutionContext, request: Request[_]): Future[Unit] =
     repo.conversationExists(client, conversationId).flatMap { exists =>
       if (exists) {
         getParticipantId(client, conversationId, enrolments).flatMap {
           case Some(id) =>
-            val message =
-              Message(id, new DateTime(), messagesRequest.content, isForwarded = Some(false))
-            repo.addMessageToConversation(client, conversationId, message)
+            val requestId = request.headers.get("X-Request-ID").getOrElse(s"govuk-tax-${UUID.randomUUID()}")
+            val queryResponse = asQueryReponse(requestId, conversationId, messagesRequest)
+            eisConnector
+              .forwardMessage(QueryResponseWrapper(queryResponse))
+              .flatMap(success =>
+                if (success) {
+                  val message =
+                    Message(id, new DateTime(), messagesRequest.content, isForwarded = Some(false))
+                  repo.addMessageToConversation(client, conversationId, message)
+                } else {
+                  Future.failed[Unit](new CommunicationException("Failed to forward message to EIS"))
+              })
           case _ => Future.failed[Unit](AuthorisationException.fromString("InsufficientEnrolments"))
         }
       } else {

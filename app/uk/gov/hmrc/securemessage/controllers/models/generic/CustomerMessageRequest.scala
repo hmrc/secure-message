@@ -17,11 +17,15 @@
 package uk.gov.hmrc.securemessage.controllers.models.generic
 
 import play.api.libs.json.{ Json, Reads }
+import uk.gov.hmrc.securemessage.models.QueryResponse
 
 final case class CustomerMessageRequest(content: String)
 
 object CustomerMessageRequest {
 
   implicit val customerMessageRequestReads: Reads[CustomerMessageRequest] = Json.reads[CustomerMessageRequest]
+
+  def asQueryReponse(id: String, conversationId: String, request: CustomerMessageRequest): QueryResponse =
+    QueryResponse(id, conversationId, request.content)
 
 }
