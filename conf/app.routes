@@ -64,6 +64,10 @@ POST        /conversation/:client/:conversationId/caseworker-message            
 #     description: bad request such as invalid payload or conversation ID not recognised
 #   401:
 #     description: user is not authorised to add a message
+#   404:
+#     description: client or conversation ID not recognised
+#   502:
+#     description: failed to forward message
 ###
 POST        /conversation/:client/:conversationId/customer-message                    uk.gov.hmrc.securemessage.controllers.SecureMessageController.createCustomerMessage(client: String, conversationId: String)
 

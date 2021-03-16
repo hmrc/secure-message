@@ -17,8 +17,8 @@
 package uk.gov.hmrc.securemessage.controllers
 
 import play.api.Logging
-
 import javax.inject.Inject
+import javax.naming.CommunicationException
 import play.api.i18n.I18nSupport
 import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc.{ Action, AnyContent, ControllerComponents, Result }
@@ -81,6 +81,7 @@ class SecureMessageController @Inject()(
         }.recover {
           case ae: AuthorisationException    => Unauthorized(ae.reason)
           case iae: IllegalArgumentException => NotFound(iae.getMessage)
+          case cex: CommunicationException   => BadGateway(cex.getMessage)
         }
       }
   }
