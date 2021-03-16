@@ -50,6 +50,7 @@ lazy val microservice = Project(appName, file("."))
       "-P:silencer:pathFilters=target/.*",
       s"-P:silencer:sourceRoots=${baseDirectory.value.getCanonicalPath}",
       "-P:wartremover:excluded:/conf/app.routes",
+      "-P:wartremover:excluded:/",
       "-P:silencer:pathFilters=app.routes",
       "-P:wartremover:traverser:org.wartremover.warts.Unsafe",
       "-deprecation", // Emit warning and location for usages of deprecated APIs.
