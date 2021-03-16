@@ -137,6 +137,7 @@ class GetConversationsISpec extends PlaySpec with ServiceSpec with BeforeAndAfte
           .get()
           .futureValue
       response.body mustBe "\"No enrolment found\""
+      response.status mustBe UNAUTHORIZED
     }
 
     "return a JSON body of [No enrolment found] when there's an auth session, but no enrolment matching the enrolment filter" in {
@@ -147,6 +148,7 @@ class GetConversationsISpec extends PlaySpec with ServiceSpec with BeforeAndAfte
           .get()
           .futureValue
       response.body mustBe "\"No enrolment found\""
+      response.status mustBe UNAUTHORIZED
     }
 
     "return a JSON body of [No enrolment found] when there's an auth session, but no enrolment matching an enrolment nor enrolment key filter" in {
@@ -158,6 +160,7 @@ class GetConversationsISpec extends PlaySpec with ServiceSpec with BeforeAndAfte
           .get()
           .futureValue
       response.body mustBe "\"No enrolment found\""
+      response.status mustBe UNAUTHORIZED
     }
 
     "return a JSON body of [Invalid query parameter(s)] when there's an invalid parameter supplied in the query string" in {
