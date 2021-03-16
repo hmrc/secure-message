@@ -18,18 +18,16 @@ package uk.gov.hmrc.securemessage.controllers.models.generic
 
 import cats.data.NonEmptyList
 import com.github.nscala_time.time.Imports.DateTime
-import org.scalatest.PrivateMethodTester
 import org.scalatestplus.play.PlaySpec
 import play.api.i18n.Messages
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.{ JsValue, Json }
 import uk.gov.hmrc.securemessage.helpers.Resources
 import play.api.test.Helpers._
 import uk.gov.hmrc.securemessage.models.core._
 
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
-class ConversationMetadataSpec extends PlaySpec with PrivateMethodTester
- {
+class ConversationMetadataSpec extends PlaySpec {
 
   implicit val messages: Messages = stubMessages()
 
@@ -80,17 +78,26 @@ class ConversationMetadataSpec extends PlaySpec with PrivateMethodTester
       val conversationJson: JsValue = Resources.readJson("model/core/conversation-created-marked-as-read.json")
       val coreConversation: Conversation = conversationJson.validate[Conversation].get
       ConversationMetadata
-        .coreToConversationMetadata(coreConversation, identifier).unreadMessages mustBe false
+        .coreToConversationMetadata(coreConversation, identifier)
+        .unreadMessages mustBe false
     }
 
     "latest message sender is same as participant we mark this as read" in {
       val identifier = Set(Identifier("name", "value", None))
 
       val participants = List(Participant(2, ParticipantType.System, identifier.head, None, None, None, None))
-       val messages = NonEmptyList(Message(2, DateTime.parse("2020-11-10T15:00:01.000"), "", None), Nil)
+      val messages = NonEmptyList(Message(2, DateTime.parse("2020-11-10T15:00:01.000"), "", None), Nil)
 
-      val coreConversation = Conversation("", "", ConversationStatus.Open, None, "",
-        Language.English, participants, messages, uk.gov.hmrc.securemessage.models.core.Alert("", None))
+      val coreConversation = Conversation(
+        "",
+        "",
+        ConversationStatus.Open,
+        None,
+        "",
+        Language.English,
+        participants,
+        messages,
+        uk.gov.hmrc.securemessage.models.core.Alert("", None))
 
       ConversationMetadata.anyUnreadMessages(coreConversation, identifier) mustBe false
     }
@@ -99,11 +106,23 @@ class ConversationMetadataSpec extends PlaySpec with PrivateMethodTester
       val identifier = Set(Identifier("name", "value", None))
 
       val participants = List(Participant(2, ParticipantType.System, identifier.head, None, None, None, None))
-      val messages = NonEmptyList(Message(2, DateTime.parse("2020-11-10T15:00:01.000"), "", None),
-        List(Message(1, DateTime.parse("2020-10-10T15:00:01.000"), "", None), Message(1, DateTime.parse("2020-9-10T15:00:01.000"), "", None)))
+      val messages = NonEmptyList(
+        Message(2, DateTime.parse("2020-11-10T15:00:01.000"), "", None),
+        List(
+          Message(1, DateTime.parse("2020-10-10T15:00:01.000"), "", None),
+          Message(1, DateTime.parse("2020-9-10T15:00:01.000"), "", None))
+      )
 
-      val coreConversation = Conversation("", "", ConversationStatus.Open, None, "",
-        Language.English, participants, messages, uk.gov.hmrc.securemessage.models.core.Alert("", None))
+      val coreConversation = Conversation(
+        "",
+        "",
+        ConversationStatus.Open,
+        None,
+        "",
+        Language.English,
+        participants,
+        messages,
+        uk.gov.hmrc.securemessage.models.core.Alert("", None))
 
       ConversationMetadata.anyUnreadMessages(coreConversation, identifier) mustBe false
     }
@@ -112,11 +131,23 @@ class ConversationMetadataSpec extends PlaySpec with PrivateMethodTester
       val identifier = Set(Identifier("name", "value", None))
 
       val participants = List(Participant(2, ParticipantType.System, identifier.head, None, None, None, None))
-      val messages = NonEmptyList(Message(1, DateTime.parse("2020-11-10T15:00:01.000"), "", None),
-        List(Message(2, DateTime.parse("2020-10-10T15:00:01.000"), "", None), Message(1, DateTime.parse("2020-9-10T15:00:01.000"), "", None)))
+      val messages = NonEmptyList(
+        Message(1, DateTime.parse("2020-11-10T15:00:01.000"), "", None),
+        List(
+          Message(2, DateTime.parse("2020-10-10T15:00:01.000"), "", None),
+          Message(1, DateTime.parse("2020-9-10T15:00:01.000"), "", None))
+      )
 
-      val coreConversation = Conversation("", "", ConversationStatus.Open, None, "",
-        Language.English, participants, messages, uk.gov.hmrc.securemessage.models.core.Alert("", None))
+      val coreConversation = Conversation(
+        "",
+        "",
+        ConversationStatus.Open,
+        None,
+        "",
+        Language.English,
+        participants,
+        messages,
+        uk.gov.hmrc.securemessage.models.core.Alert("", None))
 
       ConversationMetadata.anyUnreadMessages(coreConversation, identifier) mustBe true
     }
