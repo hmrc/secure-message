@@ -32,7 +32,6 @@ import uk.gov.hmrc.securemessage.{ DuplicateConversationError, SecureMessageErro
 import uk.gov.hmrc.securemessage.controllers.models.generic.{ CustomerEnrolment, Tag }
 import uk.gov.hmrc.securemessage.models.core.Message.dateFormat
 import uk.gov.hmrc.securemessage.models.core.{ Conversation, Message, Participants }
-import org.joda.time.DateTime
 import javax.inject.{ Inject, Singleton }
 
 import scala.collection.Seq
