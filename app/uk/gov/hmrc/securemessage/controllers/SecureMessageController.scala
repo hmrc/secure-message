@@ -97,13 +97,9 @@ class SecureMessageController @Inject()(
           case _ =>
             authorised()
               .retrieve(Retrievals.allEnrolments) { authEnrolments =>
-                filterEnrolments(authEnrolments, enrolmentKeys, customerEnrolments) match {
-                  case results if results.isEmpty => Future.successful(Unauthorized(Json.toJson("No enrolment found")))
-                  case filteredEnrolments =>
-                    secureMessageService.getConversationsFiltered(filteredEnrolments, tags).flatMap {
-                      conversationDetails =>
-                        Future.successful(Ok(Json.toJson(conversationDetails)))
-                    }
+                val filteredEnrolments = filterEnrolments(authEnrolments, enrolmentKeys, customerEnrolments)
+                secureMessageService.getConversationsFiltered(filteredEnrolments, tags).flatMap { conversationDetails =>
+                  Future.successful(Ok(Json.toJson(conversationDetails)))
                 }
               }
         }

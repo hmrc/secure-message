@@ -355,6 +355,12 @@
           },
           "401" : {
             "description" : "user is not authorised to add a message"
+          },
+          "404" : {
+            "description" : "client or conversation ID not recognised"
+          },
+          "502" : {
+            "description" : "failed to forward message"
           }
         },
         "parameters" : [ {
@@ -473,7 +479,7 @@
   },
   "info" : {
     "title" : "Secure Message API",
-    "version" : "0.53.0-SNAPSHOT"
+    "version" : "0.58.0-SNAPSHOT"
   },
   "tags" : [ {
     "name" : "app"
