@@ -32,10 +32,10 @@ import uk.gov.hmrc.securemessage.{ DuplicateConversationError, SecureMessageErro
 import uk.gov.hmrc.securemessage.controllers.models.generic.{ CustomerEnrolment, Tag }
 import uk.gov.hmrc.securemessage.models.core.Message.dateFormat
 import uk.gov.hmrc.securemessage.models.core.{ Conversation, Message, Participants }
-
 import javax.inject.{ Inject, Singleton }
 import scala.collection.Seq
 import scala.concurrent.{ ExecutionContext, Future }
+
 @Singleton
 @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.Nothing"))
 class ConversationRepository @Inject()(implicit connector: MongoConnector)
@@ -73,26 +73,34 @@ class ConversationRepository @Inject()(implicit connector: MongoConnector)
     import uk.gov.hmrc.securemessage.models.core.Conversation.conversationFormat
 
     val querySelector = (enrolments, tags) match {
-      case (enrolments, None) => enrolmentQuery(enrolments)
-      case (enrolments, Some(tags)) if tags.nonEmpty =>
+      case (enrolments, _) if enrolments.isEmpty =>
+        JsObject.empty
+      case (enrolments, None) =>
+        enrolmentQuery(enrolments)
+      case (enrolments, Some(Nil)) =>
+        enrolmentQuery(enrolments)
+      case (enrolments, Some(tags)) =>
         Json.obj(
           "$and" -> Json.arr(
             enrolmentQuery(enrolments),
             tagQuery(tags)
           ))
-      case (enrolments, Some(_))                 => enrolmentQuery(enrolments)
-      case (enrolments, _) if enrolments.isEmpty => JsObject.empty
-      case (_, _)                                => JsObject.empty
+      case _ =>
+        JsObject.empty
     }
 
-    collection
-      .find[JsObject, Conversation](
-        selector = querySelector,
-        None
-      )
-      .sort(Json.obj("_id" -> -1))
-      .cursor[Conversation]()
-      .collect[List](-1, Cursor.FailOnError[List[Conversation]]())
+    if (querySelector != JsObject.empty) {
+      collection
+        .find[JsObject, Conversation](
+          selector = querySelector,
+          None
+        )
+        .sort(Json.obj("_id" -> -1))
+        .cursor[Conversation]()
+        .collect[List](-1, Cursor.FailOnError[List[Conversation]]())
+    } else {
+      Future.successful(List())
+    }
   }
 
   private def enrolmentQuery(enrolments: Set[CustomerEnrolment]): JsObject =
