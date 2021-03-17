@@ -33,9 +33,9 @@ import uk.gov.hmrc.securemessage.controllers.models.generic.{ CustomerEnrolment,
 import uk.gov.hmrc.securemessage.models.core.Message.dateFormat
 import uk.gov.hmrc.securemessage.models.core.{ Conversation, Message, Participants }
 import javax.inject.{ Inject, Singleton }
-
 import scala.collection.Seq
 import scala.concurrent.{ ExecutionContext, Future }
+
 @Singleton
 @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.Nothing"))
 class ConversationRepository @Inject()(implicit connector: MongoConnector)
