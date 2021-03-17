@@ -78,7 +78,7 @@ class ConversationRepository @Inject()(implicit connector: MongoConnector)
         JsObject.empty
       case (enrolments, None) =>
         enrolmentQuery(enrolments)
-      case (enrolments, Some(List())) =>
+      case (enrolments, Some(Nil)) =>
         enrolmentQuery(enrolments)
       case (enrolments, Some(tags)) =>
         Json.obj(
