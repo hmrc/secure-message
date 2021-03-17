@@ -135,7 +135,6 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       status(response) mustBe INTERNAL_SERVER_ERROR
       contentAsJson(response) mustBe Json.toJson("Error on conversation with id 123: some error")
     }
-
   }
 
   "getConversationsFiltered" must {
@@ -148,13 +147,19 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       contentAsJson(response).as[List[ConversationMetadata]] must be(conversationsMetadata)
     }
 
-    "return Unauthorized (401) error when no enrolments provided as query parameters match the ones held in the auth retrievals" in new TestCase(
+    "return Ok (200) with a JSON body of an empty list when no enrolments provided as query parameters match the ones held in the auth retrievals" in new TestCase(
       Set(CustomerEnrolment("SOME_ENROLMENT_KEY", "SOME_IDENTIFIER_KEY", "SOME_IDENTIFIER_VALUE"))) {
+      when(
+        mockSecureMessageService
+          .getConversationsFiltered(eqTo(Set[CustomerEnrolment]().empty), any[Option[List[Tag]]])(
+            any[ExecutionContext],
+            any[Messages]))
+        .thenReturn(Future(List()))
       val response: Future[Result] = controller
         .getMetadataForConversationsFiltered(None, Some(List(testEnrolment)), None)
         .apply(FakeRequest("GET", "/"))
-      status(response) mustBe UNAUTHORIZED
-      contentAsString(response) mustBe "\"No enrolment found\""
+      status(response) mustBe OK
+      contentAsString(response) mustBe "[]"
     }
 
     "return Bad Request (400) error when invalid query parameters are provided" in new TestCase(
@@ -201,7 +206,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       contentAsString(response) mustBe "\"No conversation found\""
     }
 
-    "return Unauthorized (401) when no EORI enrolment found" in new TestCase(Set.empty[CustomerEnrolment]) {
+    "return Unauthorized (401) when no enrolment found" in new TestCase(Set.empty[CustomerEnrolment]) {
       private val response = controller
         .getConversationContent("cdcm", "D-80542-20201120")
         .apply(FakeRequest("GET", "/"))

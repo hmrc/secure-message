@@ -106,22 +106,19 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
       result.map(_.conversationId) mustBe List("345", "234", "123")
     }
 
-    "not be returned and instead a database exception raised when a tag filter without an enrolment counterpart is provided" in {
+    "none returned when a tag filter without an enrolment counterpart is provided" in {
       repoSetup()
-      an[reactivemongo.core.errors.DetailedDatabaseException] should be thrownBy {
+      val result =
         await(repository.getConversationsFiltered(Set.empty, Some(List(Tag("notificationType", "CDS Exports")))))
-      }
+      result mustBe Nil
     }
 
-    "not be returned and instead a database exception raised when more than one tag filter without an enrolment counterpart is provided" in {
+    "none returned when more than one tag filter without an enrolment counterpart is provided" in {
       repoSetup()
-      an[reactivemongo.core.errors.DetailedDatabaseException] should be thrownBy {
-        await(
-          repository
-            .getConversationsFiltered(
-              Set.empty,
-              Some(List(Tag("sourceId", "self-assessment"), Tag("caseId", "CT-11345")))))
-      }
+
+      val result = await(repository
+        .getConversationsFiltered(Set.empty, Some(List(Tag("sourceId", "self-assessment"), Tag("caseId", "CT-11345")))))
+      result mustBe Nil
     }
 
     "none returned for one enrolment and one tag filter constraint that do not match against a record" in {
@@ -130,7 +127,7 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
         repository.getConversationsFiltered(
           Set(CustomerEnrolment("IR-CT", "UTR", "345678901")),
           Some(List(Tag("sourceId", "self-assessment")))))
-      result.size mustBe 0
+      result mustBe Nil
     }
 
     "be returned for one enrolment and one tag filter constraint that match a single record" in {
