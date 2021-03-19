@@ -69,6 +69,9 @@ object ConversationMetadata {
   private def findLatestMessage(coreConversation: Conversation): Message =
     coreConversation.messages.sortBy(_.created.getMillis).reverse.head
 
+  private def isLatestMessageBySender(coreConversation: Conversation, participant: Participant) =
+    coreConversation.messages.sortBy(_.created.getMillis).reverse.head.senderId === participant.id
+
   private def findLatestMessageDate(coreConversation: Conversation): DateTime =
     findLatestMessage(coreConversation).created
 
@@ -98,13 +101,16 @@ object ConversationMetadata {
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
-  private def anyUnreadMessages(coreConversation: Conversation, identifiers: Set[Identifier]): Boolean =
+  private[generic] def anyUnreadMessages[generic](
+    coreConversation: Conversation,
+    identifiers: Set[Identifier]): Boolean =
     coreConversation.participants
       .find(participant => identifiers.contains(participant.identifier))
       .fold(false)(participant => findUnreadMessagesByParticipant(participant, coreConversation))
 
   private def findUnreadMessagesByParticipant(participant: Participant, coreConversation: Conversation): Boolean =
     participant.readTimes match {
+      case _ if isLatestMessageBySender(coreConversation, participant) => false
       case Some(times) =>
         times
           .sortBy(_.getMillis)

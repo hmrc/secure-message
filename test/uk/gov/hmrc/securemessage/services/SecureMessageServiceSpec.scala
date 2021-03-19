@@ -17,6 +17,34 @@
 package uk.gov.hmrc.securemessage.services
 
 import akka.stream.Materializer
+import cats.data.NonEmptyList
+import org.joda.time.DateTime
+import org.mockito.ArgumentMatchers
+import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.{ never, times, verify, when }
+import org.scalatest.concurrent.ScalaFutures
+import org.scalatestplus.mockito.MockitoSugar
+import org.scalatestplus.play.PlaySpec
+import play.api.i18n.Messages
+import play.api.mvc.AnyContentAsEmpty
+import play.api.test.Helpers._
+import play.api.test.{ FakeRequest, NoMaterializer }
+import uk.gov.hmrc.auth.core.{ AuthorisationException, Enrolment, EnrolmentIdentifier, Enrolments }
+import uk.gov.hmrc.emailaddress.EmailAddress
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.securemessage.connectors.{ ChannelPreferencesConnector, EISConnector, EmailConnector }
+import uk.gov.hmrc.securemessage.controllers.models.generic
+import uk.gov.hmrc.securemessage.controllers.models.generic._
+import uk.gov.hmrc.securemessage.helpers.ConversationUtil
+import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryResponseWrapper }
+import uk.gov.hmrc.securemessage.models.core._
+import uk.gov.hmrc.securemessage.repository.ConversationRepository
+import uk.gov.hmrc.securemessage.{ DuplicateConversationError, EmailLookupError, NoReceiverEmailError, SecureMessageError }
+import javax.naming.CommunicationException
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ ExecutionContext, Future }
+import akka.stream.Materializer
 import org.joda.time.DateTime
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
@@ -231,6 +259,25 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
           caseWorkerMessage("PG1hdHQ+Q2FuIEkgaGF2ZSBteSB0YXggbW9uZXkgcGxlYXNlPzwvbWF0dD4="))) mustBe
         Left(InvalidContent(
           "Html contains disallowed tags, attributes or protocols within the tags: matt. For allowed elements see class org.jsoup.safety.Whitelist.relaxed()"))
+    }
+
+    "throw a CommunicationException and don't store the message if the message cannot be forwarded to EIS" in new TestCase {
+      private val customerMessage = CustomerMessageRequest("PGRpdj5IZWxsbzwvZGl2Pg==")
+      private val mockEnrolments = mock[Enrolments]
+      when(mockRepository.conversationExists(any[String], any[String])(any[ExecutionContext]))
+        .thenReturn(Future.successful(true))
+      when(mockEnrolments.enrolments)
+        .thenReturn(Set(Enrolment("HMRC-CUS-ORG", Seq(EnrolmentIdentifier("EORINumber", "GB123456789000000")), "")))
+      private val eORINumber: Identifier = Identifier("EORINumber", "GB123456789000000", Some("HMRC-CUS-ORG"))
+      private val participant = Participant(1, ParticipantType.Customer, eORINumber, None, None, None, None)
+      when(mockRepository.getConversationParticipants(any[String], any[String])(any[ExecutionContext]))
+        .thenReturn(Future(Some(Participants(NonEmptyList.one(participant)))))
+      when(mockEisConnector.forwardMessage(any[QueryResponseWrapper])).thenReturn(Future.successful(false))
+      assertThrows[CommunicationException] {
+        await(service.addMessageToConversation("cdcm", "D-80542-20201120", customerMessage, mockEnrolments))
+      }
+      verify(mockRepository, never())
+        .addMessageToConversation(any[String], any[String], any[Message])(any[ExecutionContext])
     }
   }
 

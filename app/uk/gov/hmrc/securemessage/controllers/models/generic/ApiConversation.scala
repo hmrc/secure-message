@@ -18,7 +18,6 @@ package uk.gov.hmrc.securemessage.controllers.models.generic
 
 import cats.data.NonEmptyList
 import cats.implicits._
-import cats.kernel.Eq
 import org.joda.time.DateTime
 import play.api.libs.json.{ Format, Json, Writes }
 import uk.gov.hmrc.securemessage.models.core.{ Identifier, _ }
@@ -36,7 +35,7 @@ final case class ApiConversation(
 
 object ApiConversation {
 
-  def fromCore(conversation: Conversation, identifier: Identifier): ApiConversation =
+  def fromCore(conversation: Conversation, identifiers: Set[Identifier]): ApiConversation =
     ApiConversation(
       client = conversation.client,
       conversationId = conversation.conversationId,
@@ -44,7 +43,7 @@ object ApiConversation {
       tags = conversation.tags,
       subject = conversation.subject,
       language = conversation.language,
-      messages = conversation.messages.map(message => convertToApiMessage(conversation, message, identifier))
+      messages = conversation.messages.map(message => convertToApiMessage(conversation, message, identifiers))
     )
 
   private def isSender(sender: Option[Participant], reader: Option[Participant]) =
@@ -56,9 +55,9 @@ object ApiConversation {
   private def convertToApiMessage(
     coreConversation: Conversation,
     message: Message,
-    identifier: Identifier): ApiMessage = {
+    identifiers: Set[Identifier]): ApiMessage = {
     val senderPossibly: Option[Participant] = findParticipantViaId(coreConversation, message.senderId)
-    val readerPossibly: Option[Participant] = findParticipantViaIdentifier(coreConversation, identifier)
+    val readerPossibly: Option[Participant] = findParticipantViaIdentifiers(coreConversation, identifiers)
     val firstReaderPossibly = firstReaderInformation(coreConversation, message)
     val self = isSender(senderPossibly, readerPossibly).getOrElse(false)
 
@@ -93,13 +92,11 @@ object ApiConversation {
     coreConversation.participants
       .find(_.id === id)
 
-  private def findParticipantViaIdentifier(
+  private def findParticipantViaIdentifiers(
     coreConversation: Conversation,
-    identifier: Identifier): Option[Participant] = {
-    implicit val eqFoo: Eq[Identifier] = Eq.fromUniversalEquals
+    identifiers: Set[Identifier]): Option[Participant] =
     coreConversation.participants
-      .find(_.identifier === identifier)
-  }
+      .find(p => identifiers.contains(p.identifier))
 
   def getReadTimesWithId(
     participants: List[Participant]

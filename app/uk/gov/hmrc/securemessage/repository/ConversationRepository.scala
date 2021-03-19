@@ -30,11 +30,12 @@ import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.mongo.{ MongoConnector, ReactiveRepository }
 import uk.gov.hmrc.securemessage.controllers.models.generic.Tag
 import uk.gov.hmrc.securemessage.models.core.Message.dateFormat
-import uk.gov.hmrc.securemessage.models.core.{ Conversation, Identifier, Message }
+import uk.gov.hmrc.securemessage.models.core.{ Conversation, Identifier, Message, Participants }
 import uk.gov.hmrc.securemessage.{ ConversationNotFound, DuplicateConversationError, SecureMessageError, StoreError }
 
 import scala.collection.Seq
 import scala.concurrent.{ ExecutionContext, Future }
+
 @Singleton
 @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.Nothing"))
 class ConversationRepository @Inject()(implicit connector: MongoConnector)
@@ -116,7 +117,7 @@ class ConversationRepository @Inject()(implicit connector: MongoConnector)
       "$or" ->
         identifiers.foldLeft(JsArray())((acc, i) => acc ++ Json.arr(Json.obj(findByIdentifierQuery(i): _*)))
     )
-
+  //TODO: remove this
   private def findByIdentifierQuery(enrolment: Identifier): Seq[(String, JsValueWrapper)] =
     Seq(
       "participants.identifier.name"      -> JsString(enrolment.name),

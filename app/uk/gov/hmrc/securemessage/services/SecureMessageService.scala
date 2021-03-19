@@ -16,21 +16,27 @@
 
 package uk.gov.hmrc.securemessage.services
 
+import java.util.UUID
 import cats.data._
 import cats.implicits._
 import com.google.inject.Inject
+import javax.naming.CommunicationException
 import org.joda.time.DateTime
 import play.api.i18n.Messages
-import uk.gov.hmrc.auth.core.Enrolments
+import uk.gov.hmrc.auth.core.{ AuthorisationException, Enrolments }
+import play.api.mvc.Request
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.securemessage._
-import uk.gov.hmrc.securemessage.connectors.{ ChannelPreferencesConnector, EmailConnector }
+import uk.gov.hmrc.securemessage.connectors.{ ChannelPreferencesConnector, EmailConnector, EISConnector }
+import uk.gov.hmrc.securemessage.controllers.models.generic.CustomerMessageRequest.asQueryReponse
 import uk.gov.hmrc.securemessage.controllers.models.generic._
+import uk.gov.hmrc.securemessage._
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.Customer.eqCustomer
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.{ Customer => PCustomer }
 import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.securemessage.models.{ EmailRequest, core }
+import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryResponseWrapper }
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
+import uk.gov.hmrc.securemessage.{ EmailLookupError, NoReceiverEmailError, SecureMessageError }
 import uk.gov.hmrc.securemessage.services.utils.ContentValidator
 
 import scala.concurrent.{ ExecutionContext, Future }
@@ -43,7 +49,8 @@ import scala.concurrent.{ ExecutionContext, Future }
 class SecureMessageService @Inject()(
   repo: ConversationRepository,
   emailConnector: EmailConnector,
-  channelPrefConnector: ChannelPreferencesConnector) {
+  channelPrefConnector: ChannelPreferencesConnector,
+  eisConnector: EISConnector) {
 
   def createConversation(conversation: Conversation)(
     implicit hc: HeaderCarrier,

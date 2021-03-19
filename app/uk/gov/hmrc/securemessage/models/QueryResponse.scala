@@ -17,9 +17,13 @@
 package uk.gov.hmrc.securemessage.models
 
 import play.api.libs.json.{ Json, OWrites }
-import uk.gov.hmrc.emailaddress._
 
-final case class EmailRequest(to: List[EmailAddress], templateId: String, parameters: Map[String, String])
-object EmailRequest {
-  implicit val emailRequestWrites: OWrites[EmailRequest] = Json.writes[EmailRequest]
+final case class QueryResponse(id: String, conversationId: String, message: String)
+object QueryResponse {
+  implicit val queryResponseWrites: OWrites[QueryResponse] = Json.writes[QueryResponse]
+}
+
+final case class QueryResponseWrapper(queryResponse: QueryResponse)
+object QueryResponseWrapper {
+  implicit val queryResponseWrapperWrites: OWrites[QueryResponseWrapper] = Json.writes[QueryResponseWrapper]
 }

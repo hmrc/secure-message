@@ -19,6 +19,7 @@ package uk.gov.hmrc.securemessage.controllers
 import javax.inject.Inject
 import play.api.Logging
 import play.api.i18n.I18nSupport
+import javax.naming.CommunicationException
 import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc.{ Action, AnyContent, ControllerComponents, Result }
 import uk.gov.hmrc.auth.core._
@@ -91,38 +92,36 @@ class SecureMessageController @Inject()(
           case _ =>
             authorised()
               .retrieve(Retrievals.allEnrolments) { authEnrolments =>
-                filterEnrolments(authEnrolments, enrolmentKeys, customerEnrolments) match {
-                  case results if results.isEmpty => Future.successful(Unauthorized(Json.toJson("No enrolment found")))
-                  case filteredEnrolments =>
-                    secureMessageService.getConversationsFiltered(filteredEnrolments, tags).flatMap {
-                      conversationDetails =>
-                        Future.successful(Ok(Json.toJson(conversationDetails)))
-                    }
+                val filteredEnrolments = filterEnrolments(authEnrolments, enrolmentKeys, customerEnrolments)
+                secureMessageService.getConversationsFiltered(filteredEnrolments, tags).flatMap { conversationDetails =>
+                  Future.successful(Ok(Json.toJson(conversationDetails)))
                 }
               }
         }
       }
     }
 
-  def getConversationContent(
-    client: String,
-    conversationId: String,
-    enrolmentKey: String,
-    enrolmentName: String): Action[AnyContent] = Action.async { implicit request =>
-    authorised()
-      .retrieve(Retrievals.allEnrolments) { enrolments =>
-        findEnrolment(enrolments, enrolmentKey, enrolmentName) match {
-          case Some(enrolment) =>
+  def getConversationContent(client: String, conversationId: String): Action[AnyContent] = Action.async {
+    implicit request =>
+      authorised()
+        .retrieve(Retrievals.allEnrolments) { authEnrolments =>
+          if (authEnrolments.enrolments.isEmpty) {
+            Future.successful(Unauthorized(Json.toJson("No enrolment found")))
+          } else {
+            val customerEnrolments = mapToCustomerEnrolments(authEnrolments)
             secureMessageService
-              .getConversation(client, conversationId, enrolment)
+              .getConversation(client, conversationId, customerEnrolments)
               .map {
                 case Right(apiConversation) => Ok(Json.toJson(apiConversation))
                 case _                      => NotFound(Json.toJson("No conversation found"))
               }
-          case None => Future.successful(Unauthorized(Json.toJson("No EORI enrolment found")))
+          }
         }
-      }
   }
+
+  private def mapToCustomerEnrolments(authEnrolments: Enrolments): Set[CustomerEnrolment] =
+    authEnrolments.enrolments
+      .flatMap(e => e.identifiers.map(i => CustomerEnrolment(e.key, i.key, i.value)))
 
   def addCustomerReadTime(client: String, conversationId: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
@@ -150,6 +149,7 @@ class SecureMessageController @Inject()(
       case _: InvalidContent             => BadRequest(Json.toJson(errMsg))
       case _: ParticipantNotFound        => Unauthorized(Json.toJson(errMsg))
       case _: ConversationNotFound       => NotFound(Json.toJson(errMsg))
+      case cex: CommunicationException   => BadGateway(cex.getMessage)
       case _: StoreError                 => InternalServerError(Json.toJson(errMsg))
       case _                             => InternalServerError(Json.toJson(errMsg))
     }

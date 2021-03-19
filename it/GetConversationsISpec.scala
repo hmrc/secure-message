@@ -129,27 +129,29 @@ class GetConversationsISpec extends PlaySpec with ServiceSpec with BeforeAndAfte
       response.body must include("\"count\":1")
     }
 
-    "return a JSON body of [No enrolment found] when there's an auth session, but no enrolment matching the enrolment key filter" in {
+    "return an empty list JSON body when there's an auth session, but no enrolment matching the enrolment key filter" in {
       val response =
         wsClient
           .url(resource("/secure-messaging/conversations?enrolmentKey=SOME_ENROLMENT"))
           .withHttpHeaders(buildNonEoriToken)
           .get()
           .futureValue
-      response.body mustBe "\"No enrolment found\""
+      response.body must include("[]")
+      response.status mustBe OK
     }
 
-    "return a JSON body of [No enrolment found] when there's an auth session, but no enrolment matching the enrolment filter" in {
+    "return an empty list JSON body when there's an auth session, but no enrolment matching the enrolment filter" in {
       val response =
         wsClient
           .url(resource("/secure-messaging/conversations?enrolment=SOME_ENROLMENT~SomeIdentifierName~A123456789"))
           .withHttpHeaders(buildNonEoriToken)
           .get()
           .futureValue
-      response.body mustBe "\"No enrolment found\""
+      response.body must include("[]")
+      response.status mustBe OK
     }
 
-    "return a JSON body of [No enrolment found] when there's an auth session, but no enrolment matching an enrolment nor enrolment key filter" in {
+    "return an empty list JSON body when there's an auth session, but no enrolment matching an enrolment nor enrolment key filter" in {
       val response =
         wsClient
           .url(resource(
@@ -157,7 +159,8 @@ class GetConversationsISpec extends PlaySpec with ServiceSpec with BeforeAndAfte
           .withHttpHeaders(buildNonEoriToken)
           .get()
           .futureValue
-      response.body mustBe "\"No enrolment found\""
+      response.body must include("[]")
+      response.status mustBe OK
     }
 
     "return a JSON body of [Invalid query parameter(s)] when there's an invalid parameter supplied in the query string" in {

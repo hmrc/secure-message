@@ -64,6 +64,10 @@ POST        /conversation/:client/:conversationId/caseworker-message            
 #     description: bad request such as invalid payload or conversation ID not recognised
 #   401:
 #     description: user is not authorised to add a message
+#   404:
+#     description: client or conversation ID not recognised
+#   502:
+#     description: failed to forward message
 ###
 POST        /conversation/:client/:conversationId/customer-message                    uk.gov.hmrc.securemessage.controllers.SecureMessageController.addCustomerMessage(client: String, conversationId: String)
 
@@ -87,11 +91,11 @@ GET         /conversations                                                      
 #   200:
 #     description: conversations was recieved
 #   401:
-#     description: unauthorised customer when they don't have an EORI enrolment
+#     description: unauthorised customer when they don't have an enrolment
 #   404:
 #     description: conversation not found
 ###
-GET         /conversation/:client/:conversationId/:enrolmentKey/:enrolmentName        uk.gov.hmrc.securemessage.controllers.SecureMessageController.getConversationContent(client: String, conversationId: String, enrolmentKey: String, enrolmentName: String)
+GET         /conversation/:client/:conversationId                                       uk.gov.hmrc.securemessage.controllers.SecureMessageController.getConversationContent(client: String, conversationId: String)
 
 ###
 # summary: Adds a date and time that a participant read the conversation

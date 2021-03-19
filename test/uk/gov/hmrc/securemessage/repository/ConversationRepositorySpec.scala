@@ -107,22 +107,19 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
       result.map(_.conversationId) mustBe List("345", "234", "123")
     }
 
-    "not be returned and instead a database exception raised when a tag filter without an enrolment counterpart is provided" in {
+    "none returned when a tag filter without an enrolment counterpart is provided" in {
       repoSetup()
-      an[reactivemongo.core.errors.DetailedDatabaseException] should be thrownBy {
+      val result =
         await(repository.getConversationsFiltered(Set.empty, Some(List(Tag("notificationType", "CDS Exports")))))
-      }
+      result mustBe Nil
     }
 
-    "not be returned and instead a database exception raised when more than one tag filter without an enrolment counterpart is provided" in {
+    "none returned when more than one tag filter without an enrolment counterpart is provided" in {
       repoSetup()
-      an[reactivemongo.core.errors.DetailedDatabaseException] should be thrownBy {
-        await(
-          repository
-            .getConversationsFiltered(
-              Set.empty,
-              Some(List(Tag("sourceId", "self-assessment"), Tag("caseId", "CT-11345")))))
-      }
+
+      val result = await(repository
+        .getConversationsFiltered(Set.empty, Some(List(Tag("sourceId", "self-assessment"), Tag("caseId", "CT-11345")))))
+      result mustBe Nil
     }
 
     "none returned for one enrolment and one tag filter constraint that do not match against a record" in {
@@ -131,7 +128,7 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
         repository.getConversationsFiltered(
           Set(Identifier("UTR", "345678901", Some("IR-CT"))),
           Some(List(Tag("sourceId", "self-assessment")))))
-      result.size mustBe 0
+      result mustBe Nil
     }
 
     "be returned for one enrolment and one tag filter constraint that match a single record" in {
@@ -190,7 +187,7 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
       val result =
         await(
           repository
-            .getConversation("cdcm", "123", Some(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")))))
+            .getConversation("cdcm", "123", Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")))))
       result.right.get mustBe conversation
     }
   }
@@ -204,7 +201,7 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
           .getConversation(
             "cdcm",
             "D-80542-20201120",
-            Some(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORF")))))
+            Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORF")))))
       result mustBe Left(ConversationNotFound(
         "Conversation not found for client: cdcm, conversationId: D-80542-20201120, identifier: Some(Identifier(EORINumber,GB1234567890,Some(HMRC-CUS-ORF)))"))
     }
@@ -219,7 +216,7 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
       await(repository.addMessageToConversation("cdcm", aConversationId, message))
       await(repository.addMessageToConversation("cdcm", aConversationId, message))
       val updated = await(repository
-        .getConversation("cdcm", aConversationId, Some(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")))))
+        .getConversation("cdcm", aConversationId, Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")))))
       val result = updated.right.get
       result.messages.size mustBe 3
     }

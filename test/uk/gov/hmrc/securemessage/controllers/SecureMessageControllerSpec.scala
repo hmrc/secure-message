@@ -17,6 +17,7 @@
 package uk.gov.hmrc.securemessage.controllers
 
 import akka.stream.Materializer
+import javax.naming.CommunicationException
 import org.joda.time.DateTime
 import org.mockito.ArgumentMatchers.{ any, eq => eqTo }
 import org.mockito.Mockito.when
@@ -29,7 +30,7 @@ import play.api.http.HeaderNames._
 import play.api.http.Status._
 import play.api.i18n.Messages
 import play.api.libs.json.{ JsObject, JsValue, Json }
-import play.api.mvc.Result
+import play.api.mvc.{ Request, Result }
 import play.api.test.Helpers.{ POST, PUT, contentAsJson, contentAsString, defaultAwaitTimeout, status, stubMessages }
 import play.api.test.{ FakeHeaders, FakeRequest, Helpers, NoMaterializer }
 import uk.gov.hmrc.auth.core._
@@ -53,6 +54,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
   implicit val mat: Materializer = NoMaterializer
   implicit val hc: HeaderCarrier = HeaderCarrier()
   implicit val messages: Messages = stubMessages()
+  private val testEnrolment = CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789")
 
   "createConversation" must {
 
@@ -176,27 +178,25 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       contentAsJson(response).as[List[ConversationMetadata]] must be(conversationsMetadata)
     }
 
-    "return a 401 (UNAUTHORISED) error when no enrolments provided as query paramters match the ones held in the auth retrievals" in new TestCase(
-      "some other key",
-      "another enrolment") {
+    "return Ok (200) with a JSON body of an empty list when no enrolments provided as query parameters match the ones held in the auth retrievals" in new TestCase(
+      Set(CustomerEnrolment("SOME_ENROLMENT_KEY", "SOME_IDENTIFIER_KEY", "SOME_IDENTIFIER_VALUE"))) {
+      when(
+        mockSecureMessageService
+          .getConversationsFiltered(eqTo(Set[CustomerEnrolment]().empty), any[Option[List[Tag]]])(
+            any[ExecutionContext],
+            any[Messages]))
+        .thenReturn(Future(List()))
       val response: Future[Result] = controller
-        .getMetadataForConversationsFiltered(
-          None,
-          Some(List(CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789"))),
-          None)
+        .getMetadataForConversationsFiltered(None, Some(List(testEnrolment)), None)
         .apply(FakeRequest("GET", "/"))
-      status(response) mustBe UNAUTHORIZED
-      contentAsString(response) mustBe "\"No enrolment found\""
+      status(response) mustBe OK
+      contentAsString(response) mustBe "[]"
     }
 
-    "return a 400 (BAD_REQUEST) error when invalid query parameters are provided" in new TestCase(
-      "some other key",
-      "another enrolment") {
+    "return Bad Request (400) error when invalid query parameters are provided" in new TestCase(
+      Set(CustomerEnrolment("SOME_ENROLMENT_KEY", "SOME_IDENTIFIER_KEY", "SOME_IDENTIFIER_VALUE"))) {
       val response: Future[Result] = controller
-        .getMetadataForConversationsFiltered(
-          None,
-          Some(List(CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789"))),
-          None)
+        .getMetadataForConversationsFiltered(None, Some(List(testEnrolment)), None)
         .apply(FakeRequest("GET", "/some?x=123&Z=12&a=abc&test=ABCDEF"))
       status(response) mustBe BAD_REQUEST
       contentAsString(response) mustBe "\"Invalid query parameter(s) found: [Z, a, test, x]\""
@@ -204,31 +204,45 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
   }
 
   "getConversation" must {
-    "return an OK (200) with a JSON body of a ApiConversations" in new GetConversationTestCase(
+    "return Ok (200) with a JSON body of a ApiConversations" in new GetConversationTestCase(
       storedConversation = Some(Resources.readJson("model/api/api-conversation.json"))) {
       val response: Future[Result] = controller
-        .getConversationContent("cdcm", "D-80542-20201120", "HMRC-CUS-ORG", "EORINumber")
+        .getConversationContent("cdcm", "D-80542-20201120")
         .apply(FakeRequest("GET", "/"))
       status(response) mustBe OK
+      contentAsJson(response).as[ApiConversation] must be(conversation.value)
     }
 
-    "return an NotFound (404) with a JSON body of No conversation found" in new GetConversationTestCase(
+    "return Ok (200) with a JSON body of a ApiConversations when auth enrolments hold multiple identifiers and enrolments" in new GetConversationTestCase(
+      storedConversation = Some(Resources.readJson("model/api/api-conversation.json")),
+      Set(
+        testEnrolment,
+        CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB023456800"),
+        CustomerEnrolment("IR-SA", "NINO", "0123456789")
+      )
+    ) {
+      val response: Future[Result] = controller
+        .getConversationContent("cdcm", "D-80542-20201120")
+        .apply(FakeRequest("GET", "/"))
+      status(response) mustBe OK
+      contentAsJson(response).as[ApiConversation] must be(conversation.value)
+    }
+
+    "return Not Found (404) with a JSON body of No conversation found" in new GetConversationTestCase(
       storedConversation = None) {
       val response: Future[Result] = controller
-        .getConversationContent("cdcm", "D-80542-20201120", "HMRC-CUS-ORG", "EORINumber")
+        .getConversationContent("cdcm", "D-80542-20201120")
         .apply(FakeRequest("GET", "/"))
       status(response) mustBe NOT_FOUND
       contentAsString(response) mustBe "\"No conversation found\""
     }
 
-    "return a 401 (UNAUTHORISED) error when no EORI enrolment found" in new TestCase(
-      enrolmentKey = "some other key",
-      enrolmentIdentifierKey = "another enrolment") {
+    "return Unauthorized (401) when no enrolment found" in new TestCase(Set.empty[CustomerEnrolment]) {
       private val response = controller
-        .getConversationContent("cdcm", "D-80542-20201120", "HMRC-CUS-ORG", "EORINumber")
+        .getConversationContent("cdcm", "D-80542-20201120")
         .apply(FakeRequest("GET", "/"))
       status(response) mustBe UNAUTHORIZED
-      contentAsString(response) mustBe "\"No EORI enrolment found\""
+      contentAsString(response) mustBe "\"No enrolment found\""
     }
   }
 
@@ -280,6 +294,11 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       private val response = controller.addCustomerMessage("cdcm", "D-80542-20201120")(fakeRequest)
       status(response) mustBe NOT_FOUND
     }
+    "return Bad Gateway (502) when the message cannot be forwarded to EIS" in new CreateCustomerMessageTestCase(
+      addMessageResult = Future.failed(new CommunicationException("Failed to forward message to EIS"))) {
+      private val response = controller.addCustomerMessage("cdcm", "D-80542-20201120")(fakeRequest)
+      status(response) mustBe BAD_GATEWAY
+    }
   }
 
   "updateReadTime" must {
@@ -299,7 +318,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
-  class TestCase(enrolmentKey: String = "HMRC-CUS-ORG", enrolmentIdentifierKey: String = "EORINumber") {
+  class TestCase(authEnrolments: Set[CustomerEnrolment] = Set(testEnrolment)) {
     val mockRepository: ConversationRepository = mock[ConversationRepository]
     val mockAuthConnector: AuthConnector = mock[AuthConnector]
     val mockSecureMessageService: SecureMessageService = mock[SecureMessageService]
@@ -308,15 +327,19 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     val controller =
       new SecureMessageController(Helpers.stubControllerComponents(), mockAuthConnector, mockSecureMessageService)
 
-    private val enrolment: Enrolment = uk.gov.hmrc.auth.core.Enrolment(
-      key = enrolmentKey,
-      identifiers = Seq(EnrolmentIdentifier(enrolmentIdentifierKey, "GB123456789")),
-      state = "",
-      None)
+    val enrolments: Set[Enrolment] = authEnrolments.map(
+      enrolment =>
+        Enrolment(
+          key = enrolment.key,
+          identifiers = Seq(EnrolmentIdentifier(enrolment.name, enrolment.value)),
+          state = "",
+          None))
+
     when(
       mockAuthConnector
         .authorise(any[Predicate], any[Retrieval[Enrolments]])(any[HeaderCarrier], any[ExecutionContext]))
-      .thenReturn(Future.successful(Enrolments(Set(enrolment))))
+      .thenReturn(Future.successful(Enrolments(enrolments)))
+  }
 
     private val fullConversationJson = Resources.readJson("model/api/create-conversation-full.json")
     val fullConversationfakeRequest: FakeRequest[JsValue] = FakeRequest(
@@ -354,30 +377,28 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
           any[ExecutionContext])).thenReturn(givenResult)
   }
 
-  class GetConversationsTestCase(storedConversationsMetadata: JsValue) extends TestCase {
+  @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
+  class GetConversationsTestCase(
+    storedConversationsMetadata: JsValue,
+    authEnrolments: Set[CustomerEnrolment] = Set(testEnrolment),
+    customerEnrolments: Set[CustomerEnrolment] = Set(testEnrolment))
+      extends TestCase(authEnrolments) {
     val conversationsMetadata: List[ConversationMetadata] = storedConversationsMetadata.as[List[ConversationMetadata]]
-
-    private val eORINumber: CustomerEnrolment = generic.CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789")
-
-    when(
-      mockSecureMessageService
-        .getConversationsFiltered(eqTo(Set(eORINumber)), any[Option[List[Tag]]])(any[ExecutionContext], any[Messages]))
+    when(mockSecureMessageService
+      .getConversationsFiltered(eqTo(customerEnrolments), any[Option[List[Tag]]])(any[ExecutionContext], any[Messages]))
       .thenReturn(Future(conversationsMetadata))
   }
 
-  class GetConversationTestCase(storedConversation: Option[JsValue]) extends TestCase {
-    if (storedConversation.isEmpty) {
-      when(
-        mockSecureMessageService.getConversation(any[String], any[String], any[generic.CustomerEnrolment])(
-          any[ExecutionContext]))
-        .thenReturn(Future(Left(ConversationNotFound("error message"))))
-    } else {
-      val conversation: ApiConversation = storedConversation.map(_.as[ApiConversation]).get
-      when(
-        mockSecureMessageService.getConversation(any[String], any[String], any[generic.CustomerEnrolment])(
-          any[ExecutionContext]))
-        .thenReturn(Future(Right(conversation)))
-    }
+  @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
+  class GetConversationTestCase(
+    storedConversation: Option[JsValue],
+    authEnrolments: Set[CustomerEnrolment] = Set(testEnrolment))
+      extends TestCase(authEnrolments) {
+    val conversation: Option[ApiConversation] = storedConversation.map(_.as[ApiConversation])
+    when(
+      mockSecureMessageService.getConversation(any[String], any[String], any[Set[generic.CustomerEnrolment]])(
+        any[ExecutionContext]))
+      .thenReturn(Future(conversation))
   }
 
   class CreateCaseWorkerMessageTestCase(requestBody: JsValue, givenResult: Future[Either[SecureMessageError, Unit]])
