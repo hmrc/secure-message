@@ -30,7 +30,7 @@ import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.mongo.{ MongoConnector, ReactiveRepository }
 import uk.gov.hmrc.securemessage.controllers.models.generic.Tag
 import uk.gov.hmrc.securemessage.models.core.Message.dateFormat
-import uk.gov.hmrc.securemessage.models.core.{ Conversation, Identifier, Message, Participants }
+import uk.gov.hmrc.securemessage.models.core.{ Conversation, Identifier, Message }
 import uk.gov.hmrc.securemessage.{ ConversationNotFound, DuplicateConversationError, SecureMessageError, StoreError }
 
 import scala.collection.Seq
@@ -61,7 +61,7 @@ class ConversationRepository @Inject()(implicit connector: MongoConnector)
       .map(_ => Right(()))
       .recoverWith {
         case e: DatabaseException if e.code.contains(DuplicateKey) =>
-          val errMsg = "Ignoring duplicate found on insertion to conversation collection: " + e.getMessage()
+          val errMsg = "Duplicate conversation: " + e.getMessage()
           Future.successful(Left(DuplicateConversationError(errMsg, Some(e))))
         case e: DatabaseException =>
           val errMsg = s"Database error trying to store conversation ${conversation.conversationId}: " + e.getMessage()
@@ -72,58 +72,70 @@ class ConversationRepository @Inject()(implicit connector: MongoConnector)
     implicit ec: ExecutionContext): Future[List[Conversation]] = {
     import uk.gov.hmrc.securemessage.models.core.Conversation.conversationFormat
     val querySelector = (identifiers, tags) match {
-      case (identifiers, None) => identifierQuery(identifiers)
-      case (identifiers, Some(tags)) if tags.nonEmpty =>
+      case (identifiers, _) if identifiers.isEmpty =>
+        JsObject.empty
+      case (identifiers, None) =>
+        identifierQuery(identifiers)
+      case (identifiers, Some(Nil)) =>
+        identifierQuery(identifiers)
+      case (identifiers, Some(tags)) =>
         Json.obj(
           "$and" -> Json.arr(
             identifierQuery(identifiers),
             tagQuery(tags)
           ))
-      case (identifiers, Some(_))                  => identifierQuery(identifiers)
-      case (identifiers, _) if identifiers.isEmpty => JsObject.empty
-      case (_, _)                                  => JsObject.empty
+      case _ =>
+        JsObject.empty
     }
-
-    collection
-      .find[JsObject, Conversation](
-        selector = querySelector,
-        None
-      )
-      .sort(Json.obj("_id" -> -1))
-      .cursor[Conversation]()
-      .collect[List](-1, dbErrorHandler[List[Conversation]])
+    if (querySelector != JsObject.empty) {
+      collection
+        .find[JsObject, Conversation](
+          selector = querySelector,
+          None
+        )
+        .sort(Json.obj("_id" -> -1))
+        .cursor[Conversation]()
+        .collect[List](-1, dbErrorHandler[List[Conversation]])
+    } else {
+      Future(List())
+    }
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.OptionPartial"))
-  def getConversation(client: String, conversationId: String, identifier: Option[Identifier])(
-    implicit ec: ExecutionContext): Future[Either[ConversationNotFound, Conversation]] = {
-    val commonQuery = conversationQuery(client, conversationId)
+  def getConversation(client: String, conversationId: String, identifiers: Set[Identifier])(
+    implicit ec: ExecutionContext): Future[Either[ConversationNotFound, Conversation]] =
     collection
-      .find[JsObject, Conversation](selector = identifier match {
-        case Some(i) => commonQuery deepMerge Json.obj(findByIdentifierQuery(i): _*)
-        case None    => commonQuery
-      }, None)
+      .find[JsObject, Conversation](
+        selector = Json.obj("client" -> client, "conversationId" -> conversationId)
+          deepMerge identifierQuery(identifiers),
+        None)
       .one[Conversation] map {
       case Some(c) => Right(c)
       case None =>
-        Left(
-          ConversationNotFound(
-            s"Conversation not found for client: $client, conversationId: $conversationId, identifier: $identifier"))
+        Left(ConversationNotFound(s"Conversation not found for identifier: $identifiers"))
     }
-  }
 
   private def identifierQuery(identifiers: Set[Identifier]): JsObject =
     Json.obj(
       "$or" ->
         identifiers.foldLeft(JsArray())((acc, i) => acc ++ Json.arr(Json.obj(findByIdentifierQuery(i): _*)))
     )
+
   //TODO: remove this
-  private def findByIdentifierQuery(enrolment: Identifier): Seq[(String, JsValueWrapper)] =
-    Seq(
-      "participants.identifier.name"      -> JsString(enrolment.name),
-      "participants.identifier.value"     -> JsString(enrolment.value),
-      "participants.identifier.enrolment" -> JsString(enrolment.enrolment.getOrElse(""))
-    )
+  private def findByIdentifierQuery(identifier: Identifier): Seq[(String, JsValueWrapper)] =
+    identifier.enrolment match {
+      case Some(enrolment) =>
+        Seq(
+          "participants.identifier.name"      -> JsString(identifier.name),
+          "participants.identifier.value"     -> JsString(identifier.value),
+          "participants.identifier.enrolment" -> JsString(enrolment)
+        )
+      case None =>
+        Seq(
+          "participants.identifier.name"  -> JsString(identifier.name),
+          "participants.identifier.value" -> JsString(identifier.value)
+        )
+    }
 
   private def tagQuery(tags: List[Tag]): JsObject =
     Json.obj(
@@ -148,12 +160,12 @@ class ConversationRepository @Inject()(implicit connector: MongoConnector)
   private def conversationQuery(client: String, conversationId: String): JsObject =
     Json.obj("client" -> client, "conversationId" -> conversationId)
 
-  def addReadTime(client: String, conversationId: String, id: Int, readTime: DateTime)(
+  def addReadTime(client: String, conversationId: String, participantId: Int, readTime: DateTime)(
     implicit ec: ExecutionContext): Future[Either[StoreError, Unit]] =
     collection
       .update(ordered = false)
       .one[JsObject, JsObject](
-        Json.obj("client" -> client, "conversationId" -> conversationId, "participants.id" -> id),
+        Json.obj("client" -> client, "conversationId" -> conversationId, "participants.id" -> participantId),
         Json.obj("$push"  -> Json.obj("participants.$.readTimes" -> readTime))
       )
       .map(_.errmsg match {

@@ -17,30 +17,29 @@
 package uk.gov.hmrc.securemessage.services
 
 import java.util.UUID
+
 import cats.data._
 import cats.implicits._
 import com.google.inject.Inject
-import javax.naming.CommunicationException
 import org.joda.time.DateTime
 import play.api.i18n.Messages
-import uk.gov.hmrc.auth.core.{ AuthorisationException, Enrolments }
 import play.api.mvc.Request
+import uk.gov.hmrc.auth.core.Enrolments
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.securemessage.connectors.{ ChannelPreferencesConnector, EmailConnector, EISConnector }
+import uk.gov.hmrc.securemessage._
+import uk.gov.hmrc.securemessage.connectors.{ ChannelPreferencesConnector, EISConnector, EmailConnector }
 import uk.gov.hmrc.securemessage.controllers.models.generic.CustomerMessageRequest.asQueryReponse
 import uk.gov.hmrc.securemessage.controllers.models.generic._
-import uk.gov.hmrc.securemessage._
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.Customer.eqCustomer
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.{ Customer => PCustomer }
 import uk.gov.hmrc.securemessage.models.core._
-import uk.gov.hmrc.securemessage.models.{ EmailRequest, core }
-import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryResponseWrapper }
+import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryResponseWrapper, core }
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
-import uk.gov.hmrc.securemessage.{ EmailLookupError, NoReceiverEmailError, SecureMessageError }
 import uk.gov.hmrc.securemessage.services.utils.ContentValidator
 
 import scala.concurrent.{ ExecutionContext, Future }
 
+//TODO: refactor service to only accept core model classes as params
 @SuppressWarnings(
   Array(
     "org.wartremover.warts.ImplicitParameter",
@@ -72,11 +71,12 @@ class SecureMessageService @Inject()(
     }
   }
 
-  def getConversation(client: String, conversationId: String, enrolment: CustomerEnrolment)(
+  def getConversation(client: String, conversationId: String, enrolments: Set[CustomerEnrolment])(
     implicit ec: ExecutionContext): Future[Either[ConversationNotFound, ApiConversation]] = {
+    val identifiers = enrolments.map(_.asIdentifier)
     for {
-      conversation <- EitherT(repo.getConversation(client, conversationId, Some(enrolment.asIdentifier)))
-    } yield ApiConversation.fromCore(conversation, enrolment.asIdentifier)
+      conversation <- EitherT(repo.getConversation(client, conversationId, identifiers))
+    } yield ApiConversation.fromCore(conversation, identifiers)
   }.value
 
   def addCaseWorkerMessageToConversation(
@@ -85,10 +85,11 @@ class SecureMessageService @Inject()(
     messagesRequest: CaseworkerMessageRequest)(
     implicit ec: ExecutionContext,
     hc: HeaderCarrier): Future[Either[SecureMessageError, Unit]] = {
+    val identifiers: Identifier = messagesRequest.sender.system.identifier.asIdentifier
     def message(sender: Participant) = Message(sender.id, new DateTime(), messagesRequest.content)
     for {
       _            <- ContentValidator.validate(messagesRequest.content)
-      conversation <- EitherT(repo.getConversation(client, conversationId, None))
+      conversation <- EitherT(repo.getConversation(client, conversationId, Set(identifiers)))
       participants <- addMissingEmails(conversation.participants)
       sender       <- EitherT(Future(conversation.participantWith(Set(messagesRequest.senderIdentifier))))
       _            <- EitherT(repo.addMessageToConversation(client, conversationId, message(sender)))
@@ -101,21 +102,35 @@ class SecureMessageService @Inject()(
     client: String,
     conversationId: String,
     messagesRequest: CustomerMessageRequest,
-    enrolments: Enrolments)(implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] = {
+    enrolments: Enrolments)(
+    implicit ec: ExecutionContext,
+    request: Request[_]): Future[Either[SecureMessageError, Unit]] = {
     def message(sender: Participant) =
       Message(sender.id, new DateTime(), messagesRequest.content)
+    val identifiers: Set[Identifier] = enrolments.asIdentifiers
     for {
-      conversation <- EitherT(repo.getConversation(client, conversationId, None))
+      conversation <- EitherT(repo.getConversation(client, conversationId, identifiers))
       sender       <- EitherT(Future(conversation.participantWith(enrolments.asIdentifiers)))
+      _            <- forwardMessage(client, conversationId, messagesRequest)
       _            <- EitherT(repo.addMessageToConversation(client, conversationId, message(sender))).leftWiden[SecureMessageError]
     } yield ()
   }.value
 
   @SuppressWarnings(Array("org.wartremover.warts.Any"))
+  private def forwardMessage(client: String, conversationId: String, messagesRequest: CustomerMessageRequest)(
+    implicit ec: ExecutionContext,
+    request: Request[_]): EitherT[Future, SecureMessageError, Unit] = {
+    val requestId = request.headers.get("X-Request-ID").getOrElse(s"govuk-tax-${UUID.randomUUID()}")
+    val queryResponse = asQueryReponse(requestId, conversationId, messagesRequest)
+    EitherT(eisConnector.forwardMessage(QueryResponseWrapper(queryResponse), client)).leftWiden[SecureMessageError]
+  }
+
+  @SuppressWarnings(Array("org.wartremover.warts.Any"))
   def updateReadTime(client: String, conversationId: String, enrolments: Enrolments, readTime: DateTime)(
     implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] = {
+    val identifier: Set[Identifier] = enrolments.asIdentifiers
     for {
-      conversation <- EitherT(repo.getConversation(client, conversationId, None)).leftWiden[SecureMessageError]
+      conversation <- EitherT(repo.getConversation(client, conversationId, identifier)).leftWiden[SecureMessageError]
       reader       <- EitherT(Future(conversation.participantWith(enrolments.asIdentifiers))).leftWiden[SecureMessageError]
       _            <- EitherT(repo.addReadTime(client, conversationId, reader.id, readTime)).leftWiden[SecureMessageError]
     } yield ()

@@ -106,18 +106,7 @@ class CreateConversationISpec extends PlaySpec with ServiceSpec with BeforeAndAf
       response.status mustBe CONFLICT
     }
 
-    "return BAD_REQUEST when the message content is not base64 encoded" in new TestContent {
-      val response =
-        wsClient
-          .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
-          .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
-          .put(new File("./it/resources/conversation-request-invalid-base64.json"))
-          .futureValue
-      response.status mustBe BAD_REQUEST
-      response.body mustBe "\"Not valid base64 content\""
-    }
-
-    "return BAD_REQUEST when the message content is not valid HTML" in new TestContent {
+    "return BAD_REQUEST when invalid message content is supplied" in new TestContent {
       val response =
         wsClient
           .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
@@ -125,18 +114,7 @@ class CreateConversationISpec extends PlaySpec with ServiceSpec with BeforeAndAf
           .put(new File("./it/resources/conversation-request-invalid-html.json"))
           .futureValue
       response.status mustBe BAD_REQUEST
-      response.body mustBe "\"Not valid html content\""
-    }
-
-    "return BAD REQUEST if message content is empty" in new TestContent {
-      val response =
-        wsClient
-          .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
-          .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
-          .put(new File("./it/resources/conversation-request-empty-message-content.json"))
-          .futureValue
-      response.status mustBe BAD_REQUEST
-      response.body mustBe "\"Not valid html content\""
+      response.body mustBe "\"Error on conversation with client: cdcm, conversationId: D-80542-20201120, error message: Html contains disallowed tags, attributes or protocols within the tags: matt. For allowed elements see class org.jsoup.safety.Whitelist.relaxed()\""
     }
   }
 

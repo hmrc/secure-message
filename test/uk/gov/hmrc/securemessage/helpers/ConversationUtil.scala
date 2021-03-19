@@ -107,7 +107,7 @@ object ConversationUtil {
           None),
         Participant(
           2,
-          ParticipantType.Customer,
+          ParticipantType.Customer, //GB1234567890
           Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")),
           None,
           None,

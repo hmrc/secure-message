@@ -39,3 +39,5 @@ final case class InvalidContent(override val message: String, override val cause
 final case class ConversationNotFound(override val message: String) extends SecureMessageError(message)
 
 final case class ParticipantNotFound(override val message: String) extends SecureMessageError(message)
+
+final case class EisForwardingError(override val message: String) extends SecureMessageError(message)

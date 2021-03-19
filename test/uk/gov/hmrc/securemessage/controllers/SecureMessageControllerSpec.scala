@@ -48,7 +48,11 @@ import uk.gov.hmrc.securemessage.services.SecureMessageService
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ ExecutionContext, Future }
 
-@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.OptionPartial"))
+@SuppressWarnings(
+  Array(
+    "org.wartremover.warts.NonUnitStatements",
+    "org.wartremover.warts.OptionPartial",
+    "org.wartremover.warts.EitherProjectionPartial"))
 class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with MockitoSugar with OptionValues {
 
   implicit val mat: Materializer = NoMaterializer
@@ -178,7 +182,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       contentAsJson(response).as[List[ConversationMetadata]] must be(conversationsMetadata)
     }
 
-    "return Ok (200) with a JSON body of an empty list when no enrolments provided as query parameters match the ones held in the auth retrievals" in new TestCase(
+    "return Ok (200) with empty list for query parameters/auth record mismatch" in new TestCase(
       Set(CustomerEnrolment("SOME_ENROLMENT_KEY", "SOME_IDENTIFIER_KEY", "SOME_IDENTIFIER_VALUE"))) {
       when(
         mockSecureMessageService
@@ -210,7 +214,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
         .getConversationContent("cdcm", "D-80542-20201120")
         .apply(FakeRequest("GET", "/"))
       status(response) mustBe OK
-      contentAsJson(response).as[ApiConversation] must be(conversation.value)
+      contentAsJson(response).as[ApiConversation] mustBe apiConversation.right.get
     }
 
     "return Ok (200) with a JSON body of a ApiConversations when auth enrolments hold multiple identifiers and enrolments" in new GetConversationTestCase(
@@ -225,7 +229,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
         .getConversationContent("cdcm", "D-80542-20201120")
         .apply(FakeRequest("GET", "/"))
       status(response) mustBe OK
-      contentAsJson(response).as[ApiConversation] must be(conversation.value)
+      contentAsJson(response).as[ApiConversation] mustBe apiConversation.right.get
     }
 
     "return Not Found (404) with a JSON body of No conversation found" in new GetConversationTestCase(
@@ -295,7 +299,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       status(response) mustBe NOT_FOUND
     }
     "return Bad Gateway (502) when the message cannot be forwarded to EIS" in new CreateCustomerMessageTestCase(
-      addMessageResult = Future.failed(new CommunicationException("Failed to forward message to EIS"))) {
+      givenResult = Future.failed(new CommunicationException("Failed to forward message to EIS"))) {
       private val response = controller.addCustomerMessage("cdcm", "D-80542-20201120")(fakeRequest)
       status(response) mustBe BAD_GATEWAY
     }
@@ -341,14 +345,14 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       .thenReturn(Future.successful(Enrolments(enrolments)))
   }
 
-    private val fullConversationJson = Resources.readJson("model/api/create-conversation-full.json")
-    val fullConversationfakeRequest: FakeRequest[JsValue] = FakeRequest(
-      method = PUT,
-      uri = routes.SecureMessageController.createConversation("cdcm", "123").url,
-      headers = FakeHeaders(Seq(CONTENT_TYPE -> JSON)),
-      body = fullConversationJson
-    )
-  }
+  private val fullConversationJson = Resources.readJson("model/api/create-conversation-full.json")
+  val fullConversationfakeRequest: FakeRequest[JsValue] = FakeRequest(
+    method = PUT,
+    uri = routes.SecureMessageController.createConversation("cdcm", "123").url,
+    headers = FakeHeaders(Seq(CONTENT_TYPE -> JSON)),
+    body = fullConversationJson
+  )
+
   @SuppressWarnings(Array("org.wartremover.warts.OptionPartial"))
   class CreateConversationTestCase(requestBody: JsValue, expectedResult: Future[Either[SecureMessageError, Unit]])
       extends TestCase {
@@ -374,10 +378,11 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     when(
       mockSecureMessageService
         .addCustomerMessageToConversation(any[String], any[String], any[CustomerMessageRequest], any[Enrolments])(
-          any[ExecutionContext])).thenReturn(givenResult)
+          any[ExecutionContext],
+          any[Request[_]])).thenReturn(givenResult)
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
+  @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments", "org.wartremover.warts.EitherProjectionPartial"))
   class GetConversationsTestCase(
     storedConversationsMetadata: JsValue,
     authEnrolments: Set[CustomerEnrolment] = Set(testEnrolment),
@@ -394,11 +399,14 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     storedConversation: Option[JsValue],
     authEnrolments: Set[CustomerEnrolment] = Set(testEnrolment))
       extends TestCase(authEnrolments) {
-    val conversation: Option[ApiConversation] = storedConversation.map(_.as[ApiConversation])
+    val apiConversation = storedConversation match {
+      case Some(conversation) => Right(conversation.as[ApiConversation])
+      case _                  => Left(ConversationNotFound("conversations not found"))
+    }
     when(
       mockSecureMessageService.getConversation(any[String], any[String], any[Set[generic.CustomerEnrolment]])(
         any[ExecutionContext]))
-      .thenReturn(Future(conversation))
+      .thenReturn(Future(apiConversation))
   }
 
   class CreateCaseWorkerMessageTestCase(requestBody: JsValue, givenResult: Future[Either[SecureMessageError, Unit]])

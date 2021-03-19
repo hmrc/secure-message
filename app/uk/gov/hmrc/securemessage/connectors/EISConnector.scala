@@ -21,6 +21,7 @@ import play.api.http.HeaderNames.AUTHORIZATION
 import play.api.http.Status._
 import uk.gov.hmrc.http.{ HeaderCarrier, HttpClient }
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import uk.gov.hmrc.securemessage.EisForwardingError
 import uk.gov.hmrc.securemessage.models.QueryResponseWrapper
 
 import scala.concurrent.{ ExecutionContext, Future }
@@ -33,7 +34,7 @@ class EISConnector @Inject()(httpClient: HttpClient, servicesConfig: ServicesCon
 
   private val eisBearerToken = servicesConfig.getString("microservice.services.eis.bearer-token")
 
-  def forwardMessage(queryResponse: QueryResponseWrapper): Future[Boolean] = {
+  def forwardMessage(queryResponse: QueryResponseWrapper, client: String): Future[Either[EisForwardingError, Unit]] = {
     implicit val hc: HeaderCarrier = HeaderCarrier()
     httpClient
       .doPut[QueryResponseWrapper](
@@ -41,10 +42,13 @@ class EISConnector @Inject()(httpClient: HttpClient, servicesConfig: ServicesCon
         queryResponse,
         Seq((AUTHORIZATION, s"Bearer $eisBearerToken"))
       )
-      .map { response =>
+      .flatMap { response =>
         response.status match {
-          case NO_CONTENT => true
-          case _          => false
+          case NO_CONTENT => Future(Right(()))
+          case _ =>
+            val query = queryResponse.queryResponse
+            Future(Left(EisForwardingError(
+              s"There was an issue with forwarding the message to EIS for id: ${query.id}, client: $client and conversationId: ${query.conversationId}")))
         }
       }
   }

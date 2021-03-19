@@ -58,7 +58,7 @@ class AddMessageToConversationISpec extends PlaySpec with ServiceSpec with Befor
           .post(Json.obj("content" -> "PGRpdj5IZWxsbzwvZGl2Pg=="))
           .futureValue
       response.status mustBe NOT_FOUND
-      response.body mustBe "\"Conversation ID not known\""
+      response.body mustBe "\"Error on conversation with client: cdcm, conversationId: D-80542-20201120, error message: Conversation not found for client: cdcm, conversationId: D-80542-20201120, identifier: Set(Identifier(EORINumber,GB1234567890,Some(HMRC-CUS-ORG)), Identifier(NINO,CE082574D,Some(HMRC-NI)))\""
     }
     "return UNAUTHORIZED when the customer is not a participant" in new CustomerTestCase("GB1234567891") {
       response.status mustBe UNAUTHORIZED
@@ -81,22 +81,12 @@ class AddMessageToConversationISpec extends PlaySpec with ServiceSpec with Befor
           .post(new File("./it/resources/caseworker-message.json"))
           .futureValue
       response.status mustBe NOT_FOUND
-      response.body mustBe "\"Conversation ID not known\""
+      response.body mustBe "\"Error on conversation with client: cdcm, conversationId: D-80542-20201120, error message: Conversation not found for client: cdcm, conversationId: D-80542-20201120, identifier: Set(Identifier(CDCM,D-80542-20201120,None))\""
     }
-    "return BAD_REQUEST when the message content is not base64 encoded" in new CaseworkerTestCase(
-      "./it/resources/caseworker-message-invalid-base64.json") {
-      response.status mustBe BAD_REQUEST
-      response.body mustBe "\"Not valid base64 content\""
-    }
-    "return BAD_REQUEST when the message content is not valid HTML" in new CaseworkerTestCase(
+    "return BAD_REQUEST when invalid message content is supplied" in new CaseworkerTestCase(
       "./it/resources/caseworker-message-invalid-html.json") {
       response.status mustBe BAD_REQUEST
-      response.body mustBe "\"Not valid html content\""
-    }
-    "return BAD REQUEST if message content is empty" in new CaseworkerTestCase(
-      "./it/resources/caseworker-message-empty-content.json") {
-      response.status mustBe BAD_REQUEST
-      response.body mustBe "\"Not valid html content\""
+      response.body mustBe "\"Error on conversation with client: CDCM, conversationId: D-80542-20201120, error message: Html contains disallowed tags, attributes or protocols within the tags: matt. For allowed elements see class org.jsoup.safety.Whitelist.relaxed()\""
     }
   }
 
