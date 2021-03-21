@@ -14,34 +14,18 @@
  * limitations under the License.
  */
 
+import org.scalatest.DoNotDiscover
+import play.api.http.Status.CREATED
+import play.api.http.{ContentTypes, HeaderNames}
+import play.api.libs.json.Json
+import play.api.libs.ws.WSResponse
+import play.api.test.Helpers._
+
 import java.io.File
 
-import org.scalatest.BeforeAndAfterEach
-import org.scalatestplus.play.PlaySpec
-import play.api.http.Status.CREATED
-import play.api.http.{ ContentTypes, HeaderNames }
-import play.api.libs.json.Json
-import play.api.libs.ws.{ WSClient, WSResponse }
-import play.api.test.Helpers._
-import uk.gov.hmrc.integration.ServiceSpec
-import uk.gov.hmrc.securemessage.repository.ConversationRepository
-import utils.AuthHelper
-
-import scala.concurrent.ExecutionContext
-
+@DoNotDiscover
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
-class AddMessageToConversationISpec extends PlaySpec with ServiceSpec with BeforeAndAfterEach with AuthHelper {
-
-  override def externalServices: Seq[String] = Seq("auth-login-api")
-  override val ggAuthPort: Int = externalServicePorts("auth-login-api")
-  override val wsClient: WSClient = app.injector.instanceOf[WSClient]
-
-  private val repository = app.injector.instanceOf[ConversationRepository]
-  private val ec = app.injector.instanceOf[ExecutionContext]
-
-  override protected def beforeEach(): Unit = {
-    val _ = await(repository.removeAll()(ec))
-  }
+class AddMessageToConversationISpec extends ISpec {
 
   "A POST request to /secure-messaging/conversation/{client}/{conversationId}/customer-message" must {
     "return CREATED when the message is successfully added to the conversation" in new CustomerTestCase(VALID_EORI) {
