@@ -35,7 +35,7 @@ trait AuthHelper extends ScalaFutures {
   private val NO_EORI_USER_PAYLOAD =
     """
       | {
-      |  "credId": "1235",
+      |  "credId": "secure-message-001",
       |  "affinityGroup": "Organisation",
       |  "confidenceLevel": 100,
       |  "credentialStrength": "none",
@@ -46,7 +46,7 @@ trait AuthHelper extends ScalaFutures {
   private def getEoriUserPayload(eori: String) =
     s"""
        | {
-       |  "credId": "1235",
+       |  "credId": "secure-message-002",
        |  "affinityGroup": "Organisation",
        |  "confidenceLevel": 200,
        |  "credentialStrength": "none",
