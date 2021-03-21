@@ -16,7 +16,7 @@
 
 import org.scalatest.DoNotDiscover
 import play.api.http.Status.CREATED
-import play.api.http.{ContentTypes, HeaderNames}
+import play.api.http.{ ContentTypes, HeaderNames }
 import play.api.libs.json.Json
 import play.api.libs.ws.WSResponse
 import play.api.test.Helpers._
@@ -42,11 +42,12 @@ class AddMessageToConversationISpec extends ISpec {
           .post(Json.obj("content" -> "PGRpdj5IZWxsbzwvZGl2Pg=="))
           .futureValue
       response.status mustBe NOT_FOUND
-      response.body mustBe "\"Error on conversation with client: cdcm, conversationId: D-80542-20201120, error message: Conversation not found for client: cdcm, conversationId: D-80542-20201120, identifier: Set(Identifier(EORINumber,GB1234567890,Some(HMRC-CUS-ORG)), Identifier(NINO,CE082574D,Some(HMRC-NI)))\""
+      response.body mustBe "\"Error on conversation with client: cdcm, conversationId: D-80542-20201120, error message: Conversation not found for identifier: Set(Identifier(EORINumber,GB1234567890,Some(HMRC-CUS-ORG)))\""
     }
-    "return UNAUTHORIZED when the customer is not a participant" in new CustomerTestCase("GB1234567891") {
-      response.status mustBe UNAUTHORIZED
-      response.body mustBe "\"InsufficientEnrolments\""
+
+    "return NOT_FOUND when the customer is not a participant" in new CustomerTestCase("GB1234567891") {
+      response.status mustBe NOT_FOUND
+      response.body mustBe "\"Error on conversation with client: CDCM, conversationId: D-80542-20201120, error message: Conversation not found for identifier: Set(Identifier(EORINumber,GB1234567891,Some(HMRC-CUS-ORG)))\""
     }
   }
 
@@ -65,7 +66,7 @@ class AddMessageToConversationISpec extends ISpec {
           .post(new File("./it/resources/caseworker-message.json"))
           .futureValue
       response.status mustBe NOT_FOUND
-      response.body mustBe "\"Error on conversation with client: cdcm, conversationId: D-80542-20201120, error message: Conversation not found for client: cdcm, conversationId: D-80542-20201120, identifier: Set(Identifier(CDCM,D-80542-20201120,None))\""
+      response.body mustBe "\"Error on conversation with client: cdcm, conversationId: D-80542-20201120, error message: Conversation not found for identifier: Set(Identifier(CDCM,D-80542-20201120,None))\""
     }
     "return BAD_REQUEST when invalid message content is supplied" in new CaseworkerTestCase(
       "./it/resources/caseworker-message-invalid-html.json") {
