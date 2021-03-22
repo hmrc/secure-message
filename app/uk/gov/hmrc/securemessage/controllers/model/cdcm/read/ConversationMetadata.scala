@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.securemessage.controllers.models.generic
+package uk.gov.hmrc.securemessage.controllers.model.cdcm.read
 
 import cats.implicits._
 import cats.kernel.Eq
@@ -23,7 +23,7 @@ import play.api.i18n.Messages
 import play.api.libs.json.JodaReads.jodaDateReads
 import play.api.libs.json.JodaWrites.jodaDateWrites
 import play.api.libs.json.{ Format, Json, OFormat }
-import uk.gov.hmrc.securemessage.models.core.{ Conversation, Identifier, Message, Participant, ParticipantType }
+import uk.gov.hmrc.securemessage.models.core._
 
 final case class ConversationMetadata(
   client: String,
@@ -101,9 +101,7 @@ object ConversationMetadata {
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
-  private[generic] def anyUnreadMessages[generic](
-    coreConversation: Conversation,
-    identifiers: Set[Identifier]): Boolean =
+  private[cdcm] def anyUnreadMessages[generic](coreConversation: Conversation, identifiers: Set[Identifier]): Boolean =
     coreConversation.participants
       .find(participant => identifiers.contains(participant.identifier))
       .fold(false)(participant => findUnreadMessagesByParticipant(participant, coreConversation))

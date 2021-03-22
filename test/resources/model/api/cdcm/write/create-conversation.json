@@ -4,10 +4,6 @@
             "name": "CDCM",
             "value": "D-80542-20201120"
         },
-        "parameters": {
-            "caseId": "D-80542",
-            "queryId": "D-80542-20201120"
-        },
         "display": "CDS Exports Team"
     }},
     "recipients": [{"customer": {
@@ -15,9 +11,7 @@
             "key": "HMRC-CUS-ORG",
             "name": "EORINumber",
             "value": "GB1234567890"
-        },
-        "name": "Joe Bloggs",
-        "email": "joebloggs@test.com"
+        }
     }}],
     "alert": {
         "templateId": "emailTemplateId",
@@ -27,11 +21,8 @@
         }
     },
     "tags": {
-        "sourceId": "CDCM",
-        "caseId": "D-80542",
-        "queryId": "D-80542-20201120",
         "mrn": "DMS7324874993",
-        "notificationType": "CDS Exports"
+        "notificationType": "CDS-EXPORTS"
     },
     "subject": "MRN: 19GB4S24GC3PPFGVR7",
     "message": "QmxhaCBibGFoIGJsYWg=",

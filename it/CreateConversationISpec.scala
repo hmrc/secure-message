@@ -34,7 +34,7 @@ class CreateConversationISpec extends ISpec {
         wsClient
           .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
           .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
-          .put(new File("./it/resources/create-conversation-full.json"))
+          .put(new File("./it/resources/cdcm/create-conversation-full.json"))
           .futureValue
       response.status mustBe CREATED
     }
@@ -44,7 +44,7 @@ class CreateConversationISpec extends ISpec {
         wsClient
           .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
           .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
-          .put(new File("./it/resources/create-conversation-minimal.json"))
+          .put(new File("./it/resources/cdcm/create-conversation-minimal.json"))
           .futureValue
       response.status mustBe CREATED
     }
@@ -54,19 +54,9 @@ class CreateConversationISpec extends ISpec {
         wsClient
           .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
           .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
-          .put(new File("./it/resources/create-conversation-no-email.json"))
+          .put(new File("./it/resources/cdcm/create-conversation-no-email.json"))
           .futureValue
       response.status mustBe CREATED
-    }
-
-    "return BAD REQUEST when sent a conversation request with an invalid email address" in new TestContent {
-      val response =
-        wsClient
-          .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
-          .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
-          .put(new File("./it/resources/create-conversation-invalid-email.json"))
-          .futureValue
-      response.status mustBe BAD_REQUEST
     }
 
     "return BAD REQUEST when sent a minimal and invalid JSON payload" in new TestContent {
@@ -83,12 +73,12 @@ class CreateConversationISpec extends ISpec {
       val _ = wsClient
         .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
         .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
-        .put(new File("./it/resources/create-conversation-minimal.json"))
+        .put(new File("./it/resources/cdcm/create-conversation-minimal.json"))
         .futureValue
       val response = wsClient
         .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
         .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
-        .put(new File("./it/resources/create-conversation-minimal.json"))
+        .put(new File("./it/resources/cdcm/create-conversation-minimal.json"))
         .futureValue
       response.status mustBe CONFLICT
     }
@@ -98,7 +88,7 @@ class CreateConversationISpec extends ISpec {
         wsClient
           .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
           .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
-          .put(new File("./it/resources/conversation-request-invalid-html.json"))
+          .put(new File("./it/resources/cdcm/conversation-request-invalid-html.json"))
           .futureValue
       response.status mustBe BAD_REQUEST
       response.body mustBe "\"Error on conversation with client: cdcm, conversationId: D-80542-20201120, error message: Html contains disallowed tags, attributes or protocols within the tags: matt. For allowed elements see class org.jsoup.safety.Whitelist.relaxed()\""

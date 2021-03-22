@@ -18,8 +18,8 @@ package uk.gov.hmrc.securemessage.controllers.utils
 
 import org.scalatestplus.play.PlaySpec
 import uk.gov.hmrc.auth.core.{ EnrolmentIdentifier, Enrolments }
-import uk.gov.hmrc.securemessage.controllers.models.generic
-import uk.gov.hmrc.securemessage.controllers.models.generic.CustomerEnrolment
+import uk.gov.hmrc.securemessage.controllers.model.common
+import uk.gov.hmrc.securemessage.controllers.model.common.CustomerEnrolment
 import uk.gov.hmrc.securemessage.controllers.utils.EnrolmentHelper.{ filterEnrolments, findEnrolment }
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
@@ -27,7 +27,7 @@ class EnrolmentHelperSpec extends PlaySpec {
 
   "findEnrolment" must {
     "returns a specific enrolment found within a list of enrolments designated by it's key and name" in {
-      val expectedEnrolment = generic.CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789")
+      val expectedEnrolment = common.CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789")
       val enrolments = Enrolments(
         Set(
           uk.gov.hmrc.auth.core.Enrolment(
@@ -39,7 +39,7 @@ class EnrolmentHelperSpec extends PlaySpec {
     }
 
     "returns a specific enrolment found within a list of enrolments designated by it's key and name in a case-insensitive manner" in {
-      val expectedEnrolment = generic.CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789")
+      val expectedEnrolment = common.CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789")
       val enrolments = Enrolments(
         Set(
           uk.gov.hmrc.auth.core.Enrolment(

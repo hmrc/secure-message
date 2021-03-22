@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.securemessage.controllers.models.generic
+package uk.gov.hmrc.securemessage.controllers.model.common.write
 
 import play.api.libs.json.{ Json, Reads }
 import uk.gov.hmrc.securemessage.models.QueryResponse
 
-final case class CustomerMessageRequest(content: String) {
-  def asQueryReponse(requestId: String, conversationId: String): QueryResponse =
+final case class CustomerMessage(content: String) {
+  def asQueryResponse(requestId: String, conversationId: String): QueryResponse =
     QueryResponse(requestId, conversationId, content)
 }
 
-object CustomerMessageRequest {
-  implicit val customerMessageRequestReads: Reads[CustomerMessageRequest] = Json.reads[CustomerMessageRequest]
+object CustomerMessage {
+  implicit val customerMessageRequestReads: Reads[CustomerMessage] = Json.reads[CustomerMessage]
 }

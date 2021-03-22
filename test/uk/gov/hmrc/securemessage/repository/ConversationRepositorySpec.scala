@@ -21,10 +21,11 @@ import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.play.PlaySpec
 import play.api.test.Helpers._
 import uk.gov.hmrc.mongo.MongoSpecSupport
-import uk.gov.hmrc.securemessage.controllers.models.generic.Tag
+import uk.gov.hmrc.securemessage.controllers.model.common.read.FilterTag
 import uk.gov.hmrc.securemessage.helpers.ConversationUtil
 import uk.gov.hmrc.securemessage.models.core.{ Conversation, Identifier, Message }
 import uk.gov.hmrc.securemessage.{ ConversationNotFound, StoreError }
+
 import scala.collection.immutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -116,15 +117,18 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
       conversations = allConversations
     ) {
       val result: immutable.Seq[Conversation] =
-        await(repository.getConversationsFiltered(Set.empty, Some(List(Tag("notificationType", "CDS Exports")))))
+        await(repository.getConversationsFiltered(Set.empty, Some(List(FilterTag("notificationType", "CDS Exports")))))
       result mustBe Nil
     }
 
     "none returned when more than one tag filter without an enrolment counterpart is provided" in new TestContext(
       conversations = allConversations
     ) {
-      val result: immutable.Seq[Conversation] = await(repository
-        .getConversationsFiltered(Set.empty, Some(List(Tag("sourceId", "self-assessment"), Tag("caseId", "CT-11345")))))
+      val result: immutable.Seq[Conversation] = await(
+        repository
+          .getConversationsFiltered(
+            Set.empty,
+            Some(List(FilterTag("sourceId", "self-assessment"), FilterTag("caseId", "CT-11345")))))
       result mustBe Nil
     }
 
@@ -134,7 +138,7 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
       val result: immutable.Seq[Conversation] = await(
         repository.getConversationsFiltered(
           Set(Identifier("UTR", "345678901", Some("IR-CT"))),
-          Some(List(Tag("sourceId", "self-assessment")))))
+          Some(List(FilterTag("sourceId", "self-assessment")))))
       result mustBe Nil
     }
 
@@ -144,7 +148,7 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
       val result: immutable.Seq[Conversation] = await(
         repository.getConversationsFiltered(
           Set(Identifier("UTR", "123456789", Some("IR-SA"))),
-          Some(List(Tag("sourceId", "self-assessment")))))
+          Some(List(FilterTag("sourceId", "self-assessment")))))
       result.map(_.id) mustBe Seq("345")
     }
 
@@ -158,7 +162,7 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
             Identifier("UTR", "345678901", Some("IR-CT")),
             Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")),
           ),
-          Some(List(Tag("caseId", "CT-11345")))
+          Some(List(FilterTag("caseId", "CT-11345")))
         ))
       result.map(_.id) mustBe Seq("456")
     }
@@ -169,7 +173,7 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
       val result: immutable.Seq[Conversation] = await(
         repository.getConversationsFiltered(
           Set(Identifier("UTR", "123456789", Some("IR-SA"))),
-          Some(List(Tag("sourceId", "self-assessment"), Tag("caseId", "CT-11345")))))
+          Some(List(FilterTag("sourceId", "self-assessment"), FilterTag("caseId", "CT-11345")))))
       result.map(_.id) mustBe Seq("345")
     }
 
@@ -182,7 +186,7 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
             Identifier("UTR", "123456789", Some("IR-SA")),
             Identifier("UTR", "345678901", Some("IR-CT"))
           ),
-          Some(List(Tag("sourceId", "self-assessment"), Tag("caseId", "CT-11345")))
+          Some(List(FilterTag("sourceId", "self-assessment"), FilterTag("caseId", "CT-11345")))
         ))
       result.map(_.id) must contain theSameElementsAs List("456", "345")
     }

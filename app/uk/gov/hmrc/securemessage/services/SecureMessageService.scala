@@ -17,7 +17,6 @@
 package uk.gov.hmrc.securemessage.services
 
 import java.util.UUID
-
 import cats.data._
 import cats.implicits._
 import com.google.inject.Inject
@@ -28,7 +27,11 @@ import uk.gov.hmrc.auth.core.Enrolments
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.securemessage._
 import uk.gov.hmrc.securemessage.connectors.{ ChannelPreferencesConnector, EISConnector, EmailConnector }
-import uk.gov.hmrc.securemessage.controllers.models.generic._
+import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.{ ApiConversation, ConversationMetadata }
+import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage
+import uk.gov.hmrc.securemessage.controllers.model.common.CustomerEnrolment
+import uk.gov.hmrc.securemessage.controllers.model.common.read.FilterTag
+import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.Customer.eqCustomer
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.{ Customer => PCustomer }
 import uk.gov.hmrc.securemessage.models.core._
@@ -61,7 +64,7 @@ class SecureMessageService @Inject()(
     } yield ()
   }.value
 
-  def getConversationsFiltered(enrolments: Set[CustomerEnrolment], tags: Option[List[Tag]])(
+  def getConversationsFiltered(enrolments: Set[CustomerEnrolment], tags: Option[List[FilterTag]])(
     implicit ec: ExecutionContext,
     messages: Messages): Future[List[ConversationMetadata]] = {
     val enrolmentsToIdentifiers: Set[Identifier] = enrolments.map(_.asIdentifier)
@@ -79,10 +82,7 @@ class SecureMessageService @Inject()(
     } yield ApiConversation.fromCore(conversation, identifiers)
   }.value
 
-  def addCaseWorkerMessageToConversation(
-    client: String,
-    conversationId: String,
-    messagesRequest: CaseworkerMessageRequest)(
+  def addCaseWorkerMessageToConversation(client: String, conversationId: String, messagesRequest: CaseworkerMessage)(
     implicit ec: ExecutionContext,
     hc: HeaderCarrier): Future[Either[SecureMessageError, Unit]] = {
     val identifiers: Identifier = messagesRequest.sender.system.identifier.asIdentifier
@@ -101,7 +101,7 @@ class SecureMessageService @Inject()(
   def addCustomerMessageToConversation(
     client: String,
     conversationId: String,
-    messagesRequest: CustomerMessageRequest,
+    messagesRequest: CustomerMessage,
     enrolments: Enrolments)(
     implicit ec: ExecutionContext,
     request: Request[_]): Future[Either[SecureMessageError, Unit]] = {
@@ -117,11 +117,11 @@ class SecureMessageService @Inject()(
   }.value
 
   @SuppressWarnings(Array("org.wartremover.warts.Any"))
-  private def forwardMessage(conversationId: String, messagesRequest: CustomerMessageRequest)(
+  private def forwardMessage(conversationId: String, messagesRequest: CustomerMessage)(
     implicit ec: ExecutionContext,
     request: Request[_]): EitherT[Future, SecureMessageError, Unit] = {
     val requestId = request.headers.get("X-Request-ID").getOrElse(s"govuk-tax-${UUID.randomUUID()}")
-    val queryResponse = QueryResponseWrapper(messagesRequest.asQueryReponse(requestId, conversationId))
+    val queryResponse = QueryResponseWrapper(messagesRequest.asQueryResponse(requestId, conversationId))
     EitherT(eisConnector.forwardMessage(queryResponse)).leftWiden[SecureMessageError]
   }
 

@@ -14,21 +14,20 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.securemessage.controllers.models.generic
+package uk.gov.hmrc.securemessage.controllers.model.common.read
 
-import org.joda.time.DateTime
-import play.api.libs.json.JodaReads.jodaDateReads
-import play.api.libs.json.JodaWrites.jodaDateWrites
-import play.api.libs.json.{ Format, Json, OFormat }
+import play.api.libs.json.{ Json, Reads }
 
-final case class ReadTime(timestamp: DateTime)
-case object ReadTime {
+//TODO: this is a common read model
+final case class FilterTag(key: String, value: String)
 
-  private val dateFormatString = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+object FilterTag {
+  implicit val tagReads: Reads[FilterTag] = {
+    Json.reads[FilterTag]
+  }
 
-  implicit val dateFormat: Format[DateTime] =
-    Format(jodaDateReads(dateFormatString), jodaDateWrites(dateFormatString))
-
-  implicit val messageFormat: OFormat[ReadTime] =
-    Json.format[ReadTime]
+  def parse(tagString: String): FilterTag = {
+    val tag = tagString.split('~')
+    FilterTag(tag.head, tag(1))
+  }
 }

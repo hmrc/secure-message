@@ -6,7 +6,7 @@
 #   content:
 #    application/json:
 #      schema:
-#        $ref: '#/components/schemas/uk.gov.hmrc.securemessage.controllers.models.generic.ConversationRequest'
+#        $ref: '#/components/schemas/uk.gov.hmrc.securemessage.controllers.models.cdcm.ConversationRequest'
 # responses:
 #   201:
 #     description: conversation created successfully
@@ -21,7 +21,7 @@
 #   424:
 #     description: a dependency failed - e.g. customer email validation failed
 ###
-PUT         /conversation/:client/:conversationId                                     uk.gov.hmrc.securemessage.controllers.SecureMessageController.createConversation(client: String, conversationId: String)
+PUT         /conversation/:client/:conversationId   SecureMessageController.createConversation(client: String, conversationId: String)
 
 ###
 # summary: Adds a message from a caseworker to a conversation
@@ -31,7 +31,7 @@ PUT         /conversation/:client/:conversationId                               
 #   content:
 #    application/json:
 #      schema:
-#        $ref: '#/components/schemas/uk.gov.hmrc.securemessage.controllers.models.generic.CaseworkerMessageRequest'
+#        $ref: '#/components/schemas/uk.gov.hmrc.securemessage.controllers.models.cdcm.CaseworkerMessageRequest'
 # responses:
 #   201:
 #     description: message created successfully
@@ -44,7 +44,7 @@ PUT         /conversation/:client/:conversationId                               
 #   424:
 #     description: a dependency failed - e.g. client not recognised
 ###
-POST        /conversation/:client/:conversationId/caseworker-message                  uk.gov.hmrc.securemessage.controllers.SecureMessageController.addCaseworkerMessage(client: String, conversationId: String)
+POST        /conversation/:client/:conversationId/caseworker-message    SecureMessageController.addCaseworkerMessage(client: String, conversationId: String)
 
 ###
 # summary: Adds a message from a customer to a conversation
@@ -56,7 +56,7 @@ POST        /conversation/:client/:conversationId/caseworker-message            
 #   content:
 #    application/json:
 #      schema:
-#        $ref: '#/components/schemas/uk.gov.hmrc.securemessage.controllers.models.generic.CustomerMessageRequest'
+#        $ref: '#/components/schemas/uk.gov.hmrc.securemessage.controllers.models.cdcm.CustomerMessageRequest'
 # responses:
 #   201:
 #     description: message created successfully
@@ -69,7 +69,7 @@ POST        /conversation/:client/:conversationId/caseworker-message            
 #   502:
 #     description: failed to forward message
 ###
-POST        /conversation/:client/:conversationId/customer-message                    uk.gov.hmrc.securemessage.controllers.SecureMessageController.addCustomerMessage(client: String, conversationId: String)
+POST        /conversation/:client/:conversationId/customer-message  SecureMessageController.addCustomerMessage(client: String, conversationId: String)
 
 ###
 # summary: Gets a list of conversations via enrolmentKeys, enrolments and tags filters
@@ -81,7 +81,7 @@ POST        /conversation/:client/:conversationId/customer-message              
 #   401:
 #     description: unauthorised customer when they don't have an enrolment
 ###
-GET         /conversations                                                            uk.gov.hmrc.securemessage.controllers.SecureMessageController.getMetadataForConversationsFiltered(enrolmentKey: Option[List[String]], enrolment: Option[List[CustomerEnrolment]], tag: Option[List[Tag]])
+GET         /conversations  SecureMessageController.getMetadataForConversationsFiltered(enrolmentKey: Option[List[String]], enrolment: Option[List[CustomerEnrolment]], tag: Option[List[FilterTag]])
 
 ###
 # summary: Gets a conversation via client ID and conversation ID
@@ -95,7 +95,7 @@ GET         /conversations                                                      
 #   404:
 #     description: conversation not found
 ###
-GET         /conversation/:client/:conversationId                                       uk.gov.hmrc.securemessage.controllers.SecureMessageController.getConversationContent(client: String, conversationId: String)
+GET         /conversation/:client/:conversationId   SecureMessageController.getConversationContent(client: String, conversationId: String)
 
 ###
 # summary: Adds a date and time that a participant read the conversation
@@ -107,11 +107,11 @@ GET         /conversation/:client/:conversationId                               
 #   content:
 #    application/json:
 #      schema:
-#        $ref: '#/components/schemas/uk.gov.hmrc.securemessage.controllers.models.generic.ReadTime'
+#        $ref: '#/components/schemas/uk.gov.hmrc.securemessage.controllers.models.common.write.ReadTime'
 # responses:
 #   201:
 #     description: read date and time successfully added
 #   400:
 #     description: issue with updating read time
 ###
-POST        /conversation/:client/:conversationId/read-time                           uk.gov.hmrc.securemessage.controllers.SecureMessageController.addCustomerReadTime(client: String, conversationId: String)
+POST        /conversation/:client/:conversationId/read-time SecureMessageController.addCustomerReadTime(client: String, conversationId: String)

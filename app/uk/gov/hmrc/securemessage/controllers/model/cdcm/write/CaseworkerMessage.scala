@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.securemessage.controllers.models.generic
+package uk.gov.hmrc.securemessage.controllers.model.cdcm.write
 
 import play.api.libs.json.{ Json, Reads }
 import uk.gov.hmrc.securemessage.models.core.Identifier
 
-final case class CaseworkerMessageRequest(sender: CaseworkerMessageRequest.Sender, content: String) {
+final case class CaseworkerMessage(sender: CaseworkerMessage.Sender, content: String) {
   def senderIdentifier: Identifier = sender.system.identifier.asIdentifier
 }
 
-object CaseworkerMessageRequest {
+object CaseworkerMessage {
 
-  implicit val caseworkerMessageRequestReads: Reads[CaseworkerMessageRequest] = Json.reads[CaseworkerMessageRequest]
+  implicit val caseworkerMessageRequestReads: Reads[CaseworkerMessage] = Json.reads[CaseworkerMessage]
 
   final case class System(identifier: SystemIdentifier)
   object System {

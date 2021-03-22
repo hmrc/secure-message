@@ -32,7 +32,11 @@ import uk.gov.hmrc.auth.core.{ Enrolment, EnrolmentIdentifier, Enrolments }
 import uk.gov.hmrc.emailaddress.EmailAddress
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.securemessage.connectors.{ ChannelPreferencesConnector, EISConnector, EmailConnector }
-import uk.gov.hmrc.securemessage.controllers.models.generic._
+import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.ConversationMetadata
+import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage
+import uk.gov.hmrc.securemessage.controllers.model.common.CustomerEnrolment
+import uk.gov.hmrc.securemessage.controllers.model.common.read.FilterTag
+import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
 import uk.gov.hmrc.securemessage.helpers.{ ConversationUtil, Resources }
 import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryResponseWrapper }
@@ -54,7 +58,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
   "createConversation" must {
 
     "return true when an email address is provided in the conversation" in new CreateMessageTestContext {
-      private val result = service.createConversation(cnvWithEmail)
+      private val result = service.createConversation(cnvWithNoEmail)
       result.futureValue mustBe Right(())
     }
 
@@ -71,7 +75,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
 
     "return an error message when a conversation already exists for this client and conversation ID" in new CreateMessageTestContext(
       dbInsertResult = Left(DuplicateConversationError("errMsg", None))) {
-      private val result = service.createConversation(cnvWithEmail).futureValue
+      private val result = service.createConversation(cnvWithNoEmail).futureValue
       result mustBe Left(DuplicateConversationError("errMsg", None))
     }
 
@@ -90,7 +94,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
 
     "return content validation error if message content is invalid" in new CreateMessageTestContext {
       private val invalidBaseHtmlConversation: Conversation =
-        Resources.readJson("model/api/conversation-request-invalid-html.json").as[Conversation]
+        Resources.readJson("model/api/cdcm/write/conversation-request-invalid-html.json").as[Conversation]
       private val result = service.createConversation(invalidBaseHtmlConversation)
       result.futureValue mustBe Left(InvalidContent(
         "Html contains disallowed tags, attributes or protocols within the tags: matt. For allowed elements see class org.jsoup.safety.Whitelist.relaxed()"))
@@ -123,13 +127,13 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
       when(
         mockRepository.getConversationsFiltered(
           ArgumentMatchers.eq(Set(Identifier("EORIName", "GB7777777777", Some("HMRC-CUS_ORG")))),
-          ArgumentMatchers.eq(Some(List(Tag("notificationType", "CDS Exports"))))
+          ArgumentMatchers.eq(Some(List(FilterTag("notificationType", "CDS Exports"))))
         )(any[ExecutionContext]))
         .thenReturn(Future.successful(listOfCoreConversation))
       val result = await(
         service.getConversationsFiltered(
           Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777")),
-          Some(List(Tag("notificationType", "CDS Exports")))))
+          Some(List(FilterTag("notificationType", "CDS Exports")))))
       result mustBe
         List(
           ConversationMetadata(
@@ -168,14 +172,14 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
       when(
         mockRepository.getConversationsFiltered(
           ArgumentMatchers.eq(Set(Identifier("EORIName", "GB7777777777", Some("HMRC-CUS_ORG")))),
-          ArgumentMatchers.eq(Some(List(Tag("notificationType", "CDS Exports"))))
+          ArgumentMatchers.eq(Some(List(FilterTag("notificationType", "CDS Exports"))))
         )(any[ExecutionContext]))
         .thenReturn(Future.successful(listOfCoreConversation))
 
       val result = await(
         service.getConversationsFiltered(
           Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777")),
-          Some(List(Tag("notificationType", "CDS Exports")))))
+          Some(List(FilterTag("notificationType", "CDS Exports")))))
       result mustBe
         List(
           ConversationMetadata(
@@ -253,7 +257,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
     }
 
     "return NoParticipantFound if the customer does not have a participating enrolment" in new AddCustomerMessageTestContext(
-      getConversationResult = Right(cnvWithEmail)) {
+      getConversationResult = Right(cnvWithNoEmail)) {
       when(mockEnrolments.enrolments)
         .thenReturn(Set(Enrolment("HMRC-CUS-ORG", Seq(EnrolmentIdentifier("EORINumber", "GB123456789000001")), "")))
       await(service.addCustomerMessageToConversation("cdcm", "D-80542-20201120", customerMessage, mockEnrolments)) mustBe Left(
@@ -270,7 +274,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
     }
 
     "return EisForwardingError and don't store the message if the message cannot be forwarded to EIS" in new AddCustomerMessageTestContext(
-      getConversationResult = Right(cnvWithEmail),
+      getConversationResult = Right(cnvWithNoEmail),
       addMessageResult = Left(EisForwardingError("There was an issue with forwarding the message to EIS"))) {
       when(mockEnrolments.enrolments)
         .thenReturn(Set(Enrolment("HMRC-CUS-ORG", Seq(EnrolmentIdentifier("EORINumber", "GB123456789000000")), "")))
@@ -374,7 +378,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
 
   @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   class AddCaseworkerMessageTestContent(
-    getConversationResult: Either[ConversationNotFound, Conversation] = Right(cnvWithEmail),
+    getConversationResult: Either[ConversationNotFound, Conversation] = Right(cnvWithNoEmail),
     addMessageResult: Either[SecureMessageError, Unit] = Right(()),
     sendEmailResult: Either[EmailSendingError, Unit] = Right(())) {
     when(mockRepository.getConversation(any[String], any[String], any[Set[Identifier]])(any[ExecutionContext]))
@@ -386,7 +390,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
 
   @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   class UpdateReadTimeTestContext(
-    getConversationResult: Either[ConversationNotFound, Conversation] = Right(cnvWithEmail),
+    getConversationResult: Either[ConversationNotFound, Conversation] = Right(cnvWithNoEmail),
     addReadTime: Either[StoreError, Unit]) {
     when(mockRepository.getConversation(any[String], any[String], any[Set[Identifier]])(any[ExecutionContext]))
       .thenReturn(Future(getConversationResult))
@@ -422,23 +426,20 @@ trait TestHelpers extends MockitoSugar {
     None,
     None)
   val message: Message = Message(2, DateTime.now, "PHA+Q2FuIEkgaGF2ZSBteSB0YXggbW9uZXkgcGxlYXNlPzwvcD4==")
-  val customerMessage: CustomerMessageRequest = CustomerMessageRequest("PGRpdj5IZWxsbzwvZGl2Pg==")
+  val customerMessage: CustomerMessage = CustomerMessage("PGRpdj5IZWxsbzwvZGl2Pg==")
   val mockEnrolments: Enrolments = mock[Enrolments]
   val customerEnrolment: Enrolments = Enrolments(
     Set(Enrolment("HMRC-CUS-ORG", Vector(EnrolmentIdentifier("EORINumber", "GB1234567890")), "Activated", None)))
 
-  def caseWorkerMessage(content: String): CaseworkerMessageRequest =
-    CaseworkerMessageRequest(
-      CaseworkerMessageRequest.Sender(
-        CaseworkerMessageRequest.System(CaseworkerMessageRequest.SystemIdentifier("cdcm", "123"))),
+  def caseWorkerMessage(content: String): CaseworkerMessage =
+    CaseworkerMessage(
+      CaseworkerMessage.Sender(CaseworkerMessage.System(CaseworkerMessage.SystemIdentifier("cdcm", "123"))),
       content
     )
   val listOfCoreConversation = List(
     ConversationUtil.getFullConversation("D-80542-20201120", "HMRC-CUS-ORG", "EORINumber", "GB1234567890"))
-  val cnvWithEmail: Conversation =
-    Resources.readJson("model/api/conversation-request-with-email.json").as[Conversation]
   val cnvWithNoEmail: Conversation =
-    Resources.readJson("model/api/conversation-request-without-email.json").as[Conversation]
+    Resources.readJson("model/api/cdcm/write/conversation-request-without-email.json").as[Conversation]
   val cnvWithNoCustomer: Conversation = cnvWithNoEmail.copy(participants = List(cnvWithNoEmail.participants.head))
   val cnvWithMultipleCustomers: Conversation =
     ConversationUtil.getConversationRequestWithMultipleCustomers.asConversation("cdcm", "123")

@@ -42,7 +42,9 @@ lazy val microservice = Project(appName, file("."))
     libraryDependencies ++= AppDependencies.compile ++ AppDependencies.test,
     routesImport ++= Seq(
       "uk.gov.hmrc.securemessage.controllers.binders._",
-      "uk.gov.hmrc.securemessage.controllers.models.generic._"
+      "uk.gov.hmrc.securemessage.controllers.SecureMessageController",
+      "uk.gov.hmrc.securemessage.controllers.model.common.read._",
+      "uk.gov.hmrc.securemessage.controllers.model.common._"
     ),
     // ***************
     // Use the silencer plugin to suppress warnings

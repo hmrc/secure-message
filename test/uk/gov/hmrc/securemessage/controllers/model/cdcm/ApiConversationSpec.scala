@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.securemessage.controllers.models.generic
+package uk.gov.hmrc.securemessage.controllers.model.cdcm
 
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json.{ JsValue, Json }
+import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.ApiConversation
 import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core._
 

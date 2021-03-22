@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.securemessage.controllers.models.generic
+package uk.gov.hmrc.securemessage.controllers.model.cdcm.read
 
 import org.joda.time.DateTime
 import play.api.libs.json.JodaReads.jodaDateReads

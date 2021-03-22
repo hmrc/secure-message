@@ -1,0 +1,32 @@
+{
+  "sender": {
+    "system": {
+      "identifier": {
+        "name": "CDCM",
+        "value": "D-80542-20201120"
+      },
+      "display": "CDS Exports Team"
+    }
+  },
+  "recipients": [
+    {
+      "customer": {
+        "enrolment": {
+          "key": "HMRC-CUS-ORG",
+          "name": "EORINumber",
+          "value": "GB1234567890"
+        },
+        "email": "jobloggs@test.com"
+      }
+    }
+  ],
+  "alert": {
+    "templateId": "emailTemplateId"
+  },
+  "tags": {
+    "mrn": "DMS7324874993",
+    "notificationType": "CDS-EXPORTS"
+  },
+  "subject": "D-80542-20201120",
+  "message": "PG1hdHQ+Q2FuIEkgaGF2ZSBteSB0YXggbW9uZXkgcGxlYXNlPzwvbWF0dD4="
+}

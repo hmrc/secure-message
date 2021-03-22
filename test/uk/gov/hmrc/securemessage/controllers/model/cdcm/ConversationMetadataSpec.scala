@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.securemessage.controllers.models.generic
+package uk.gov.hmrc.securemessage.controllers.model.cdcm
 
 import cats.data.NonEmptyList
 import com.github.nscala_time.time.Imports.DateTime
@@ -22,6 +22,7 @@ import org.scalatestplus.play.PlaySpec
 import play.api.i18n.Messages
 import play.api.libs.json.{ JsValue, Json }
 import play.api.test.Helpers._
+import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.ConversationMetadata
 import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core._
 @SuppressWarnings(Array("org.wartremover.warts.All"))
@@ -34,7 +35,7 @@ class ConversationMetadataSpec extends PlaySpec {
       val identifier = Identifier(name = "EORINumber", value = "GB1234567890", enrolment = Some("HMRC-CUS-ORG"))
       val conversationJson: JsValue = Resources.readJson("model/core/conversation-full-extender.json")
       val coreConversation: Conversation = conversationJson.validate[Conversation].get
-      val conversationMetadataJson: JsValue = Resources.readJson("model/api/conversation-metadata.json")
+      val conversationMetadataJson: JsValue = Resources.readJson("model/api/cdcm/read/conversation-metadata.json")
       val conversationMetadata: ConversationMetadata = conversationMetadataJson.validate[ConversationMetadata].get
       ConversationMetadata
         .coreToConversationMetadata(coreConversation, identifier) mustEqual conversationMetadata
@@ -56,7 +57,7 @@ class ConversationMetadataSpec extends PlaySpec {
       )
       val conversationJson: JsValue = Resources.readJson("model/core/conversation-full-extender.json")
       val coreConversation: Conversation = conversationJson.validate[Conversation].get
-      val conversationMetadataJson: JsValue = Resources.readJson("model/api/conversation-metadata.json")
+      val conversationMetadataJson: JsValue = Resources.readJson("model/api/cdcm/read/conversation-metadata.json")
       val conversationMetadata: ConversationMetadata = conversationMetadataJson.validate[ConversationMetadata].get
       ConversationMetadata
         .coreToConversationMetadata(coreConversation, identifiers) mustEqual conversationMetadata

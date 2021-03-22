@@ -16,21 +16,26 @@
 
 package uk.gov.hmrc.securemessage.controllers
 
-import javax.inject.Inject
 import play.api.Logging
 import play.api.i18n.I18nSupport
 import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc.{ Action, AnyContent, ControllerComponents, Result }
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.securemessage._
-import uk.gov.hmrc.securemessage.controllers.models.generic._
+import uk.gov.hmrc.securemessage.controllers.model.cdcm.write._
+import uk.gov.hmrc.securemessage.controllers.model.common.CustomerEnrolment
+import uk.gov.hmrc.securemessage.controllers.model.common.read._
+import uk.gov.hmrc.securemessage.controllers.model.common.write._
 import uk.gov.hmrc.securemessage.controllers.utils.EnrolmentHelper._
 import uk.gov.hmrc.securemessage.controllers.utils.QueryStringValidation
+import uk.gov.hmrc.securemessage.models.core.Conversation
 import uk.gov.hmrc.securemessage.services.SecureMessageService
-
+import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
+
 @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
 class SecureMessageController @Inject()(
   cc: ControllerComponents,
@@ -40,19 +45,19 @@ class SecureMessageController @Inject()(
 
   def createConversation(client: String, conversationId: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
-      withJsonBody[ConversationRequest] { conversationRequest =>
-        secureMessageService.createConversation(conversationRequest.asConversation(client, conversationId)).map {
-          case Right(_)                        => Created
-          case Left(error: SecureMessageError) => handleErrors(client, conversationId, error)
-        }
-      }.recover {
-        case error: Exception => handleErrors(client, conversationId, error)
+      client match {
+        case "cdcm" =>
+          withJsonBody[CdcmConversation] { cdcmConversation =>
+            saveConversation(cdcmConversation.asConversation(client, conversationId))
+          }
+        case _ => Future(handleErrors(client, conversationId, InvalidRequestBody(s"Not supported client: $client")))
       }
+
   }
 
   def addCaseworkerMessage(client: String, conversationId: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
-      withJsonBody[CaseworkerMessageRequest] { caseworkerMessageRequest =>
+      withJsonBody[CaseworkerMessage] { caseworkerMessageRequest =>
         secureMessageService.addCaseWorkerMessageToConversation(client, conversationId, caseworkerMessageRequest).map {
           case Right(_) =>
             Created(Json.toJson(s"Created case worker message for client $client and conversationId $conversationId"))
@@ -66,7 +71,7 @@ class SecureMessageController @Inject()(
   def addCustomerMessage(client: String, conversationId: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
       authorised().retrieve(Retrievals.allEnrolments) { enrolments: Enrolments =>
-        withJsonBody[CustomerMessageRequest] { customerMessageRequest =>
+        withJsonBody[CustomerMessage] { customerMessageRequest =>
           secureMessageService
             .addCustomerMessageToConversation(client, conversationId, customerMessageRequest, enrolments)
             .map {
@@ -83,7 +88,7 @@ class SecureMessageController @Inject()(
   def getMetadataForConversationsFiltered(
     enrolmentKeys: Option[List[String]],
     customerEnrolments: Option[List[CustomerEnrolment]],
-    tags: Option[List[Tag]]): Action[AnyContent] =
+    tags: Option[List[FilterTag]]): Action[AnyContent] =
     Action.async { implicit request =>
       {
         validateQueryParameters(request.queryString, "enrolment", "enrolmentKey", "tag") match {
@@ -118,6 +123,17 @@ class SecureMessageController @Inject()(
         }
   }
 
+  private def saveConversation(conversation: Conversation)(implicit hc: HeaderCarrier): Future[Result] =
+    secureMessageService
+      .createConversation(conversation)
+      .map {
+        case Right(_)                        => Created
+        case Left(error: SecureMessageError) => handleErrors(conversation.client, conversation.id, error)
+      }
+      .recover {
+        case error: Exception => handleErrors(conversation.client, conversation.id, error)
+      }
+
   private def mapToCustomerEnrolments(authEnrolments: Enrolments): Set[CustomerEnrolment] =
     authEnrolments.enrolments
       .flatMap(e => e.identifiers.map(i => CustomerEnrolment(e.key, i.key, i.value)))
@@ -143,15 +159,15 @@ class SecureMessageController @Inject()(
     logger.error(error.getMessage, error.getCause)
     val jsonError = Json.toJson(errMsg)
     error match {
-      case _: EmailSendingError          => Created(jsonError)
-      case _: NoReceiverEmailError       => Created(jsonError)
-      case _: DuplicateConversationError => Conflict(jsonError)
-      case _: InvalidContent             => BadRequest(jsonError)
-      case _: ParticipantNotFound        => Unauthorized(jsonError)
-      case _: ConversationNotFound       => NotFound(jsonError)
-      case _: EisForwardingError         => BadGateway(jsonError)
-      case _: StoreError                 => InternalServerError(jsonError)
-      case _                             => InternalServerError(jsonError)
+      case EmailSendingError(_)                            => Created(jsonError)
+      case NoReceiverEmailError(_)                         => Created(jsonError)
+      case DuplicateConversationError(_, _)                => Conflict(jsonError)
+      case InvalidContent(_, _) | InvalidRequestBody(_, _) => BadRequest(jsonError)
+      case ParticipantNotFound(_)                          => Unauthorized(jsonError)
+      case ConversationNotFound(_)                         => NotFound(jsonError)
+      case EisForwardingError(_)                           => BadGateway(jsonError)
+      case StoreError(_, _)                                => InternalServerError(jsonError)
+      case _                                               => InternalServerError(jsonError)
     }
   }
 }

@@ -13,7 +13,7 @@
     }}}],
     "alert": {"templateId": "emailTemplateId"},
     "tags": {
-        "notificationType": "CDS Exports"
+        "notificationType": "CDS-EXPORTS"
     },
     "subject": "D-80542-20201120",
     "message": "QmxhaCBibGFoIGJsYWg="

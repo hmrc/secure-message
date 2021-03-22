@@ -17,7 +17,8 @@
 package uk.gov.hmrc.securemessage.controllers
 
 import play.api.mvc.QueryStringBindable
-import uk.gov.hmrc.securemessage.controllers.models.generic.{ CustomerEnrolment, Tag }
+import uk.gov.hmrc.securemessage.controllers.model.common.CustomerEnrolment
+import uk.gov.hmrc.securemessage.controllers.model.common.read.FilterTag
 
 package object binders {
 
@@ -37,16 +38,17 @@ package object binders {
     }
 
   @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.Nothing"))
-  implicit def queryStringBindableTag(implicit stringBinder: QueryStringBindable[String]): QueryStringBindable[Tag] =
-    new QueryStringBindable[Tag] {
+  implicit def queryStringBindableTag(
+    implicit stringBinder: QueryStringBindable[String]): QueryStringBindable[FilterTag] =
+    new QueryStringBindable[FilterTag] {
 
-      override def bind(key: String, params: Map[String, Seq[String]]): Option[Either[String, Tag]] =
+      override def bind(key: String, params: Map[String, Seq[String]]): Option[Either[String, FilterTag]] =
         stringBinder.bind("tag", params) map {
-          case Right(tag) => Right(Tag.parse(tag))
+          case Right(tag) => Right(FilterTag.parse(tag))
           case _          => Left("Unable to bind a Tag")
         }
 
-      override def unbind(key: String, tag: Tag): String =
+      override def unbind(key: String, tag: FilterTag): String =
         tag.key + "~" + tag.value
     }
 }
