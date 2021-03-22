@@ -19,7 +19,6 @@ package uk.gov.hmrc.securemessage.controllers
 import javax.inject.Inject
 import play.api.Logging
 import play.api.i18n.I18nSupport
-import javax.naming.CommunicationException
 import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc.{ Action, AnyContent, ControllerComponents, Result }
 import uk.gov.hmrc.auth.core._
@@ -142,16 +141,17 @@ class SecureMessageController @Inject()(
     val errMsg =
       s"Error on conversation with client: $client, conversationId: $conversationId, error message: ${error.getMessage}"
     logger.error(error.getMessage, error.getCause)
+    val jsonError = Json.toJson(errMsg)
     error match {
-      case _: EmailSendingError          => Created(Json.toJson(errMsg))
-      case _: NoReceiverEmailError       => Created(Json.toJson(errMsg))
-      case _: DuplicateConversationError => Conflict(Json.toJson(errMsg))
-      case _: InvalidContent             => BadRequest(Json.toJson(errMsg))
-      case _: ParticipantNotFound        => Unauthorized(Json.toJson(errMsg))
-      case _: ConversationNotFound       => NotFound(Json.toJson(errMsg))
-      case cex: CommunicationException   => BadGateway(cex.getMessage)
-      case _: StoreError                 => InternalServerError(Json.toJson(errMsg))
-      case _                             => InternalServerError(Json.toJson(errMsg))
+      case _: EmailSendingError          => Created(jsonError)
+      case _: NoReceiverEmailError       => Created(jsonError)
+      case _: DuplicateConversationError => Conflict(jsonError)
+      case _: InvalidContent             => BadRequest(jsonError)
+      case _: ParticipantNotFound        => Unauthorized(jsonError)
+      case _: ConversationNotFound       => NotFound(jsonError)
+      case _: EisForwardingError         => BadGateway(jsonError)
+      case _: StoreError                 => InternalServerError(jsonError)
+      case _                             => InternalServerError(jsonError)
     }
   }
 }

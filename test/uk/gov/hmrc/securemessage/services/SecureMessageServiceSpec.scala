@@ -20,26 +20,27 @@ import akka.stream.Materializer
 import org.joda.time.DateTime
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.{ never, times, verify, when }
+import org.mockito.Mockito.{never, times, verify, when}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
+import play.api.i18n.Messages
 import play.api.mvc.AnyContentAsEmpty
 import play.api.test.Helpers._
-import play.api.test.{ FakeRequest, NoMaterializer }
-import uk.gov.hmrc.auth.core.{ Enrolment, EnrolmentIdentifier, Enrolments }
+import play.api.test.{FakeRequest, NoMaterializer}
+import uk.gov.hmrc.auth.core.{Enrolment, EnrolmentIdentifier, Enrolments}
 import uk.gov.hmrc.emailaddress.EmailAddress
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.securemessage.connectors.{ ChannelPreferencesConnector, EISConnector, EmailConnector }
+import uk.gov.hmrc.securemessage.connectors.{ChannelPreferencesConnector, EISConnector, EmailConnector}
 import uk.gov.hmrc.securemessage.controllers.models.generic._
-import uk.gov.hmrc.securemessage.helpers.{ ConversationUtil, Resources }
+import uk.gov.hmrc.securemessage.helpers.{ConversationUtil, Resources}
 import uk.gov.hmrc.securemessage.models.core._
-import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryResponseWrapper }
+import uk.gov.hmrc.securemessage.models.{EmailRequest, QueryResponseWrapper}
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
-import uk.gov.hmrc.securemessage.{ DuplicateConversationError, EmailLookupError, NoReceiverEmailError, SecureMessageError, _ }
+import uk.gov.hmrc.securemessage.{DuplicateConversationError, EmailLookupError, NoReceiverEmailError, SecureMessageError, _}
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.{ExecutionContext, Future}
 
 //TODO: move test data and mocks to TextContexts
 @SuppressWarnings(Array("org.wartremover.warts.All"))
@@ -47,7 +48,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
   implicit val mat: Materializer = NoMaterializer
-  implicit val messages = stubMessages()
+  implicit val messages: Messages = stubMessages()
   implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
 
   "createConversation" must {
@@ -182,7 +183,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
 
     "update the database when the customer has a participating enrolment" in new AddCustomerMessageTestContext(
       getConversationResult = Right(listOfCoreConversation.head)) {
-      when(mockEisConnector.forwardMessage(any[QueryResponseWrapper], any[String])).thenReturn(Future(Right(())))
+      when(mockEisConnector.forwardMessage(any[QueryResponseWrapper])).thenReturn(Future(Right(())))
       await(service.addCustomerMessageToConversation("cdcm", "D-80542-20201120", customerMessage, customerEnrolment))
       verify(mockRepository, times(1))
         .addMessageToConversation(any[String], any[String], any[Message])(any[ExecutionContext])
@@ -258,7 +259,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
 
     "return Right(()) when a readTime has been added to the db" in new UpdateReadTimeTestContext(
       addReadTime = Right(())) {
-      val result =
+      val result: Either[SecureMessageError, Unit] =
         await(
           service.updateReadTime(
             "cdcm",
@@ -271,7 +272,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
 
     "return Left(storeError) when something went wrong with adding a readTime to the db" in new UpdateReadTimeTestContext(
       addReadTime = Left(StoreError("errMsg", None))) {
-      val result =
+      val result: Either[SecureMessageError, Unit] =
         await(
           service.updateReadTime(
             "cdcm",

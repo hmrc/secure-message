@@ -17,7 +17,6 @@
 package uk.gov.hmrc.securemessage.controllers
 
 import akka.stream.Materializer
-import javax.naming.CommunicationException
 import org.joda.time.DateTime
 import org.mockito.ArgumentMatchers.{ any, eq => eqTo }
 import org.mockito.Mockito.when
@@ -64,35 +63,35 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
 
     "return CREATED (201) when sent a request with all optional fields populated" in new CreateConversationTestCase(
       requestBody = Resources.readJson("model/api/create-conversation-full.json"),
-      expectedResult = Future(Right(()))) {
+      serviceResponse = Future(Right(()))) {
       private val response = controller.createConversation("cdcm", "123")(fakeRequest)
       status(response) mustBe CREATED
     }
 
     "return CREATED (201) when sent a request with no optional fields populated" in new CreateConversationTestCase(
       requestBody = Resources.readJson("model/api/create-conversation-minimal.json"),
-      expectedResult = Future(Right(()))) {
+      serviceResponse = Future(Right(()))) {
       private val response = controller.createConversation("cdcm", "123")(fakeRequest)
       status(response) mustBe CREATED
     }
 
     "return BAD REQUEST (400) when sent a request with required fields missing" in new CreateConversationTestCase(
       requestBody = Json.parse("""{"missing":"data"}""".stripMargin),
-      expectedResult = Future(Right(()))) {
+      serviceResponse = Future(Right(()))) {
       private val response = controller.createConversation("cdcm", "123")(fakeRequest)
       status(response) mustBe BAD_REQUEST
     }
 
     "return BAD REQUEST (400) when an invalid email address is provided" in new CreateConversationTestCase(
       requestBody = Resources.readJson("model/api/create-conversation-invalid-email.json"),
-      expectedResult = Future(Right(()))) {
+      serviceResponse = Future(Right(()))) {
       private val response = controller.createConversation("cdcm", "123")(fakeRequest)
       status(response) mustBe BAD_REQUEST
     }
 
     "return CONFLICT (409) when the conversation already exists" in new CreateConversationTestCase(
       requestBody = Resources.readJson("model/api/create-conversation-full.json"),
-      expectedResult = Future(Left(DuplicateConversationError("conflict error", None)))
+      serviceResponse = Future(Left(DuplicateConversationError("conflict error", None)))
     ) {
       private val response = controller.createConversation("cdcm", "123")(fakeRequest)
       status(response) mustBe CONFLICT
@@ -102,7 +101,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
 
     "return InternalServerError (500) when there is an error storing the conversation" in new CreateConversationTestCase(
       requestBody = Resources.readJson("model/api/create-conversation-full.json"),
-      expectedResult = Future(Left(StoreError("mongo error", None)))) {
+      serviceResponse = Future(Left(StoreError("mongo error", None)))) {
       private val response = controller.createConversation("cdcm", "123")(fakeRequest)
       status(response) mustBe INTERNAL_SERVER_ERROR
       contentAsJson(response) mustBe Json.toJson(
@@ -111,7 +110,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
 
     "return CREATED (201) when there is an error sending the email" in new CreateConversationTestCase(
       requestBody = Resources.readJson("model/api/create-conversation-full.json"),
-      expectedResult = Future(Left(EmailSendingError("email error")))) {
+      serviceResponse = Future(Left(EmailSendingError("email error")))) {
       private val response = controller.createConversation("cdcm", "123")(fakeRequest)
       status(response) mustBe CREATED
       contentAsJson(response) mustBe Json.toJson(
@@ -120,7 +119,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
 
     "return CREATED (201) when no email can be found" in new CreateConversationTestCase(
       requestBody = Resources.readJson("model/api/create-conversation-full.json"),
-      expectedResult = Future(Left(NoReceiverEmailError("Verified email address could not be found")))
+      serviceResponse = Future(Left(NoReceiverEmailError("Verified email address could not be found")))
     ) {
       private val response = controller.createConversation("cdcm", "123")(fakeRequest)
       status(response) mustBe CREATED
@@ -130,7 +129,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
 
     "return InternalServerError (500) if unexpected SecureMessageError returned" in new CreateConversationTestCase(
       requestBody = Resources.readJson("model/api/create-conversation-full.json"),
-      expectedResult = Future(Left(new SecureMessageError("some unknown err")))) {
+      serviceResponse = Future(Left(new SecureMessageError("some unknown err")))) {
       private val response = controller.createConversation("cdcm", "123")(fakeRequest)
       status(response) mustBe INTERNAL_SERVER_ERROR
       contentAsJson(response) mustBe Json.toJson(
@@ -139,9 +138,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
 
     "return InternalServerError (500) if an unexpected exception is thrown" in new CreateConversationTestCase(
       requestBody = Resources.readJson("model/api/create-conversation-full.json"),
-      expectedResult = Future(Right(()))) {
-      when(mockSecureMessageService.createConversation(any[Conversation])(any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(Future.failed(new Exception("some error")))
+      serviceResponse = Future.failed(new Exception("some error"))) {
       private val response = controller.createConversation("cdcm", "123")(fakeRequest)
       status(response) mustBe INTERNAL_SERVER_ERROR
       contentAsJson(response) mustBe Json.toJson(
@@ -150,7 +147,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
 
     "return BAD_REQUEST (400) when the message content is not base64 encoded" in new CreateConversationTestCase(
       requestBody = Resources.readJson("model/api/create-conversation-full.json"),
-      expectedResult = Future(Left(InvalidContent("Not valid base64 content")))
+      serviceResponse = Future(Left(InvalidContent("Not valid base64 content")))
     ) {
       private val response = controller.createConversation("cdcm", "123")(fakeRequest)
       status(response) mustBe BAD_REQUEST
@@ -160,7 +157,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
 
     "return BAD_REQUEST (400) when the message content is not valid HTML" in new CreateConversationTestCase(
       requestBody = Resources.readJson("model/api/create-conversation-full.json"),
-      expectedResult = Future(Left(InvalidContent("Not valid html content")))
+      serviceResponse = Future(Left(InvalidContent("Not valid html content")))
     ) {
       private val response = controller.createConversation("cdcm", "123")(fakeRequest)
       status(response) mustBe BAD_REQUEST
@@ -182,8 +179,9 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       contentAsJson(response).as[List[ConversationMetadata]] must be(conversationsMetadata)
     }
 
+    //TODO: move mock to GetConversationsTestCase, this functionality needs to be reviewed.
     "return Ok (200) with empty list for query parameters/auth record mismatch" in new TestCase(
-      Set(CustomerEnrolment("SOME_ENROLMENT_KEY", "SOME_IDENTIFIER_KEY", "SOME_IDENTIFIER_VALUE"))) {
+      authEnrolments = Set(CustomerEnrolment("SOME_ENROLMENT_KEY", "SOME_IDENTIFIER_KEY", "SOME_IDENTIFIER_VALUE"))) {
       when(
         mockSecureMessageService
           .getConversationsFiltered(eqTo(Set[CustomerEnrolment]().empty), any[Option[List[Tag]]])(
@@ -198,7 +196,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     }
 
     "return Bad Request (400) error when invalid query parameters are provided" in new TestCase(
-      Set(CustomerEnrolment("SOME_ENROLMENT_KEY", "SOME_IDENTIFIER_KEY", "SOME_IDENTIFIER_VALUE"))) {
+      authEnrolments = Set(CustomerEnrolment("SOME_ENROLMENT_KEY", "SOME_IDENTIFIER_KEY", "SOME_IDENTIFIER_VALUE"))) {
       val response: Future[Result] = controller
         .getMetadataForConversationsFiltered(None, Some(List(testEnrolment)), None)
         .apply(FakeRequest("GET", "/some?x=123&Z=12&a=abc&test=ABCDEF"))
@@ -253,20 +251,20 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
   "createCaseworkerMessage" must {
     "return CREATED (201) when with valid payload" in new CreateCaseWorkerMessageTestCase(
       requestBody = Resources.readJson("model/api/caseworker-message.json"),
-      givenResult = Future(Right(()))) {
+      serviceResponse = Future(Right(()))) {
       private val response = controller.addCaseworkerMessage("cdcm", "123")(fakeRequest)
       status(response) mustBe CREATED
     }
     "return UNAUTHORIZED (401) when the caseworker is not a conversation participant" in new CreateCaseWorkerMessageTestCase(
       requestBody = Resources.readJson("model/api/caseworker-message.json"),
-      givenResult = Future(Left(ParticipantNotFound("Caseworker ID not found")))
+      serviceResponse = Future(Left(ParticipantNotFound("Caseworker ID not found")))
     ) {
       private val response = controller.addCaseworkerMessage("cdcm", "123")(fakeRequest)
       status(response) mustBe UNAUTHORIZED
     }
     "return BAD_REQUEST (400) when the message content is not base64 encoded" in new CreateCaseWorkerMessageTestCase(
       requestBody = Resources.readJson("model/api/caseworker-message.json"),
-      givenResult = Future.successful(Left(InvalidContent("Not valid base64 content")))
+      serviceResponse = Future.successful(Left(InvalidContent("Not valid base64 content")))
     ) {
       private val response = controller.addCaseworkerMessage("cdcm", "123")(fakeRequest)
       status(response) mustBe BAD_REQUEST
@@ -274,7 +272,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     }
     "return BAD_REQUEST (400) when the message content is not valid HTML" in new CreateCaseWorkerMessageTestCase(
       requestBody = Resources.readJson("model/api/caseworker-message.json"),
-      givenResult = Future.successful(Left(InvalidContent("Not valid HTML content")))
+      serviceResponse = Future.successful(Left(InvalidContent("Not valid HTML content")))
     ) {
       private val response = controller.addCaseworkerMessage("cdcm", "123")(fakeRequest)
       status(response) mustBe BAD_REQUEST
@@ -284,22 +282,22 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
 
   "createCustomerMessage" must {
     "return CREATED (201) when a message is successfully added to the conversation" in new CreateCustomerMessageTestCase(
-      givenResult = Future.successful(Right(()))) {
+      serviceResponse = Future.successful(Right(()))) {
       private val response = controller.addCustomerMessage("cdcm", "D-80542-20201120")(fakeRequest)
       status(response) mustBe CREATED
     }
     "return UNAUTHORIZED (401) when the customer is not a conversation participant" in new CreateCustomerMessageTestCase(
-      givenResult = Future.successful(Left(ParticipantNotFound("InsufficientEnrolments")))) {
+      serviceResponse = Future.successful(Left(ParticipantNotFound("InsufficientEnrolments")))) {
       private val response = controller.addCustomerMessage("cdcm", "D-80542-20201120")(fakeRequest)
       status(response) mustBe UNAUTHORIZED
     }
     "return NOT_FOUND (404) when the conversation ID is not recognised" in new CreateCustomerMessageTestCase(
-      givenResult = Future.successful(Left(ConversationNotFound("Conversation ID not known")))) {
+      serviceResponse = Future.successful(Left(ConversationNotFound("Conversation ID not known")))) {
       private val response = controller.addCustomerMessage("cdcm", "D-80542-20201120")(fakeRequest)
       status(response) mustBe NOT_FOUND
     }
     "return Bad Gateway (502) when the message cannot be forwarded to EIS" in new CreateCustomerMessageTestCase(
-      givenResult = Future.failed(new CommunicationException("Failed to forward message to EIS"))) {
+      serviceResponse = Future(Left(EisForwardingError("Failed to forward message to EIS")))) {
       private val response = controller.addCustomerMessage("cdcm", "D-80542-20201120")(fakeRequest)
       status(response) mustBe BAD_GATEWAY
     }
@@ -307,14 +305,14 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
 
   "updateReadTime" must {
     "return CREATED (201) with a JSON body of read time successfully added when a readTime has successfully been created " in new UpdateReadTimeTestCase(
-      updateSuccessful = Right(())) {
+      dbResult = Right(())) {
       val response: Future[Result] = controller.addCustomerReadTime("cdcm", "D-80542-20201120")(fakeRequest)
       status(response) mustBe CREATED
       contentAsString(response) mustBe "\"read time successfully added\""
     }
 
     "return INTERNAL_SERVER_ERROR (500) with a JSON body of issue with updating read time" in new UpdateReadTimeTestCase(
-      updateSuccessful = Left(StoreError("errMsg", None))) {
+      dbResult = Left(StoreError("errMsg", None))) {
       val response: Future[Result] = controller.addCustomerReadTime("cdcm", "D-80542-20201120")(fakeRequest)
       status(response) mustBe INTERNAL_SERVER_ERROR
       contentAsString(response) mustBe "\"Error on conversation with client: cdcm, conversationId: D-80542-20201120, error message: errMsg\""
@@ -354,7 +352,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
   )
 
   @SuppressWarnings(Array("org.wartremover.warts.OptionPartial"))
-  class CreateConversationTestCase(requestBody: JsValue, expectedResult: Future[Either[SecureMessageError, Unit]])
+  class CreateConversationTestCase(requestBody: JsValue, serviceResponse: Future[Either[SecureMessageError, Unit]])
       extends TestCase {
     val fakeRequest: FakeRequest[JsValue] = FakeRequest(
       method = PUT,
@@ -364,11 +362,11 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     )
 
     when(mockSecureMessageService.createConversation(any[Conversation])(any[HeaderCarrier], any[ExecutionContext]))
-      .thenReturn(expectedResult)
+      .thenReturn(serviceResponse)
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
-  class CreateCustomerMessageTestCase(givenResult: Future[Either[SecureMessageError, Unit]]) extends TestCase {
+  class CreateCustomerMessageTestCase(serviceResponse: Future[Either[SecureMessageError, Unit]]) extends TestCase {
     val fakeRequest: FakeRequest[JsObject] = FakeRequest(
       method = POST,
       uri = routes.SecureMessageController.addCustomerMessage("cdcm", "D-80542-20201120").url,
@@ -379,7 +377,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       mockSecureMessageService
         .addCustomerMessageToConversation(any[String], any[String], any[CustomerMessageRequest], any[Enrolments])(
           any[ExecutionContext],
-          any[Request[_]])).thenReturn(givenResult)
+          any[Request[_]])).thenReturn(serviceResponse)
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments", "org.wartremover.warts.EitherProjectionPartial"))
@@ -399,7 +397,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     storedConversation: Option[JsValue],
     authEnrolments: Set[CustomerEnrolment] = Set(testEnrolment))
       extends TestCase(authEnrolments) {
-    val apiConversation = storedConversation match {
+    val apiConversation: Either[ConversationNotFound, ApiConversation] = storedConversation match {
       case Some(conversation) => Right(conversation.as[ApiConversation])
       case _                  => Left(ConversationNotFound("conversations not found"))
     }
@@ -409,7 +407,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       .thenReturn(Future(apiConversation))
   }
 
-  class CreateCaseWorkerMessageTestCase(requestBody: JsValue, givenResult: Future[Either[SecureMessageError, Unit]])
+  class CreateCaseWorkerMessageTestCase(requestBody: JsValue, serviceResponse: Future[Either[SecureMessageError, Unit]])
       extends TestCase {
     val fakeRequest: FakeRequest[JsValue] = FakeRequest(
       method = POST,
@@ -421,14 +419,14 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       mockSecureMessageService.addCaseWorkerMessageToConversation(
         any[String],
         any[String],
-        any[CaseworkerMessageRequest])(any[ExecutionContext], any[HeaderCarrier])).thenReturn(givenResult)
+        any[CaseworkerMessageRequest])(any[ExecutionContext], any[HeaderCarrier])).thenReturn(serviceResponse)
   }
 
-  class UpdateReadTimeTestCase(updateSuccessful: Either[SecureMessageError, Unit]) extends TestCase {
+  class UpdateReadTimeTestCase(dbResult: Either[SecureMessageError, Unit]) extends TestCase {
     when(
       mockSecureMessageService.updateReadTime(any[String], any[String], any[Enrolments], any[DateTime])(
         any[ExecutionContext]))
-      .thenReturn(Future(updateSuccessful))
+      .thenReturn(Future(dbResult))
     val fakeRequest: FakeRequest[JsValue] = FakeRequest(
       method = POST,
       uri = routes.SecureMessageController.addCustomerReadTime("cdcm", "123").url,

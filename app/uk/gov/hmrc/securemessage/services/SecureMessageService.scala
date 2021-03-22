@@ -28,7 +28,6 @@ import uk.gov.hmrc.auth.core.Enrolments
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.securemessage._
 import uk.gov.hmrc.securemessage.connectors.{ ChannelPreferencesConnector, EISConnector, EmailConnector }
-import uk.gov.hmrc.securemessage.controllers.models.generic.CustomerMessageRequest.asQueryReponse
 import uk.gov.hmrc.securemessage.controllers.models.generic._
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.Customer.eqCustomer
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.{ Customer => PCustomer }
@@ -110,28 +109,28 @@ class SecureMessageService @Inject()(
     val identifiers: Set[Identifier] = enrolments.asIdentifiers
     for {
       conversation <- EitherT(repo.getConversation(client, conversationId, identifiers))
-      sender       <- EitherT(Future(conversation.participantWith(enrolments.asIdentifiers)))
-      _            <- forwardMessage(client, conversationId, messagesRequest)
+      sender       <- EitherT(Future(conversation.participantWith(identifiers)))
+      _            <- forwardMessage(conversationId, messagesRequest)
       _            <- EitherT(repo.addMessageToConversation(client, conversationId, message(sender))).leftWiden[SecureMessageError]
     } yield ()
   }.value
 
   @SuppressWarnings(Array("org.wartremover.warts.Any"))
-  private def forwardMessage(client: String, conversationId: String, messagesRequest: CustomerMessageRequest)(
+  private def forwardMessage(conversationId: String, messagesRequest: CustomerMessageRequest)(
     implicit ec: ExecutionContext,
     request: Request[_]): EitherT[Future, SecureMessageError, Unit] = {
     val requestId = request.headers.get("X-Request-ID").getOrElse(s"govuk-tax-${UUID.randomUUID()}")
-    val queryResponse = asQueryReponse(requestId, conversationId, messagesRequest)
-    EitherT(eisConnector.forwardMessage(QueryResponseWrapper(queryResponse), client)).leftWiden[SecureMessageError]
+    val queryResponse = QueryResponseWrapper(messagesRequest.asQueryReponse(requestId, conversationId))
+    EitherT(eisConnector.forwardMessage(queryResponse)).leftWiden[SecureMessageError]
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.Any"))
   def updateReadTime(client: String, conversationId: String, enrolments: Enrolments, readTime: DateTime)(
     implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] = {
-    val identifier: Set[Identifier] = enrolments.asIdentifiers
+    val identifiers: Set[Identifier] = enrolments.asIdentifiers
     for {
-      conversation <- EitherT(repo.getConversation(client, conversationId, identifier)).leftWiden[SecureMessageError]
-      reader       <- EitherT(Future(conversation.participantWith(enrolments.asIdentifiers))).leftWiden[SecureMessageError]
+      conversation <- EitherT(repo.getConversation(client, conversationId, identifiers)).leftWiden[SecureMessageError]
+      reader       <- EitherT(Future(conversation.participantWith(identifiers))).leftWiden[SecureMessageError]
       _            <- EitherT(repo.addReadTime(client, conversationId, reader.id, readTime)).leftWiden[SecureMessageError]
     } yield ()
   }.value
