@@ -42,7 +42,7 @@ object ConversationMetadata {
     val messageCount = coreConversation.messages.size
     ConversationMetadata(
       coreConversation.client,
-      coreConversation.conversationId,
+      coreConversation.id,
       coreConversation.subject,
       findLatestMessageDate(coreConversation),
       findLatestMessageName(coreConversation),
@@ -57,7 +57,7 @@ object ConversationMetadata {
     val messageCount = coreConversation.messages.size
     ConversationMetadata(
       coreConversation.client,
-      coreConversation.conversationId,
+      coreConversation.id,
       coreConversation.subject,
       findLatestMessageDate(coreConversation),
       findLatestMessageName(coreConversation),
