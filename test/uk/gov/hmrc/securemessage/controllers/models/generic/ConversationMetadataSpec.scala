@@ -21,8 +21,8 @@ import com.github.nscala_time.time.Imports.DateTime
 import org.scalatestplus.play.PlaySpec
 import play.api.i18n.Messages
 import play.api.libs.json.{ JsValue, Json }
-import uk.gov.hmrc.securemessage.helpers.Resources
 import play.api.test.Helpers._
+import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core._
 @SuppressWarnings(Array("org.wartremover.warts.All"))
 class ConversationMetadataSpec extends PlaySpec {
@@ -84,7 +84,7 @@ class ConversationMetadataSpec extends PlaySpec {
       val identifier = Set(Identifier("name", "value", None))
 
       val participants = List(Participant(2, ParticipantType.System, identifier.head, None, None, None, None))
-      val messages = NonEmptyList(Message(2, DateTime.parse("2020-11-10T15:00:01.000"), "", None), Nil)
+      val messages = NonEmptyList(Message(2, DateTime.parse("2020-11-10T15:00:01.000"), ""), Nil)
 
       val coreConversation = Conversation(
         "",
@@ -105,10 +105,10 @@ class ConversationMetadataSpec extends PlaySpec {
 
       val participants = List(Participant(2, ParticipantType.System, identifier.head, None, None, None, None))
       val messages = NonEmptyList(
-        Message(2, DateTime.parse("2020-11-10T15:00:01.000"), "", None),
+        Message(2, DateTime.parse("2020-11-10T15:00:01.000"), ""),
         List(
-          Message(1, DateTime.parse("2020-10-10T15:00:01.000"), "", None),
-          Message(1, DateTime.parse("2020-9-10T15:00:01.000"), "", None))
+          Message(1, DateTime.parse("2020-10-10T15:00:01.000"), ""),
+          Message(1, DateTime.parse("2020-9-10T15:00:01.000"), ""))
       )
 
       val coreConversation = Conversation(
@@ -130,10 +130,10 @@ class ConversationMetadataSpec extends PlaySpec {
 
       val participants = List(Participant(2, ParticipantType.System, identifier.head, None, None, None, None))
       val messages = NonEmptyList(
-        Message(1, DateTime.parse("2020-11-10T15:00:01.000"), "", None),
+        Message(1, DateTime.parse("2020-11-10T15:00:01.000"), ""),
         List(
-          Message(2, DateTime.parse("2020-10-10T15:00:01.000"), "", None),
-          Message(1, DateTime.parse("2020-9-10T15:00:01.000"), "", None))
+          Message(2, DateTime.parse("2020-10-10T15:00:01.000"), ""),
+          Message(1, DateTime.parse("2020-9-10T15:00:01.000"), ""))
       )
 
       val coreConversation = Conversation(

@@ -24,8 +24,8 @@ import uk.gov.hmrc.http.{ HeaderCarrier, HttpClient, HttpResponse }
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.securemessage.models.EmailRequest
 import uk.gov.hmrc.securemessage.models.EmailRequest.emailRequestWrites
-import play.api.http.Status.CREATED
-import uk.gov.hmrc.securemessage.EmailError
+import play.api.http.Status.ACCEPTED
+import uk.gov.hmrc.securemessage.EmailSendingError
 
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -36,13 +36,13 @@ class EmailConnector @Inject()(httpClient: HttpClient, servicesConfig: ServicesC
 
   private val emailBaseUrl = servicesConfig.baseUrl("email")
 
-  def send(emailRequest: EmailRequest)(implicit hc: HeaderCarrier): Future[Either[EmailError, Int]] =
+  def send(emailRequest: EmailRequest)(implicit hc: HeaderCarrier): Future[Either[EmailSendingError, Unit]] =
     httpClient.POST[EmailRequest, HttpResponse](s"$emailBaseUrl/hmrc/email", emailRequest).map { response =>
       response.status match {
-        case CREATED => Right(CREATED)
+        case ACCEPTED => Right(())
         case status =>
           val errMsg = s"Email request failed: got response status $status from email service"
-          Left(EmailError(errMsg))
+          Left(EmailSendingError(errMsg))
       }
     }
 

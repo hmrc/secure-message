@@ -32,7 +32,9 @@ object Alert {
     Json.reads[Alert]
 }
 
-final case class CustomerEnrolment(key: String, name: String, value: String)
+final case class CustomerEnrolment(key: String, name: String, value: String) {
+  def asIdentifier: Identifier = Identifier(name, value, Some(key))
+}
 object CustomerEnrolment {
   implicit val enrolmentReads: Reads[CustomerEnrolment] = {
     Json.reads[CustomerEnrolment]
@@ -107,7 +109,7 @@ final case class ConversationRequest(
     asConversationWithCreatedDate(client, conversationId, now)
 
   def asConversationWithCreatedDate(client: String, conversationId: String, created: DateTime): Conversation = {
-    val initialMessage = Message(1, created, message, None)
+    val initialMessage = Message(1, created, message)
     val initialParticipants = getSenderParticipant(sender.system) :: getRecipientParticipants(recipients)
     Conversation(
       client,

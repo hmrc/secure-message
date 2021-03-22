@@ -1,0 +1,38 @@
+{
+  "client": "cdcm",
+  "conversationId": "123",
+  "status": "open",
+  "subject": "Test",
+  "language": "en",
+  "participants": [{
+    "id": 1,
+    "participantType": "system",
+    "identifier": {
+      "name": "cdcm",
+      "value": "123"
+    },
+    "name": "CDS Exports"
+  }, {
+    "id": 2,
+    "participantType": "customer",
+    "identifier": {
+      "name": "EORINumber",
+      "value": "GB1234567890",
+      "enrolment": "HMRC-CUS-ORG"
+    },
+    "name": "Joe Bloggs",
+    "email": "joebloggs@test.com"
+  }],
+  "messages": [{
+    "senderId": 1,
+    "created": "2021-03-14T22:01:44.441+0000",
+    "content": "aGV%sb-G8sIHdvcmxkIQ=="
+  }],
+  "alert": {
+    "templateId": "emailTemplateId",
+    "parameters": {
+      "param1": "value1",
+      "param2": "value2"
+    }
+  }
+}
