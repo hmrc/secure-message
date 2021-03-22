@@ -67,6 +67,7 @@ class SecureMessageService @Inject()(
     val enrolmentsToIdentifiers: Set[Identifier] = enrolments.map(_.asIdentifier)
     repo.getConversationsFiltered(enrolmentsToIdentifiers, tags).map {
       _.map(ConversationMetadata.coreToConversationMetadata(_, enrolments.map(_.asIdentifier)))
+        .sortBy(_.issueDate.getMillis)(Ordering[Long].reverse)
     }
   }
 

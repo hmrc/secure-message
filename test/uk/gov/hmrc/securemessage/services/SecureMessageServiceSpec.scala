@@ -141,6 +141,69 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
             unreadMessages = false,
             1))
     }
+
+    "return a list of ConversationMetaData in the order of latest message in the list" in {
+      val listOfCoreConversation =
+        List(
+          ConversationUtil.getFullConversation(
+            "D-80542-20201120",
+            "HMRC-CUS-ORG",
+            "EORINumber",
+            "GB1234567890",
+            messageCreationDate = "2020-11-08T15:00:00.000"),
+          ConversationUtil.getFullConversation(
+            "D-80542-20201120",
+            "HMRC-CUS-ORG",
+            "EORINumber",
+            "GB1234567890",
+            messageCreationDate = "2020-11-10T15:00:00.000"),
+          ConversationUtil.getFullConversation(
+            "D-80542-20201120",
+            "HMRC-CUS-ORG",
+            "EORINumber",
+            "GB1234567890",
+            messageCreationDate = "2020-11-09T15:00:00.000")
+        )
+
+      when(
+        mockRepository.getConversationsFiltered(
+          ArgumentMatchers.eq(Set(Identifier("EORIName", "GB7777777777", Some("HMRC-CUS_ORG")))),
+          ArgumentMatchers.eq(Some(List(Tag("notificationType", "CDS Exports"))))
+        )(any[ExecutionContext]))
+        .thenReturn(Future.successful(listOfCoreConversation))
+
+      val result = await(
+        service.getConversationsFiltered(
+          Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777")),
+          Some(List(Tag("notificationType", "CDS Exports")))))
+      result mustBe
+        List(
+          ConversationMetadata(
+            "cdcm",
+            "D-80542-20201120",
+            "MRN: 19GB4S24GC3PPFGVR7",
+            DateTime.parse("2020-11-10T15:00:00.000"),
+            Some("CDS Exports Team"),
+            unreadMessages = false,
+            1),
+          ConversationMetadata(
+            "cdcm",
+            "D-80542-20201120",
+            "MRN: 19GB4S24GC3PPFGVR7",
+            DateTime.parse("2020-11-09T15:00:00.000"),
+            Some("CDS Exports Team"),
+            unreadMessages = false,
+            1),
+          ConversationMetadata(
+            "cdcm",
+            "D-80542-20201120",
+            "MRN: 19GB4S24GC3PPFGVR7",
+            DateTime.parse("2020-11-08T15:00:00.000"),
+            Some("CDS Exports Team"),
+            unreadMessages = false,
+            1)
+        )
+    }
   }
 
   "getConversation" must {
