@@ -20,27 +20,27 @@ import akka.stream.Materializer
 import org.joda.time.DateTime
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.{never, times, verify, when}
+import org.mockito.Mockito.{ never, times, verify, when }
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.i18n.Messages
 import play.api.mvc.AnyContentAsEmpty
 import play.api.test.Helpers._
-import play.api.test.{FakeRequest, NoMaterializer}
-import uk.gov.hmrc.auth.core.{Enrolment, EnrolmentIdentifier, Enrolments}
+import play.api.test.{ FakeRequest, NoMaterializer }
+import uk.gov.hmrc.auth.core.{ Enrolment, EnrolmentIdentifier, Enrolments }
 import uk.gov.hmrc.emailaddress.EmailAddress
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.securemessage.connectors.{ChannelPreferencesConnector, EISConnector, EmailConnector}
+import uk.gov.hmrc.securemessage.connectors.{ ChannelPreferencesConnector, EISConnector, EmailConnector }
 import uk.gov.hmrc.securemessage.controllers.models.generic._
-import uk.gov.hmrc.securemessage.helpers.{ConversationUtil, Resources}
+import uk.gov.hmrc.securemessage.helpers.{ ConversationUtil, Resources }
 import uk.gov.hmrc.securemessage.models.core._
-import uk.gov.hmrc.securemessage.models.{EmailRequest, QueryResponseWrapper}
+import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryResponseWrapper }
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
-import uk.gov.hmrc.securemessage.{DuplicateConversationError, EmailLookupError, NoReceiverEmailError, SecureMessageError, _}
+import uk.gov.hmrc.securemessage.{ DuplicateConversationError, EmailLookupError, NoReceiverEmailError, SecureMessageError, _ }
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 
 //TODO: move test data and mocks to TextContexts
 @SuppressWarnings(Array("org.wartremover.warts.All"))
