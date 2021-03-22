@@ -203,7 +203,7 @@ class SecureMessageService @Inject()(
         case Some(participant) => Right(participant)
         case None =>
           Left(ParticipantNotFound(
-            s"No participant found for client: ${conversation.client}, conversationId: ${conversation.conversationId}, indentifiers: $identifiers"))
+            s"No participant found for client: ${conversation.client}, conversationId: ${conversation.id}, indentifiers: $identifiers"))
       }
   }
 

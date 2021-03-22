@@ -1,6 +1,6 @@
 {
   "client" : "cdcm",
-  "conversationId" : "1111",
+  "id" : "1111",
   "status" : "open",
   "subject" : "D-80542-20201120",
   "language" : "en",

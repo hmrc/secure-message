@@ -50,7 +50,7 @@ class ConversationRepository @Inject()(implicit connector: MongoConnector)
   override def indexes: Seq[Index] =
     Seq(
       Index(
-        key = Seq("client" -> IndexType.Ascending, "conversationId" -> IndexType.Ascending),
+        key = Seq("client" -> IndexType.Ascending, "id" -> IndexType.Ascending),
         name = Some("unique-conversation"),
         unique = true,
         sparse = true))
@@ -64,7 +64,7 @@ class ConversationRepository @Inject()(implicit connector: MongoConnector)
           val errMsg = "Duplicate conversation: " + e.getMessage()
           Future.successful(Left(DuplicateConversationError(errMsg, Some(e))))
         case e: DatabaseException =>
-          val errMsg = s"Database error trying to store conversation ${conversation.conversationId}: " + e.getMessage()
+          val errMsg = s"Database error trying to store conversation ${conversation.id}: " + e.getMessage()
           Future.successful(Left(StoreError(errMsg, Some(e))))
       }
 
@@ -106,7 +106,7 @@ class ConversationRepository @Inject()(implicit connector: MongoConnector)
     implicit ec: ExecutionContext): Future[Either[ConversationNotFound, Conversation]] =
     collection
       .find[JsObject, Conversation](
-        selector = Json.obj("client" -> client, "conversationId" -> conversationId)
+        selector = Json.obj("client" -> client, "id" -> conversationId)
           deepMerge identifierQuery(identifiers),
         None)
       .one[Conversation] map {
@@ -158,14 +158,14 @@ class ConversationRepository @Inject()(implicit connector: MongoConnector)
       })
 
   private def conversationQuery(client: String, conversationId: String): JsObject =
-    Json.obj("client" -> client, "conversationId" -> conversationId)
+    Json.obj("client" -> client, "id" -> conversationId)
 
   def addReadTime(client: String, conversationId: String, participantId: Int, readTime: DateTime)(
     implicit ec: ExecutionContext): Future[Either[StoreError, Unit]] =
     collection
       .update(ordered = false)
       .one[JsObject, JsObject](
-        Json.obj("client" -> client, "conversationId" -> conversationId, "participants.id" -> participantId),
+        Json.obj("client" -> client, "id" -> conversationId, "participants.id" -> participantId),
         Json.obj("$push"  -> Json.obj("participants.$.readTimes" -> readTime))
       )
       .map(_.errmsg match {
