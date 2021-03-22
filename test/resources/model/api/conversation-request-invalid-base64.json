@@ -1,6 +1,6 @@
 {
   "client": "cdcm",
-  "conversationId": "123",
+  "id": "123",
   "status": "open",
   "subject": "Test",
   "language": "en",

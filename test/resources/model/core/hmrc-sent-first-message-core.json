@@ -1,6 +1,6 @@
 {
   "client" : "cdcn",
-  "conversationId" : "1111",
+  "id" : "1111",
   "status" : "open",
   "tags" : {
     "queryId" : "D-80542-20201120",

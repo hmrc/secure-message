@@ -38,7 +38,7 @@ object ApiConversation {
   def fromCore(conversation: Conversation, identifiers: Set[Identifier]): ApiConversation =
     ApiConversation(
       client = conversation.client,
-      conversationId = conversation.conversationId,
+      conversationId = conversation.id,
       status = conversation.status,
       tags = conversation.tags,
       subject = conversation.subject,
