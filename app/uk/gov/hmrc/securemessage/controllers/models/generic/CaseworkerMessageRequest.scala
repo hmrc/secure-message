@@ -17,8 +17,11 @@
 package uk.gov.hmrc.securemessage.controllers.models.generic
 
 import play.api.libs.json.{ Json, Reads }
+import uk.gov.hmrc.securemessage.models.core.Identifier
 
-final case class CaseworkerMessageRequest(sender: CaseworkerMessageRequest.Sender, content: String)
+final case class CaseworkerMessageRequest(sender: CaseworkerMessageRequest.Sender, content: String) {
+  def senderIdentifier: Identifier = sender.system.identifier.asIdentifier
+}
 
 object CaseworkerMessageRequest {
 
@@ -35,7 +38,9 @@ object CaseworkerMessageRequest {
       Json.reads[Sender]
   }
 
-  final case class SystemIdentifier(name: String, value: String)
+  final case class SystemIdentifier(name: String, value: String) {
+    def asIdentifier: Identifier = Identifier(name, value, None)
+  }
   object SystemIdentifier {
     implicit val identifierReads: Reads[SystemIdentifier] = Json.reads[SystemIdentifier]
   }

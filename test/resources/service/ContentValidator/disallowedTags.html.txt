@@ -1,0 +1,10 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h2>The title Attribute</h2>
+
+<p>Mouse over this paragraph, to display the title attribute as a tooltip.</p>
+
+</body>
+</html>

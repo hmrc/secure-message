@@ -29,8 +29,7 @@ class CreateConversationISpec extends ISpec {
 
   "A PUT request to /secure-messaging/conversation/{client}/{conversationId}" should {
 
-    "return CREATED when sent a full and valid JSON payload" in {
-      val wsClient = app.injector.instanceOf[WSClient]
+    "return CREATED when sent a full and valid JSON payload" in new TestContent {
       val response =
         wsClient
           .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
@@ -40,8 +39,7 @@ class CreateConversationISpec extends ISpec {
       response.status mustBe CREATED
     }
 
-    "return CREATED when sent a minimal and valid JSON payload" in {
-      val wsClient = app.injector.instanceOf[WSClient]
+    "return CREATED when sent a minimal and valid JSON payload" in new TestContent {
       val response =
         wsClient
           .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
@@ -51,8 +49,7 @@ class CreateConversationISpec extends ISpec {
       response.status mustBe CREATED
     }
 
-    "return CREATED when sent a conversation request with no email address and it is found in CDS" in {
-      val wsClient = app.injector.instanceOf[WSClient]
+    "return CREATED when sent a conversation request with no email address and it is found in CDS" in new TestContent {
       val response =
         wsClient
           .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
@@ -62,8 +59,7 @@ class CreateConversationISpec extends ISpec {
       response.status mustBe CREATED
     }
 
-    "return BAD REQUEST when sent a conversation request with an invalid email address" in {
-      val wsClient = app.injector.instanceOf[WSClient]
+    "return BAD REQUEST when sent a conversation request with an invalid email address" in new TestContent {
       val response =
         wsClient
           .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
@@ -73,8 +69,7 @@ class CreateConversationISpec extends ISpec {
       response.status mustBe BAD_REQUEST
     }
 
-    "return BAD REQUEST when sent a minimal and invalid JSON payload" in {
-      val wsClient = app.injector.instanceOf[WSClient]
+    "return BAD REQUEST when sent a minimal and invalid JSON payload" in new TestContent {
       val response =
         wsClient
           .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
@@ -84,8 +79,7 @@ class CreateConversationISpec extends ISpec {
       response.status mustBe BAD_REQUEST
     }
 
-    "return CONFLICT when a conversation with the given conversationId already exists" in {
-      val wsClient = app.injector.instanceOf[WSClient]
+    "return CONFLICT when a conversation with the given conversationId already exists" in new TestContent {
       val _ = wsClient
         .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
         .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
@@ -98,6 +92,20 @@ class CreateConversationISpec extends ISpec {
         .futureValue
       response.status mustBe CONFLICT
     }
+
+    "return BAD_REQUEST when invalid message content is supplied" in new TestContent {
+      val response =
+        wsClient
+          .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
+          .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
+          .put(new File("./it/resources/conversation-request-invalid-html.json"))
+          .futureValue
+      response.status mustBe BAD_REQUEST
+      response.body mustBe "\"Error on conversation with client: cdcm, conversationId: D-80542-20201120, error message: Html contains disallowed tags, attributes or protocols within the tags: matt. For allowed elements see class org.jsoup.safety.Whitelist.relaxed()\""
+    }
   }
 
+  class TestContent {
+    val wsClient = app.injector.instanceOf[WSClient]
+  }
 }

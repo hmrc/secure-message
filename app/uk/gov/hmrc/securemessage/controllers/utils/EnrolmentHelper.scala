@@ -31,7 +31,7 @@ object EnrolmentHelper {
         .map(enrolmentIdentifier =>
           CustomerEnrolment(eoriEnrolment.key, enrolmentIdentifier.key, enrolmentIdentifier.value))
     }
-
+  //TODO: move this in service within getConversationsFiltered
   @SuppressWarnings(Array("org.wartremover.warts.Option2Iterable"))
   def filterEnrolments(
     authEnrolments: Enrolments,

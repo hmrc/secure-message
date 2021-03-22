@@ -16,16 +16,15 @@
 
 package uk.gov.hmrc.securemessage.controllers
 
-import play.api.Logging
 import javax.inject.Inject
-import javax.naming.CommunicationException
+import play.api.Logging
 import play.api.i18n.I18nSupport
 import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc.{ Action, AnyContent, ControllerComponents, Result }
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.securemessage.{ DuplicateConversationError, EmailError, NoReceiverEmailError, SecureMessageError, StoreError }
+import uk.gov.hmrc.securemessage._
 import uk.gov.hmrc.securemessage.controllers.models.generic._
 import uk.gov.hmrc.securemessage.controllers.utils.EnrolmentHelper._
 import uk.gov.hmrc.securemessage.controllers.utils.QueryStringValidation
@@ -44,44 +43,39 @@ class SecureMessageController @Inject()(
       withJsonBody[ConversationRequest] { conversationRequest =>
         secureMessageService.createConversation(conversationRequest.asConversation(client, conversationId)).map {
           case Right(_)                        => Created
-          case Left(error: SecureMessageError) => handleCreateConversationErrors(conversationId, error)
+          case Left(error: SecureMessageError) => handleErrors(client, conversationId, error)
         }
       }.recover {
-        case error: Exception => handleCreateConversationErrors(conversationId, error)
+        case error: Exception => handleErrors(client, conversationId, error)
       }
   }
 
-  private def handleCreateConversationErrors(conversationId: String, error: Exception): Result = {
-    val errMsg = s"Error on conversation with id $conversationId: ${error.getMessage}"
-    logger.error(error.getMessage, error.getCause)
-    error match {
-      case ee: EmailError                 => Created(Json.toJson(ee.message))
-      case ee: NoReceiverEmailError       => Created(Json.toJson(ee.message))
-      case de: DuplicateConversationError => Conflict(Json.toJson(de.message))
-      case se: StoreError                 => InternalServerError(Json.toJson(se.message))
-      case _                              => InternalServerError(Json.toJson(errMsg))
-    }
-  }
-
-  def createCaseworkerMessage(client: String, conversationId: String): Action[JsValue] = Action.async(parse.json) {
+  def addCaseworkerMessage(client: String, conversationId: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
-      withJsonBody[CaseworkerMessageRequest] { _ =>
-        Future.successful(Created(s"Created for client $client and conversationId $conversationId"))
+      withJsonBody[CaseworkerMessageRequest] { caseworkerMessageRequest =>
+        secureMessageService.addCaseWorkerMessageToConversation(client, conversationId, caseworkerMessageRequest).map {
+          case Right(_) =>
+            Created(Json.toJson(s"Created case worker message for client $client and conversationId $conversationId"))
+          case Left(error) => handleErrors(client, conversationId, error)
+        }
+      }.recover {
+        case error: Exception => handleErrors(client, conversationId, error)
       }
-
   }
 
-  def createCustomerMessage(client: String, conversationId: String): Action[JsValue] = Action.async(parse.json) {
+  def addCustomerMessage(client: String, conversationId: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
       authorised().retrieve(Retrievals.allEnrolments) { enrolments: Enrolments =>
-        withJsonBody[CustomerMessageRequest] { message =>
-          secureMessageService.addMessageToConversation(client, conversationId, message, enrolments).map { _ =>
-            Created(s"Created for client $client and conversationId $conversationId")
-          }
+        withJsonBody[CustomerMessageRequest] { customerMessageRequest =>
+          secureMessageService
+            .addCustomerMessageToConversation(client, conversationId, customerMessageRequest, enrolments)
+            .map {
+              case Right(_) =>
+                Created(Json.toJson(s"Created customer message for client $client and conversationId $conversationId"))
+              case Left(error) => handleErrors(client, conversationId, error)
+            }
         }.recover {
-          case ae: AuthorisationException    => Unauthorized(ae.reason)
-          case iae: IllegalArgumentException => NotFound(iae.getMessage)
-          case cex: CommunicationException   => BadGateway(cex.getMessage)
+          case error: Exception => handleErrors(client, conversationId, error)
         }
       }
   }
@@ -117,8 +111,8 @@ class SecureMessageController @Inject()(
             secureMessageService
               .getConversation(client, conversationId, customerEnrolments)
               .map {
-                case Some(apiConversation) => Ok(Json.toJson(apiConversation))
-                case _                     => NotFound(Json.toJson("No conversation found"))
+                case Right(apiConversation) => Ok(Json.toJson(apiConversation))
+                case _                      => NotFound(Json.toJson("No conversation found"))
               }
           }
         }
@@ -136,10 +130,28 @@ class SecureMessageController @Inject()(
             secureMessageService
               .updateReadTime(client, conversationId, enrolments, readTime.timestamp)
               .map {
-                case true  => Created(Json.toJson("read time successfully added"))
-                case false => BadRequest(Json.toJson("issue with updating read time"))
+                case Right(_)    => Created(Json.toJson("read time successfully added"))
+                case Left(error) => handleErrors(client, conversationId, error)
               }
           }
         }
+  }
+
+  private def handleErrors(client: String, conversationId: String, error: Exception): Result = {
+    val errMsg =
+      s"Error on conversation with client: $client, conversationId: $conversationId, error message: ${error.getMessage}"
+    logger.error(error.getMessage, error.getCause)
+    val jsonError = Json.toJson(errMsg)
+    error match {
+      case _: EmailSendingError          => Created(jsonError)
+      case _: NoReceiverEmailError       => Created(jsonError)
+      case _: DuplicateConversationError => Conflict(jsonError)
+      case _: InvalidContent             => BadRequest(jsonError)
+      case _: ParticipantNotFound        => Unauthorized(jsonError)
+      case _: ConversationNotFound       => NotFound(jsonError)
+      case _: EisForwardingError         => BadGateway(jsonError)
+      case _: StoreError                 => InternalServerError(jsonError)
+      case _                             => InternalServerError(jsonError)
+    }
   }
 }

@@ -1,6 +1,6 @@
 # secure-message
 Micro-service responsible for providing a secure communication channel between HMRC and it's customers.
-
+ 
 ## API
 
 An OpenAPI 3.0 schema is available for the endpoints on this service which can be explored via a Swagger UI. The schema and UI URLs are as follows:

@@ -181,3 +181,6 @@ dependencyUpdatesFilter -= moduleFilter(organization = "org.webjars")
 sources in (Compile, doc) := Seq.empty
 
 scalaModuleInfo ~= (_.map(_.withOverrideScalaVersion(true)))
+//TODO make bellow work and rename resources/service/ContentValidation/*html.txt to html
+resourceDirectory in Test := baseDirectory.value / "test" / "resources"
+excludeFilter in (Test, resources) := HiddenFileFilter || "*.html"
