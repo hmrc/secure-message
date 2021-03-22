@@ -49,7 +49,8 @@ object ConversationUtil {
         "mrn"              -> "DMS7324874993",
         "notificationType" -> "CDS Exports"
       )),
-    alert: core.Alert = alert
+    alert: core.Alert = alert,
+    messageCreationDate: String = "2020-11-10T15:00:01.000"
   ): Conversation =
     Conversation(
       "cdcm",
@@ -81,7 +82,7 @@ object ConversationUtil {
       NonEmptyList.one(
         Message(
           1,
-          new DateTime("2020-11-10T15:00:01.000"),
+          new DateTime(messageCreationDate),
           "QmxhaCBibGFoIGJsYWg="
         )
       ),
