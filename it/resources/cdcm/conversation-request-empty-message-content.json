@@ -11,8 +11,7 @@
       "key": "HMRC-CUS-ORG",
       "name": "EORINumber",
       "value": "GB1234567890"
-    },
-    "email": "jobloggs@test.com"
+    }
   }}],
   "alert": {"templateId": "emailTemplateId"},
   "subject": "D-80542-20201120",

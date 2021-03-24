@@ -57,18 +57,13 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
 
   "createConversation" must {
 
-    "return true when an email address is provided in the conversation" in new CreateMessageTestContext {
-      private val result = service.createConversation(cnvWithNoEmail)
-      result.futureValue mustBe Right(())
-    }
-
     "return SecureMessageException when no email address is provided and cannot be found in cds" in new CreateMessageTestContext(
       getEmailResult = Left(EmailLookupError(""))) {
       private val result = service.createConversation(cnvWithNoEmail).futureValue
       result.swap.toOption.get.message must startWith("Email lookup failed for:")
     }
 
-    "return true when no email address is provided but is found in the CDS lookup" in new CreateMessageTestContext {
+    "return Right when no email address is provided but is found in the CDS lookup" in new CreateMessageTestContext {
       private val result = service.createConversation(cnvWithNoEmail).futureValue
       result mustBe Right(())
     }
@@ -439,7 +434,7 @@ trait TestHelpers extends MockitoSugar {
   val listOfCoreConversation = List(
     ConversationUtil.getFullConversation("D-80542-20201120", "HMRC-CUS-ORG", "EORINumber", "GB1234567890"))
   val cnvWithNoEmail: Conversation =
-    Resources.readJson("model/api/cdcm/write/conversation-request-without-email.json").as[Conversation]
+    Resources.readJson("model/api/cdcm/write/conversation-request.json").as[Conversation]
   val cnvWithNoCustomer: Conversation = cnvWithNoEmail.copy(participants = List(cnvWithNoEmail.participants.head))
   val cnvWithMultipleCustomers: Conversation =
     ConversationUtil.getConversationRequestWithMultipleCustomers.asConversation("cdcm", "123")

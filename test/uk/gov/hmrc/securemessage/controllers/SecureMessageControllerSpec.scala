@@ -79,6 +79,20 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       status(response) mustBe CREATED
     }
 
+    "return CREATED (201) when sent a request with no alert parameters are passed" in new CreateConversationTestCase(
+      requestBody = Resources.readJson("model/api/cdcm/write/create-conversation-without-alert-parameters.json"),
+      serviceResponse = Future(Right(()))) {
+      private val response = controller.createConversation("cdcm", "123")(fakeRequest)
+      status(response) mustBe CREATED
+    }
+
+    "return CREATED (201) when sent a request email" in new CreateConversationTestCase(
+      requestBody = Resources.readJson("model/api/cdcm/write/create-conversation-with-email.json"),
+      serviceResponse = Future(Right(()))) {
+      private val response = controller.createConversation("cdcm", "123")(fakeRequest)
+      status(response) mustBe CREATED
+    }
+
     "return BAD REQUEST (400) when sent a request with required fields missing" in new CreateConversationTestCase(
       requestBody = Json.parse("""{"missing":"data"}""".stripMargin),
       serviceResponse = Future(Right(()))) {

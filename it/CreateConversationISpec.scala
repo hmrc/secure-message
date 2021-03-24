@@ -34,7 +34,7 @@ class CreateConversationISpec extends ISpec {
         wsClient
           .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
           .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
-          .put(new File("./it/resources/cdcm/create-conversation-full.json"))
+          .put(new File("./it/resources/cdcm/create-conversation.json"))
           .futureValue
       response.status mustBe CREATED
     }
@@ -45,16 +45,6 @@ class CreateConversationISpec extends ISpec {
           .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
           .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
           .put(new File("./it/resources/cdcm/create-conversation-minimal.json"))
-          .futureValue
-      response.status mustBe CREATED
-    }
-
-    "return CREATED when sent a conversation request with no email address and it is found in CDS" in new TestContent {
-      val response =
-        wsClient
-          .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
-          .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
-          .put(new File("./it/resources/cdcm/create-conversation-no-email.json"))
           .futureValue
       response.status mustBe CREATED
     }
