@@ -279,7 +279,7 @@
     },
     "/secure-messaging/conversation/{client}/{conversationId}/caseworker-message" : {
       "post" : {
-        "operationId" : "createCaseworkerMessage",
+        "operationId" : "addCaseworkerMessage",
         "tags" : [ "app" ],
         "summary" : "Adds a message from a caseworker to a conversation",
         "requestBody" : {
@@ -329,7 +329,7 @@
     },
     "/secure-messaging/conversation/{client}/{conversationId}/customer-message" : {
       "post" : {
-        "operationId" : "createCustomerMessage",
+        "operationId" : "addCustomerMessage",
         "tags" : [ "app" ],
         "summary" : "Adds a message from a customer to a conversation",
         "security" : [ {
@@ -479,7 +479,7 @@
   },
   "info" : {
     "title" : "Secure Message API",
-    "version" : "0.59.0-SNAPSHOT"
+    "version" : "0.64.0-SNAPSHOT"
   },
   "tags" : [ {
     "name" : "app"

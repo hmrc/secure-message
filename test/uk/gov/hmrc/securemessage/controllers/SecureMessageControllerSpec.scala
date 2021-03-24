@@ -19,8 +19,8 @@ package uk.gov.hmrc.securemessage.controllers
 import akka.stream.Materializer
 import app.routes
 import org.joda.time.DateTime
-import org.mockito.ArgumentMatchers.{ any, eq => eqTo }
-import org.mockito.Mockito.when
+import org.mockito.ArgumentMatchers.{ any, same, eq => eqTo }
+import org.mockito.Mockito.{ times, verify, when }
 import org.scalatest.OptionValues
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
@@ -39,7 +39,7 @@ import uk.gov.hmrc.auth.core.retrieve.Retrieval
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.securemessage._
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.{ ApiConversation, ConversationMetadata }
-import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage
+import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.{ CaseworkerMessage, CdcmConversation }
 import uk.gov.hmrc.securemessage.controllers.model.common.CustomerEnrolment
 import uk.gov.hmrc.securemessage.controllers.model.common.read.FilterTag
 import uk.gov.hmrc.securemessage.controllers.model.common.write.{ CustomerMessage, ReadTime }
@@ -86,10 +86,13 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       status(response) mustBe CREATED
     }
 
-    "return CREATED (201) when sent a request email" in new CreateConversationTestCase(
-      requestBody = Resources.readJson("model/api/cdcm/write/create-conversation-with-email.json"),
+    val cdcmConversationWithEmail = Resources.readJson("model/api/cdcm/write/create-conversation-with-email.json")
+    "return CREATED (201) when sending email in but ignore it" in new CreateConversationTestCase(
+      requestBody = cdcmConversationWithEmail,
       serviceResponse = Future(Right(()))) {
-      private val response = controller.createConversation("cdcm", "123")(fakeRequest)
+      private val response = controller.createConversation(client, conversationId)(fakeRequest)
+      verify(mockSecureMessageService, times(1))
+        .createConversation(same(expectedConversation))(any[HeaderCarrier], any[ExecutionContext])
       status(response) mustBe CREATED
     }
 
@@ -372,7 +375,11 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       headers = FakeHeaders(Seq(CONTENT_TYPE -> JSON)),
       body = requestBody
     )
-
+    val client = "cdcm"
+    val conversationId = "123"
+    private val conversation: Conversation = requestBody.as[CdcmConversation].asConversation(client, conversationId)
+    private val expectedParticipants = conversation.participants.map(p => p.copy(email = None, name = None))
+    val expectedConversation: Conversation = conversation.copy(participants = expectedParticipants)
     when(mockSecureMessageService.createConversation(any[Conversation])(any[HeaderCarrier], any[ExecutionContext]))
       .thenReturn(serviceResponse)
   }
