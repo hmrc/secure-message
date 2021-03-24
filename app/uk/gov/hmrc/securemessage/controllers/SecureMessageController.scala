@@ -33,6 +33,8 @@ import uk.gov.hmrc.securemessage.controllers.utils.EnrolmentHelper._
 import uk.gov.hmrc.securemessage.controllers.utils.QueryStringValidation
 import uk.gov.hmrc.securemessage.models.core.Conversation
 import uk.gov.hmrc.securemessage.services.SecureMessageService
+import uk.gov.hmrc.time.DateTimeUtils
+
 import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -40,7 +42,8 @@ import scala.concurrent.{ ExecutionContext, Future }
 class SecureMessageController @Inject()(
   cc: ControllerComponents,
   val authConnector: AuthConnector,
-  secureMessageService: SecureMessageService)(implicit ec: ExecutionContext)
+  secureMessageService: SecureMessageService,
+  dataTimeUtils: DateTimeUtils)(implicit ec: ExecutionContext)
     extends BackendController(cc) with AuthorisedFunctions with QueryStringValidation with I18nSupport with Logging {
 
   def createConversation(client: String, conversationId: String): Action[JsValue] = Action.async(parse.json) {
@@ -48,7 +51,7 @@ class SecureMessageController @Inject()(
       client match {
         case "cdcm" =>
           withJsonBody[CdcmConversation] { cdcmConversation =>
-            saveConversation(cdcmConversation.asConversation(client, conversationId))
+            saveConversation(cdcmConversation.asConversationWithCreatedDate(client, conversationId, dataTimeUtils.now))
           }
         case _ => Future(handleErrors(client, conversationId, InvalidRequest(s"Not supported client: $client")))
       }

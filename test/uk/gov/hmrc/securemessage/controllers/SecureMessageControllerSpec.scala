@@ -19,7 +19,7 @@ package uk.gov.hmrc.securemessage.controllers
 import akka.stream.Materializer
 import app.routes
 import org.joda.time.DateTime
-import org.mockito.ArgumentMatchers.{ any, same, eq => eqTo }
+import org.mockito.ArgumentMatchers.{ any, eq => eqTo }
 import org.mockito.Mockito.{ times, verify, when }
 import org.scalatest.OptionValues
 import org.scalatest.concurrent.ScalaFutures
@@ -56,7 +56,7 @@ import scala.concurrent.{ ExecutionContext, Future }
     "org.wartremover.warts.NonUnitStatements",
     "org.wartremover.warts.OptionPartial",
     "org.wartremover.warts.EitherProjectionPartial"))
-class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with MockitoSugar with OptionValues {
+class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with MockitoSugar with OptionValues with UnitTest {
 
   implicit val mat: Materializer = NoMaterializer
   implicit val hc: HeaderCarrier = HeaderCarrier()
@@ -86,13 +86,12 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       status(response) mustBe CREATED
     }
 
-    val cdcmConversationWithEmail = Resources.readJson("model/api/cdcm/write/create-conversation-with-email.json")
     "return CREATED (201) when sending email in but ignore it" in new CreateConversationTestCase(
-      requestBody = cdcmConversationWithEmail,
+      requestBody = Resources.readJson("model/api/cdcm/write/create-conversation-with-email.json"),
       serviceResponse = Future(Right(()))) {
       private val response = controller.createConversation(client, conversationId)(fakeRequest)
       verify(mockSecureMessageService, times(1))
-        .createConversation(same(expectedConversation))(any[HeaderCarrier], any[ExecutionContext])
+        .createConversation(eqTo(expectedConversation))(any[HeaderCarrier], any[ExecutionContext])
       status(response) mustBe CREATED
     }
 
@@ -341,8 +340,13 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     val mockSecureMessageService: SecureMessageService = mock[SecureMessageService]
     when(mockRepository.insertIfUnique(any[Conversation])(any[ExecutionContext]))
       .thenReturn(Future.successful(Right(())))
+
     val controller =
-      new SecureMessageController(Helpers.stubControllerComponents(), mockAuthConnector, mockSecureMessageService)
+      new SecureMessageController(
+        Helpers.stubControllerComponents(),
+        mockAuthConnector,
+        mockSecureMessageService,
+        zeroTimeProvider)
 
     val enrolments: Set[Enrolment] = authEnrolments.map(
       enrolment =>
@@ -377,9 +381,10 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     )
     val client = "cdcm"
     val conversationId = "123"
-    private val conversation: Conversation = requestBody.as[CdcmConversation].asConversation(client, conversationId)
-    private val expectedParticipants = conversation.participants.map(p => p.copy(email = None, name = None))
-    val expectedConversation: Conversation = conversation.copy(participants = expectedParticipants)
+    private lazy val conversation: Conversation =
+      requestBody.as[CdcmConversation].asConversationWithCreatedDate(client, conversationId, now)
+    private lazy val expectedParticipants = conversation.participants.map(p => p.copy(email = None))
+    lazy val expectedConversation: Conversation = conversation.copy(participants = expectedParticipants)
     when(mockSecureMessageService.createConversation(any[Conversation])(any[HeaderCarrier], any[ExecutionContext]))
       .thenReturn(serviceResponse)
   }

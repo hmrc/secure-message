@@ -6,7 +6,7 @@
 #   content:
 #    application/json:
 #      schema:
-#        $ref: '#/components/schemas/uk.gov.hmrc.securemessage.controllers.models.cdcm.ConversationRequest'
+#        $ref: '#/components/schemas/uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CdcmConversation'
 # responses:
 #   201:
 #     description: conversation created successfully
@@ -31,7 +31,7 @@ PUT         /conversation/:client/:conversationId   SecureMessageController.crea
 #   content:
 #    application/json:
 #      schema:
-#        $ref: '#/components/schemas/uk.gov.hmrc.securemessage.controllers.models.cdcm.CaseworkerMessageRequest'
+#        $ref: '#/components/schemas/uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage'
 # responses:
 #   201:
 #     description: message created successfully
@@ -56,7 +56,7 @@ POST        /conversation/:client/:conversationId/caseworker-message    SecureMe
 #   content:
 #    application/json:
 #      schema:
-#        $ref: '#/components/schemas/uk.gov.hmrc.securemessage.controllers.models.cdcm.CustomerMessageRequest'
+#        $ref: '#/components/schemas/uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage'
 # responses:
 #   201:
 #     description: message created successfully
@@ -107,7 +107,7 @@ GET         /conversation/:client/:conversationId   SecureMessageController.getC
 #   content:
 #    application/json:
 #      schema:
-#        $ref: '#/components/schemas/uk.gov.hmrc.securemessage.controllers.models.common.write.ReadTime'
+#        $ref: '#/components/schemas/uk.gov.hmrc.securemessage.controllers.model.common.write.ReadTime'
 # responses:
 #   201:
 #     description: read date and time successfully added

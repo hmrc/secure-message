@@ -394,8 +394,9 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
   }
 }
 
+//TODO: change this with specialized TestCases
 @SuppressWarnings(Array("org.wartremover.warts.TraversableOps", "org.wartremover.warts.NonUnitStatements"))
-trait TestHelpers extends MockitoSugar {
+trait TestHelpers extends MockitoSugar with UnitTest {
   import uk.gov.hmrc.auth.core.Enrolment
   val eORINumber: Identifier = Identifier("EORINumber", "GB123456789000000", Some("HMRC-CUS-ORG"))
   val participant: Participant = Participant(1, ParticipantType.Customer, eORINumber, None, None, None, None)
@@ -437,5 +438,5 @@ trait TestHelpers extends MockitoSugar {
     Resources.readJson("model/api/cdcm/write/conversation-request.json").as[Conversation]
   val cnvWithNoCustomer: Conversation = cnvWithNoEmail.copy(participants = List(cnvWithNoEmail.participants.head))
   val cnvWithMultipleCustomers: Conversation =
-    ConversationUtil.getConversationRequestWithMultipleCustomers.asConversation("cdcm", "123")
+    ConversationUtil.getConversationRequestWithMultipleCustomers.asConversationWithCreatedDate("cdcm", "123", now)
 }
