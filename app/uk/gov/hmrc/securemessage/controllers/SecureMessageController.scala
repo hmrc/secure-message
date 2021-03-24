@@ -50,7 +50,7 @@ class SecureMessageController @Inject()(
           withJsonBody[CdcmConversation] { cdcmConversation =>
             saveConversation(cdcmConversation.asConversation(client, conversationId))
           }
-        case _ => Future(handleErrors(client, conversationId, InvalidRequestBody(s"Not supported client: $client")))
+        case _ => Future(handleErrors(client, conversationId, InvalidRequest(s"Not supported client: $client")))
       }
 
   }
@@ -159,15 +159,15 @@ class SecureMessageController @Inject()(
     logger.error(error.getMessage, error.getCause)
     val jsonError = Json.toJson(errMsg)
     error match {
-      case EmailSendingError(_)                            => Created(jsonError)
-      case NoReceiverEmailError(_)                         => Created(jsonError)
-      case DuplicateConversationError(_, _)                => Conflict(jsonError)
-      case InvalidContent(_, _) | InvalidRequestBody(_, _) => BadRequest(jsonError)
-      case ParticipantNotFound(_)                          => Unauthorized(jsonError)
-      case ConversationNotFound(_)                         => NotFound(jsonError)
-      case EisForwardingError(_)                           => BadGateway(jsonError)
-      case StoreError(_, _)                                => InternalServerError(jsonError)
-      case _                                               => InternalServerError(jsonError)
+      case EmailSendingError(_)                        => Created(jsonError)
+      case NoReceiverEmailError(_)                     => Created(jsonError)
+      case DuplicateConversationError(_, _)            => Conflict(jsonError)
+      case InvalidContent(_, _) | InvalidRequest(_, _) => BadRequest(jsonError)
+      case ParticipantNotFound(_)                      => Unauthorized(jsonError)
+      case ConversationNotFound(_)                     => NotFound(jsonError)
+      case EisForwardingError(_)                       => BadGateway(jsonError)
+      case StoreError(_, _)                            => InternalServerError(jsonError)
+      case _                                           => InternalServerError(jsonError)
     }
   }
 }

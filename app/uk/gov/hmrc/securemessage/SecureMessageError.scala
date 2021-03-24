@@ -43,5 +43,5 @@ final case class ParticipantNotFound(override val message: String) extends Secur
 final case class EisForwardingError(override val message: String) extends SecureMessageError(message)
 
 @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
-final case class InvalidRequestBody(override val message: String, override val cause: Option[Throwable] = None)
+final case class InvalidRequest(override val message: String, override val cause: Option[Throwable] = None)
     extends SecureMessageError(message, cause)
