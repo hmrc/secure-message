@@ -66,27 +66,13 @@
         },
         "required" : [ "customer" ]
       },
-      "uk.gov.hmrc.securemessage.controllers.model.common.SystemIdentifier" : {
-        "properties" : {
-          "name" : {
-            "type" : "string"
-          },
-          "value" : {
-            "type" : "string"
-          }
-        },
-        "required" : [ "name", "value" ]
-      },
       "uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CdcmSystem" : {
         "properties" : {
-          "identifier" : {
-            "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.controllers.model.common.SystemIdentifier"
-          },
           "display" : {
             "type" : "string"
           }
         },
-        "required" : [ "identifier", "display" ]
+        "required" : [ "display" ]
       },
       "uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CdcmSender" : {
         "properties" : {
@@ -205,10 +191,10 @@
         "parameters" : [ {
           "in" : "path",
           "name" : "client",
+          "required" : true,
           "schema" : {
             "type" : "string"
-          },
-          "required" : true
+          }
         }, {
           "in" : "path",
           "name" : "conversationId",
@@ -256,10 +242,10 @@
         "parameters" : [ {
           "in" : "path",
           "name" : "client",
+          "required" : true,
           "schema" : {
             "type" : "string"
-          },
-          "required" : true
+          }
         }, {
           "in" : "path",
           "name" : "conversationId",
@@ -306,10 +292,10 @@
         "parameters" : [ {
           "in" : "path",
           "name" : "client",
+          "required" : true,
           "schema" : {
             "type" : "string"
-          },
-          "required" : true
+          }
         }, {
           "in" : "path",
           "name" : "conversationId",
@@ -359,10 +345,10 @@
         "parameters" : [ {
           "in" : "path",
           "name" : "client",
+          "required" : true,
           "schema" : {
             "type" : "string"
-          },
-          "required" : true
+          }
         }, {
           "in" : "path",
           "name" : "conversationId",
@@ -455,10 +441,10 @@
         "parameters" : [ {
           "in" : "path",
           "name" : "client",
+          "required" : true,
           "schema" : {
             "type" : "string"
-          },
-          "required" : true
+          }
         }, {
           "in" : "path",
           "name" : "conversationId",
