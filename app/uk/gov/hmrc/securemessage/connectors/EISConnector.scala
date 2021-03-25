@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.securemessage.connectors
 
+import java.util.UUID
+
 import com.github.nscala_time.time.Imports.DateTime
 import controllers.Assets.{ ACCEPT, CONTENT_TYPE, DATE }
 import javax.inject.{ Inject, Singleton }
@@ -25,6 +27,7 @@ import play.api.http.Status._
 import uk.gov.hmrc.http.{ HeaderCarrier, HttpClient }
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.securemessage.EisForwardingError
+import uk.gov.hmrc.securemessage.connectors.utils.CustomHeaders
 import uk.gov.hmrc.securemessage.models.QueryResponseWrapper
 
 import scala.concurrent.{ ExecutionContext, Future }
@@ -35,9 +38,9 @@ import scala.concurrent.{ ExecutionContext, Future }
 class EISConnector @Inject()(httpClient: HttpClient, servicesConfig: ServicesConfig)(implicit ec: ExecutionContext) {
 
   private val eisBaseUrl = servicesConfig.baseUrl("eis")
-
   private val eisBearerToken = servicesConfig.getString("microservice.services.eis.bearer-token")
   private val eisEndpoint = servicesConfig.getString("microservice.services.eis.endpoint")
+  private val eisEnvironment = servicesConfig.getString("microservice.services.eis.environment")
 
   def forwardMessage(queryResponse: QueryResponseWrapper): Future[Either[EisForwardingError, Unit]] = {
     implicit val hc: HeaderCarrier = HeaderCarrier()
@@ -49,7 +52,11 @@ class EISConnector @Inject()(httpClient: HttpClient, servicesConfig: ServicesCon
           (CONTENT_TYPE, MimeTypes.JSON),
           (ACCEPT, MimeTypes.JSON),
           (AUTHORIZATION, s"Bearer $eisBearerToken"),
-          (DATE, DateTime.now().toString("EEE, dd MMM yyyy HH:mm:ss z"))
+          (DATE, DateTime.now().toString("EEE, dd MMM yyyy HH:mm:ss z")),
+          (CustomHeaders.CorrelationId, UUID.randomUUID().toString),
+          (CustomHeaders.ForwardedHost, "DIGITAL"),
+          (CustomHeaders.EisSenderClassification, "internal"),
+          (CustomHeaders.Environment, eisEnvironment)
         )
       )
       .flatMap { response =>
@@ -61,5 +68,4 @@ class EISConnector @Inject()(httpClient: HttpClient, servicesConfig: ServicesCon
         }
       }
   }
-
 }
