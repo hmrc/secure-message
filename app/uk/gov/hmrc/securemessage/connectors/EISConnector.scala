@@ -16,8 +16,11 @@
 
 package uk.gov.hmrc.securemessage.connectors
 
+import com.github.nscala_time.time.Imports.DateTime
+import controllers.Assets.{ ACCEPT, CONTENT_TYPE, DATE }
 import javax.inject.{ Inject, Singleton }
 import play.api.http.HeaderNames.AUTHORIZATION
+import play.api.http.MimeTypes
 import play.api.http.Status._
 import uk.gov.hmrc.http.{ HeaderCarrier, HttpClient }
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
@@ -34,14 +37,20 @@ class EISConnector @Inject()(httpClient: HttpClient, servicesConfig: ServicesCon
   private val eisBaseUrl = servicesConfig.baseUrl("eis")
 
   private val eisBearerToken = servicesConfig.getString("microservice.services.eis.bearer-token")
+  private val eisEndpoint = servicesConfig.getString("microservice.services.eis.endpoint")
 
   def forwardMessage(queryResponse: QueryResponseWrapper): Future[Either[EisForwardingError, Unit]] = {
     implicit val hc: HeaderCarrier = HeaderCarrier()
     httpClient
       .doPut[QueryResponseWrapper](
-        s"$eisBaseUrl/prsup/PRRestService/DMS/Service/QueryResponse",
+        s"$eisBaseUrl$eisEndpoint",
         queryResponse,
-        Seq((AUTHORIZATION, s"Bearer $eisBearerToken"))
+        Seq(
+          (CONTENT_TYPE, MimeTypes.JSON),
+          (ACCEPT, MimeTypes.JSON),
+          (AUTHORIZATION, s"Bearer $eisBearerToken"),
+          (DATE, DateTime.now().toString("EEE, dd MMM yyyy HH:mm:ss z"))
+        )
       )
       .flatMap { response =>
         response.status match {
