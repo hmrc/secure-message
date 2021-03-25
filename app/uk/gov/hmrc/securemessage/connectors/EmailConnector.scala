@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.securemessage.connectors
 
-import play.api.Logging
-
 import javax.inject.{ Inject, Singleton }
 import uk.gov.hmrc.http.HttpReads.Implicits.readRaw
 import uk.gov.hmrc.http.{ HeaderCarrier, HttpClient, HttpResponse }
@@ -25,22 +23,31 @@ import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.securemessage.models.EmailRequest
 import uk.gov.hmrc.securemessage.models.EmailRequest.emailRequestWrites
 import play.api.http.Status.ACCEPTED
+import uk.gov.hmrc.play.audit.http.connector.AuditConnector
+import uk.gov.hmrc.play.audit.model.EventTypes
 import uk.gov.hmrc.securemessage.EmailSendingError
+import uk.gov.hmrc.securemessage.services.Auditing
 
 import scala.concurrent.{ ExecutionContext, Future }
 
 @Singleton
 @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.Nothing"))
-class EmailConnector @Inject()(httpClient: HttpClient, servicesConfig: ServicesConfig)(implicit ec: ExecutionContext)
-    extends Logging {
+class EmailConnector @Inject()(
+  httpClient: HttpClient,
+  servicesConfig: ServicesConfig,
+  override val auditConnector: AuditConnector)(implicit ec: ExecutionContext)
+    extends Auditing {
 
   private val emailBaseUrl = servicesConfig.baseUrl("email")
 
   def send(emailRequest: EmailRequest)(implicit hc: HeaderCarrier): Future[Either[EmailSendingError, Unit]] =
     httpClient.POST[EmailRequest, HttpResponse](s"$emailBaseUrl/hmrc/email", emailRequest).map { response =>
       response.status match {
-        case ACCEPTED => Right(())
+        case ACCEPTED =>
+          auditEmailSent(EventTypes.Succeeded, emailRequest, ACCEPTED)
+          Right(())
         case status =>
+          auditEmailSent(EventTypes.Failed, emailRequest, status)
           val errMsg = s"Email request failed: got response status $status from email service"
           Left(EmailSendingError(errMsg))
       }

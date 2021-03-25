@@ -17,6 +17,7 @@
 package uk.gov.hmrc.securemessage.services
 
 import java.util.UUID
+
 import cats.data._
 import cats.implicits._
 import com.google.inject.Inject
@@ -25,6 +26,7 @@ import play.api.i18n.Messages
 import play.api.mvc.Request
 import uk.gov.hmrc.auth.core.Enrolments
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.securemessage._
 import uk.gov.hmrc.securemessage.connectors.{ ChannelPreferencesConnector, EISConnector, EmailConnector }
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.{ ApiConversation, ConversationMetadata }
@@ -51,7 +53,9 @@ class SecureMessageService @Inject()(
   repo: ConversationRepository,
   emailConnector: EmailConnector,
   channelPrefConnector: ChannelPreferencesConnector,
-  eisConnector: EISConnector) {
+  eisConnector: EISConnector,
+  override val auditConnector: AuditConnector)
+    extends Auditing {
 
   def createConversation(conversation: Conversation)(
     implicit hc: HeaderCarrier,
@@ -154,8 +158,12 @@ class SecureMessageService @Inject()(
     ec: ExecutionContext): Future[List[Either[CustomerEmailError, Participant]]] =
     Future.sequence(noEmailCustomers.map(customerParticipant =>
       channelPrefConnector.getEmailForEnrolment(customerParticipant.identifier).map {
-        case Right(email) => Right(customerParticipant.copy(email = Some(email)))
-        case Left(elr)    => Left(CustomerEmailError(customerParticipant, elr))
+        case Right(email) =>
+          auditRetrieveEmail(Some(email))
+          Right(customerParticipant.copy(email = Some(email)))
+        case Left(elr) =>
+          auditRetrieveEmail(None)
+          Left(CustomerEmailError(customerParticipant, elr))
     }))
 
   @SuppressWarnings(
