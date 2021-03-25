@@ -57,6 +57,8 @@ class CreateConversationISpec extends ISpec {
           .put(new File("./it/resources/cdcm/create-conversation.json"))
           .futureValue
       response.status mustBe BAD_REQUEST
+      response.body must startWith("Unknown value supplied for uk.gov.hmrc.securemessage.controllers.model.ClientName")
+      response.body must include("cdcm")
     }
 
     "return BAD REQUEST when sent a minimal and invalid JSON payload" in new TestContent {
