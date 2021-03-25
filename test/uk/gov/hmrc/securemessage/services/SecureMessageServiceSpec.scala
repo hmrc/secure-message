@@ -107,7 +107,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
       val result = await(
         service.getConversationsFiltered(Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777")), None))
       val metadata: ConversationMetadata = ConversationMetadata(
-        "cdcm",
+        "CDCM",
         "D-80542-20201120",
         "MRN: 19GB4S24GC3PPFGVR7",
         DateTime.parse("2020-11-10T15:00:01.000"),
@@ -132,7 +132,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
       result mustBe
         List(
           ConversationMetadata(
-            "cdcm",
+            "CDCM",
             "D-80542-20201120",
             "MRN: 19GB4S24GC3PPFGVR7",
             DateTime.parse("2020-11-10T15:00:01.000"),
@@ -178,7 +178,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
       result mustBe
         List(
           ConversationMetadata(
-            "cdcm",
+            "CDCM",
             "D-80542-20201120",
             "MRN: 19GB4S24GC3PPFGVR7",
             DateTime.parse("2020-11-10T15:00:00.000"),
@@ -186,7 +186,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
             unreadMessages = false,
             1),
           ConversationMetadata(
-            "cdcm",
+            "CDCM",
             "D-80542-20201120",
             "MRN: 19GB4S24GC3PPFGVR7",
             DateTime.parse("2020-11-09T15:00:00.000"),
@@ -194,7 +194,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
             unreadMessages = false,
             1),
           ConversationMetadata(
-            "cdcm",
+            "CDCM",
             "D-80542-20201120",
             "MRN: 19GB4S24GC3PPFGVR7",
             DateTime.parse("2020-11-08T15:00:00.000"),
@@ -214,10 +214,10 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
       val result = await(
         service
           .getConversation(
-            "cdcm",
+            "CDCM",
             "D-80542-20201120",
             Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777"))))
-      result.right.get.client mustBe "cdcm"
+      result.right.get.client mustBe "CDCM"
       result.right.get.messages.size mustBe 1
       result.right.get.subject mustBe "MRN: 19GB4S24GC3PPFGVR7"
     }
@@ -231,7 +231,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
       val result = await(
         service
           .getConversation(
-            "cdcm",
+            "CDCM",
             "D-80542-20201120",
             Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777"))))
       result mustBe
@@ -246,7 +246,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
     "update the database when the customer has a participating enrolment" in new AddCustomerMessageTestContext(
       getConversationResult = Right(listOfCoreConversation.head)) {
       when(mockEisConnector.forwardMessage(any[QueryResponseWrapper])).thenReturn(Future(Right(())))
-      await(service.addCustomerMessageToConversation("cdcm", "D-80542-20201120", customerMessage, customerEnrolment))
+      await(service.addCustomerMessageToConversation("CDCM", "D-80542-20201120", customerMessage, customerEnrolment))
       verify(mockRepository, times(1))
         .addMessageToConversation(any[String], any[String], any[Message])(any[ExecutionContext])
     }
@@ -255,16 +255,16 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
       getConversationResult = Right(cnvWithNoEmail)) {
       when(mockEnrolments.enrolments)
         .thenReturn(Set(Enrolment("HMRC-CUS-ORG", Seq(EnrolmentIdentifier("EORINumber", "GB123456789000001")), "")))
-      await(service.addCustomerMessageToConversation("cdcm", "D-80542-20201120", customerMessage, mockEnrolments)) mustBe Left(
+      await(service.addCustomerMessageToConversation("CDCM", "D-80542-20201120", customerMessage, mockEnrolments)) mustBe Left(
         ParticipantNotFound(
-          "No participant found for client: cdcm, conversationId: 123, indentifiers: Set(Identifier(EORINumber,GB123456789000001,Some(HMRC-CUS-ORG)))"))
+          "No participant found for client: CDCM, conversationId: 123, indentifiers: Set(Identifier(EORINumber,GB123456789000001,Some(HMRC-CUS-ORG)))"))
     }
 
     "return ConversationIdNotFound if the conversation ID is not found" in new AddCustomerMessageTestContext(
       getConversationResult = Left(ConversationNotFound("Conversation ID not known"))) {
       when(mockEnrolments.enrolments)
         .thenReturn(Set(Enrolment("HMRC-CUS-ORG", Seq(EnrolmentIdentifier("EORINumber", "GB123456789000001")), "")))
-      await(service.addCustomerMessageToConversation("cdcm", "D-80542-20201120", customerMessage, mockEnrolments)) mustBe Left(
+      await(service.addCustomerMessageToConversation("CDCM", "D-80542-20201120", customerMessage, mockEnrolments)) mustBe Left(
         ConversationNotFound("Conversation ID not known"))
     }
 
@@ -273,7 +273,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
       addMessageResult = Left(EisForwardingError("There was an issue with forwarding the message to EIS"))) {
       when(mockEnrolments.enrolments)
         .thenReturn(Set(Enrolment("HMRC-CUS-ORG", Seq(EnrolmentIdentifier("EORINumber", "GB123456789000000")), "")))
-      await(service.addCustomerMessageToConversation("cdcm", "D-80542-20201120", customerMessage, mockEnrolments))
+      await(service.addCustomerMessageToConversation("CDCM", "D-80542-20201120", customerMessage, mockEnrolments))
       verify(mockRepository, never())
         .addMessageToConversation(any[String], any[String], any[Message])(any[ExecutionContext])
     }
@@ -284,7 +284,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
     "update the database and send a nudge email when a caseworker message has successfully been added to the db" in new AddCaseworkerMessageTestContent {
       await(
         service.addCaseWorkerMessageToConversation(
-          "cdcm",
+          "CDCM",
           "123",
           caseWorkerMessage("PHA+Q2FuIEkgaGF2ZSBteSB0YXggbW9uZXkgcGxlYXNlPzwvcD4="))) mustBe Right(())
     }
@@ -292,7 +292,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
     "return ParticipantNotFound if the caseworker does not have a participating enrolment" in new AddCaseworkerMessageTestContent {
       await(
         service.addCaseWorkerMessageToConversation(
-          "cdcm",
+          "CDCM",
           "D-80542-20201120",
           caseWorkerMessage("PHA+Q2FuIEkgaGF2ZSBteSB0YXggbW9uZXkgcGxlYXNlPzwvcD4="))) mustBe Right(())
     }
@@ -301,7 +301,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
       getConversationResult = Left(ConversationNotFound("Conversation ID not known"))) {
       await(
         service.addCaseWorkerMessageToConversation(
-          "cdcm",
+          "CDCM",
           "D-80542-20201120",
           caseWorkerMessage("QmxhaCBibGFoIGJsYWg="))) mustBe Left(ConversationNotFound("Conversation ID not known"))
     }
@@ -309,7 +309,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
     "return content validation error if message content is invalid" in new AddCaseworkerMessageTestContent {
       await(
         service.addCaseWorkerMessageToConversation(
-          "cdcm",
+          "CDCM",
           "D-80542-20201120",
           caseWorkerMessage("PG1hdHQ+Q2FuIEkgaGF2ZSBteSB0YXggbW9uZXkgcGxlYXNlPzwvbWF0dD4="))) mustBe
         Left(InvalidContent(
@@ -324,7 +324,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
       val result: Either[SecureMessageError, Unit] =
         await(
           service.updateReadTime(
-            "cdcm",
+            "CDCM",
             "D-80542-20201120",
             customerEnrolment,
             DateTime.parse("2020-11-10T15:00:18.000+0000")
@@ -337,7 +337,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
       val result: Either[SecureMessageError, Unit] =
         await(
           service.updateReadTime(
-            "cdcm",
+            "CDCM",
             "D-80542-20201120",
             customerEnrolment,
             DateTime.parse("2020-11-10T15:00:18.000+0000")))
@@ -410,7 +410,7 @@ trait TestHelpers extends MockitoSugar with UnitTest {
   val enrolments: Enrolments = Enrolments(
     Set(Enrolment("HMRC-CUS-ORG", Vector(EnrolmentIdentifier("EORINumber", "GB7777777777")), "Activated", None)))
   val identifier: Identifier = Identifier("EORINumber", "GB123456789000000", Some("HMRC-CUS-ORG"))
-  val systemIdentifier: Identifier = Identifier("cdcm", "123", None)
+  val systemIdentifier: Identifier = Identifier("CDCM", "123", None)
   val systemParticipant: Participant =
     Participant(1, ParticipantType.System, systemIdentifier, None, None, None, None)
   val customerParticipant: Participant = Participant(
@@ -429,7 +429,7 @@ trait TestHelpers extends MockitoSugar with UnitTest {
 
   def caseWorkerMessage(content: String): CaseworkerMessage =
     CaseworkerMessage(
-      CaseworkerMessage.Sender(CaseworkerMessage.System(CaseworkerMessage.SystemIdentifier("cdcm", "123"))),
+      CaseworkerMessage.Sender(CaseworkerMessage.System(CaseworkerMessage.SystemIdentifier("CDCM", "123"))),
       content
     )
   val listOfCoreConversation = List(
@@ -438,5 +438,5 @@ trait TestHelpers extends MockitoSugar with UnitTest {
     Resources.readJson("model/api/cdcm/write/conversation-request.json").as[Conversation]
   val cnvWithNoCustomer: Conversation = cnvWithNoEmail.copy(participants = List(cnvWithNoEmail.participants.head))
   val cnvWithMultipleCustomers: Conversation =
-    ConversationUtil.getConversationRequestWithMultipleCustomers.asConversationWithCreatedDate("cdcm", "123", now)
+    ConversationUtil.getConversationRequestWithMultipleCustomers.asConversationWithCreatedDate("CDCM", "123", now)
 }

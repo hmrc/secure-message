@@ -31,10 +31,10 @@ class AddMessageToConversationISpec extends ISpec {
     "return CREATED when the message is successfully added to the conversation" in new CustomerTestCase(VALID_EORI) {
 
       response.status mustBe CREATED
-      response.body mustBe "\"Created customer message for client cdcm and conversationId D-80542-20201120\""
+      response.body mustBe "\"Created customer message for client CDCM and conversationId D-80542-20201120\""
     }
     "return NOT FOUND when the conversation ID is not recognised" in {
-      val client = "cdcm"
+      val client = "CDCM"
       val conversationId = "D-80542-20201120"
       val response =
         wsClient
@@ -43,12 +43,12 @@ class AddMessageToConversationISpec extends ISpec {
           .post(Json.obj("content" -> "PGRpdj5IZWxsbzwvZGl2Pg=="))
           .futureValue
       response.status mustBe NOT_FOUND
-      response.body mustBe "\"Error on conversation with client: cdcm, conversationId: D-80542-20201120, error message: Conversation not found for identifier: Set(Identifier(EORINumber,GB1234567890,Some(HMRC-CUS-ORG)))\""
+      response.body mustBe "\"Error on conversation with client: CDCM, conversationId: D-80542-20201120, error message: Conversation not found for identifier: Set(Identifier(EORINumber,GB1234567890,Some(HMRC-CUS-ORG)))\""
     }
 
     "return NOT_FOUND when the customer is not a participant" in new CustomerTestCase("GB1234567891") {
       response.status mustBe NOT_FOUND
-      response.body mustBe "\"Error on conversation with client: cdcm, conversationId: D-80542-20201120, error message: Conversation not found for identifier: Set(Identifier(EORINumber,GB1234567891,Some(HMRC-CUS-ORG)))\""
+      response.body mustBe "\"Error on conversation with client: CDCM, conversationId: D-80542-20201120, error message: Conversation not found for identifier: Set(Identifier(EORINumber,GB1234567891,Some(HMRC-CUS-ORG)))\""
     }
   }
 
@@ -59,7 +59,7 @@ class AddMessageToConversationISpec extends ISpec {
       response.status mustBe CREATED
     }
     "return NOT FOUND when the conversation ID is not recognised" in {
-      val client = "cdcm"
+      val client = "CDCM"
       val conversationId = "D-80542-20201120"
       val response =
         wsClient
@@ -68,17 +68,17 @@ class AddMessageToConversationISpec extends ISpec {
           .post(new File("./it/resources/cdcm/caseworker-message.json"))
           .futureValue
       response.status mustBe NOT_FOUND
-      response.body mustBe "\"Error on conversation with client: cdcm, conversationId: D-80542-20201120, error message: Conversation not found for identifier: Set(Identifier(CDCM,D-80542-20201120,None))\""
+      response.body mustBe "\"Error on conversation with client: CDCM, conversationId: D-80542-20201120, error message: Conversation not found for identifier: Set(Identifier(CDCM,D-80542-20201120,None))\""
     }
     "return BAD_REQUEST when invalid message content is supplied" in new CaseworkerTestCase(
       "./it/resources/cdcm/caseworker-message-invalid-html.json") {
       response.status mustBe BAD_REQUEST
-      response.body mustBe "\"Error on conversation with client: cdcm, conversationId: D-80542-20201120, error message: Html contains disallowed tags, attributes or protocols within the tags: matt. For allowed elements see class org.jsoup.safety.Whitelist.relaxed()\""
+      response.body mustBe "\"Error on conversation with client: CDCM, conversationId: D-80542-20201120, error message: Html contains disallowed tags, attributes or protocols within the tags: matt. For allowed elements see class org.jsoup.safety.Whitelist.relaxed()\""
     }
   }
 
   class CaseworkerTestCase(file: String) {
-    val client = "cdcm"
+    val client = "CDCM"
     val conversationId = "D-80542-20201120"
     await(
       wsClient
@@ -94,7 +94,7 @@ class AddMessageToConversationISpec extends ISpec {
   }
 
   class CustomerTestCase(eori: String) {
-    val client = "cdcm"
+    val client = "CDCM"
     val conversationId = "D-80542-20201120"
     await(
       wsClient

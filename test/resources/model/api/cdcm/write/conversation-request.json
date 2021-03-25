@@ -1,5 +1,5 @@
 {
-  "client": "cdcm",
+  "client": "CDCM",
   "id": "123",
   "status": "open",
   "subject": "Test",
@@ -8,7 +8,7 @@
     "id": 1,
     "participantType": "system",
     "identifier": {
-      "name": "cdcm",
+      "name": "CDCM",
       "value": "123"
     },
     "name": "CDS Exports"

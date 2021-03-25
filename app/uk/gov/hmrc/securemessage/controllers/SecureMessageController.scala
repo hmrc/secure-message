@@ -25,6 +25,7 @@ import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.securemessage._
+import uk.gov.hmrc.securemessage.controllers.model.ClientName
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write._
 import uk.gov.hmrc.securemessage.controllers.model.common.CustomerEnrolment
 import uk.gov.hmrc.securemessage.controllers.model.common.read._
@@ -46,37 +47,40 @@ class SecureMessageController @Inject()(
   dataTimeUtils: DateTimeUtils)(implicit ec: ExecutionContext)
     extends BackendController(cc) with AuthorisedFunctions with QueryStringValidation with I18nSupport with Logging {
 
-  def createConversation(client: String, conversationId: String): Action[JsValue] = Action.async(parse.json) {
+  def createConversation(client: ClientName, conversationId: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
       client match {
-        case "cdcm" =>
+        case ClientName.CDCM =>
           withJsonBody[CdcmConversation] { cdcmConversation =>
-            saveConversation(cdcmConversation.asConversationWithCreatedDate(client, conversationId, dataTimeUtils.now))
+            saveConversation(
+              cdcmConversation.asConversationWithCreatedDate(client.entryName, conversationId, dataTimeUtils.now))
           }
         case _ => Future(handleErrors(client, conversationId, InvalidRequest(s"Not supported client: $client")))
       }
 
   }
 
-  def addCaseworkerMessage(client: String, conversationId: String): Action[JsValue] = Action.async(parse.json) {
+  def addCaseworkerMessage(client: ClientName, conversationId: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
       withJsonBody[CaseworkerMessage] { caseworkerMessageRequest =>
-        secureMessageService.addCaseWorkerMessageToConversation(client, conversationId, caseworkerMessageRequest).map {
-          case Right(_) =>
-            Created(Json.toJson(s"Created case worker message for client $client and conversationId $conversationId"))
-          case Left(error) => handleErrors(client, conversationId, error)
-        }
+        secureMessageService
+          .addCaseWorkerMessageToConversation(client.entryName, conversationId, caseworkerMessageRequest)
+          .map {
+            case Right(_) =>
+              Created(Json.toJson(s"Created case worker message for client $client and conversationId $conversationId"))
+            case Left(error) => handleErrors(client, conversationId, error)
+          }
       }.recover {
         case error: Exception => handleErrors(client, conversationId, error)
       }
   }
 
-  def addCustomerMessage(client: String, conversationId: String): Action[JsValue] = Action.async(parse.json) {
+  def addCustomerMessage(client: ClientName, conversationId: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
       authorised().retrieve(Retrievals.allEnrolments) { enrolments: Enrolments =>
         withJsonBody[CustomerMessage] { customerMessageRequest =>
           secureMessageService
-            .addCustomerMessageToConversation(client, conversationId, customerMessageRequest, enrolments)
+            .addCustomerMessageToConversation(client.entryName, conversationId, customerMessageRequest, enrolments)
             .map {
               case Right(_) =>
                 Created(Json.toJson(s"Created customer message for client $client and conversationId $conversationId"))
@@ -108,7 +112,7 @@ class SecureMessageController @Inject()(
       }
     }
 
-  def getConversationContent(client: String, conversationId: String): Action[AnyContent] = Action.async {
+  def getConversationContent(client: ClientName, conversationId: String): Action[AnyContent] = Action.async {
     implicit request =>
       authorised()
         .retrieve(Retrievals.allEnrolments) { authEnrolments =>
@@ -117,7 +121,7 @@ class SecureMessageController @Inject()(
           } else {
             val customerEnrolments = mapToCustomerEnrolments(authEnrolments)
             secureMessageService
-              .getConversation(client, conversationId, customerEnrolments)
+              .getConversation(client.entryName, conversationId, customerEnrolments)
               .map {
                 case Right(apiConversation) => Ok(Json.toJson(apiConversation))
                 case _                      => NotFound(Json.toJson("No conversation found"))
@@ -130,24 +134,25 @@ class SecureMessageController @Inject()(
     secureMessageService
       .createConversation(conversation)
       .map {
-        case Right(_)                        => Created
-        case Left(error: SecureMessageError) => handleErrors(conversation.client, conversation.id, error)
+        case Right(_) => Created
+        case Left(error: SecureMessageError) =>
+          handleErrors(ClientName.withName(conversation.client), conversation.id, error)
       }
       .recover {
-        case error: Exception => handleErrors(conversation.client, conversation.id, error)
+        case error: Exception => handleErrors(ClientName.withName(conversation.client), conversation.id, error)
       }
 
   private def mapToCustomerEnrolments(authEnrolments: Enrolments): Set[CustomerEnrolment] =
     authEnrolments.enrolments
       .flatMap(e => e.identifiers.map(i => CustomerEnrolment(e.key, i.key, i.value)))
 
-  def addCustomerReadTime(client: String, conversationId: String): Action[JsValue] = Action.async(parse.json) {
+  def addCustomerReadTime(client: ClientName, conversationId: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
       authorised()
         .retrieve(Retrievals.allEnrolments) { enrolments: Enrolments =>
           withJsonBody[ReadTime] { readTime: ReadTime =>
             secureMessageService
-              .updateReadTime(client, conversationId, enrolments, readTime.timestamp)
+              .updateReadTime(client.entryName, conversationId, enrolments, readTime.timestamp)
               .map {
                 case Right(_)    => Created(Json.toJson("read time successfully added"))
                 case Left(error) => handleErrors(client, conversationId, error)
@@ -156,7 +161,7 @@ class SecureMessageController @Inject()(
         }
   }
 
-  private def handleErrors(client: String, conversationId: String, error: Exception): Result = {
+  private def handleErrors(client: ClientName, conversationId: String, error: Exception): Result = {
     val errMsg =
       s"Error on conversation with client: $client, conversationId: $conversationId, error message: ${error.getMessage}"
     logger.error(error.getMessage, error.getCause)

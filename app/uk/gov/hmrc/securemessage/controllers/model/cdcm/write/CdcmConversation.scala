@@ -20,8 +20,8 @@ import cats.data.NonEmptyList
 import org.joda.time.DateTime
 import play.api.libs.json.{ Format, Json, Reads }
 import uk.gov.hmrc.securemessage.controllers.model.common
+import uk.gov.hmrc.securemessage.controllers.model.common.CustomerEnrolment
 import uk.gov.hmrc.securemessage.controllers.model.common.write.Recipient
-import uk.gov.hmrc.securemessage.controllers.model.common.{ CustomerEnrolment, SystemIdentifier }
 import uk.gov.hmrc.securemessage.models.core
 import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.time.DateTimeUtils
@@ -41,7 +41,8 @@ final case class CdcmConversation(
 
   def asConversationWithCreatedDate(client: String, conversationId: String, created: DateTime): Conversation = {
     val initialMessage = Message(1, created, message)
-    val initialParticipants = getSenderParticipant(sender.system) :: getRecipientParticipants(recipients)
+    val initialParticipants = getSenderParticipant(client, conversationId, sender.system) :: getRecipientParticipants(
+      recipients)
     Conversation(
       client,
       conversationId,
@@ -61,11 +62,11 @@ final case class CdcmConversation(
       case _          => Language.English
 
     }
-  private def getSenderParticipant(senderSystem: CdcmSystem): Participant =
+  private def getSenderParticipant(client: String, conversationId: String, senderSystem: CdcmSystem): Participant =
     Participant(
       1,
       ParticipantType.System,
-      Identifier(senderSystem.identifier.name, senderSystem.identifier.value, None),
+      Identifier(client, conversationId, None),
       Some(senderSystem.display),
       None,
       None,
@@ -87,7 +88,7 @@ object CdcmConversation {
     Json.reads[CdcmConversation]
 }
 
-final case class CdcmSystem(identifier: SystemIdentifier, display: String)
+final case class CdcmSystem(display: String)
 object CdcmSystem {
   implicit val systemReads: Reads[CdcmSystem] = Json.reads[CdcmSystem]
 }

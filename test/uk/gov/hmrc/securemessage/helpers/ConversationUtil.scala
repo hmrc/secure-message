@@ -51,7 +51,7 @@ object ConversationUtil {
     messageCreationDate: String = "2020-11-10T15:00:01.000"
   ): Conversation =
     Conversation(
-      "cdcm",
+      "CDCM",
       id,
       ConversationStatus.Open,
       tags,

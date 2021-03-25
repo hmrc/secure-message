@@ -36,7 +36,7 @@ class CdcmConversationSpec extends PlaySpec {
       fullConversationRequestJson.validate[CdcmConversation] match {
         case s: JsSuccess[CdcmConversation] =>
           val conversationRequest: CdcmConversation = s.getOrElse(fail("Unable to get conversation"))
-          val conversation = conversationRequest.asConversationWithCreatedDate("cdcm", "D-80542-20201120", dateTime)
+          val conversation = conversationRequest.asConversationWithCreatedDate("CDCM", "D-80542-20201120", dateTime)
           val expectedConversationJson: JsValue = Resources.readJson("model/core/conversation.json")
           expectedConversationJson.validate[Conversation] match {
             case success: JsSuccess[Conversation] =>

@@ -43,6 +43,7 @@ lazy val microservice = Project(appName, file("."))
     routesImport ++= Seq(
       "uk.gov.hmrc.securemessage.controllers.binders._",
       "uk.gov.hmrc.securemessage.controllers.SecureMessageController",
+      "uk.gov.hmrc.securemessage.controllers.model._",
       "uk.gov.hmrc.securemessage.controllers.model.common.read._",
       "uk.gov.hmrc.securemessage.controllers.model.common._"
     ),
@@ -51,7 +52,7 @@ lazy val microservice = Project(appName, file("."))
     scalacOptions ++= Seq(
       "-P:silencer:pathFilters=target/.*",
       s"-P:silencer:sourceRoots=${baseDirectory.value.getCanonicalPath}",
-      "-P:wartremover:excluded:/conf/app.routes",
+      "-P:wartremover:excluded:/",
       "-P:silencer:pathFilters=app.routes",
       "-P:wartremover:traverser:org.wartremover.warts.Unsafe",
       "-deprecation", // Emit warning and location for usages of deprecated APIs.
@@ -151,6 +152,7 @@ compileScalastyle := scalastyle.in(Compile).toTask("").value
 (compile in Compile) := ((compile in Compile) dependsOn compileScalastyle).value
 
 swaggerDomainNameSpaces := Seq(
+  "uk.gov.hmrc.securemessage.controllers.model",
   "uk.gov.hmrc.securemessage.controllers.model.cdcm.read",
   "uk.gov.hmrc.securemessage.controllers.model.cdcm.write",
   "uk.gov.hmrc.securemessage.controllers.model.common",
@@ -185,6 +187,7 @@ dependencyUpdatesFilter -= moduleFilter(organization = "com.github.ghik")
 dependencyUpdatesFilter -= moduleFilter(organization = "com.typesafe.play")
 dependencyUpdatesFilter -= moduleFilter(organization = "org.scalatestplus.play")
 dependencyUpdatesFilter -= moduleFilter(organization = "org.webjars")
+dependencyUpdatesFilter -= moduleFilter(name = "enumeratum-play")
 
 sources in (Compile, doc) := Seq.empty
 
