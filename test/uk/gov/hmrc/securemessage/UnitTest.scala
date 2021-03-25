@@ -16,25 +16,17 @@
 
 package uk.gov.hmrc.securemessage
 
-import com.google.inject.{ AbstractModule, Provides }
-import play.modules.reactivemongo.ReactiveMongoComponent
-import uk.gov.hmrc.mongo.MongoConnector
+import org.joda.time.DateTime
 import uk.gov.hmrc.time.DateTimeUtils
 
-import javax.inject.Singleton
+/** This will be the base class for all our unit tests, replacing PlaySpec and all extended traits for consistency
+  * */
+trait UnitTest {
 
-@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
-class SecureMessageModule extends AbstractModule {
+  val zeroTimeProvider: ZeroTimeProvider = new ZeroTimeProvider()
+  val now: DateTime = zeroTimeProvider.now
 
-  @Provides
-  @Singleton
-  def mongoConnectorProvider(reactiveMongoComponent: ReactiveMongoComponent): MongoConnector =
-    reactiveMongoComponent.mongoConnector
-
-  override def configure(): Unit = {
-    bind(classOf[DateTimeUtils]).to(classOf[TimeProvider])
-    super.configure()
+  class ZeroTimeProvider extends DateTimeUtils {
+    override def now: DateTime = new DateTime(0)
   }
 }
-
-class TimeProvider extends DateTimeUtils

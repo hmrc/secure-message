@@ -27,7 +27,7 @@ class GetIndividualConversationISpec extends ISpec {
       createConversation map { _ =>
         val response =
           wsClient
-            .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
+            .url(resource("/secure-messaging/conversation/CDCM/D-80542-20201120"))
             .withHttpHeaders(buildEoriToken(VALID_EORI))
             .get()
             .futureValue
@@ -39,7 +39,7 @@ class GetIndividualConversationISpec extends ISpec {
       createConversation map { _ =>
         val response =
           wsClient
-            .url(resource("/secure-messaging/conversation/cdcm/D-80542-77777777"))
+            .url(resource("/secure-messaging/conversation/CDCM/D-80542-77777777"))
             .withHttpHeaders(buildEoriToken(VALID_EORI))
             .get()
             .futureValue
@@ -50,7 +50,7 @@ class GetIndividualConversationISpec extends ISpec {
     "return a JSON body of [No enrolment found] when auth session enrolments do not match a conversation's participants identifiers" in {
       val response =
         wsClient
-          .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
+          .url(resource("/secure-messaging/conversation/CDCM/D-80542-20201120"))
           .withHttpHeaders(buildNonEoriToken)
           .get()
           .futureValue

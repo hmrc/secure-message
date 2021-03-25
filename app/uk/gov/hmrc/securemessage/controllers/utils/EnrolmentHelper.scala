@@ -17,10 +17,9 @@
 package uk.gov.hmrc.securemessage.controllers.utils
 
 import java.util.Locale
-
 import uk.gov.hmrc.auth.core.Enrolments
-import uk.gov.hmrc.securemessage.controllers.models.generic.CustomerEnrolment
 import cats.implicits._
+import uk.gov.hmrc.securemessage.controllers.model.common.CustomerEnrolment
 
 object EnrolmentHelper {
 
@@ -37,6 +36,8 @@ object EnrolmentHelper {
     authEnrolments: Enrolments,
     enrolmentKeys: Option[List[String]],
     customerEnrolments: Option[List[CustomerEnrolment]]): Set[CustomerEnrolment] = {
+
+    //authEnrolments.enrolments.intersect(customerEnrolments).filter(ce => enrolmentKeys.contains(ce.key))
 
     val enrolmentsFromKeys =
       authEnrolments.enrolments.filter(e =>

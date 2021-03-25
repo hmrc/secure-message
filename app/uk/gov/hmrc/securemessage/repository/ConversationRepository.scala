@@ -28,7 +28,7 @@ import reactivemongo.bson.BSONObjectID
 import reactivemongo.core.errors.DatabaseException
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.mongo.{ MongoConnector, ReactiveRepository }
-import uk.gov.hmrc.securemessage.controllers.models.generic.Tag
+import uk.gov.hmrc.securemessage.controllers.model.common.read.FilterTag
 import uk.gov.hmrc.securemessage.models.core.Message.dateFormat
 import uk.gov.hmrc.securemessage.models.core.{ Conversation, Identifier, Message }
 import uk.gov.hmrc.securemessage.{ ConversationNotFound, DuplicateConversationError, SecureMessageError, StoreError }
@@ -68,7 +68,7 @@ class ConversationRepository @Inject()(implicit connector: MongoConnector)
           Future.successful(Left(StoreError(errMsg, Some(e))))
       }
 
-  def getConversationsFiltered(identifiers: Set[Identifier], tags: Option[List[Tag]])(
+  def getConversationsFiltered(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
     implicit ec: ExecutionContext): Future[List[Conversation]] = {
     import uk.gov.hmrc.securemessage.models.core.Conversation.conversationFormat
     val querySelector = (identifiers, tags) match {
@@ -137,7 +137,7 @@ class ConversationRepository @Inject()(implicit connector: MongoConnector)
         )
     }
 
-  private def tagQuery(tags: List[Tag]): JsObject =
+  private def tagQuery(tags: List[FilterTag]): JsObject =
     Json.obj(
       "$or" ->
         tags.foldLeft(JsArray())((acc, t) => acc ++ Json.arr(Json.obj(s"tags.${t.key}" -> JsString(t.value))))
