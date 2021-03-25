@@ -42,14 +42,17 @@ lazy val microservice = Project(appName, file("."))
     libraryDependencies ++= AppDependencies.compile ++ AppDependencies.test,
     routesImport ++= Seq(
       "uk.gov.hmrc.securemessage.controllers.binders._",
-      "uk.gov.hmrc.securemessage.controllers.models.generic._"
+      "uk.gov.hmrc.securemessage.controllers.SecureMessageController",
+      "uk.gov.hmrc.securemessage.controllers.model._",
+      "uk.gov.hmrc.securemessage.controllers.model.common.read._",
+      "uk.gov.hmrc.securemessage.controllers.model.common._"
     ),
     // ***************
     // Use the silencer plugin to suppress warnings
     scalacOptions ++= Seq(
       "-P:silencer:pathFilters=target/.*",
       s"-P:silencer:sourceRoots=${baseDirectory.value.getCanonicalPath}",
-      "-P:wartremover:excluded:/conf/app.routes",
+      "-P:wartremover:excluded:/",
       "-P:silencer:pathFilters=app.routes",
       "-P:wartremover:traverser:org.wartremover.warts.Unsafe",
       "-deprecation", // Emit warning and location for usages of deprecated APIs.
@@ -148,7 +151,14 @@ lazy val compileScalastyle = taskKey[Unit]("compileScalastyle")
 compileScalastyle := scalastyle.in(Compile).toTask("").value
 (compile in Compile) := ((compile in Compile) dependsOn compileScalastyle).value
 
-swaggerDomainNameSpaces := Seq("uk.gov.hmrc.securemessage.controllers.models.generic")
+swaggerDomainNameSpaces := Seq(
+  "uk.gov.hmrc.securemessage.controllers.model",
+  "uk.gov.hmrc.securemessage.controllers.model.cdcm.read",
+  "uk.gov.hmrc.securemessage.controllers.model.cdcm.write",
+  "uk.gov.hmrc.securemessage.controllers.model.common",
+  "uk.gov.hmrc.securemessage.controllers.model.common.read",
+  "uk.gov.hmrc.securemessage.controllers.model.common.write"
+)
 swaggerTarget := baseDirectory.value / "public"
 swaggerFileName := "schema.json"
 swaggerPrettyJson := true
@@ -177,6 +187,7 @@ dependencyUpdatesFilter -= moduleFilter(organization = "com.github.ghik")
 dependencyUpdatesFilter -= moduleFilter(organization = "com.typesafe.play")
 dependencyUpdatesFilter -= moduleFilter(organization = "org.scalatestplus.play")
 dependencyUpdatesFilter -= moduleFilter(organization = "org.webjars")
+dependencyUpdatesFilter -= moduleFilter(name = "enumeratum-play")
 
 sources in (Compile, doc) := Seq.empty
 
