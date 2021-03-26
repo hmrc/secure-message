@@ -17,6 +17,7 @@
 package uk.gov.hmrc.securemessage.controllers.model.common.write
 
 import play.api.libs.json.{ Json, Reads }
+import uk.gov.hmrc.emailaddress.{ EmailAddress, PlayJsonFormats }
 import uk.gov.hmrc.securemessage.controllers.model.common.CustomerEnrolment
 
 final case class Recipient(customer: Customer)
@@ -26,7 +27,8 @@ object Recipient {
     Json.reads[Recipient]
 }
 
-final case class Customer(enrolment: CustomerEnrolment)
+final case class Customer(enrolment: CustomerEnrolment, name: Option[String], email: Option[EmailAddress])
 object Customer {
+  implicit val emailReads: Reads[EmailAddress] = PlayJsonFormats.emailAddressReads
   implicit val customerReads: Reads[Customer] = Json.reads[Customer]
 }

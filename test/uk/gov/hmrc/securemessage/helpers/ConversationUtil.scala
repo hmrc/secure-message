@@ -18,6 +18,7 @@ package uk.gov.hmrc.securemessage.helpers
 
 import cats.data.NonEmptyList
 import org.joda.time.DateTime
+import uk.gov.hmrc.emailaddress.EmailAddress
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CdcmConversation
 import uk.gov.hmrc.securemessage.controllers.model.common.CustomerEnrolment
 import uk.gov.hmrc.securemessage.controllers.model.common.write.{ Customer, Recipient }
@@ -33,7 +34,9 @@ object ConversationUtil {
     cnv.copy(
       recipients = Recipient(
         Customer(
-          CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890")
+          CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890"),
+          name = Some("someName"),
+          email = Some(EmailAddress("some@email.com"))
         )) :: cnv.recipients)
   }
   @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))

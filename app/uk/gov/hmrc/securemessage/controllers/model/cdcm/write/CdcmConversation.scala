@@ -74,9 +74,17 @@ final case class CdcmConversation(
     )
 
   private def getRecipientParticipants(recipients: List[Recipient]): List[Participant] =
-    recipients.zip(Stream from 2) map { r =>
-      val customer = r._1.customer
-      Participant(r._2, ParticipantType.Customer, getCustomerIdentifier(customer.enrolment), None, None, None, None)
+    recipients.zip(Stream from 2) map {
+      case (recipient, id) =>
+        val customer = recipient.customer
+        Participant(
+          id,
+          ParticipantType.Customer,
+          getCustomerIdentifier(customer.enrolment),
+          customer.name,
+          customer.email,
+          None,
+          None)
     }
 
   private def getCustomerIdentifier(enrolment: CustomerEnrolment): Identifier =
