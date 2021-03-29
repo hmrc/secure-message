@@ -16,13 +16,14 @@
 
 package uk.gov.hmrc.securemessage.controllers
 
-import play.api.Logging
+import javax.inject.Inject
 import play.api.i18n.I18nSupport
 import play.api.libs.json.{ JsValue, Json }
-import play.api.mvc.{ Action, AnyContent, ControllerComponents, Result }
+import play.api.mvc.{ Action, AnyContent, ControllerComponents }
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.audit.http.connector.AuditConnector
+import uk.gov.hmrc.play.audit.model.EventTypes
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.securemessage._
 import uk.gov.hmrc.securemessage.controllers.model.ClientName
@@ -32,28 +33,42 @@ import uk.gov.hmrc.securemessage.controllers.model.common.read._
 import uk.gov.hmrc.securemessage.controllers.model.common.write._
 import uk.gov.hmrc.securemessage.controllers.utils.EnrolmentHelper._
 import uk.gov.hmrc.securemessage.controllers.utils.QueryStringValidation
-import uk.gov.hmrc.securemessage.models.core.Conversation
-import uk.gov.hmrc.securemessage.services.SecureMessageService
+import uk.gov.hmrc.securemessage.services.{ Auditing, ErrorHandling, SecureMessageService }
 import uk.gov.hmrc.time.DateTimeUtils
 
-import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.control.NonFatal
 
 @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
 class SecureMessageController @Inject()(
   cc: ControllerComponents,
   val authConnector: AuthConnector,
+  override val auditConnector: AuditConnector,
   secureMessageService: SecureMessageService,
   dataTimeUtils: DateTimeUtils)(implicit ec: ExecutionContext)
-    extends BackendController(cc) with AuthorisedFunctions with QueryStringValidation with I18nSupport with Logging {
+    extends BackendController(cc) with AuthorisedFunctions with QueryStringValidation with I18nSupport
+    with ErrorHandling with Auditing {
 
   def createConversation(client: ClientName, conversationId: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
       client match {
         case ClientName.CDCM =>
           withJsonBody[CdcmConversation] { cdcmConversation =>
-            saveConversation(
-              cdcmConversation.asConversationWithCreatedDate(client.entryName, conversationId, dataTimeUtils.now))
+            val conversation =
+              cdcmConversation.asConversationWithCreatedDate(client.entryName, conversationId, dataTimeUtils.now)
+            secureMessageService
+              .createConversation(conversation)
+              .map {
+                case Right(_) =>
+                  val _ = auditCreateConversation(EventTypes.Succeeded, conversation)
+                  Created
+                case Left(error: SecureMessageError) =>
+                  val _ = auditCreateConversation(EventTypes.Failed, conversation)
+                  handleErrors(ClientName.withName(conversation.client), conversation.id, error)
+              }
+              .recover {
+                case NonFatal(error) => handleErrors(ClientName.withName(conversation.client), conversation.id, error)
+              }
           }
         case _ => Future(handleErrors(client, conversationId, InvalidRequest(s"Not supported client: $client")))
       }
@@ -67,11 +82,14 @@ class SecureMessageController @Inject()(
           .addCaseWorkerMessageToConversation(client.entryName, conversationId, caseworkerMessageRequest)
           .map {
             case Right(_) =>
+              val _ = auditCaseworkerReply(EventTypes.Succeeded, client, conversationId, caseworkerMessageRequest)
               Created(Json.toJson(s"Created case worker message for client $client and conversationId $conversationId"))
-            case Left(error) => handleErrors(client, conversationId, error)
+            case Left(error) =>
+              val _ = auditCaseworkerReply(EventTypes.Failed, client, conversationId, caseworkerMessageRequest)
+              handleErrors(client, conversationId, error)
           }
       }.recover {
-        case error: Exception => handleErrors(client, conversationId, error)
+        case NonFatal(error) => handleErrors(client, conversationId, error)
       }
   }
 
@@ -83,8 +101,11 @@ class SecureMessageController @Inject()(
             .addCustomerMessageToConversation(client.entryName, conversationId, customerMessageRequest, enrolments)
             .map {
               case Right(_) =>
+                val _ = auditCustomerReply(EventTypes.Succeeded, client, conversationId, customerMessageRequest)
                 Created(Json.toJson(s"Created customer message for client $client and conversationId $conversationId"))
-              case Left(error) => handleErrors(client, conversationId, error)
+              case Left(error) =>
+                val _ = auditCustomerReply(EventTypes.Failed, client, conversationId, customerMessageRequest)
+                handleErrors(client, conversationId, error)
             }
         }.recover {
           case error: Exception => handleErrors(client, conversationId, error)
@@ -130,22 +151,6 @@ class SecureMessageController @Inject()(
         }
   }
 
-  private def saveConversation(conversation: Conversation)(implicit hc: HeaderCarrier): Future[Result] =
-    secureMessageService
-      .createConversation(conversation)
-      .map {
-        case Right(_) => Created
-        case Left(error: SecureMessageError) =>
-          handleErrors(ClientName.withName(conversation.client), conversation.id, error)
-      }
-      .recover {
-        case error: Exception => handleErrors(ClientName.withName(conversation.client), conversation.id, error)
-      }
-
-  private def mapToCustomerEnrolments(authEnrolments: Enrolments): Set[CustomerEnrolment] =
-    authEnrolments.enrolments
-      .flatMap(e => e.identifiers.map(i => CustomerEnrolment(e.key, i.key, i.value)))
-
   def addCustomerReadTime(client: ClientName, conversationId: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
       authorised()
@@ -154,28 +159,21 @@ class SecureMessageController @Inject()(
             secureMessageService
               .updateReadTime(client.entryName, conversationId, enrolments, readTime.timestamp)
               .map {
-                case Right(_)    => Created(Json.toJson("read time successfully added"))
-                case Left(error) => handleErrors(client, conversationId, error)
+                case Right(_) =>
+                  val _ =
+                    auditConversationRead(EventTypes.Succeeded, client, conversationId, readTime.timestamp, enrolments)
+                  Created(Json.toJson("read time successfully added"))
+                case Left(error) =>
+                  val _ =
+                    auditConversationRead(EventTypes.Failed, client, conversationId, readTime.timestamp, enrolments)
+                  handleErrors(client, conversationId, error)
               }
           }
         }
   }
 
-  private def handleErrors(client: ClientName, conversationId: String, error: Exception): Result = {
-    val errMsg =
-      s"Error on conversation with client: $client, conversationId: $conversationId, error message: ${error.getMessage}"
-    logger.error(error.getMessage, error.getCause)
-    val jsonError = Json.toJson(errMsg)
-    error match {
-      case EmailSendingError(_)                        => Created(jsonError)
-      case NoReceiverEmailError(_)                     => Created(jsonError)
-      case DuplicateConversationError(_, _)            => Conflict(jsonError)
-      case InvalidContent(_, _) | InvalidRequest(_, _) => BadRequest(jsonError)
-      case ParticipantNotFound(_)                      => Unauthorized(jsonError)
-      case ConversationNotFound(_)                     => NotFound(jsonError)
-      case EisForwardingError(_)                       => BadGateway(jsonError)
-      case StoreError(_, _)                            => InternalServerError(jsonError)
-      case _                                           => InternalServerError(jsonError)
-    }
-  }
+  private def mapToCustomerEnrolments(authEnrolments: Enrolments): Set[CustomerEnrolment] =
+    authEnrolments.enrolments
+      .flatMap(e => e.identifiers.map(i => CustomerEnrolment(e.key, i.key, i.value)))
+
 }

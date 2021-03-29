@@ -25,17 +25,24 @@ import play.api.http.HeaderNames.AUTHORIZATION
 import play.api.http.MimeTypes
 import play.api.http.Status._
 import uk.gov.hmrc.http.{ HeaderCarrier, HttpClient }
+import uk.gov.hmrc.play.audit.http.connector.AuditConnector
+import uk.gov.hmrc.play.audit.model.EventTypes
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.securemessage.EisForwardingError
 import uk.gov.hmrc.securemessage.connectors.utils.CustomHeaders
 import uk.gov.hmrc.securemessage.models.QueryResponseWrapper
+import uk.gov.hmrc.securemessage.services.Auditing
 
 import scala.concurrent.{ ExecutionContext, Future }
 
 //TODO: add tests for the connector
 @Singleton
 @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
-class EISConnector @Inject()(httpClient: HttpClient, servicesConfig: ServicesConfig)(implicit ec: ExecutionContext) {
+class EISConnector @Inject()(
+  httpClient: HttpClient,
+  servicesConfig: ServicesConfig,
+  override val auditConnector: AuditConnector)(implicit ec: ExecutionContext)
+    extends Auditing {
 
   private val eisBaseUrl = servicesConfig.baseUrl("eis")
   private val eisBearerToken = servicesConfig.getString("microservice.services.eis.bearer-token")
@@ -61,9 +68,12 @@ class EISConnector @Inject()(httpClient: HttpClient, servicesConfig: ServicesCon
       )
       .flatMap { response =>
         response.status match {
-          case NO_CONTENT => Future(Right(()))
+          case NO_CONTENT =>
+            val _ = auditMessageForwarded(EventTypes.Succeeded, queryResponse, NO_CONTENT)
+            Future.successful(Right(()))
           case code =>
-            Future(Left(EisForwardingError(
+            val _ = auditMessageForwarded(EventTypes.Failed, queryResponse, code)
+            Future.successful(Left(EisForwardingError(
               s"There was an issue with forwarding the message to EIS, response code is: $code, response body is: ${response.body}")))
         }
       }
