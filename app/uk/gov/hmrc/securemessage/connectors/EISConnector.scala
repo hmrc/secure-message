@@ -69,11 +69,11 @@ class EISConnector @Inject()(
       .flatMap { response =>
         response.status match {
           case NO_CONTENT =>
-            auditMessageForwarded(EventTypes.Succeeded, queryResponse, NO_CONTENT)
-            Future(Right(()))
+            val _ = auditMessageForwarded(EventTypes.Succeeded, queryResponse, NO_CONTENT)
+            Future.successful(Right(()))
           case code =>
-            auditMessageForwarded(EventTypes.Failed, queryResponse, code)
-            Future(Left(EisForwardingError(
+            val _ = auditMessageForwarded(EventTypes.Failed, queryResponse, code)
+            Future.successful(Left(EisForwardingError(
               s"There was an issue with forwarding the message to EIS, response code is: $code, response body is: ${response.body}")))
         }
       }

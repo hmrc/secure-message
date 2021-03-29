@@ -44,10 +44,10 @@ class EmailConnector @Inject()(
     httpClient.POST[EmailRequest, HttpResponse](s"$emailBaseUrl/hmrc/email", emailRequest).map { response =>
       response.status match {
         case ACCEPTED =>
-          auditEmailSent(EventTypes.Succeeded, emailRequest, ACCEPTED)
+          val _ = auditEmailSent(EventTypes.Succeeded, emailRequest, ACCEPTED)
           Right(())
         case status =>
-          auditEmailSent(EventTypes.Failed, emailRequest, status)
+          val _ = auditEmailSent(EventTypes.Failed, emailRequest, status)
           val errMsg = s"Email request failed: got response status $status from email service"
           Left(EmailSendingError(errMsg))
       }

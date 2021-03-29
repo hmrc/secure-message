@@ -63,7 +63,7 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
       alert)
 
     "send correct audit details when new conversation created" in {
-      auditCreateConversation(EventTypes.Succeeded, conversation)
+      val _ = auditCreateConversation(EventTypes.Succeeded, conversation)
       verify(auditConnector).sendExplicitAudit(
         EventTypes.Succeeded,
         Map[String, String](
@@ -77,7 +77,7 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
     }
 
     "send correct audit details when new conversation not created" in {
-      auditCreateConversation(EventTypes.Failed, conversation)
+      val _ = auditCreateConversation(EventTypes.Failed, conversation)
       verify(auditConnector).sendExplicitAudit(
         EventTypes.Failed,
         Map[String, String](
@@ -95,14 +95,14 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
 
     "send correct audit details when email retrieved" in {
       val emailAddress = Some(EmailAddress("test@test.com"))
-      auditRetrieveEmail(emailAddress)
+      val _ = auditRetrieveEmail(emailAddress)
       verify(auditConnector)
         .sendExplicitAudit(EventTypes.Succeeded, Map(retrieveEmailTxnName, "email" -> "test@test.com"))
     }
 
     "send correct audit details when email was not retrieved" in {
       val emailAddress = None
-      auditRetrieveEmail(emailAddress)
+      val _ = auditRetrieveEmail(emailAddress)
       verify(auditConnector)
         .sendExplicitAudit(EventTypes.Failed, Map(retrieveEmailTxnName))
     }
@@ -114,7 +114,7 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
       CaseworkerMessage(Sender(System(SystemIdentifier(CDCM.entryName, conversationId))), messageContent)
 
     "send correct audit details when the casework reply is sent" in {
-      auditCaseworkerReply(EventTypes.Succeeded, CDCM, conversationId, message)
+      val _ = auditCaseworkerReply(EventTypes.Succeeded, CDCM, conversationId, message)
       verify(auditConnector).sendExplicitAudit(
         EventTypes.Succeeded,
         Map(
@@ -125,7 +125,7 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
     }
 
     "send correct audit details when the caseworker reply is not sent" in {
-      auditCaseworkerReply(EventTypes.Failed, CDCM, conversationId, message)
+      val _ = auditCaseworkerReply(EventTypes.Failed, CDCM, conversationId, message)
       verify(auditConnector).sendExplicitAudit(
         EventTypes.Failed,
         Map(
@@ -141,7 +141,7 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
     val readTime = DateTime.now
 
     "send correct audit details when read time is recorded" in {
-      auditConversationRead(
+      val _ = auditConversationRead(
         EventTypes.Succeeded,
         CDCM,
         conversationId,
@@ -164,7 +164,7 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
     }
 
     "send correct audit details when read time is not recorded" in {
-      auditConversationRead(
+      val _ = auditConversationRead(
         EventTypes.Failed,
         CDCM,
         conversationId,
@@ -190,7 +190,7 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
   "auditCustomerReply" must {
 
     "send correct audit details when the customer reply is sent" in {
-      auditCustomerReply(EventTypes.Succeeded, CDCM, conversationId, CustomerMessage(messageContent))
+      val _ = auditCustomerReply(EventTypes.Succeeded, CDCM, conversationId, CustomerMessage(messageContent))
       verify(auditConnector).sendExplicitAudit(
         EventTypes.Succeeded,
         Map(
@@ -201,7 +201,7 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
     }
 
     "send correct audit details when the customer reply is not sent" in {
-      auditCustomerReply(EventTypes.Failed, CDCM, conversationId, CustomerMessage(messageContent))
+      val _ = auditCustomerReply(EventTypes.Failed, CDCM, conversationId, CustomerMessage(messageContent))
       verify(auditConnector).sendExplicitAudit(
         EventTypes.Failed,
         Map(
@@ -218,7 +218,7 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
     val emailAddress = "test@test.com"
 
     "send correct audit details when email sent" in {
-      auditEmailSent(
+      val _ = auditEmailSent(
         EventTypes.Succeeded,
         EmailRequest(List(EmailAddress(emailAddress)), templateId, Map("firstName" -> "Joe", "lastName" -> "Bloggs")),
         ACCEPTED)
@@ -234,7 +234,7 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
     }
 
     "send correct audit details when email not sent" in {
-      auditEmailSent(
+      val _ = auditEmailSent(
         EventTypes.Failed,
         EmailRequest(List(EmailAddress(emailAddress)), templateId, Map("firstName" -> "Joe", "lastName" -> "Bloggs")),
         ACCEPTED)
@@ -255,7 +255,7 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
     val xRequestId = s"govuk-tax-${UUID.randomUUID()}"
 
     "send correct audit details when message forwarded" in {
-      auditMessageForwarded(
+      val _ = auditMessageForwarded(
         EventTypes.Succeeded,
         QueryResponseWrapper(QueryResponse(xRequestId, conversationId, messageContent)),
         NO_CONTENT)
@@ -271,7 +271,7 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
     }
 
     "send correct audit details when message not forwarded" in {
-      auditMessageForwarded(
+      val _ = auditMessageForwarded(
         EventTypes.Failed,
         QueryResponseWrapper(QueryResponse(xRequestId, conversationId, messageContent)),
         INTERNAL_SERVER_ERROR)

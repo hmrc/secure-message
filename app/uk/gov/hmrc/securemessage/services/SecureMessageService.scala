@@ -159,10 +159,10 @@ class SecureMessageService @Inject()(
     Future.sequence(noEmailCustomers.map(customerParticipant =>
       channelPrefConnector.getEmailForEnrolment(customerParticipant.identifier).map {
         case Right(email) =>
-          auditRetrieveEmail(Some(email))
+          val _ = auditRetrieveEmail(Some(email))
           Right(customerParticipant.copy(email = Some(email)))
         case Left(elr) =>
-          auditRetrieveEmail(None)
+          val _ = auditRetrieveEmail(None)
           Left(CustomerEmailError(customerParticipant, elr))
     }))
 

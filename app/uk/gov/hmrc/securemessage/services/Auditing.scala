@@ -33,7 +33,7 @@ import scala.concurrent.ExecutionContext
 
 trait Auditing {
 
-  val auditConnector: AuditConnector
+  def auditConnector: AuditConnector
 
   protected val isoDtf = ISODateTimeFormat.basicDateTime()
   protected val txnName = "transactionName"

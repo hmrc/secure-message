@@ -25,7 +25,7 @@ import uk.gov.hmrc.securemessage._
 
 trait ErrorHandling extends Logging {
 
-  def handleErrors(client: ClientName, conversationId: String, error: Exception): Result = {
+  def handleErrors(client: ClientName, conversationId: String, error: Throwable): Result = {
     val errMsg =
       s"Error on conversation with client: $client, conversationId: $conversationId, error message: ${error.getMessage}"
     logger.error(error.getMessage, error.getCause)

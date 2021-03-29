@@ -37,6 +37,7 @@ import uk.gov.hmrc.securemessage.services.{ Auditing, ErrorHandling, SecureMessa
 import uk.gov.hmrc.time.DateTimeUtils
 
 import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.control.NonFatal
 
 @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
 class SecureMessageController @Inject()(
@@ -59,14 +60,14 @@ class SecureMessageController @Inject()(
               .createConversation(conversation)
               .map {
                 case Right(_) =>
-                  auditCreateConversation(EventTypes.Succeeded, conversation)
+                  val _ = auditCreateConversation(EventTypes.Succeeded, conversation)
                   Created
                 case Left(error: SecureMessageError) =>
-                  auditCreateConversation(EventTypes.Failed, conversation)
+                  val _ = auditCreateConversation(EventTypes.Failed, conversation)
                   handleErrors(ClientName.withName(conversation.client), conversation.id, error)
               }
               .recover {
-                case error: Exception => handleErrors(ClientName.withName(conversation.client), conversation.id, error)
+                case NonFatal(error) => handleErrors(ClientName.withName(conversation.client), conversation.id, error)
               }
           }
         case _ => Future(handleErrors(client, conversationId, InvalidRequest(s"Not supported client: $client")))
@@ -81,14 +82,14 @@ class SecureMessageController @Inject()(
           .addCaseWorkerMessageToConversation(client.entryName, conversationId, caseworkerMessageRequest)
           .map {
             case Right(_) =>
-              auditCaseworkerReply(EventTypes.Succeeded, client, conversationId, caseworkerMessageRequest)
+              val _ = auditCaseworkerReply(EventTypes.Succeeded, client, conversationId, caseworkerMessageRequest)
               Created(Json.toJson(s"Created case worker message for client $client and conversationId $conversationId"))
             case Left(error) =>
-              auditCaseworkerReply(EventTypes.Failed, client, conversationId, caseworkerMessageRequest)
+              val _ = auditCaseworkerReply(EventTypes.Failed, client, conversationId, caseworkerMessageRequest)
               handleErrors(client, conversationId, error)
           }
       }.recover {
-        case error: Exception => handleErrors(client, conversationId, error)
+        case NonFatal(error) => handleErrors(client, conversationId, error)
       }
   }
 
@@ -100,10 +101,10 @@ class SecureMessageController @Inject()(
             .addCustomerMessageToConversation(client.entryName, conversationId, customerMessageRequest, enrolments)
             .map {
               case Right(_) =>
-                auditCustomerReply(EventTypes.Succeeded, client, conversationId, customerMessageRequest)
+                val _ = auditCustomerReply(EventTypes.Succeeded, client, conversationId, customerMessageRequest)
                 Created(Json.toJson(s"Created customer message for client $client and conversationId $conversationId"))
               case Left(error) =>
-                auditCustomerReply(EventTypes.Failed, client, conversationId, customerMessageRequest)
+                val _ = auditCustomerReply(EventTypes.Failed, client, conversationId, customerMessageRequest)
                 handleErrors(client, conversationId, error)
             }
         }.recover {
@@ -159,10 +160,12 @@ class SecureMessageController @Inject()(
               .updateReadTime(client.entryName, conversationId, enrolments, readTime.timestamp)
               .map {
                 case Right(_) =>
-                  auditConversationRead(EventTypes.Succeeded, client, conversationId, readTime.timestamp, enrolments)
+                  val _ =
+                    auditConversationRead(EventTypes.Succeeded, client, conversationId, readTime.timestamp, enrolments)
                   Created(Json.toJson("read time successfully added"))
                 case Left(error) =>
-                  auditConversationRead(EventTypes.Failed, client, conversationId, readTime.timestamp, enrolments)
+                  val _ =
+                    auditConversationRead(EventTypes.Failed, client, conversationId, readTime.timestamp, enrolments)
                   handleErrors(client, conversationId, error)
               }
           }
