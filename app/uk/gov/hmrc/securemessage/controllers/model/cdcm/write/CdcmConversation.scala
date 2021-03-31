@@ -47,7 +47,7 @@ final case class CdcmConversation(
       client,
       conversationId,
       ConversationStatus.Open,
-      Some(Map("mrn" -> tags.mrn, "notificationType" -> tags.notificationType.entryName)), //TODO: remove option as empty map can take place of that
+      Some(Map("mrn" -> tags.mrn, "notificationType" -> tags.notificationType.entryName)),
       subject,
       getLanguage(language),
       initialParticipants,

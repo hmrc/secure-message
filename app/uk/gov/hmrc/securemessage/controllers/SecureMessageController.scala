@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.securemessage.controllers
 
-import javax.inject.Inject
+import play.api.Logging
 import play.api.i18n.I18nSupport
 import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc.{ Action, AnyContent, ControllerComponents }
@@ -33,11 +33,11 @@ import uk.gov.hmrc.securemessage.controllers.model.common.read._
 import uk.gov.hmrc.securemessage.controllers.model.common.write._
 import uk.gov.hmrc.securemessage.controllers.utils.EnrolmentHelper._
 import uk.gov.hmrc.securemessage.controllers.utils.QueryStringValidation
-import uk.gov.hmrc.securemessage.services.{ Auditing, ErrorHandling, SecureMessageService }
+import uk.gov.hmrc.securemessage.services.{ Auditing, SecureMessageService }
 import uk.gov.hmrc.time.DateTimeUtils
 
+import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
-import scala.util.control.NonFatal
 
 @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
 class SecureMessageController @Inject()(
@@ -47,30 +47,22 @@ class SecureMessageController @Inject()(
   secureMessageService: SecureMessageService,
   dataTimeUtils: DateTimeUtils)(implicit ec: ExecutionContext)
     extends BackendController(cc) with AuthorisedFunctions with QueryStringValidation with I18nSupport
-    with ErrorHandling with Auditing {
+    with ErrorHandling with Auditing with Logging {
 
   def createConversation(client: ClientName, conversationId: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
-      client match {
-        case ClientName.CDCM =>
-          withJsonBody[CdcmConversation] { cdcmConversation =>
-            val conversation =
-              cdcmConversation.asConversationWithCreatedDate(client.entryName, conversationId, dataTimeUtils.now)
-            secureMessageService
-              .createConversation(conversation)
-              .map {
-                case Right(_) =>
-                  val _ = auditCreateConversation(EventTypes.Succeeded, conversation, "Conversation Created")
-                  Created
-                case Left(error: SecureMessageError) =>
-                  val _ = auditCreateConversation(EventTypes.Failed, conversation, error.message)
-                  handleErrors(ClientName.withName(conversation.client), conversation.id, error)
-              }
-              .recover {
-                case NonFatal(error) => handleErrors(ClientName.withName(conversation.client), conversation.id, error)
-              }
+      withJsonBody[CdcmConversation] { cdcmConversation =>
+        val conversation =
+          cdcmConversation.asConversationWithCreatedDate(client.entryName, conversationId, dataTimeUtils.now)
+        secureMessageService
+          .createConversation(conversation)
+          .map {
+            case Right(_) =>
+              val _ = auditCreateConversation(EventTypes.Succeeded, conversation, "Conversation Created")
+              Created
+            case Left(error: SecureMessageError) =>
+              handleErrors(ClientName.withName(conversation.client), conversation.id, error)
           }
-        case _ => Future(handleErrors(client, conversationId, InvalidRequest(s"Not supported client: $client")))
       }
 
   }
@@ -88,8 +80,6 @@ class SecureMessageController @Inject()(
               val _ = auditCaseworkerReply(EventTypes.Failed, client, conversationId, caseworkerMessageRequest)
               handleErrors(client, conversationId, error)
           }
-      }.recover {
-        case NonFatal(error) => handleErrors(client, conversationId, error)
       }
   }
 
@@ -107,8 +97,6 @@ class SecureMessageController @Inject()(
                 val _ = auditCustomerReply(EventTypes.Failed, client, conversationId, customerMessageRequest)
                 handleErrors(client, conversationId, error)
             }
-        }.recover {
-          case error: Exception => handleErrors(client, conversationId, error)
         }
       }
   }
