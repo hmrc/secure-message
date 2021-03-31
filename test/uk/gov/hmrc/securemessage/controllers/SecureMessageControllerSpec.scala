@@ -50,7 +50,7 @@ import uk.gov.hmrc.securemessage.repository.ConversationRepository
 import uk.gov.hmrc.securemessage.services.SecureMessageService
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.{ ExecutionContext, ExecutionException, Future }
 
 @SuppressWarnings(
   Array(
@@ -154,15 +154,6 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
         "Error on conversation with client: CDCM, conversationId: 123, error message: some unknown err")
     }
 
-    "return InternalServerError (500) if an unexpected exception is thrown" in new CreateConversationTestCase(
-      requestBody = Resources.readJson("model/api/cdcm/write/create-conversation.json"),
-      serviceResponse = Future.failed(new Exception("some error"))) {
-      private val response = controller.createConversation(cdcm, "123")(fakeRequest)
-      status(response) mustBe INTERNAL_SERVER_ERROR
-      contentAsJson(response) mustBe Json.toJson(
-        "Error on conversation with client: CDCM, conversationId: 123, error message: some error")
-    }
-
     "return BAD_REQUEST (400) when the message content is not base64 encoded" in new CreateConversationTestCase(
       requestBody = Resources.readJson("model/api/cdcm/write/create-conversation.json"),
       serviceResponse = Future.successful(Left(InvalidContent("Not valid base64 content")))
@@ -181,6 +172,25 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       status(response) mustBe BAD_REQUEST
       contentAsJson(response) mustBe Json.toJson(
         "Error on conversation with client: CDCM, conversationId: 123, error message: Not valid html content")
+    }
+
+    "do not handle non SecureMessageError exceptions" in new CreateConversationTestCase(
+      requestBody = Resources.readJson("model/api/cdcm/write/create-conversation.json"),
+      serviceResponse = Future.failed(new Exception("some error"))) {
+      private val response = controller.createConversation(cdcm, "123")(fakeRequest)
+      assertThrows[Exception] {
+        status(response)
+      }
+    }
+
+    "do not handle OutOfMemoryError" in new CreateConversationTestCase(
+      requestBody = Resources.readJson("model/api/cdcm/write/create-conversation.json"),
+      serviceResponse = Future.failed(new OutOfMemoryError("no memory for jvm"))
+    ) {
+      assertThrows[ExecutionException] {
+        val response: Future[Result] = controller.createConversation(cdcm, "123")(fakeRequest)
+        status(response)
+      }
     }
 
     "return BAD_REQUEST (400) when mrn is empty" in new CreateConversationTestCase(

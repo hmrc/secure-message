@@ -18,7 +18,6 @@ package uk.gov.hmrc.securemessage
 
 @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments", "org.wartremover.warts.Null"))
 sealed class SecureMessageError(val message: String, val cause: Option[Throwable] = None)
-    extends Exception(message, cause.orNull)
 
 final case class StoreError(override val message: String, override val cause: Option[Throwable])
     extends SecureMessageError(message, cause)
