@@ -2,7 +2,7 @@
   "querymessageRequest" : {
     "requestCommon" : {
       "originatingSystem" : "dc-secure-message",
-      "receiptDate" : "2021-04-01T14:32:48+00:00",
+      "receiptDate" : "{{dateTime}}",
       "acknowledgementReference" : "acknowledgementReference"
     },
     "requestDetail" : {
