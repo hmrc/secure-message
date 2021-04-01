@@ -33,7 +33,7 @@ import uk.gov.hmrc.securemessage.controllers.model.ClientName.CDCM
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage.{ Sender, System, SystemIdentifier }
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
-import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryResponse, QueryResponseWrapper }
+import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryMessageRequest, RequestCommon, RequestDetail }
 import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.securemessage.services.Auditing
 
@@ -257,8 +257,11 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
     "send correct audit details when message forwarded" in {
       val _ = auditMessageForwarded(
         EventTypes.Succeeded,
-        QueryResponseWrapper(QueryResponse(xRequestId, conversationId, messageContent)),
-        NO_CONTENT)
+        QueryMessageRequest(
+          RequestCommon("dc-secure-message", DateTime.now(), "acknowledgementReference"),
+          RequestDetail(xRequestId, conversationId, messageContent)),
+        NO_CONTENT
+      )
       verify(auditConnector).sendExplicitAudit(
         EventTypes.Succeeded,
         Map(
@@ -273,8 +276,11 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
     "send correct audit details when message not forwarded" in {
       val _ = auditMessageForwarded(
         EventTypes.Failed,
-        QueryResponseWrapper(QueryResponse(xRequestId, conversationId, messageContent)),
-        INTERNAL_SERVER_ERROR)
+        QueryMessageRequest(
+          RequestCommon("dc-secure-message", DateTime.now(), "acknowledgementReference"),
+          RequestDetail(xRequestId, conversationId, messageContent)),
+        INTERNAL_SERVER_ERROR
+      )
       verify(auditConnector).sendExplicitAudit(
         EventTypes.Failed,
         Map(
