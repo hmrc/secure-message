@@ -1,0 +1,14 @@
+{
+  "querymessageRequest" : {
+    "requestCommon" : {
+      "originatingSystem" : "dc-secure-message",
+      "receiptDate" : "2021-04-01T14:32:48+01:00",
+      "acknowledgementReference" : "acknowledgementReference"
+    },
+    "requestDetail" : {
+      "id" : "govuk-tax-random-unique-id",
+      "conversationId" : "D-26675-20210401",
+      "message" : "dGhpcyBpcyBhIHRlc3Q="
+    }
+  }
+}

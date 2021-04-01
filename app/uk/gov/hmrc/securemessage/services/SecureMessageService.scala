@@ -37,7 +37,7 @@ import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.Customer.eqCustomer
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.{ Customer => PCustomer }
 import uk.gov.hmrc.securemessage.models.core._
-import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryMessageRequest, RequestCommon, core }
+import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryMessageRequest, QueryMessageWrapper, RequestCommon, core }
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
 import uk.gov.hmrc.securemessage.services.utils.ContentValidator
 
@@ -127,16 +127,17 @@ class SecureMessageService @Inject()(
     val randomId = UUID.randomUUID().toString
     val correlationId = request.headers.get("X-Correlation-ID").getOrElse(randomId)
     val requestId = request.headers.get("X-Request-ID").getOrElse(s"govuk-tax-$randomId")
-    val queryMessageRequest = QueryMessageRequest(
-      requestCommon = RequestCommon(
-        originatingSystem = "dc-secure-message",
-        receiptDate = DateTime.now(),
-        acknowledgementReference = correlationId
-      ),
-      requestDetail = messagesRequest.asRequestDetail(requestId, conversationId)
-    )
+    val queryMessageWrapper = QueryMessageWrapper(
+      QueryMessageRequest(
+        requestCommon = RequestCommon(
+          originatingSystem = "dc-secure-message",
+          receiptDate = DateTime.now(),
+          acknowledgementReference = correlationId
+        ),
+        requestDetail = messagesRequest.asRequestDetail(requestId, conversationId)
+      ))
 
-    EitherT(eisConnector.forwardMessage(queryMessageRequest)).leftWiden[SecureMessageError]
+    EitherT(eisConnector.forwardMessage(queryMessageWrapper)).leftWiden[SecureMessageError]
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.Any"))
