@@ -181,6 +181,15 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       contentAsJson(response) mustBe Json.toJson(
         "Error on conversation with client: CDCM, conversationId: 123, error message: Not valid html content")
     }
+
+    "return BAD_REQUEST (400) when mrn is empty" in new CreateConversationTestCase(
+      requestBody = Resources.readJson("model/api/cdcm/write/create-conversation-empty-mrn.json"),
+      serviceResponse = Future(Right(()))
+    ) {
+      private val response = controller.createConversation(cdcm, "123")(fakeRequest)
+      status(response) mustBe BAD_REQUEST
+      contentAsString(response) mustBe "Could not parse body due to requirement failed: empty mrn not allowed"
+    }
   }
 
   "getConversationsFiltered" must {
