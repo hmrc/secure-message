@@ -17,7 +17,6 @@
 package uk.gov.hmrc.securemessage.controllers
 
 import akka.stream.Materializer
-import app.routes
 import org.joda.time.DateTime
 import org.mockito.ArgumentMatchers.{ any, eq => eqTo }
 import org.mockito.Mockito.{ times, verify, when }
