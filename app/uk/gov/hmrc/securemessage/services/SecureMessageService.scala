@@ -89,13 +89,13 @@ class SecureMessageService @Inject()(
   def addCaseWorkerMessageToConversation(client: String, conversationId: String, messagesRequest: CaseworkerMessage)(
     implicit ec: ExecutionContext,
     hc: HeaderCarrier): Future[Either[SecureMessageError, Unit]] = {
-    val identifiers: Identifier = messagesRequest.sender.system.identifier.asIdentifier
+    val senderIdentifier: Identifier = messagesRequest.senderIdentifier(client, conversationId)
     def message(sender: Participant) = Message(sender.id, new DateTime(), messagesRequest.content)
     for {
       _            <- ContentValidator.validate(messagesRequest.content)
-      conversation <- EitherT(repo.getConversation(client, conversationId, Set(identifiers)))
+      conversation <- EitherT(repo.getConversation(client, conversationId, Set(senderIdentifier)))
+      sender       <- EitherT(Future(conversation.participantWith(Set(senderIdentifier))))
       participants <- addMissingEmails(conversation.participants)
-      sender       <- EitherT(Future(conversation.participantWith(Set(messagesRequest.senderIdentifier))))
       _            <- EitherT(repo.addMessageToConversation(client, conversationId, message(sender)))
       _            <- sendAlert(participants.customer, conversation.alert)
     } yield ()
