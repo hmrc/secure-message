@@ -98,7 +98,9 @@ object CdcmSender {
   implicit val senderReads: Reads[CdcmSender] = Json.reads[CdcmSender]
 }
 
-case class CdcmTags(mrn: String, notificationType: CdcmNotificationType)
+case class CdcmTags(mrn: String, notificationType: CdcmNotificationType) {
+  require(mrn.nonEmpty, "empty mrn not allowed")
+}
 
 object CdcmTags {
   implicit val tagsFormats: Format[CdcmTags] = Json.format[CdcmTags]

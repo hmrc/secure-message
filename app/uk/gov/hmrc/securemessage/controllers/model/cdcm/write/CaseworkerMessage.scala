@@ -19,8 +19,9 @@ package uk.gov.hmrc.securemessage.controllers.model.cdcm.write
 import play.api.libs.json.{ Json, Reads }
 import uk.gov.hmrc.securemessage.models.core.Identifier
 
-final case class CaseworkerMessage(sender: CaseworkerMessage.Sender, content: String) {
-  def senderIdentifier: Identifier = sender.system.identifier.asIdentifier
+final case class CaseworkerMessage(content: String) {
+  def senderIdentifier(clientName: String, conversationId: String): Identifier =
+    Identifier(clientName.toString, conversationId, None)
 }
 
 object CaseworkerMessage {

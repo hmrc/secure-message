@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.securemessage.services.utils
 
-import java.util.UUID
-
 import cats.data.NonEmptyList
 import org.joda.time.DateTime
 import org.mockito.Mockito.verify
@@ -31,12 +29,12 @@ import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.audit.model.EventTypes
 import uk.gov.hmrc.securemessage.controllers.model.ClientName.CDCM
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage
-import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage.{ Sender, System, SystemIdentifier }
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
-import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryResponse, QueryResponseWrapper }
 import uk.gov.hmrc.securemessage.models.core._
+import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryResponse, QueryResponseWrapper }
 import uk.gov.hmrc.securemessage.services.Auditing
 
+import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
@@ -111,7 +109,7 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
   "auditCaseworkerReply" must {
 
     val message =
-      CaseworkerMessage(Sender(System(SystemIdentifier(CDCM.entryName, conversationId))), messageContent)
+      CaseworkerMessage(messageContent)
 
     "send correct audit details when the casework reply is sent" in {
       val _ = auditCaseworkerReply(EventTypes.Succeeded, CDCM, conversationId, message)
