@@ -295,7 +295,8 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
         service.addCaseWorkerMessageToConversation(
           "CDCM",
           "D-80542-20201120",
-          caseWorkerMessage("PHA+Q2FuIEkgaGF2ZSBteSB0YXggbW9uZXkgcGxlYXNlPzwvcD4="))) mustBe Right(())
+          caseWorkerMessage("PHA+Q2FuIEkgaGF2ZSBteSB0YXggbW9uZXkgcGxlYXNlPzwvcD4="))) mustBe Left(ParticipantNotFound(
+        "No participant found for client: CDCM, conversationId: 123, indentifiers: Set(Identifier(CDCM,D-80542-20201120,None))"))
     }
 
     "return ConversationIdNotFound if the conversation ID is not found" in new AddCaseworkerMessageTestContent(
@@ -435,10 +436,7 @@ trait TestHelpers extends MockitoSugar with UnitTest {
     Set(Enrolment("HMRC-CUS-ORG", Vector(EnrolmentIdentifier("EORINumber", "GB1234567890")), "Activated", None)))
 
   def caseWorkerMessage(content: String): CaseworkerMessage =
-    CaseworkerMessage(
-      CaseworkerMessage.Sender(CaseworkerMessage.System(CaseworkerMessage.SystemIdentifier("CDCM", "123"))),
-      content
-    )
+    CaseworkerMessage(content)
   val listOfCoreConversation = List(
     ConversationUtil.getFullConversation("D-80542-20201120", "HMRC-CUS-ORG", "EORINumber", "GB1234567890"))
   val cnvWithNoEmail: Conversation =
