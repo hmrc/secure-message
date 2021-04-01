@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.securemessage.models
 
+import org.joda.time.DateTimeZone
 import org.joda.time.format.DateTimeFormat
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json.Json
@@ -28,12 +29,12 @@ class queryMessageWrapperSpec extends PlaySpec {
     "be successful when generating a valid JSON payload" in {
 
       val dtf = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ssZZ")
-      val dt = dtf.parseDateTime("2021-04-01T14:32:48+01:00")
+      val dt = dtf.parseDateTime("2021-04-01T14:32:48+01:00").toLocalDateTime
       val queryMessageRequest = QueryMessageWrapper(
         QueryMessageRequest(
           requestCommon = RequestCommon(
             originatingSystem = "dc-secure-message",
-            receiptDate = dt,
+            receiptDate = dt.toDateTime(DateTimeZone.UTC),
             acknowledgementReference = "acknowledgementReference"),
           requestDetail = RequestDetail(
             id = "govuk-tax-random-unique-id",
