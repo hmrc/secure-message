@@ -21,7 +21,8 @@ import play.api.libs.json.{ JodaWrites, JsObject, Json, OWrites, Writes }
 
 final case class RequestCommon(originatingSystem: String, receiptDate: DateTime, acknowledgementReference: String)
 object RequestCommon {
-  val dateFormat = "yyyy-MM-dd'T'HH:mm:ssZZ"
+  // ISO-8601
+  val dateFormat = "yyyy-MM-dd'T'HH:mm:ssZ"
   implicit val JodaDateWrites: Writes[org.joda.time.DateTime] = JodaWrites.jodaDateWrites(dateFormat)
   implicit val requestCommonWrites: OWrites[RequestCommon] = Json.writes[RequestCommon]
 }
