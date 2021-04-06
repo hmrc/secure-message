@@ -124,8 +124,13 @@ class SecureMessageService @Inject()(
   private def forwardMessage(conversationId: String, messagesRequest: CustomerMessage)(
     implicit ec: ExecutionContext,
     request: Request[_]): EitherT[Future, SecureMessageError, Unit] = {
+    val ACKNOWLEDGEMENT_REFERENCE_MAX_LENGTH = 32
     val randomId = UUID.randomUUID().toString
-    val correlationId = request.headers.get("X-Correlation-ID").getOrElse(randomId)
+    val correlationId = request.headers
+      .get("X-Correlation-ID")
+      .getOrElse(randomId)
+      .replace("-", "")
+      .substring(0, ACKNOWLEDGEMENT_REFERENCE_MAX_LENGTH - 1)
     val requestId = request.headers.get("X-Request-ID").getOrElse(s"govuk-tax-$randomId")
     val queryMessageWrapper = QueryMessageWrapper(
       QueryMessageRequest(
