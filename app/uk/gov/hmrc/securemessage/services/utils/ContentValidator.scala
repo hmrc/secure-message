@@ -22,7 +22,7 @@ import org.jsoup.nodes.{ Document, Element }
 import org.jsoup.parser.Parser
 import org.jsoup.safety.Whitelist
 import uk.gov.hmrc.securemessage.InvalidContent
-
+import java.nio.charset.StandardCharsets
 import java.util.Base64
 import scala.collection.JavaConverters._
 import scala.concurrent.{ ExecutionContext, Future }
@@ -55,7 +55,7 @@ object ContentValidator {
 
   private[utils] def decodeBase64(content: EncodedBase64): Either[InvalidContent, DecodedBase64] =
     Try {
-      decoder.decode(content).map(_.toChar).mkString
+      decoder.decode(content.getBytes(StandardCharsets.UTF_8)).map(_.toChar).mkString
     } match {
       case Success(decodedBase64) => Right(decodedBase64)
       case Failure(e)             => Left(InvalidContent(s"Invalid base64 content: ${e.getMessage}.", Some(e)))
