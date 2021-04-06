@@ -27,7 +27,7 @@ import uk.gov.hmrc.securemessage.controllers.model.ClientName
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
 import uk.gov.hmrc.securemessage.models.core.Conversation
-import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryResponseWrapper }
+import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryMessageRequest }
 
 import scala.concurrent.ExecutionContext
 
@@ -119,15 +119,15 @@ trait Auditing {
     auditConnector.sendExplicitAudit(txnStatus, detail)
   }
 
-  def auditMessageForwarded(txnStatus: String, qrw: QueryResponseWrapper, eisResponseCode: Int)(
+  def auditMessageForwarded(txnStatus: String, qrw: QueryMessageRequest, eisResponseCode: Int)(
     implicit hc: HeaderCarrier,
     ec: ExecutionContext): Unit = {
     val detail = Map(
       txnName           -> "Message forwarded to caseworker",
       "eisResponseCode" -> eisResponseCode.toString,
-      "conversationId"  -> qrw.queryResponse.conversationId,
-      "x-request-id"    -> qrw.queryResponse.id,
-      "message"         -> qrw.queryResponse.message
+      "conversationId"  -> qrw.requestDetail.conversationId,
+      "x-request-id"    -> qrw.requestDetail.id,
+      "message"         -> qrw.requestDetail.message
     )
     auditConnector.sendExplicitAudit(txnStatus, detail)
   }
