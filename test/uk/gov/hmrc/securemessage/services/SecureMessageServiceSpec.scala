@@ -40,7 +40,7 @@ import uk.gov.hmrc.securemessage.controllers.model.common.read.FilterTag
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
 import uk.gov.hmrc.securemessage.helpers.{ ConversationUtil, Resources }
 import uk.gov.hmrc.securemessage.models.core._
-import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryResponseWrapper }
+import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryMessageWrapper }
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
 import uk.gov.hmrc.securemessage.{ DuplicateConversationError, EmailLookupError, NoReceiverEmailError, SecureMessageError, _ }
 
@@ -246,7 +246,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
 
     "update the database when the customer has a participating enrolment" in new AddCustomerMessageTestContext(
       getConversationResult = Right(listOfCoreConversation.head)) {
-      when(mockEisConnector.forwardMessage(any[QueryResponseWrapper])).thenReturn(Future(Right(())))
+      when(mockEisConnector.forwardMessage(any[QueryMessageWrapper])).thenReturn(Future(Right(())))
       await(service.addCustomerMessageToConversation("CDCM", "D-80542-20201120", customerMessage, customerEnrolment))
       verify(mockRepository, times(1))
         .addMessageToConversation(any[String], any[String], any[Message])(any[ExecutionContext])

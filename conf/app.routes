@@ -21,7 +21,7 @@
 #   424:
 #     description: a dependency failed - e.g. customer email validation failed
 ###
-PUT         /conversation/:client/:conversationId   SecureMessageController.createConversation(client: ClientName, conversationId: String)
+PUT         /conversation/:client/:conversationId   uk.gov.hmrc.securemessage.controllers.SecureMessageController.createConversation(client: ClientName, conversationId: String)
 
 ###
 # summary: Adds a message from a caseworker to a conversation
@@ -44,7 +44,7 @@ PUT         /conversation/:client/:conversationId   SecureMessageController.crea
 #   424:
 #     description: a dependency failed - e.g. client not recognised
 ###
-POST        /conversation/:client/:conversationId/caseworker-message    SecureMessageController.addCaseworkerMessage(client: ClientName, conversationId: String)
+POST        /conversation/:client/:conversationId/caseworker-message    uk.gov.hmrc.securemessage.controllers.SecureMessageController.addCaseworkerMessage(client: ClientName, conversationId: String)
 
 ###
 # summary: Adds a message from a customer to a conversation
@@ -69,7 +69,7 @@ POST        /conversation/:client/:conversationId/caseworker-message    SecureMe
 #   502:
 #     description: failed to forward message
 ###
-POST        /conversation/:client/:conversationId/customer-message  SecureMessageController.addCustomerMessage(client: ClientName, conversationId: String)
+POST        /conversation/:client/:conversationId/customer-message  uk.gov.hmrc.securemessage.controllers.SecureMessageController.addCustomerMessage(client: ClientName, conversationId: String)
 
 ###
 # summary: Gets a list of conversations via enrolmentKeys, enrolments and tags filters
@@ -81,7 +81,7 @@ POST        /conversation/:client/:conversationId/customer-message  SecureMessag
 #   401:
 #     description: unauthorised customer when they don't have an enrolment
 ###
-GET         /conversations  SecureMessageController.getMetadataForConversationsFiltered(enrolmentKey: Option[List[String]], enrolment: Option[List[CustomerEnrolment]], tag: Option[List[FilterTag]])
+GET         /conversations  uk.gov.hmrc.securemessage.controllers.SecureMessageController.getMetadataForConversationsFiltered(enrolmentKey: Option[List[String]], enrolment: Option[List[CustomerEnrolment]], tag: Option[List[FilterTag]])
 
 ###
 # summary: Gets a conversation via client ID and conversation ID
@@ -95,7 +95,7 @@ GET         /conversations  SecureMessageController.getMetadataForConversationsF
 #   404:
 #     description: conversation not found
 ###
-GET         /conversation/:client/:conversationId   SecureMessageController.getConversationContent(client: ClientName, conversationId: String)
+GET         /conversation/:client/:conversationId   uk.gov.hmrc.securemessage.controllers.SecureMessageController.getConversationContent(client: ClientName, conversationId: String)
 
 ###
 # summary: Adds a date and time that a participant read the conversation
@@ -114,4 +114,4 @@ GET         /conversation/:client/:conversationId   SecureMessageController.getC
 #   400:
 #     description: issue with updating read time
 ###
-POST        /conversation/:client/:conversationId/read-time SecureMessageController.addCustomerReadTime(client: ClientName, conversationId: String)
+POST        /conversation/:client/:conversationId/read-time uk.gov.hmrc.securemessage.controllers.SecureMessageController.addCustomerReadTime(client: ClientName, conversationId: String)

@@ -17,11 +17,11 @@
 package uk.gov.hmrc.securemessage.controllers.model.common.write
 
 import play.api.libs.json.{ Json, Reads }
-import uk.gov.hmrc.securemessage.models.QueryResponse
+import uk.gov.hmrc.securemessage.models.RequestDetail
 
 final case class CustomerMessage(content: String) {
-  def asQueryResponse(requestId: String, conversationId: String): QueryResponse =
-    QueryResponse(requestId, conversationId, content)
+  def asRequestDetail(requestId: String, conversationId: String): RequestDetail =
+    RequestDetail(requestId, conversationId, content)
 }
 
 object CustomerMessage {

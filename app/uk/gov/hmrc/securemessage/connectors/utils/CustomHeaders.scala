@@ -17,7 +17,7 @@
 package uk.gov.hmrc.securemessage.connectors.utils
 
 object CustomHeaders {
-  val CorrelationId = "X-Correlation-Id"
+  val CorrelationId = "X-Correlation-ID"
   val ForwardedHost = "X-Forwarded-Host"
   val EisSenderClassification = "X-Eis-Sender-Classification"
   val Environment = "environment"
