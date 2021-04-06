@@ -27,7 +27,7 @@ class queryMessageWrapperSpec extends PlaySpec {
 
     "be successful when generating a valid JSON payload" in {
 
-      val dtf = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ssZZ")
+      val dtf = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ssZ")
       val dt = dtf.parseDateTime("2021-04-01T14:32:48+01:00")
       val queryMessageRequest = QueryMessageWrapper(
         QueryMessageRequest(
@@ -43,10 +43,9 @@ class queryMessageWrapperSpec extends PlaySpec {
 
       val expectedJson = Resources
         .readString("model/eisRequest.json")
-        .replaceAllLiterally("{{dateTime}}", dt.toString("yyyy-MM-dd'T'HH:mm:ssZZ"))
+        .replaceAllLiterally("{{dateTime}}", dt.toString("yyyy-MM-dd'T'HH:mm:ssZ"))
       val generatedJson = Json.prettyPrint(Json.toJson[QueryMessageWrapper](queryMessageRequest))
       generatedJson mustBe expectedJson
     }
   }
-
 }
