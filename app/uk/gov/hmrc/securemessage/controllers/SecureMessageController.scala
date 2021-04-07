@@ -22,8 +22,6 @@ import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc.{ Action, AnyContent, ControllerComponents }
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
-import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import uk.gov.hmrc.play.audit.model.EventTypes
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.securemessage._
 import uk.gov.hmrc.securemessage.controllers.model.ClientName
@@ -33,7 +31,7 @@ import uk.gov.hmrc.securemessage.controllers.model.common.read._
 import uk.gov.hmrc.securemessage.controllers.model.common.write._
 import uk.gov.hmrc.securemessage.controllers.utils.EnrolmentHelper._
 import uk.gov.hmrc.securemessage.controllers.utils.QueryStringValidation
-import uk.gov.hmrc.securemessage.services.{ Auditing, ErrorHandling, SecureMessageService }
+import uk.gov.hmrc.securemessage.services.{ ErrorHandling, SecureMessageService }
 import uk.gov.hmrc.time.DateTimeUtils
 
 import scala.concurrent.{ ExecutionContext, Future }
@@ -43,11 +41,11 @@ import scala.util.control.NonFatal
 class SecureMessageController @Inject()(
   cc: ControllerComponents,
   val authConnector: AuthConnector,
-  override val auditConnector: AuditConnector,
+//  override val auditConnector: AuditConnector,
   secureMessageService: SecureMessageService,
   dataTimeUtils: DateTimeUtils)(implicit ec: ExecutionContext)
     extends BackendController(cc) with AuthorisedFunctions with QueryStringValidation with I18nSupport
-    with ErrorHandling with Auditing {
+    with ErrorHandling {
 
   def createConversation(client: ClientName, conversationId: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
@@ -60,10 +58,10 @@ class SecureMessageController @Inject()(
               .createConversation(conversation)
               .map {
                 case Right(_) =>
-                  val _ = auditCreateConversation(EventTypes.Succeeded, conversation)
+//                  val _ = auditCreateConversation(EventTypes.Succeeded, conversation)
                   Created
                 case Left(error: SecureMessageError) =>
-                  val _ = auditCreateConversation(EventTypes.Failed, conversation)
+//                  val _ = auditCreateConversation(EventTypes.Failed, conversation)
                   handleErrors(ClientName.withName(conversation.client), conversation.id, error)
               }
               .recover {
@@ -82,10 +80,10 @@ class SecureMessageController @Inject()(
           .addCaseWorkerMessageToConversation(client.entryName, conversationId, caseworkerMessageRequest)
           .map {
             case Right(_) =>
-              val _ = auditCaseworkerReply(EventTypes.Succeeded, client, conversationId, caseworkerMessageRequest)
+//              val _ = auditCaseworkerReply(EventTypes.Succeeded, client, conversationId, caseworkerMessageRequest)
               Created(Json.toJson(s"Created case worker message for client $client and conversationId $conversationId"))
             case Left(error) =>
-              val _ = auditCaseworkerReply(EventTypes.Failed, client, conversationId, caseworkerMessageRequest)
+//              val _ = auditCaseworkerReply(EventTypes.Failed, client, conversationId, caseworkerMessageRequest)
               handleErrors(client, conversationId, error)
           }
       }.recover {
@@ -101,10 +99,10 @@ class SecureMessageController @Inject()(
             .addCustomerMessageToConversation(client.entryName, conversationId, customerMessageRequest, enrolments)
             .map {
               case Right(_) =>
-                val _ = auditCustomerReply(EventTypes.Succeeded, client, conversationId, customerMessageRequest)
+//                val _ = auditCustomerReply(EventTypes.Succeeded, client, conversationId, customerMessageRequest)
                 Created(Json.toJson(s"Created customer message for client $client and conversationId $conversationId"))
               case Left(error) =>
-                val _ = auditCustomerReply(EventTypes.Failed, client, conversationId, customerMessageRequest)
+//                val _ = auditCustomerReply(EventTypes.Failed, client, conversationId, customerMessageRequest)
                 handleErrors(client, conversationId, error)
             }
         }.recover {
@@ -160,12 +158,12 @@ class SecureMessageController @Inject()(
               .updateReadTime(client.entryName, conversationId, enrolments, readTime.timestamp)
               .map {
                 case Right(_) =>
-                  val _ =
-                    auditConversationRead(EventTypes.Succeeded, client, conversationId, readTime.timestamp, enrolments)
+//                  val _ =
+//                    auditConversationRead(EventTypes.Succeeded, client, conversationId, readTime.timestamp, enrolments)
                   Created(Json.toJson("read time successfully added"))
                 case Left(error) =>
-                  val _ =
-                    auditConversationRead(EventTypes.Failed, client, conversationId, readTime.timestamp, enrolments)
+//                  val _ =
+//                    auditConversationRead(EventTypes.Failed, client, conversationId, readTime.timestamp, enrolments)
                   handleErrors(client, conversationId, error)
               }
           }

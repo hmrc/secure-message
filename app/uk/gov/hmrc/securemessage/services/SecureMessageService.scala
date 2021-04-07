@@ -26,7 +26,7 @@ import play.api.i18n.Messages
 import play.api.mvc.Request
 import uk.gov.hmrc.auth.core.Enrolments
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.audit.http.connector.AuditConnector
+//import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.securemessage._
 import uk.gov.hmrc.securemessage.connectors.{ ChannelPreferencesConnector, EISConnector, EmailConnector }
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.{ ApiConversation, ConversationMetadata }
@@ -53,9 +53,7 @@ class SecureMessageService @Inject()(
   repo: ConversationRepository,
   emailConnector: EmailConnector,
   channelPrefConnector: ChannelPreferencesConnector,
-  eisConnector: EISConnector,
-  override val auditConnector: AuditConnector)
-    extends Auditing {
+  eisConnector: EISConnector) {
 
   def createConversation(conversation: Conversation)(
     implicit hc: HeaderCarrier,
@@ -175,10 +173,10 @@ class SecureMessageService @Inject()(
     Future.sequence(noEmailCustomers.map(customerParticipant =>
       channelPrefConnector.getEmailForEnrolment(customerParticipant.identifier).map {
         case Right(email) =>
-          val _ = auditRetrieveEmail(Some(email))
+//          val _ = auditRetrieveEmail(Some(email))
           Right(customerParticipant.copy(email = Some(email)))
         case Left(elr) =>
-          val _ = auditRetrieveEmail(None)
+//          val _ = auditRetrieveEmail(None)
           Left(CustomerEmailError(customerParticipant, elr))
     }))
 

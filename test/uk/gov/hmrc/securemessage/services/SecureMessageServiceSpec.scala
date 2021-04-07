@@ -31,7 +31,7 @@ import play.api.test.{ FakeRequest, NoMaterializer }
 import uk.gov.hmrc.auth.core.{ Enrolment, EnrolmentIdentifier, Enrolments }
 import uk.gov.hmrc.emailaddress.EmailAddress
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.audit.http.connector.AuditConnector
+//import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.securemessage.connectors.{ ChannelPreferencesConnector, EISConnector, EmailConnector }
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.ConversationMetadata
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage
@@ -403,7 +403,7 @@ trait TestHelpers extends MockitoSugar with UnitTest {
   val eORINumber: Identifier = Identifier("EORINumber", "GB123456789000000", Some("HMRC-CUS-ORG"))
   val participant: Participant = Participant(1, ParticipantType.Customer, eORINumber, None, None, None, None)
   val mockEisConnector: EISConnector = mock[EISConnector]
-  val mockAuditConnector: AuditConnector = mock[AuditConnector]
+//  val mockAuditConnector: AuditConnector = mock[AuditConnector]
   val mockRepository: ConversationRepository = mock[ConversationRepository]
   val mockEmailConnector: EmailConnector = mock[EmailConnector]
   when(mockEmailConnector.send(any[EmailRequest])(any[HeaderCarrier])).thenReturn(Future.successful(Right(())))
@@ -414,7 +414,8 @@ trait TestHelpers extends MockitoSugar with UnitTest {
       mockEmailConnector,
       mockChannelPreferencesConnector,
       mockEisConnector,
-      mockAuditConnector)
+//      mockAuditConnector
+    )
   val enrolments: Enrolments = Enrolments(
     Set(Enrolment("HMRC-CUS-ORG", Vector(EnrolmentIdentifier("EORINumber", "GB7777777777")), "Activated", None)))
   val identifier: Identifier = Identifier("EORINumber", "GB123456789000000", Some("HMRC-CUS-ORG"))

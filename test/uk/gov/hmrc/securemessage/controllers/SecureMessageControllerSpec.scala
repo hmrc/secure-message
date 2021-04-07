@@ -36,7 +36,7 @@ import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.authorise.Predicate
 import uk.gov.hmrc.auth.core.retrieve.Retrieval
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.audit.http.connector.AuditConnector
+//import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.securemessage._
 import uk.gov.hmrc.securemessage.controllers.model.ClientName
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.{ ApiConversation, ConversationMetadata }
@@ -350,7 +350,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
   class TestCase(authEnrolments: Set[CustomerEnrolment] = Set(testEnrolment)) {
     val mockRepository: ConversationRepository = mock[ConversationRepository]
     val mockAuthConnector: AuthConnector = mock[AuthConnector]
-    val mockAuditConnector: AuditConnector = mock[AuditConnector]
+//    val mockAuditConnector: AuditConnector = mock[AuditConnector]
     val mockSecureMessageService: SecureMessageService = mock[SecureMessageService]
     when(mockRepository.insertIfUnique(any[Conversation])(any[ExecutionContext]))
       .thenReturn(Future.successful(Right(())))
@@ -359,7 +359,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       new SecureMessageController(
         Helpers.stubControllerComponents(),
         mockAuthConnector,
-        mockAuditConnector,
+//        mockAuditConnector,
         mockSecureMessageService,
         zeroTimeProvider)
 
