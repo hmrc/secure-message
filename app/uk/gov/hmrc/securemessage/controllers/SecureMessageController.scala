@@ -31,9 +31,8 @@ import uk.gov.hmrc.securemessage.controllers.model.cdcm.write._
 import uk.gov.hmrc.securemessage.controllers.model.common.CustomerEnrolment
 import uk.gov.hmrc.securemessage.controllers.model.common.read._
 import uk.gov.hmrc.securemessage.controllers.model.common.write._
-import uk.gov.hmrc.securemessage.controllers.utils.EnrolmentHelper._
 import uk.gov.hmrc.securemessage.controllers.utils.QueryStringValidation
-import uk.gov.hmrc.securemessage.services.{ Auditing, SecureMessageService }
+import uk.gov.hmrc.securemessage.services.{ Auditing, ImplicitClassesExtensions, SecureMessageService }
 import uk.gov.hmrc.time.DateTimeUtils
 
 import javax.inject.Inject
@@ -47,7 +46,7 @@ class SecureMessageController @Inject()(
   secureMessageService: SecureMessageService,
   dataTimeUtils: DateTimeUtils)(implicit ec: ExecutionContext)
     extends BackendController(cc) with AuthorisedFunctions with QueryStringValidation with I18nSupport
-    with ErrorHandling with Auditing with Logging {
+    with ErrorHandling with Auditing with Logging with ImplicitClassesExtensions {
 
   def createConversation(client: ClientName, conversationId: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
@@ -113,7 +112,7 @@ class SecureMessageController @Inject()(
           case _ =>
             authorised()
               .retrieve(Retrievals.allEnrolments) { authEnrolments =>
-                val filteredEnrolments = filterEnrolments(authEnrolments, enrolmentKeys, customerEnrolments)
+                val filteredEnrolments = authEnrolments.filter(enrolmentKeys, customerEnrolments) //TODO: move this to service
                 secureMessageService.getConversationsFiltered(filteredEnrolments, tags).flatMap { conversationDetails =>
                   Future.successful(Ok(Json.toJson(conversationDetails)))
                 }

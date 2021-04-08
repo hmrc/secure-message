@@ -19,13 +19,14 @@ package uk.gov.hmrc.securemessage.services
 import org.scalatest.{ FreeSpec, MustMatchers }
 import uk.gov.hmrc.auth.core.{ EnrolmentIdentifier, Enrolments }
 import uk.gov.hmrc.securemessage.controllers.model.common
+import uk.gov.hmrc.securemessage.controllers.model.common.CustomerEnrolment
 
 class ImplicitClassesExtensionsTest extends FreeSpec with MustMatchers with ImplicitClassesExtensions {
 
   "ConversationExtensions" - {}
 
   "EnrolmentsExtensions" - {
-    "findEnrolment" - {
+    "find" - {
       "returns a specific enrolment found within a list of enrolments designated by it's key and name" in {
         val expectedEnrolment = common.CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789")
         val enrolments = Enrolments(
@@ -59,6 +60,189 @@ class ImplicitClassesExtensionsTest extends FreeSpec with MustMatchers with Impl
               state = "",
               None)))
         enrolments.find("HMRC-CUS-ORG", "EORINumber") mustBe None
+      }
+    }
+
+    "filter" - {
+      "returns a specific customer enrolment out of all the ones provided and ensures only the one available as an auth enrolment are returned" in {
+        val authEnrolments = Enrolments(
+          Set(
+            uk.gov.hmrc.auth.core.Enrolment(
+              key = "HMRC-CUS-ORG",
+              identifiers = Seq(EnrolmentIdentifier("EORINumber", "GB1234567890")),
+              state = "",
+              None)))
+
+        val enrolments = Some(
+          List(
+            CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890"),
+            CustomerEnrolment("IR-SA", "UTR", "123456789"),
+            CustomerEnrolment("IR-CT", "UTR", "345678901")
+          ))
+
+        authEnrolments.filter(None, enrolments) mustBe Set(
+          CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890"))
+      }
+
+      "returns multiple customer enrolments for same enrolments with multiple identifiers provided and held in auth" in {
+        val authEnrolments = Enrolments(
+          Set(uk.gov.hmrc.auth.core.Enrolment(
+            key = "HMRC-CUS-ORG",
+            identifiers = Seq(
+              EnrolmentIdentifier("EORINumber", "GB1234567890"),
+              EnrolmentIdentifier("EORINumber", "GB1234567891"),
+              EnrolmentIdentifier("EORINumber", "GB1234567892")
+            ),
+            state = "",
+            None
+          )))
+
+        val enrolments = Some(
+          List(
+            CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890"),
+            CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567891"),
+            CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567892"),
+            CustomerEnrolment("IR-SA", "UTR", "123456789"),
+            CustomerEnrolment("IR-CT", "UTR", "345678901")
+          ))
+
+        authEnrolments.filter(None, enrolments) mustBe Set(
+          CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890"),
+          CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567891"),
+          CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567892")
+        )
+      }
+
+      "returns multiple customer enrolments based on enrolment keys when multiple identifiers are held in auth" in {
+        val authEnrolments = Enrolments(
+          Set(uk.gov.hmrc.auth.core.Enrolment(
+            key = "HMRC-CUS-ORG",
+            identifiers = Seq(
+              EnrolmentIdentifier("EORINumber", "GB1234567890"),
+              EnrolmentIdentifier("EORINumber", "GB1234567891"),
+              EnrolmentIdentifier("EORINumber", "GB1234567892")
+            ),
+            state = "",
+            None
+          )))
+
+        val enrolmentKeys = Some(List("HMRC-CUS-ORG"))
+        authEnrolments.filter(enrolmentKeys, None) mustBe Set(
+          CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890"),
+          CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567891"),
+          CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567892")
+        )
+      }
+
+      "returns specific customer enrolments when provided with customer enrolments filters (no enrolment keys) and a specific set of auth enrolments" in {
+        val authEnrolments = Enrolments(
+          Set(
+            uk.gov.hmrc.auth.core.Enrolment(
+              key = "HMRC-CUS-ORG",
+              identifiers = Seq(EnrolmentIdentifier("EORINumber", "GB1234567890")),
+              state = "",
+              None),
+            uk.gov.hmrc.auth.core
+              .Enrolment(key = "IR-CT", identifiers = Seq(EnrolmentIdentifier("UTR", "345678901")), state = "", None)
+          ))
+
+        val enrolments = Some(
+          List(
+            CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890"),
+            CustomerEnrolment("IR-SA", "UTR", "123456789"),
+            CustomerEnrolment("IR-CT", "UTR", "345678901")
+          ))
+
+        authEnrolments.filter(None, enrolments) mustBe
+          Set(
+            CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890"),
+            CustomerEnrolment("IR-CT", "UTR", "345678901")
+          )
+      }
+
+      "returns a specific enrolment out of all the enrolment keys provided and ensures only the one available as an auth enrolment are returned" in {
+        val authEnrolments = Enrolments(
+          Set(
+            uk.gov.hmrc.auth.core.Enrolment(
+              key = "HMRC-CUS-ORG",
+              identifiers = Seq(EnrolmentIdentifier("EORINumber", "GB1234567890")),
+              state = "",
+              None)))
+
+        val enrolmentKeys = Some(List("HMRC-CUS-ORG", "IR-SA", "IR-CT"))
+
+        authEnrolments.filter(enrolmentKeys, None) mustBe Set(
+          CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890"))
+      }
+
+      "returns another specific enrolment out of all the enrolment keys provided and ensures only the ones available as auth enrolments are returned" in {
+        val authEnrolments = Enrolments(
+          Set(
+            uk.gov.hmrc.auth.core.Enrolment(
+              key = "HMRC-CUS-ORG",
+              identifiers = Seq(EnrolmentIdentifier("EORINumber", "GB1234567890")),
+              state = "",
+              None),
+            uk.gov.hmrc.auth.core
+              .Enrolment(key = "IR-SA", identifiers = Seq(EnrolmentIdentifier("UTR", "123456789")), state = "", None)
+          ))
+
+        val enrolmentKeys = Some(List("HMRC-CUS-ORG", "IR-SA", "IR-CT"))
+
+        authEnrolments.filter(enrolmentKeys, None) mustBe Set(
+          CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890"),
+          CustomerEnrolment("IR-SA", "UTR", "123456789"))
+      }
+
+      "returns customer enrolments out of all the ones provided plus enrolment keys and ensures only the ones available as auth enrolments are returned" in {
+        val authEnrolments = Enrolments(
+          Set(
+            uk.gov.hmrc.auth.core.Enrolment(
+              key = "HMRC-CUS-ORG",
+              identifiers = Seq(EnrolmentIdentifier("EORINumber", "GB1234567890")),
+              state = "",
+              None),
+            uk.gov.hmrc.auth.core
+              .Enrolment(key = "IR-CT", identifiers = Seq(EnrolmentIdentifier("UTR", "345678901")), state = "", None)
+          ))
+
+        val enrolmentKeys = Some(List("HMRC-CuS-ORG", "ir-SA", "IR-Ct"))
+        val enrolments = Some(
+          List(
+            CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890"),
+            CustomerEnrolment("ir-sa", "UTR", "123456789"),
+            CustomerEnrolment("IR-CT", "UTR", "345678901")
+          ))
+
+        authEnrolments.filter(enrolmentKeys, enrolments) mustBe
+          Set(
+            CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890"),
+            CustomerEnrolment("IR-CT", "UTR", "345678901")
+          )
+      }
+
+      "returns specific customer enrolments out of all the ones available as auth enrolments when no filters are passed" in {
+        val authEnrolments = Enrolments(
+          Set(
+            uk.gov.hmrc.auth.core.Enrolment(
+              key = "HMRC-CUS-ORG",
+              identifiers = Seq(EnrolmentIdentifier("EORINumber", "GB1234567890")),
+              state = "",
+              None),
+            uk.gov.hmrc.auth.core
+              .Enrolment(key = "IR-CT", identifiers = Seq(EnrolmentIdentifier("UTR", "345678901")), state = "", None)
+          ))
+
+        val expectedResult =
+          Set(
+            CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890"),
+            CustomerEnrolment("IR-CT", "UTR", "345678901")
+          )
+
+        authEnrolments.filter(None, None) mustBe expectedResult
+        authEnrolments.filter(Some(List()), None) mustBe expectedResult
+        authEnrolments.filter(None, Some(List())) mustBe expectedResult
+        authEnrolments.filter(Some(List()), Some(List())) mustBe expectedResult
       }
     }
   }

@@ -20,6 +20,9 @@ import uk.gov.hmrc.auth.core.Enrolments
 import uk.gov.hmrc.securemessage.ParticipantNotFound
 import uk.gov.hmrc.securemessage.controllers.model.common.CustomerEnrolment
 import uk.gov.hmrc.securemessage.models.core.{ Conversation, Identifier, Participant }
+import cats.implicits._
+
+import java.util.Locale
 
 trait ImplicitClassesExtensions {
   implicit class EnrolmentsExtensions(enrolments: Enrolments) {
@@ -36,6 +39,39 @@ trait ImplicitClassesExtensions {
           .map(enrolmentIdentifier =>
             CustomerEnrolment(eoriEnrolment.key, enrolmentIdentifier.key, enrolmentIdentifier.value))
       }
+
+    @SuppressWarnings(Array("org.wartremover.warts.Option2Iterable"))
+    def filter(
+      enrolmentKeys: Option[List[String]],
+      customerEnrolments: Option[List[CustomerEnrolment]]): Set[CustomerEnrolment] = {
+
+      //authEnrolments.enrolments.intersect(customerEnrolments).filter(ce => enrolmentKeys.contains(ce.key))
+
+      val enrolmentsFromKeys =
+        enrolments.enrolments.filter(
+          e =>
+            enrolmentKeys
+              .getOrElse(List())
+              .map(_.toUpperCase(Locale.ENGLISH))
+              .contains(e.key.toUpperCase(Locale.ENGLISH)))
+      val enrolmentsFromCustomerEnrolments = enrolments.enrolments.filter(
+        ae =>
+          customerEnrolments
+            .getOrElse(List())
+            .exists(
+              ce =>
+                (ae.key.toUpperCase(Locale.ENGLISH) === ce.key.toUpperCase(Locale.ENGLISH)) &&
+                  (ae.identifiers.exists(i =>
+                    (i.key.toUpperCase(Locale.ENGLISH) === ce.name.toUpperCase(Locale.ENGLISH)) &&
+                      (i.value.toUpperCase(Locale.ENGLISH) === ce.value.toUpperCase(Locale.ENGLISH))))))
+
+      val newCustomerEnrolments = (enrolmentKeys, customerEnrolments) match {
+        case (None, None) | (Some(List()), None) | (None, Some(List())) | (Some(List()), Some(List())) =>
+          enrolments.enrolments
+        case _ => enrolmentsFromKeys union enrolmentsFromCustomerEnrolments
+      }
+      newCustomerEnrolments.flatMap(e => e.identifiers.map(i => CustomerEnrolment(e.key, i.key, i.value)))
+    }
   }
 
   implicit class ConversationExtensions(conversation: Conversation) {
