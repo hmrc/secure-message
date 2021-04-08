@@ -22,14 +22,6 @@ import cats.implicits._
 import uk.gov.hmrc.securemessage.controllers.model.common.CustomerEnrolment
 
 object EnrolmentHelper {
-
-  def findEnrolment(enrolments: Enrolments, enrolmentKey: String, enrolmentName: String): Option[CustomerEnrolment] =
-    enrolments.getEnrolment(enrolmentKey).flatMap { eoriEnrolment =>
-      eoriEnrolment
-        .getIdentifier(enrolmentName)
-        .map(enrolmentIdentifier =>
-          CustomerEnrolment(eoriEnrolment.key, enrolmentIdentifier.key, enrolmentIdentifier.value))
-    }
   //TODO: move this in service within getConversationsFiltered
   @SuppressWarnings(Array("org.wartremover.warts.Option2Iterable"))
   def filterEnrolments(

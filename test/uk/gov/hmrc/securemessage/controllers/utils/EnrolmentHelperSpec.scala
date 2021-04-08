@@ -18,49 +18,13 @@ package uk.gov.hmrc.securemessage.controllers.utils
 
 import org.scalatestplus.play.PlaySpec
 import uk.gov.hmrc.auth.core.{ EnrolmentIdentifier, Enrolments }
-import uk.gov.hmrc.securemessage.controllers.model.common
 import uk.gov.hmrc.securemessage.controllers.model.common.CustomerEnrolment
-import uk.gov.hmrc.securemessage.controllers.utils.EnrolmentHelper.{ filterEnrolments, findEnrolment }
+import uk.gov.hmrc.securemessage.controllers.utils.EnrolmentHelper.filterEnrolments
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class EnrolmentHelperSpec extends PlaySpec {
 
-  "findEnrolment" must {
-    "returns a specific enrolment found within a list of enrolments designated by it's key and name" in {
-      val expectedEnrolment = common.CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789")
-      val enrolments = Enrolments(
-        Set(
-          uk.gov.hmrc.auth.core.Enrolment(
-            key = "HMRC-CUS-ORG",
-            identifiers = Seq(EnrolmentIdentifier("EORINumber", "GB123456789")),
-            state = "",
-            None)))
-      findEnrolment(enrolments, "HMRC-CUS-ORG", "EORINumber") mustBe Some(expectedEnrolment)
-    }
-
-    "returns a specific enrolment found within a list of enrolments designated by it's key and name in a case-insensitive manner" in {
-      val expectedEnrolment = common.CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789")
-      val enrolments = Enrolments(
-        Set(
-          uk.gov.hmrc.auth.core.Enrolment(
-            key = "HMRC-CUS-ORG",
-            identifiers = Seq(EnrolmentIdentifier("EORINumber", "GB123456789")),
-            state = "",
-            None)))
-      findEnrolment(enrolments, "hmrc-cUs-oRG", "eoriNumber") mustBe Some(expectedEnrolment)
-    }
-
-    "returns None when a specific enrolment cannot be found within a list of enrolments" in {
-      val enrolments = Enrolments(
-        Set(
-          uk.gov.hmrc.auth.core.Enrolment(
-            key = "HMRC-CUS-ORG",
-            identifiers = Seq(EnrolmentIdentifier("Some other name", "some value")),
-            state = "",
-            None)))
-      findEnrolment(enrolments, "HMRC-CUS-ORG", "EORINumber") mustBe None
-    }
-  }
+  "findEnrolment" must {}
 
   "filterEnrolments" must {
     "returns a specific customer enrolment out of all the ones provided and ensures only the one available as an auth enrolment are returned" in {

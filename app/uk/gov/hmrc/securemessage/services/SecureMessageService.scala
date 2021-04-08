@@ -17,7 +17,6 @@
 package uk.gov.hmrc.securemessage.services
 
 import java.util.UUID
-
 import cats.data._
 import cats.implicits._
 import com.google.inject.Inject
@@ -55,7 +54,7 @@ class SecureMessageService @Inject()(
   channelPrefConnector: ChannelPreferencesConnector,
   eisConnector: EISConnector,
   override val auditConnector: AuditConnector)
-    extends Auditing {
+    extends Auditing with ImplicitClassesExtensions {
 
   def createConversation(conversation: Conversation)(
     implicit hc: HeaderCarrier,
@@ -213,23 +212,5 @@ class SecureMessageService @Inject()(
     def all: List[Participant] = success ++ failure.map(_.customer)
   }
   case class CustomerEmailError(customer: Participant, error: EmailLookupError)
-
-  private implicit class EnrolmentsExtensions(enrolments: Enrolments) {
-    def asIdentifiers: Set[Identifier] =
-      for {
-        enr <- enrolments.enrolments
-        id  <- enr.identifiers
-      } yield Identifier(id.key, id.value, Some(enr.key))
-  }
-
-  private implicit class ConversationExtensions(conversation: Conversation) {
-    def participantWith(identifiers: Set[Identifier]): Either[ParticipantNotFound, Participant] =
-      conversation.participants.find(p => identifiers.contains(p.identifier)) match {
-        case Some(participant) => Right(participant)
-        case None =>
-          Left(ParticipantNotFound(
-            s"No participant found for client: ${conversation.client}, conversationId: ${conversation.id}, indentifiers: $identifiers"))
-      }
-  }
 
 }

@@ -67,7 +67,7 @@ object ContentValidator {
     val dom: Document = Jsoup.parse(content, "", parser)
     val errors = parser.getErrors.asScala.map(_.toString)
     if (errors.nonEmpty) {
-      Left(InvalidContent(s"Invalid html: $errors")) //TODO: test a valid xml but invalid html
+      Left(InvalidContent(s"Invalid html: $errors"))
     } else {
       Right(dom)
     }
