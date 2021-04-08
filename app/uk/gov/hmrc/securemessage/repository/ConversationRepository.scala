@@ -121,7 +121,6 @@ class ConversationRepository @Inject()(implicit connector: MongoConnector)
         identifiers.foldLeft(JsArray())((acc, i) => acc ++ Json.arr(Json.obj(findByIdentifierQuery(i): _*)))
     )
 
-  //TODO: remove this
   private def findByIdentifierQuery(identifier: Identifier): Seq[(String, JsValueWrapper)] =
     identifier.enrolment match {
       case Some(enrolment) =>
