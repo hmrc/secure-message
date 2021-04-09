@@ -20,9 +20,6 @@ import uk.gov.hmrc.auth.core.Enrolments
 import uk.gov.hmrc.securemessage.ParticipantNotFound
 import uk.gov.hmrc.securemessage.controllers.model.common.CustomerEnrolment
 import uk.gov.hmrc.securemessage.models.core.{ Conversation, Identifier, Participant }
-import cats.implicits._
-
-import java.util.Locale
 
 trait ImplicitClassesExtensions {
   implicit class EnrolmentsExtensions(enrolments: Enrolments) {
@@ -32,45 +29,38 @@ trait ImplicitClassesExtensions {
         id  <- enr.identifiers
       } yield Identifier(id.key, id.value, Some(enr.key))
 
+    def asCustomerEnrolments: Set[CustomerEnrolment] =
+      for {
+        enr <- enrolments.enrolments
+        id  <- enr.identifiers
+      } yield CustomerEnrolment(enr.key, id.key, id.value)
+
     def find(enrolmentKey: String, enrolmentName: String): Option[CustomerEnrolment] =
-      enrolments.getEnrolment(enrolmentKey).flatMap { eoriEnrolment =>
-        eoriEnrolment
-          .getIdentifier(enrolmentName)
-          .map(enrolmentIdentifier =>
-            CustomerEnrolment(eoriEnrolment.key, enrolmentIdentifier.key, enrolmentIdentifier.value))
-      }
+      for {
+        eoriEnrolment       <- enrolments.getEnrolment(enrolmentKey)
+        enrolmentIdentifier <- eoriEnrolment.getIdentifier(enrolmentName)
+      } yield CustomerEnrolment(eoriEnrolment.key, enrolmentIdentifier.key, enrolmentIdentifier.value)
 
     @SuppressWarnings(Array("org.wartremover.warts.Option2Iterable"))
     def filter(
       enrolmentKeys: Option[List[String]],
       customerEnrolments: Option[List[CustomerEnrolment]]): Set[CustomerEnrolment] = {
-
-      //authEnrolments.enrolments.intersect(customerEnrolments).filter(ce => enrolmentKeys.contains(ce.key))
-
-      val enrolmentsFromKeys =
-        enrolments.enrolments.filter(
-          e =>
-            enrolmentKeys
-              .getOrElse(List())
-              .map(_.toUpperCase(Locale.ENGLISH))
-              .contains(e.key.toUpperCase(Locale.ENGLISH)))
-      val enrolmentsFromCustomerEnrolments = enrolments.enrolments.filter(
-        ae =>
-          customerEnrolments
-            .getOrElse(List())
-            .exists(
-              ce =>
-                (ae.key.toUpperCase(Locale.ENGLISH) === ce.key.toUpperCase(Locale.ENGLISH)) &&
-                  (ae.identifiers.exists(i =>
-                    (i.key.toUpperCase(Locale.ENGLISH) === ce.name.toUpperCase(Locale.ENGLISH)) &&
-                      (i.value.toUpperCase(Locale.ENGLISH) === ce.value.toUpperCase(Locale.ENGLISH))))))
-
-      val newCustomerEnrolments = (enrolmentKeys, customerEnrolments) match {
-        case (None, None) | (Some(List()), None) | (None, Some(List())) | (Some(List()), Some(List())) =>
-          enrolments.enrolments
-        case _ => enrolmentsFromKeys union enrolmentsFromCustomerEnrolments
-      }
-      newCustomerEnrolments.flatMap(e => e.identifiers.map(i => CustomerEnrolment(e.key, i.key, i.value)))
+      val originalEnrolments: Set[CustomerEnrolment] = enrolments.asCustomerEnrolments
+      val enrolmentKeysFilter: Set[String] = enrolmentKeys.toSet.flatten
+      val customerEnrolmentsFilter: Set[CustomerEnrolment] = customerEnrolments.toSet.flatten
+      val enrolmentKeysFiltered =
+        if (enrolmentKeysFilter.isEmpty) {
+          originalEnrolments
+        } else {
+          originalEnrolments.filter(e => enrolmentKeysFilter.contains(e.key))
+        }
+      val customerEnrolmentsFiltered =
+        if (customerEnrolmentsFilter.isEmpty) {
+          enrolmentKeysFiltered
+        } else {
+          enrolmentKeysFiltered.intersect(customerEnrolmentsFilter)
+        }
+      customerEnrolmentsFiltered
     }
   }
 
