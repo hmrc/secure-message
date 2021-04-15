@@ -56,10 +56,10 @@ class SecureMessageController @Inject()(
           .createConversation(conversation)
           .map {
             case Right(_) =>
-              val _ = auditCreateConversation(EventTypes.Succeeded, conversation)
+              auditCreateConversation(EventTypes.Succeeded, conversation)
               Created
             case Left(error: SecureMessageError) =>
-              val _ = auditCreateConversation(EventTypes.Failed, conversation)
+              auditCreateConversation(EventTypes.Failed, conversation)
               handleErrors(ClientName.withName(conversation.client), conversation.id, error)
           }
       }
