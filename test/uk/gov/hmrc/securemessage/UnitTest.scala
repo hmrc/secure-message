@@ -17,6 +17,8 @@
 package uk.gov.hmrc.securemessage
 
 import org.joda.time.DateTime
+import uk.gov.hmrc.auth.core.{ Enrolment, EnrolmentIdentifier, Enrolments }
+import uk.gov.hmrc.securemessage.models.core.CustomerEnrolment
 import uk.gov.hmrc.time.DateTimeUtils
 
 /** This will be the base class for all our unit tests, replacing PlaySpec and all extended traits for consistency
@@ -29,4 +31,15 @@ trait UnitTest {
   class ZeroTimeProvider extends DateTimeUtils {
     override def now: DateTime = new DateTime(0)
   }
+
+  def authEnrolmentsFrom(customerEnrolments: Set[CustomerEnrolment]): Enrolments =
+    Enrolments(
+      customerEnrolments.map(
+        enrolment =>
+          Enrolment(
+            key = enrolment.key,
+            identifiers = Seq(EnrolmentIdentifier(enrolment.name, enrolment.value)),
+            state = "",
+            None))
+    )
 }

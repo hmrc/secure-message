@@ -19,11 +19,10 @@ package uk.gov.hmrc.securemessage.helpers
 import cats.data.NonEmptyList
 import org.joda.time.DateTime
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CdcmConversation
-import uk.gov.hmrc.securemessage.controllers.model.common.CustomerEnrolment
 import uk.gov.hmrc.securemessage.controllers.model.common.write.{ Customer, Recipient }
 import uk.gov.hmrc.securemessage.models.core
 import uk.gov.hmrc.securemessage.models.core.Language.English
-import uk.gov.hmrc.securemessage.models.core._
+import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, _ }
 
 object ConversationUtil {
   val alert: core.Alert = core.Alert("emailTemplateId", Some(Map("param1" -> "value1", "param2" -> "value2")))

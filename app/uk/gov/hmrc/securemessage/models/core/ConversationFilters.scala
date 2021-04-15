@@ -14,19 +14,13 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.securemessage.controllers.model.common.write
+package uk.gov.hmrc.securemessage.models.core
 
-import play.api.libs.json.{ Json, Reads }
-import uk.gov.hmrc.securemessage.models.core.CustomerEnrolment
-
-final case class Recipient(customer: Customer)
-
-object Recipient {
-  implicit val recipientReads: Reads[Recipient] =
-    Json.reads[Recipient]
-}
-
-final case class Customer(enrolment: CustomerEnrolment)
-object Customer {
-  implicit val customerReads: Reads[Customer] = Json.reads[Customer]
+case class ConversationFilters(
+  enrolmentKeys: Option[List[String]],
+  customerEnrolments: Option[List[CustomerEnrolment]],
+  tags: Option[List[FilterTag]]) {
+  def enrolmentKeysFilter: Set[String] = enrolmentKeys.toSet.flatten
+  def enrolmentsFilter: Set[CustomerEnrolment] = customerEnrolments.toSet.flatten
+  def tagsFilter: Set[FilterTag] = tags.toSet.flatten
 }

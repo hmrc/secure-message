@@ -41,16 +41,14 @@ import uk.gov.hmrc.securemessage._
 import uk.gov.hmrc.securemessage.controllers.model.ClientName
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.{ ApiConversation, ConversationMetadata }
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.{ CaseworkerMessage, CdcmConversation }
-import uk.gov.hmrc.securemessage.controllers.model.common.CustomerEnrolment
-import uk.gov.hmrc.securemessage.controllers.model.common.read.FilterTag
 import uk.gov.hmrc.securemessage.controllers.model.common.write.{ CustomerMessage, ReadTime }
 import uk.gov.hmrc.securemessage.helpers.Resources
-import uk.gov.hmrc.securemessage.models.core.Conversation
+import uk.gov.hmrc.securemessage.models.core.{ Conversation, ConversationFilters, CustomerEnrolment, FilterTag }
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
 import uk.gov.hmrc.securemessage.services.SecureMessageService
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.{ ExecutionContext, ExecutionException, Future }
 
 @SuppressWarnings(
   Array(
@@ -154,15 +152,6 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
         "Error on conversation with client: CDCM, conversationId: 123, error message: some unknown err")
     }
 
-    "return InternalServerError (500) if an unexpected exception is thrown" in new CreateConversationTestCase(
-      requestBody = Resources.readJson("model/api/cdcm/write/create-conversation.json"),
-      serviceResponse = Future.failed(new Exception("some error"))) {
-      private val response = controller.createConversation(cdcm, "123")(fakeRequest)
-      status(response) mustBe INTERNAL_SERVER_ERROR
-      contentAsJson(response) mustBe Json.toJson(
-        "Error on conversation with client: CDCM, conversationId: 123, error message: some error")
-    }
-
     "return BAD_REQUEST (400) when the message content is not base64 encoded" in new CreateConversationTestCase(
       requestBody = Resources.readJson("model/api/cdcm/write/create-conversation.json"),
       serviceResponse = Future.successful(Left(InvalidContent("Not valid base64 content")))
@@ -181,6 +170,25 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       status(response) mustBe BAD_REQUEST
       contentAsJson(response) mustBe Json.toJson(
         "Error on conversation with client: CDCM, conversationId: 123, error message: Not valid html content")
+    }
+
+    "do not handle non SecureMessageError exceptions" in new CreateConversationTestCase(
+      requestBody = Resources.readJson("model/api/cdcm/write/create-conversation.json"),
+      serviceResponse = Future.failed(new Exception("some error"))) {
+      private val response = controller.createConversation(cdcm, "123")(fakeRequest)
+      assertThrows[Exception] {
+        status(response)
+      }
+    }
+
+    "do not handle OutOfMemoryError" in new CreateConversationTestCase(
+      requestBody = Resources.readJson("model/api/cdcm/write/create-conversation.json"),
+      serviceResponse = Future.failed(new OutOfMemoryError("no memory for jvm"))
+    ) {
+      assertThrows[ExecutionException] {
+        val response: Future[Result] = controller.createConversation(cdcm, "123")(fakeRequest)
+        status(response)
+      }
     }
 
     "return BAD_REQUEST (400) when mrn is empty" in new CreateConversationTestCase(
@@ -209,14 +217,14 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     //TODO: move mock to GetConversationsTestCase, this functionality needs to be reviewed.
     "return Ok (200) with empty list for query parameters/auth record mismatch" in new TestCase(
       authEnrolments = Set(CustomerEnrolment("SOME_ENROLMENT_KEY", "SOME_IDENTIFIER_KEY", "SOME_IDENTIFIER_VALUE"))) {
+      private val someEnrolments: Some[List[CustomerEnrolment]] = Some(List(testEnrolment))
+      private val filters: ConversationFilters = ConversationFilters(None, someEnrolments, None)
       when(
         mockSecureMessageService
-          .getConversationsFiltered(eqTo(Set[CustomerEnrolment]().empty), any[Option[List[FilterTag]]])(
-            any[ExecutionContext],
-            any[Messages]))
+          .getConversationsFiltered(eqTo(enrolments), eqTo(filters))(any[ExecutionContext], any[Messages]))
         .thenReturn(Future.successful(List()))
       val response: Future[Result] = controller
-        .getMetadataForConversationsFiltered(None, Some(List(testEnrolment)), None)
+        .getMetadataForConversationsFiltered(None, someEnrolments, None)
         .apply(FakeRequest("GET", "/"))
       status(response) mustBe OK
       contentAsString(response) mustBe "[]"
@@ -363,18 +371,12 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
         mockSecureMessageService,
         zeroTimeProvider)
 
-    val enrolments: Set[Enrolment] = authEnrolments.map(
-      enrolment =>
-        Enrolment(
-          key = enrolment.key,
-          identifiers = Seq(EnrolmentIdentifier(enrolment.name, enrolment.value)),
-          state = "",
-          None))
+    val enrolments: Enrolments = authEnrolmentsFrom(authEnrolments)
 
     when(
       mockAuthConnector
         .authorise(any[Predicate], any[Retrieval[Enrolments]])(any[HeaderCarrier], any[ExecutionContext]))
-      .thenReturn(Future.successful(Enrolments(enrolments)))
+      .thenReturn(Future.successful(enrolments))
   }
 
   private val fullConversationJson = Resources.readJson("model/api/cdcm/write/create-conversation.json")
@@ -423,12 +425,16 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
   class GetConversationsTestCase(
     storedConversationsMetadata: JsValue,
     authEnrolments: Set[CustomerEnrolment] = Set(testEnrolment),
-    customerEnrolments: Set[CustomerEnrolment] = Set(testEnrolment))
-      extends TestCase(authEnrolments) {
+    customerEnrolments: Set[CustomerEnrolment] = Set(testEnrolment),
+    filterTags: Option[List[FilterTag]] = None,
+    filterEnrolmentKeys: Option[List[String]] = None
+  ) extends TestCase(authEnrolments) {
     val conversationsMetadata: List[ConversationMetadata] = storedConversationsMetadata.as[List[ConversationMetadata]]
     when(
       mockSecureMessageService
-        .getConversationsFiltered(eqTo(customerEnrolments), any[Option[List[FilterTag]]])(
+        .getConversationsFiltered(
+          eqTo(authEnrolmentsFrom(authEnrolments)),
+          eqTo(ConversationFilters(filterEnrolmentKeys, Some(customerEnrolments.toList), filterTags)))(
           any[ExecutionContext],
           any[Messages]))
       .thenReturn(Future.successful(conversationsMetadata))

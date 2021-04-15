@@ -37,4 +37,5 @@ class ErrorHandler @Inject()(jsonErrorHandler: JsonErrorHandler) extends HttpErr
 
   override def onServerError(request: RequestHeader, exception: Throwable): Future[Result] =
     jsonErrorHandler.onServerError(request, exception)
+
 }
