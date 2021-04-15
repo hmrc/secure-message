@@ -44,8 +44,9 @@ lazy val microservice = Project(appName, file("."))
       "uk.gov.hmrc.securemessage.controllers.binders._",
 //      "uk.gov.hmrc.securemessage.controllers.SecureMessageController",
       "uk.gov.hmrc.securemessage.controllers.model._",
-      "uk.gov.hmrc.securemessage.controllers.model.common.read._",
-      "uk.gov.hmrc.securemessage.controllers.model.common._"
+      "uk.gov.hmrc.securemessage.controllers.model.common._",
+      "uk.gov.hmrc.securemessage.models.core.CustomerEnrolment",
+      "uk.gov.hmrc.securemessage.models.core.FilterTag"
     ),
     // ***************
     // Use the silencer plugin to suppress warnings

@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.securemessage.controllers.model.common.read
+package uk.gov.hmrc.securemessage.models.core
 
 import play.api.libs.json.{ Json, Reads }
 
-//TODO: this is a common read model
 final case class FilterTag(key: String, value: String)
 
 object FilterTag {

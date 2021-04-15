@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-import java.io.File
-
 import org.scalatest.DoNotDiscover
 import play.api.http.Status.{ BAD_REQUEST, CREATED }
 import play.api.http.{ ContentTypes, HeaderNames }
 import play.api.libs.json.Json
-import play.api.libs.ws.WSClient
+import play.api.libs.ws.{ WSClient, WSResponse }
 import play.api.test.Helpers._
+
+import java.io.File
 
 @DoNotDiscover
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
@@ -30,7 +30,7 @@ class CreateConversationISpec extends ISpec {
   "A PUT request to /secure-messaging/conversation/{client}/{conversationId}" should {
 
     "return CREATED when sent a full and valid JSON payload" in new TestContent {
-      val response =
+      val response: WSResponse =
         wsClient
           .url(resource("/secure-messaging/conversation/CDCM/D-80542-20201120"))
           .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
@@ -40,7 +40,7 @@ class CreateConversationISpec extends ISpec {
     }
 
     "return CREATED when sent a minimal and valid JSON payload" in new TestContent {
-      val response =
+      val response: WSResponse =
         wsClient
           .url(resource("/secure-messaging/conversation/CDCM/D-80542-20201120"))
           .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
@@ -50,7 +50,7 @@ class CreateConversationISpec extends ISpec {
     }
 
     "return BAD REQUEST when sending lowercase cdcm in URL" in new TestContent {
-      val response =
+      val response: WSResponse =
         wsClient
           .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
           .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
@@ -62,7 +62,7 @@ class CreateConversationISpec extends ISpec {
     }
 
     "return BAD REQUEST when sent a minimal and invalid JSON payload" in new TestContent {
-      val response =
+      val response: WSResponse =
         wsClient
           .url(resource("/secure-messaging/conversation/CDCM/D-80542-20201120"))
           .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
@@ -77,7 +77,7 @@ class CreateConversationISpec extends ISpec {
         .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
         .put(new File("./it/resources/cdcm/create-conversation-minimal.json"))
         .futureValue
-      val response = wsClient
+      val response: WSResponse = wsClient
         .url(resource("/secure-messaging/conversation/CDCM/D-80542-20201120"))
         .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
         .put(new File("./it/resources/cdcm/create-conversation-minimal.json"))
@@ -86,14 +86,14 @@ class CreateConversationISpec extends ISpec {
     }
 
     "return BAD_REQUEST when invalid message content is supplied" in new TestContent {
-      val response =
+      val response: WSResponse =
         wsClient
           .url(resource("/secure-messaging/conversation/CDCM/D-80542-20201120"))
           .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
           .put(new File("./it/resources/cdcm/conversation-request-invalid-html.json"))
           .futureValue
       response.status mustBe BAD_REQUEST
-      response.body mustBe "\"Error on conversation with client: CDCM, conversationId: D-80542-20201120, error message: Html contains disallowed tags, attributes or protocols within the tags: matt. For allowed elements see class org.jsoup.safety.Whitelist.relaxed()\""
+      response.body mustBe """"Error on conversation with client: CDCM, conversationId: D-80542-20201120, error message: Html contains disallowed tags, attributes or protocols within the tags: matt. For allowed elements see class org.jsoup.safety.Whitelist.relaxed()"""".stripMargin
     }
   }
 
