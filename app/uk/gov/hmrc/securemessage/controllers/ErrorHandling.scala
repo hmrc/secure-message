@@ -31,14 +31,13 @@ trait ErrorHandling extends Logging {
     logger.error(error.message, error.cause.orNull)
     val jsonError = Json.toJson(errMsg)
     error match {
-      case EmailSendingError(_)                          => Created(jsonError)
-      case NoReceiverEmailError(_) | EmailLookupError(_) => Created(jsonError)
-      case DuplicateConversationError(_, _)              => Conflict(jsonError)
-      case InvalidContent(_, _) | InvalidRequest(_, _)   => BadRequest(jsonError)
-      case ParticipantNotFound(_)                        => Unauthorized(jsonError)
-      case ConversationNotFound(_)                       => NotFound(jsonError)
-      case EisForwardingError(_)                         => BadGateway(jsonError)
-      case _: SecureMessageError                         => InternalServerError(jsonError)
+      case EmailSendingError(_) | NoReceiverEmailError(_) | EmailLookupError(_) => Created(jsonError)
+      case DuplicateConversationError(_, _)                                     => Conflict(jsonError)
+      case InvalidContent(_, _) | InvalidRequest(_, _)                          => BadRequest(jsonError)
+      case ParticipantNotFound(_)                                               => Unauthorized(jsonError)
+      case ConversationNotFound(_)                                              => NotFound(jsonError)
+      case EisForwardingError(_)                                                => BadGateway(jsonError)
+      case _: SecureMessageError                                                => InternalServerError(jsonError)
     }
   }
 
