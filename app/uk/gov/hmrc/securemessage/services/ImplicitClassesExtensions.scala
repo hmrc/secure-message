@@ -18,8 +18,7 @@ package uk.gov.hmrc.securemessage.services
 
 import uk.gov.hmrc.auth.core.Enrolments
 import uk.gov.hmrc.securemessage.ParticipantNotFound
-import uk.gov.hmrc.securemessage.controllers.model.common.CustomerEnrolment
-import uk.gov.hmrc.securemessage.models.core.{ Conversation, Identifier, Participant }
+import uk.gov.hmrc.securemessage.models.core.{ Conversation, CustomerEnrolment, Identifier, Participant }
 
 trait ImplicitClassesExtensions {
   implicit class EnrolmentsExtensions(enrolments: Enrolments) {
@@ -42,23 +41,19 @@ trait ImplicitClassesExtensions {
       } yield CustomerEnrolment(eoriEnrolment.key, enrolmentIdentifier.key, enrolmentIdentifier.value)
 
     @SuppressWarnings(Array("org.wartremover.warts.Option2Iterable"))
-    def filter(
-      enrolmentKeys: Option[List[String]],
-      customerEnrolments: Option[List[CustomerEnrolment]]): Set[CustomerEnrolment] = {
+    def filter(enrolmentKeys: Set[String], customerEnrolments: Set[CustomerEnrolment]): Set[CustomerEnrolment] = {
       val originalEnrolments: Set[CustomerEnrolment] = enrolments.asCustomerEnrolments
-      val enrolmentKeysFilter: Set[String] = enrolmentKeys.toSet.flatten
-      val customerEnrolmentsFilter: Set[CustomerEnrolment] = customerEnrolments.toSet.flatten
       val enrolmentKeysFiltered =
-        if (enrolmentKeysFilter.isEmpty) {
+        if (enrolmentKeys.isEmpty) {
           originalEnrolments
         } else {
-          originalEnrolments.filter(e => enrolmentKeysFilter.contains(e.key))
+          originalEnrolments.filter(e => enrolmentKeys.contains(e.key))
         }
       val customerEnrolmentsFiltered =
-        if (customerEnrolmentsFilter.isEmpty) {
+        if (customerEnrolments.isEmpty) {
           enrolmentKeysFiltered
         } else {
-          enrolmentKeysFiltered.intersect(customerEnrolmentsFilter)
+          enrolmentKeysFiltered.intersect(customerEnrolments)
         }
       customerEnrolmentsFiltered
     }

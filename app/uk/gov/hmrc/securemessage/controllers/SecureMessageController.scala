@@ -28,10 +28,9 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.securemessage._
 import uk.gov.hmrc.securemessage.controllers.model.ClientName
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write._
-import uk.gov.hmrc.securemessage.controllers.model.common.CustomerEnrolment
-import uk.gov.hmrc.securemessage.controllers.model.common.read._
 import uk.gov.hmrc.securemessage.controllers.model.common.write._
 import uk.gov.hmrc.securemessage.controllers.utils.QueryStringValidation
+import uk.gov.hmrc.securemessage.models.core.{ ConversationFilters, CustomerEnrolment, FilterTag }
 import uk.gov.hmrc.securemessage.services.{ Auditing, ImplicitClassesExtensions, SecureMessageService }
 import uk.gov.hmrc.time.DateTimeUtils
 
@@ -111,10 +110,13 @@ class SecureMessageController @Inject()(
           case _ =>
             authorised()
               .retrieve(Retrievals.allEnrolments) { authEnrolments =>
-                val filteredEnrolments = authEnrolments.filter(enrolmentKeys, customerEnrolments) //TODO: move this to service
-                secureMessageService.getConversationsFiltered(filteredEnrolments, tags).flatMap { conversationDetails =>
-                  Future.successful(Ok(Json.toJson(conversationDetails)))
-                }
+                secureMessageService
+                  .getConversationsFiltered(
+                    authEnrolments,
+                    ConversationFilters(enrolmentKeys, customerEnrolments, tags))
+                  .flatMap { conversationDetails =>
+                    Future.successful(Ok(Json.toJson(conversationDetails)))
+                  }
               }
         }
       }
@@ -127,9 +129,8 @@ class SecureMessageController @Inject()(
           if (authEnrolments.enrolments.isEmpty) {
             Future.successful(Unauthorized(Json.toJson("No enrolment found")))
           } else {
-            val customerEnrolments = mapToCustomerEnrolments(authEnrolments)
             secureMessageService
-              .getConversation(client.entryName, conversationId, customerEnrolments)
+              .getConversation(client.entryName, conversationId, authEnrolments.asCustomerEnrolments)
               .map {
                 case Right(apiConversation) => Ok(Json.toJson(apiConversation))
                 case _                      => NotFound(Json.toJson("No conversation found"))
@@ -158,9 +159,5 @@ class SecureMessageController @Inject()(
           }
         }
   }
-
-  private def mapToCustomerEnrolments(authEnrolments: Enrolments): Set[CustomerEnrolment] =
-    authEnrolments.enrolments
-      .flatMap(e => e.identifiers.map(i => CustomerEnrolment(e.key, i.key, i.value)))
 
 }

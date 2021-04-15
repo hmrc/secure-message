@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.securemessage.controllers.model.common.read
+package uk.gov.hmrc.securemessage.models.core
 
 import play.api.libs.json.{ Json, Reads }
 

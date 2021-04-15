@@ -20,10 +20,9 @@ import cats.data.NonEmptyList
 import org.joda.time.DateTime
 import play.api.libs.json.{ Format, Json, Reads }
 import uk.gov.hmrc.securemessage.controllers.model.common
-import uk.gov.hmrc.securemessage.controllers.model.common.CustomerEnrolment
 import uk.gov.hmrc.securemessage.controllers.model.common.write.Recipient
 import uk.gov.hmrc.securemessage.models.core
-import uk.gov.hmrc.securemessage.models.core._
+import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, _ }
 import uk.gov.hmrc.time.DateTimeUtils
 
 /**

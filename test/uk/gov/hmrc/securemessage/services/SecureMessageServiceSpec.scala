@@ -35,11 +35,9 @@ import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.securemessage.connectors.{ ChannelPreferencesConnector, EISConnector, EmailConnector }
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.ConversationMetadata
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage
-import uk.gov.hmrc.securemessage.controllers.model.common.CustomerEnrolment
-import uk.gov.hmrc.securemessage.controllers.model.common.read.FilterTag
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
 import uk.gov.hmrc.securemessage.helpers.{ ConversationUtil, Resources }
-import uk.gov.hmrc.securemessage.models.core._
+import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag, _ }
 import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryMessageWrapper }
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
 import uk.gov.hmrc.securemessage.{ DuplicateConversationError, EmailLookupError, NoReceiverEmailError, SecureMessageError, _ }
@@ -49,7 +47,7 @@ import scala.concurrent.{ ExecutionContext, Future }
 
 //TODO: move test data and mocks to TextContexts
 @SuppressWarnings(Array("org.wartremover.warts.All"))
-class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpers {
+class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpers with UnitTest {
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
   implicit val mat: Materializer = NoMaterializer
@@ -105,8 +103,9 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
           ArgumentMatchers.eq(Set(Identifier("EORIName", "GB7777777777", Some("HMRC-CUS_ORG")))),
           ArgumentMatchers.eq(None))(any[ExecutionContext]))
         .thenReturn(Future.successful(listOfCoreConversation))
-      val result = await(
-        service.getConversationsFiltered(Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777")), None))
+      val filters =
+        ConversationFilters(None, Some(List(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777"))), None)
+      val result = await(service.getConversationsFiltered(authEnrolmentsFrom(filters.enrolmentsFilter), filters))
       val metadata: ConversationMetadata = ConversationMetadata(
         "CDCM",
         "D-80542-20201120",
@@ -126,10 +125,11 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
           ArgumentMatchers.eq(Some(List(FilterTag("notificationType", "CDS Exports"))))
         )(any[ExecutionContext]))
         .thenReturn(Future.successful(listOfCoreConversation))
-      val result = await(
-        service.getConversationsFiltered(
-          Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777")),
-          Some(List(FilterTag("notificationType", "CDS Exports")))))
+      val filters = ConversationFilters(
+        None,
+        Some(List(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777"))),
+        Some(List(FilterTag("notificationType", "CDS Exports"))))
+      val result = await(service.getConversationsFiltered(authEnrolmentsFrom(filters.enrolmentsFilter), filters))
       result mustBe
         List(
           ConversationMetadata(
@@ -172,10 +172,11 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
         )(any[ExecutionContext]))
         .thenReturn(Future.successful(listOfCoreConversation))
 
-      val result = await(
-        service.getConversationsFiltered(
-          Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777")),
-          Some(List(FilterTag("notificationType", "CDS Exports")))))
+      val filters = ConversationFilters(
+        None,
+        Some(List(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777"))),
+        Some(List(FilterTag("notificationType", "CDS Exports"))))
+      val result = await(service.getConversationsFiltered(authEnrolmentsFrom(filters.enrolmentsFilter), filters))
       result mustBe
         List(
           ConversationMetadata(

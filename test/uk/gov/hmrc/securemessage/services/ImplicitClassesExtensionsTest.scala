@@ -18,8 +18,8 @@ package uk.gov.hmrc.securemessage.services
 
 import org.scalatest.{ FreeSpec, MustMatchers }
 import uk.gov.hmrc.auth.core.{ EnrolmentIdentifier, Enrolments }
-import uk.gov.hmrc.securemessage.controllers.model.common
-import uk.gov.hmrc.securemessage.controllers.model.common.CustomerEnrolment
+import uk.gov.hmrc.securemessage.models.core
+import uk.gov.hmrc.securemessage.models.core.CustomerEnrolment
 
 class ImplicitClassesExtensionsTest extends FreeSpec with MustMatchers with ImplicitClassesExtensions {
 
@@ -32,7 +32,7 @@ class ImplicitClassesExtensionsTest extends FreeSpec with MustMatchers with Impl
 
     "find" - {
       "returns a specific enrolment found within a list of enrolments designated by it's key and name" in {
-        val expectedEnrolment = common.CustomerEnrolment(hmrcCusOrg, eORINumber, eori89)
+        val expectedEnrolment = core.CustomerEnrolment(hmrcCusOrg, eORINumber, eori89)
         val enrolments = Enrolments(
           Set(uk.gov.hmrc.auth.core
             .Enrolment(key = hmrcCusOrg, identifiers = Seq(EnrolmentIdentifier(eORINumber, eori89)), state = "", None)))
@@ -40,7 +40,7 @@ class ImplicitClassesExtensionsTest extends FreeSpec with MustMatchers with Impl
       }
 
       "returns a specific enrolment found within a list of enrolments designated by it's key and name in a case insensitive manner" in {
-        val expectedEnrolment = common.CustomerEnrolment(hmrcCusOrg, eORINumber, eori89)
+        val expectedEnrolment = core.CustomerEnrolment(hmrcCusOrg, eORINumber, eori89)
         val enrolments = Enrolments(
           Set(uk.gov.hmrc.auth.core
             .Enrolment(key = hmrcCusOrg, identifiers = Seq(EnrolmentIdentifier(eORINumber, eori89)), state = "", None)))
@@ -73,14 +73,13 @@ class ImplicitClassesExtensionsTest extends FreeSpec with MustMatchers with Impl
         val authEnrolments = Enrolments(Set(
           uk.gov.hmrc.auth.core.Enrolment(key = hmrcCusOrg, identifiers = Seq(enrolmentIdentifier), state = "", None)))
 
-        val enrolments = Some(
-          List(
-            eoriEnrolment,
-            saUtrEnrolment,
-            ctUtrEnrolment
-          ))
+        val enrolments = Set(
+          eoriEnrolment,
+          saUtrEnrolment,
+          ctUtrEnrolment
+        )
 
-        authEnrolments.filter(None, enrolments) mustBe Set(eoriEnrolment)
+        authEnrolments.filter(Set(), enrolments) mustBe Set(eoriEnrolment)
       }
 
       "returns multiple customer enrolments for same enrolments with multiple identifiers provided and held in auth" in {
@@ -97,16 +96,15 @@ class ImplicitClassesExtensionsTest extends FreeSpec with MustMatchers with Impl
               None
             )))
 
-        val enrolments = Some(
-          List(
-            eoriEnrolment,
-            eoriEnrolment1,
-            eoriEnrolment2,
-            saUtrEnrolment,
-            ctUtrEnrolment
-          ))
+        val enrolments = Set(
+          eoriEnrolment,
+          eoriEnrolment1,
+          eoriEnrolment2,
+          saUtrEnrolment,
+          ctUtrEnrolment
+        )
 
-        authEnrolments.filter(None, enrolments) mustBe Set(
+        authEnrolments.filter(Set(), enrolments) mustBe Set(
           eoriEnrolment,
           eoriEnrolment1,
           eoriEnrolment2
@@ -127,8 +125,8 @@ class ImplicitClassesExtensionsTest extends FreeSpec with MustMatchers with Impl
               None
             )))
 
-        val enrolmentKeys = Some(List(hmrcCusOrg))
-        authEnrolments.filter(enrolmentKeys, None) mustBe Set(
+        val enrolmentKeys = Set(hmrcCusOrg)
+        authEnrolments.filter(enrolmentKeys, Set()) mustBe Set(
           eoriEnrolment,
           eoriEnrolment1,
           eoriEnrolment2
@@ -144,14 +142,13 @@ class ImplicitClassesExtensionsTest extends FreeSpec with MustMatchers with Impl
               .Enrolment(key = "IR-CT", identifiers = Seq(utrEnrolmentIdentifier), state = "", None)
           ))
 
-        val enrolments = Some(
-          List(
-            eoriEnrolment,
-            saUtrEnrolment,
-            ctUtrEnrolment
-          ))
+        val enrolments = Set(
+          eoriEnrolment,
+          saUtrEnrolment,
+          ctUtrEnrolment
+        )
 
-        authEnrolments.filter(None, enrolments) mustBe
+        authEnrolments.filter(Set(), enrolments) mustBe
           Set(
             eoriEnrolment,
             ctUtrEnrolment
@@ -162,9 +159,9 @@ class ImplicitClassesExtensionsTest extends FreeSpec with MustMatchers with Impl
         val authEnrolments = Enrolments(Set(
           uk.gov.hmrc.auth.core.Enrolment(key = hmrcCusOrg, identifiers = Seq(enrolmentIdentifier), state = "", None)))
 
-        val enrolmentKeys = Some(List(hmrcCusOrg, "IR-SA", "IR-CT"))
+        val enrolmentKeys = Set(hmrcCusOrg, "IR-SA", "IR-CT")
 
-        authEnrolments.filter(enrolmentKeys, None) mustBe Set(eoriEnrolment)
+        authEnrolments.filter(enrolmentKeys, Set()) mustBe Set(eoriEnrolment)
       }
 
       "returns another specific enrolment out of all the enrolment keys provided and ensures only the ones available as auth enrolments are returned" in {
@@ -175,9 +172,9 @@ class ImplicitClassesExtensionsTest extends FreeSpec with MustMatchers with Impl
               .Enrolment(key = "IR-SA", identifiers = Seq(EnrolmentIdentifier("UTR", "123456789")), state = "", None)
           ))
 
-        val enrolmentKeys = Some(List(hmrcCusOrg, "IR-SA", "IR-CT"))
+        val enrolmentKeys = Set(hmrcCusOrg, "IR-SA", "IR-CT")
 
-        authEnrolments.filter(enrolmentKeys, None) mustBe Set(eoriEnrolment, saUtrEnrolment)
+        authEnrolments.filter(enrolmentKeys, Set()) mustBe Set(eoriEnrolment, saUtrEnrolment)
       }
 
       "returns customer enrolments out of all the ones provided plus enrolment keys and ensures only the ones available as auth enrolments are returned" in {
@@ -188,13 +185,12 @@ class ImplicitClassesExtensionsTest extends FreeSpec with MustMatchers with Impl
               .Enrolment(key = "IR-CT", identifiers = Seq(utrEnrolmentIdentifier), state = "", None)
           ))
 
-        val enrolmentKeys = Some(List(hmrcCusOrg, "IR-SA", "IR-CT"))
-        val enrolments = Some(
-          List(
-            eoriEnrolment,
-            CustomerEnrolment("IR-SA", "UTR", "123456789"),
-            ctUtrEnrolment
-          ))
+        val enrolmentKeys = Set(hmrcCusOrg, "IR-SA", "IR-CT")
+        val enrolments = Set(
+          eoriEnrolment,
+          CustomerEnrolment("IR-SA", "UTR", "123456789"),
+          ctUtrEnrolment
+        )
 
         authEnrolments.filter(enrolmentKeys, enrolments) mustBe
           Set(
@@ -217,10 +213,7 @@ class ImplicitClassesExtensionsTest extends FreeSpec with MustMatchers with Impl
             ctUtrEnrolment
           )
 
-        authEnrolments.filter(None, None) mustBe expectedResult
-        authEnrolments.filter(Some(List()), None) mustBe expectedResult
-        authEnrolments.filter(None, Some(List())) mustBe expectedResult
-        authEnrolments.filter(Some(List()), Some(List())) mustBe expectedResult
+        authEnrolments.filter(Set(), Set()) mustBe expectedResult
       }
     }
   }

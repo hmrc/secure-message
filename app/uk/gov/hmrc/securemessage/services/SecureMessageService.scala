@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.securemessage.services
 
-import java.util.UUID
 import cats.data._
 import cats.implicits._
 import com.google.inject.Inject
@@ -30,16 +29,15 @@ import uk.gov.hmrc.securemessage._
 import uk.gov.hmrc.securemessage.connectors.{ ChannelPreferencesConnector, EISConnector, EmailConnector }
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.{ ApiConversation, ConversationMetadata }
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage
-import uk.gov.hmrc.securemessage.controllers.model.common.CustomerEnrolment
-import uk.gov.hmrc.securemessage.controllers.model.common.read.FilterTag
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.Customer.eqCustomer
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.{ Customer => PCustomer }
-import uk.gov.hmrc.securemessage.models.core._
-import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryMessageRequest, QueryMessageWrapper, RequestCommon, core }
+import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, _ }
+import uk.gov.hmrc.securemessage.models._
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
 import uk.gov.hmrc.securemessage.services.utils.ContentValidator
 
+import java.util.UUID
 import scala.concurrent.{ ExecutionContext, Future }
 
 //TODO: refactor service to only accept core model classes as params
@@ -67,12 +65,13 @@ class SecureMessageService @Inject()(
     } yield ()
   }.value
 
-  def getConversationsFiltered(enrolments: Set[CustomerEnrolment], tags: Option[List[FilterTag]])(
+  def getConversationsFiltered(authEnrolments: Enrolments, filters: ConversationFilters)(
     implicit ec: ExecutionContext,
     messages: Messages): Future[List[ConversationMetadata]] = {
-    val enrolmentsToIdentifiers: Set[Identifier] = enrolments.map(_.asIdentifier)
-    repo.getConversationsFiltered(enrolmentsToIdentifiers, tags).map {
-      _.map(ConversationMetadata.coreToConversationMetadata(_, enrolments.map(_.asIdentifier)))
+    val filteredEnrolments = authEnrolments.filter(filters.enrolmentKeysFilter, filters.enrolmentsFilter)
+    val identifiers: Set[Identifier] = filteredEnrolments.map(_.asIdentifier)
+    repo.getConversationsFiltered(identifiers, filters.tags).map {
+      _.map(ConversationMetadata.coreToConversationMetadata(_, identifiers)) //TODO: move this to controllers
         .sortBy(_.issueDate.getMillis)(Ordering[Long].reverse)
     }
   }
