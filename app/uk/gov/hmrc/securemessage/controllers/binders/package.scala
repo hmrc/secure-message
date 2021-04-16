@@ -17,7 +17,8 @@
 package uk.gov.hmrc.securemessage.controllers
 
 import play.api.mvc.QueryStringBindable
-import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag }
+import uk.gov.hmrc.securemessage.controllers.model.common.CustomerEnrolment
+import uk.gov.hmrc.securemessage.controllers.model.common.read.FilterTag
 
 package object binders {
 

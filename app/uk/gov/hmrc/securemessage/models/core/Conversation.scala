@@ -22,7 +22,7 @@ import uk.gov.hmrc.securemessage.models.utils.NonEmptyListOps._
 
 final case class Conversation(
   client: String,
-  id: String,
+  id: String, //TODO: rename to id
   status: ConversationStatus,
   tags: Option[Map[String, String]],
   subject: String,

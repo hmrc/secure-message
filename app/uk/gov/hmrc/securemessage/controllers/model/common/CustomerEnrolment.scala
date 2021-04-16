@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.securemessage.models.core
+package uk.gov.hmrc.securemessage.controllers.model.common
 
 import play.api.libs.json.{ Json, Reads }
+import uk.gov.hmrc.securemessage.models.core.Identifier
 
 /** [[CustomerEnrolment]] along with [[SystemIdentifier]] are identifiers, probably should make part of common model
   * */

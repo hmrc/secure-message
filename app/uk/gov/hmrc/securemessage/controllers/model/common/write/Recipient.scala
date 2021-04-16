@@ -17,7 +17,7 @@
 package uk.gov.hmrc.securemessage.controllers.model.common.write
 
 import play.api.libs.json.{ Json, Reads }
-import uk.gov.hmrc.securemessage.models.core.CustomerEnrolment
+import uk.gov.hmrc.securemessage.controllers.model.common.CustomerEnrolment
 
 final case class Recipient(customer: Customer)
 
