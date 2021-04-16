@@ -20,9 +20,10 @@ import cats.data.NonEmptyList
 import org.joda.time.DateTime
 import play.api.libs.json.{ Format, Json, Reads }
 import uk.gov.hmrc.securemessage.controllers.model.common
+import uk.gov.hmrc.securemessage.controllers.model.common.CustomerEnrolment
 import uk.gov.hmrc.securemessage.controllers.model.common.write.Recipient
 import uk.gov.hmrc.securemessage.models.core
-import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, _ }
+import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.time.DateTimeUtils
 
 /**
@@ -46,7 +47,7 @@ final case class CdcmConversation(
       client,
       conversationId,
       ConversationStatus.Open,
-      Some(Map("mrn" -> tags.mrn, "notificationType" -> tags.notificationType.entryName)),
+      Some(Map("mrn" -> tags.mrn, "notificationType" -> tags.notificationType.entryName)), //TODO: remove option as empty map can take place of that
       subject,
       getLanguage(language),
       initialParticipants,
