@@ -21,8 +21,9 @@ import org.joda.time.format.ISODateTimeFormat
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json.{ JsError, JsSuccess, JsValue }
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CdcmConversation
+import uk.gov.hmrc.securemessage.controllers.model.common.CustomerEnrolment
 import uk.gov.hmrc.securemessage.helpers.Resources
-import uk.gov.hmrc.securemessage.models.core.{ Conversation, CustomerEnrolment }
+import uk.gov.hmrc.securemessage.models.core.Conversation
 
 class CdcmConversationSpec extends PlaySpec {
 
