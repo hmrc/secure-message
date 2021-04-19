@@ -60,19 +60,22 @@ class SecureMessageController @Inject()(
               .createConversation(conversation)
               .map {
                 case Right(_) =>
-                  val _ = auditCreateConversation(EventTypes.Succeeded, conversation)
+                  val _ = auditCreateConversation(EventTypes.Succeeded, conversation, "Conversation Created")
                   Created
                 case Left(error: SecureMessageError) =>
-                  val _ = auditCreateConversation(EventTypes.Failed, conversation)
+                  val _ = auditCreateConversation(EventTypes.Failed, conversation, error.message)
                   handleErrors(ClientName.withName(conversation.client), conversation.id, error)
               }
               .recover {
-                case NonFatal(error) => handleErrors(ClientName.withName(conversation.client), conversation.id, error)
+                case NonFatal(error) =>
+                  val _ = auditErrorHandling(client, conversationId, error.getMessage)
+                  handleErrors(ClientName.withName(conversation.client), conversation.id, error)
               }
           }
-        case _ => Future(handleErrors(client, conversationId, InvalidRequest(s"Not supported client: $client")))
+        case _ =>
+          val _ = auditErrorHandling(client, conversationId, s"Not supported client: $client")
+          Future(handleErrors(client, conversationId, InvalidRequest(s"Not supported client: $client")))
       }
-
   }
 
   def addCaseworkerMessage(client: ClientName, conversationId: String): Action[JsValue] = Action.async(parse.json) {
@@ -89,7 +92,9 @@ class SecureMessageController @Inject()(
               handleErrors(client, conversationId, error)
           }
       }.recover {
-        case NonFatal(error) => handleErrors(client, conversationId, error)
+        case NonFatal(error) =>
+          val _ = auditErrorHandling(client, conversationId, error.getMessage)
+          handleErrors(client, conversationId, error)
       }
   }
 
@@ -108,7 +113,9 @@ class SecureMessageController @Inject()(
                 handleErrors(client, conversationId, error)
             }
         }.recover {
-          case error: Exception => handleErrors(client, conversationId, error)
+          case error: Exception =>
+            val _ = auditErrorHandling(client, conversationId, error.getMessage)
+            handleErrors(client, conversationId, error)
         }
       }
   }
