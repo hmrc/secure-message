@@ -94,22 +94,6 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
     }
   }
 
-  "auditErrorHandling" must {
-    "create correct audit error detail for not supported client" in {
-      val responseMessage = "Not supported client: CDCM"
-      val _ = auditErrorHandling(CDCM, "D-80542-20210327", responseMessage)
-      verify(auditConnector).sendExplicitAudit(
-        EventTypes.Failed,
-        Map[String, String](
-          "client"       -> CDCM.entryName,
-          "id"           -> "D-80542-20210327",
-          "errorMessage" -> responseMessage,
-          "client"       -> CDCM.entryName
-        )
-      )
-    }
-  }
-
   "auditRetrieveEmail" must {
 
     "send correct audit details when email retrieved" in {

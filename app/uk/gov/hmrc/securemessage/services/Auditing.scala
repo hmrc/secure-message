@@ -59,16 +59,6 @@ trait Auditing {
     auditConnector.sendExplicitAudit(txnStatus, detail)
   }
 
-  def auditErrorHandling(clientName: ClientName, conversationId: String, responseMessage: String)(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Unit = {
-    val detail = Map(
-      "client"       -> clientName.entryName,
-      "id"           -> conversationId,
-      "errorMessage" -> responseMessage
-    )
-    auditConnector.sendExplicitAudit(EventTypes.Failed, detail)
-  }
   def auditRetrieveEmail(emailAddress: Option[EmailAddress])(implicit hc: HeaderCarrier, ec: ExecutionContext): Unit =
     emailAddress match {
       case Some(email) =>
