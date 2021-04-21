@@ -24,6 +24,7 @@ import org.mockito.Mockito.verify
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.http.Status.{ ACCEPTED, INTERNAL_SERVER_ERROR, NO_CONTENT }
+import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.auth.core.{ Enrolment, EnrolmentIdentifier, Enrolments }
 import uk.gov.hmrc.emailaddress.EmailAddress
 import uk.gov.hmrc.http.HeaderCarrier
@@ -51,6 +52,7 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
     val message = Message(1, DateTime.now, messageContent)
     val alert = Alert("", None)
     val conversation = Conversation(
+      BSONObjectID.generate,
       CDCM.entryName,
       "D-80542-20210327",
       ConversationStatus.Open,
@@ -59,7 +61,8 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
       Language.English,
       List(),
       NonEmptyList.one(message),
-      alert)
+      alert
+    )
 
     "send correct audit details when new conversation created" in {
       val responseMessage = "Conversation Created"

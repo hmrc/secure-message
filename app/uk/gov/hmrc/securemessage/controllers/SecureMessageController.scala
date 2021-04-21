@@ -26,18 +26,18 @@ import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.audit.model.EventTypes
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.securemessage._
-import uk.gov.hmrc.securemessage.controllers.model.ClientName
+import uk.gov.hmrc.securemessage.controllers.model.MessageType.{ Conversation, Letter }
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write._
 import uk.gov.hmrc.securemessage.controllers.model.common.write._
+import uk.gov.hmrc.securemessage.controllers.model.{ ClientName, MessageType }
 import uk.gov.hmrc.securemessage.controllers.utils.QueryStringValidation
 import uk.gov.hmrc.securemessage.models.core.{ ConversationFilters, CustomerEnrolment, FilterTag }
 import uk.gov.hmrc.securemessage.services.{ Auditing, ImplicitClassesExtensions, SecureMessageService }
 import uk.gov.hmrc.time.DateTimeUtils
-
 import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
 
-@SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
+@SuppressWarnings(Array("org.wartremover.warts.All"))
 class SecureMessageController @Inject()(
   cc: ControllerComponents,
   val authConnector: AuthConnector,
@@ -60,7 +60,7 @@ class SecureMessageController @Inject()(
               Created
             case Left(error: SecureMessageError) =>
               auditCreateConversation(EventTypes.Failed, conversation, "Conversation Created")
-              handleErrors(ClientName.withName(conversation.client), conversation.id, error)
+              handleErrors(conversation.id, error, Some(ClientName.withName(conversation.client)))
           }
       }
   }
@@ -76,7 +76,7 @@ class SecureMessageController @Inject()(
               Created(Json.toJson(s"Created case worker message for client $client and conversationId $conversationId"))
             case Left(error) =>
               val _ = auditCaseworkerReply(EventTypes.Failed, client, conversationId, caseworkerMessageRequest)
-              handleErrors(client, conversationId, error)
+              handleErrors(conversationId, error, Some(client))
           }
       }
   }
@@ -93,7 +93,7 @@ class SecureMessageController @Inject()(
                 Created(Json.toJson(s"Created customer message for client $client and conversationId $conversationId"))
               case Left(error) =>
                 auditCustomerReply(EventTypes.Failed, client, conversationId, customerMessageRequest)
-                handleErrors(client, conversationId, error)
+                handleErrors(conversationId, error, Some(client))
             }
         }
       }
@@ -136,6 +136,30 @@ class SecureMessageController @Inject()(
         }
   }
 
+  def getContentDetail(id: String, contentType: MessageType): Action[AnyContent] = Action.async { implicit request =>
+    authorised()
+      .retrieve(Retrievals.allEnrolments) { authEnrolments =>
+        if (authEnrolments.enrolments.isEmpty) {
+          Future.successful(Unauthorized(Json.toJson("No enrolment found")))
+        } else {
+          contentType match {
+            case Conversation =>
+              secureMessageService
+                .getConversation(id, authEnrolments.asCustomerEnrolments)
+                .map {
+                  case Right(apiConversation) => Ok(Json.toJson(apiConversation))
+                  case Left(error)            => handleErrors(id, error)
+                }
+            case Letter =>
+              secureMessageService.getLetter(id, authEnrolments.asCustomerEnrolments).map {
+                case Right(apiLetter) => Ok(Json.toJson(apiLetter))
+                case Left(error)      => handleErrors(id, error)
+              }
+          }
+        }
+      }
+  }
+
   def addCustomerReadTime(client: ClientName, conversationId: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
       authorised()
@@ -151,7 +175,7 @@ class SecureMessageController @Inject()(
                 case Left(error) =>
                   val _ =
                     auditConversationRead(EventTypes.Failed, client, conversationId, readTime.timestamp, enrolments)
-                  handleErrors(client, conversationId, error)
+                  handleErrors(conversationId, error, Some(client))
               }
           }
         }

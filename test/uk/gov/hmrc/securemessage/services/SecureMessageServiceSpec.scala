@@ -20,30 +20,32 @@ import akka.stream.Materializer
 import org.joda.time.DateTime
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.{ never, times, verify, when }
+import org.mockito.Mockito.{never, times, verify, when}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.i18n.Messages
+import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.AnyContentAsEmpty
 import play.api.test.Helpers._
-import play.api.test.{ FakeRequest, NoMaterializer }
-import uk.gov.hmrc.auth.core.{ Enrolment, EnrolmentIdentifier, Enrolments }
+import play.api.test.{FakeRequest, NoMaterializer}
+import reactivemongo.bson.BSONObjectID
+import uk.gov.hmrc.auth.core.{Enrolment, EnrolmentIdentifier, Enrolments}
 import uk.gov.hmrc.emailaddress.EmailAddress
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import uk.gov.hmrc.securemessage.connectors.{ ChannelPreferencesConnector, EISConnector, EmailConnector }
+import uk.gov.hmrc.securemessage.connectors.{ChannelPreferencesConnector, EISConnector, EmailConnector}
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.ConversationMetadata
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
-import uk.gov.hmrc.securemessage.helpers.{ ConversationUtil, Resources }
-import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag, _ }
-import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryMessageWrapper }
-import uk.gov.hmrc.securemessage.repository.ConversationRepository
-import uk.gov.hmrc.securemessage.{ DuplicateConversationError, EmailLookupError, NoReceiverEmailError, SecureMessageError, _ }
-
+import uk.gov.hmrc.securemessage.helpers.{ConversationUtil, MessageUtil, Resources}
+import uk.gov.hmrc.securemessage.models.core._
+import uk.gov.hmrc.securemessage.models.{EmailRequest, QueryMessageWrapper}
+import uk.gov.hmrc.securemessage.repository.{ConversationRepository, MessageRepository}
+import uk.gov.hmrc.securemessage.{DuplicateConversationError, EmailLookupError, NoReceiverEmailError, SecureMessageError, _}
+import Conversation._
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.{ExecutionContext, Future}
 
 //TODO: move test data and mocks to TextContexts
 @SuppressWarnings(Array("org.wartremover.warts.All"))
@@ -87,8 +89,11 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
     }
 
     "return content validation error if message content is invalid" in new CreateMessageTestContext {
+      val json = Resources
+        .readJson("model/api/cdcm/write/conversation-request-invalid-html.json")
+        .as[JsObject] + ("_id" -> Json.toJson(objectID))
       private val invalidBaseHtmlConversation: Conversation =
-        Resources.readJson("model/api/cdcm/write/conversation-request-invalid-html.json").as[Conversation]
+        json.as[Conversation]
       private val result = service.createConversation(invalidBaseHtmlConversation)
       result.futureValue mustBe Left(InvalidContent(
         "Html contains disallowed tags, attributes or protocols within the tags: matt. For allowed elements see class org.jsoup.safety.Whitelist.relaxed()"))
@@ -99,7 +104,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
 
     "return a list of ConversationMetaData when presented with one customer enrolment and no tags for a filter" in {
       when(
-        mockRepository.getConversationsFiltered(
+        mockConversationRepository.getConversationsFiltered(
           ArgumentMatchers.eq(Set(Identifier("EORIName", "GB7777777777", Some("HMRC-CUS_ORG")))),
           ArgumentMatchers.eq(None))(any[ExecutionContext]))
         .thenReturn(Future.successful(listOfCoreConversation))
@@ -120,7 +125,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
 
     "return a list of ConversationMetaData when presented with one customer enrolment and one tag for a filter" in {
       when(
-        mockRepository.getConversationsFiltered(
+        mockConversationRepository.getConversationsFiltered(
           ArgumentMatchers.eq(Set(Identifier("EORIName", "GB7777777777", Some("HMRC-CUS_ORG")))),
           ArgumentMatchers.eq(Some(List(FilterTag("notificationType", "CDS Exports"))))
         )(any[ExecutionContext]))
@@ -146,18 +151,21 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
       val listOfCoreConversation =
         List(
           ConversationUtil.getFullConversation(
+            BSONObjectID.generate(),
             "D-80542-20201120",
             "HMRC-CUS-ORG",
             "EORINumber",
             "GB1234567890",
             messageCreationDate = "2020-11-08T15:00:00.000"),
           ConversationUtil.getFullConversation(
+            BSONObjectID.generate,
             "D-80542-20201120",
             "HMRC-CUS-ORG",
             "EORINumber",
             "GB1234567890",
             messageCreationDate = "2020-11-10T15:00:00.000"),
           ConversationUtil.getFullConversation(
+            BSONObjectID.generate,
             "D-80542-20201120",
             "HMRC-CUS-ORG",
             "EORINumber",
@@ -166,7 +174,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
         )
 
       when(
-        mockRepository.getConversationsFiltered(
+        mockConversationRepository.getConversationsFiltered(
           ArgumentMatchers.eq(Set(Identifier("EORIName", "GB7777777777", Some("HMRC-CUS_ORG")))),
           ArgumentMatchers.eq(Some(List(FilterTag("notificationType", "CDS Exports"))))
         )(any[ExecutionContext]))
@@ -210,9 +218,16 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
   "getConversation" must {
 
     "return a message with ApiConversation" in {
-      when(mockRepository.getConversation(any[String], any[String], any[Set[Identifier]])(any[ExecutionContext]))
-        .thenReturn(Future.successful(Right(
-          ConversationUtil.getFullConversation("D-80542-20201120", "HMRC-CUS-ORG", "EORINumber", "GB1234567890"))))
+      when(mockConversationRepository.getConversation(any[String], any[String], any[Set[Identifier]])(any[ExecutionContext]))
+        .thenReturn(
+          Future.successful(
+            Right(
+              ConversationUtil.getFullConversation(
+                BSONObjectID.generate,
+                "D-80542-20201120",
+                "HMRC-CUS-ORG",
+                "EORINumber",
+                "GB1234567890"))))
       val result = await(
         service
           .getConversation(
@@ -226,7 +241,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
 
     "return a Left(ConversationNotFound)" in {
       when(
-        mockRepository
+        mockConversationRepository
           .getConversation(any[String], any[String], any[Set[Identifier]])(any[ExecutionContext]))
         .thenReturn(Future(Left(ConversationNotFound(
           "Conversation not found for client: cdcm, conversationId: D-80542-20201120, enrolment: GB1234567890"))))
@@ -243,13 +258,88 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
     }
   }
 
+  "getConversation by id" must {
+    "return a message with ApiConversation" in {
+      when(mockConversationRepository.getConversation(any[String], any[Set[Identifier]])(any[ExecutionContext]))
+        .thenReturn(
+          Future.successful(
+            Right(
+              ConversationUtil.getFullConversation(
+                BSONObjectID.generate,
+                "D-80542-20201120",
+                "HMRC-CUS-ORG",
+                "EORINumber",
+                "GB1234567890"))))
+      val result = await(
+        service
+          .getConversation(
+            BSONObjectID.generate().stringify,
+            Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777"))))
+      result.right.get.client mustBe "CDCM"
+      result.right.get.messages.size mustBe 1
+      result.right.get.subject mustBe "MRN: 19GB4S24GC3PPFGVR7"
+    }
+
+    "return a Left(ConversationNotFound)" in {
+      when(
+        mockConversationRepository
+          .getConversation(any[String], any[Set[Identifier]])(any[ExecutionContext]))
+        .thenReturn(Future(Left(ConversationNotFound(
+          "Conversation not found for client: cdcm, conversationId: D-80542-20201120, enrolment: GB1234567890"))))
+      val result = await(
+        service
+          .getConversation(
+            BSONObjectID.generate().stringify,
+            Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777"))))
+      result mustBe
+        Left(
+          ConversationNotFound(
+            s"Conversation not found for client: cdcm, conversationId: D-80542-20201120, enrolment: GB1234567890"))
+    }
+  }
+
+
+  "getMessage by id" must {
+    "return a message with ApiLetter" in {
+      when(mockMessageRepository.getLetter(any[String], any[Set[Identifier]])(any[ExecutionContext]))
+        .thenReturn(
+          Future(
+            Right(
+              MessageUtil.getMessage("subject", "content"))))
+      val result = await(
+        service
+          .getLetter(
+            BSONObjectID.generate().stringify,
+            Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777"))))
+      result.right.get.subject mustBe "subject"
+      result.right.get.content mustBe "content"
+    }
+
+    "return a Left(LetterNotFound)" in {
+      when(
+        mockMessageRepository.getLetter(any[String], any[Set[Identifier]])(any[ExecutionContext]))
+        .thenReturn(Future(Left(LetterNotFound(
+          "Letter not found"))))
+      val result = await(
+        service
+          .getLetter(
+            BSONObjectID.generate().stringify,
+            Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777"))))
+      result mustBe
+        Left(
+          LetterNotFound(
+            s"Letter not found"))
+    }
+  }
+
+
   "Adding a customer message to a conversation" must {
 
     "update the database when the customer has a participating enrolment" in new AddCustomerMessageTestContext(
       getConversationResult = Right(listOfCoreConversation.head)) {
       when(mockEisConnector.forwardMessage(any[QueryMessageWrapper])).thenReturn(Future(Right(())))
       await(service.addCustomerMessageToConversation("CDCM", "D-80542-20201120", customerMessage, customerEnrolment))
-      verify(mockRepository, times(1))
+      verify(mockConversationRepository, times(1))
         .addMessageToConversation(any[String], any[String], any[Message])(any[ExecutionContext])
     }
 
@@ -276,7 +366,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
       when(mockEnrolments.enrolments)
         .thenReturn(Set(Enrolment("HMRC-CUS-ORG", Seq(EnrolmentIdentifier("EORINumber", "GB123456789000000")), "")))
       await(service.addCustomerMessageToConversation("CDCM", "D-80542-20201120", customerMessage, mockEnrolments))
-      verify(mockRepository, never())
+      verify(mockConversationRepository, never())
         .addMessageToConversation(any[String], any[String], any[Message])(any[ExecutionContext])
     }
   }
@@ -351,7 +441,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
   class CreateMessageTestContext(
     dbInsertResult: Either[SecureMessageError, Unit] = Right(()),
     getEmailResult: Either[EmailLookupError, EmailAddress] = Right(EmailAddress("joeblogs@yahoo.com"))) {
-    when(mockRepository.insertIfUnique(any[Conversation])(any[ExecutionContext]))
+    when(mockConversationRepository.insertIfUnique(any[Conversation])(any[ExecutionContext]))
       .thenReturn(Future(dbInsertResult))
     when(mockChannelPreferencesConnector.getEmailForEnrolment(any[Identifier])(any[HeaderCarrier]))
       .thenReturn(Future(getEmailResult))
@@ -359,7 +449,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
 
   @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   class GetConversationTestContext(getConversationResult: Either[ConversationNotFound, Conversation]) {
-    when(mockRepository.getConversation(any[String], any[String], any[Set[Identifier]])(any[ExecutionContext]))
+    when(mockConversationRepository.getConversation(any[String], any[String], any[Set[Identifier]])(any[ExecutionContext]))
       .thenReturn(Future(getConversationResult))
   }
 
@@ -368,9 +458,9 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
     getConversationResult: Either[ConversationNotFound, Conversation],
     addMessageResult: Either[SecureMessageError, Unit] = Right(()))
       extends TestHelpers {
-    when(mockRepository.getConversation(any[String], any[String], any[Set[Identifier]])(any[ExecutionContext]))
+    when(mockConversationRepository.getConversation(any[String], any[String], any[Set[Identifier]])(any[ExecutionContext]))
       .thenReturn(Future(getConversationResult))
-    when(mockRepository.addMessageToConversation(any[String], any[String], any[Message])(any[ExecutionContext]))
+    when(mockConversationRepository.addMessageToConversation(any[String], any[String], any[Message])(any[ExecutionContext]))
       .thenReturn(Future(addMessageResult))
   }
 
@@ -379,9 +469,9 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
     getConversationResult: Either[ConversationNotFound, Conversation] = Right(cnvWithNoEmail),
     addMessageResult: Either[SecureMessageError, Unit] = Right(()),
     sendEmailResult: Either[EmailSendingError, Unit] = Right(())) {
-    when(mockRepository.getConversation(any[String], any[String], any[Set[Identifier]])(any[ExecutionContext]))
+    when(mockConversationRepository.getConversation(any[String], any[String], any[Set[Identifier]])(any[ExecutionContext]))
       .thenReturn(Future(getConversationResult))
-    when(mockRepository.addMessageToConversation(any[String], any[String], any[Message])(any[ExecutionContext]))
+    when(mockConversationRepository.addMessageToConversation(any[String], any[String], any[Message])(any[ExecutionContext]))
       .thenReturn(Future(addMessageResult))
     when(mockEmailConnector.send(any[EmailRequest])(any[HeaderCarrier])).thenReturn(Future(sendEmailResult))
   }
@@ -390,9 +480,9 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
   class UpdateReadTimeTestContext(
     getConversationResult: Either[ConversationNotFound, Conversation] = Right(cnvWithNoEmail),
     addReadTime: Either[StoreError, Unit]) {
-    when(mockRepository.getConversation(any[String], any[String], any[Set[Identifier]])(any[ExecutionContext]))
+    when(mockConversationRepository.getConversation(any[String], any[String], any[Set[Identifier]])(any[ExecutionContext]))
       .thenReturn(Future(getConversationResult))
-    when(mockRepository.addReadTime(any[String], any[String], any[Int], any[DateTime])(any[ExecutionContext]))
+    when(mockConversationRepository.addReadTime(any[String], any[String], any[Int], any[DateTime])(any[ExecutionContext]))
       .thenReturn(Future(addReadTime))
   }
 }
@@ -401,17 +491,21 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
 @SuppressWarnings(Array("org.wartremover.warts.TraversableOps", "org.wartremover.warts.NonUnitStatements"))
 trait TestHelpers extends MockitoSugar with UnitTest {
   import uk.gov.hmrc.auth.core.Enrolment
+
+  val objectID = BSONObjectID.generate()
   val eORINumber: Identifier = Identifier("EORINumber", "GB123456789000000", Some("HMRC-CUS-ORG"))
   val participant: Participant = Participant(1, ParticipantType.Customer, eORINumber, None, None, None, None)
   val mockEisConnector: EISConnector = mock[EISConnector]
   val mockAuditConnector: AuditConnector = mock[AuditConnector]
-  val mockRepository: ConversationRepository = mock[ConversationRepository]
+  val mockConversationRepository: ConversationRepository = mock[ConversationRepository]
+  val mockMessageRepository: MessageRepository = mock[MessageRepository]
   val mockEmailConnector: EmailConnector = mock[EmailConnector]
   when(mockEmailConnector.send(any[EmailRequest])(any[HeaderCarrier])).thenReturn(Future.successful(Right(())))
   val mockChannelPreferencesConnector: ChannelPreferencesConnector = mock[ChannelPreferencesConnector]
   val service: SecureMessageService =
     new SecureMessageService(
-      mockRepository,
+      mockConversationRepository,
+      mockMessageRepository,
       mockEmailConnector,
       mockChannelPreferencesConnector,
       mockEisConnector,
@@ -439,9 +533,14 @@ trait TestHelpers extends MockitoSugar with UnitTest {
   def caseWorkerMessage(content: String): CaseworkerMessage =
     CaseworkerMessage(content)
   val listOfCoreConversation = List(
-    ConversationUtil.getFullConversation("D-80542-20201120", "HMRC-CUS-ORG", "EORINumber", "GB1234567890"))
+    ConversationUtil
+      .getFullConversation(BSONObjectID.generate, "D-80542-20201120", "HMRC-CUS-ORG", "EORINumber", "GB1234567890"))
+
+  val conversationJson = Resources
+    .readJson("model/api/cdcm/write/conversation-request.json")
+    .as[JsObject] + ("_id" -> Json.toJson(objectID))
   val cnvWithNoEmail: Conversation =
-    Resources.readJson("model/api/cdcm/write/conversation-request.json").as[Conversation]
+    conversationJson.as[Conversation]
   val cnvWithNoCustomer: Conversation = cnvWithNoEmail.copy(participants = List(cnvWithNoEmail.participants.head))
   val cnvWithMultipleCustomers: Conversation =
     ConversationUtil.getConversationRequestWithMultipleCustomers.asConversationWithCreatedDate("CDCM", "123", now)

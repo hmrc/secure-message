@@ -17,18 +17,23 @@
 package uk.gov.hmrc.securemessage.controllers.model.cdcm
 
 import org.scalatestplus.play.PlaySpec
-import play.api.libs.json.{ JsValue, Json }
+import play.api.libs.json.{ JsObject, JsValue, Json }
+import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.ApiConversation
 import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core._
+import Conversation._
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class ApiConversationSpec extends PlaySpec {
 
   "ApiConversation" must {
+    val objectID = BSONObjectID.generate()
     "Convert core conversation to ApiConversation details when hmrc sends first message to customer" in {
       val identifiers = Set(Identifier(name = "EORINumber", value = "GB1234567890", enrolment = Some("HMRC-CUS-ORG")))
-      val conversationJson: JsValue = Resources.readJson("model/core/hmrc-sent-first-message-core.json")
+      val conversationJson: JsValue = Resources
+        .readJson("model/core/hmrc-sent-first-message-core.json")
+        .as[JsObject] + ("_id" -> Json.toJson(objectID))
       val coreConversation: Conversation = conversationJson.validate[Conversation].get
       val apiConversation = ApiConversation.fromCore(coreConversation, identifiers)
       apiConversation mustBe a[ApiConversation]
@@ -61,7 +66,9 @@ class ApiConversationSpec extends PlaySpec {
     }
     "Convert core conversation to ApiConversation details with read time by same user" in {
       val identifiers = Set(Identifier(name = "EORINumber", value = "GB1234567890", enrolment = Some("HMRC-CUS-ORG")))
-      val conversationJson: JsValue = Resources.readJson("model/core/customer-first-read-core.json")
+      val conversationJson: JsValue = Resources
+        .readJson("model/core/customer-first-read-core.json")
+        .as[JsObject] + ("_id" -> Json.toJson(objectID))
       val coreConversation: Conversation = conversationJson.validate[Conversation].get
       val apiConversation = ApiConversation.fromCore(coreConversation, identifiers)
       apiConversation mustBe a[ApiConversation]
@@ -87,7 +94,9 @@ class ApiConversationSpec extends PlaySpec {
     }
     "Convert core conversation to ApiConversation details with 2 messages that includes customer message" in {
       val identifiers = Set(Identifier(name = "EORINumber", value = "GB1234567890", enrolment = Some("HMRC-CUS-ORG")))
-      val conversationJson: JsValue = Resources.readJson("model/core/customer-sent-message-core.json")
+      val conversationJson: JsValue = Resources
+        .readJson("model/core/customer-sent-message-core.json")
+        .as[JsObject] + ("_id" -> Json.toJson(objectID))
       val coreConversation: Conversation = conversationJson.validate[Conversation].get
       val apiConversation = ApiConversation.fromCore(coreConversation, identifiers)
       apiConversation mustBe a[ApiConversation]
@@ -120,7 +129,9 @@ class ApiConversationSpec extends PlaySpec {
 
     "Convert core conversation to ApiConversation details when first read by different user" in {
       val identifiers = Set(Identifier(name = "EORINumber", value = "GB1234567890", enrolment = Some("HMRC-CUS-ORG")))
-      val conversationJson: JsValue = Resources.readJson("model/core/read-by-other-user-core.json")
+      val conversationJson: JsValue = Resources
+        .readJson("model/core/read-by-other-user-core.json")
+        .as[JsObject] + ("_id" -> Json.toJson(objectID))
       val coreConversation: Conversation = conversationJson.validate[Conversation].get
       val apiConversation = ApiConversation.fromCore(coreConversation, identifiers)
       apiConversation mustBe a[ApiConversation]
@@ -167,7 +178,9 @@ class ApiConversationSpec extends PlaySpec {
     }
     "Convert core conversation to ApiConversation details that has random messages from different participants" in {
       val identifiers = Set(Identifier(name = "EORINumber", value = "GB1234567890", enrolment = Some("HMRC-CUS-ORG")))
-      val conversationJson: JsValue = Resources.readJson("model/core/conversation-full-extender.json")
+      val conversationJson: JsValue = Resources
+        .readJson("model/core/conversation-full-extender.json")
+        .as[JsObject] + ("_id" -> Json.toJson(objectID))
       val coreConversation: Conversation = conversationJson.validate[Conversation].get
       val apiConversation = ApiConversation.fromCore(coreConversation, identifiers)
       apiConversation mustBe a[ApiConversation]

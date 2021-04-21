@@ -18,9 +18,11 @@ package uk.gov.hmrc.securemessage.models.core
 
 import cats.data.NonEmptyList
 import play.api.libs.json.{ Json, OFormat }
+import reactivemongo.bson.BSONObjectID
+import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.securemessage.models.utils.NonEmptyListOps._
-
 final case class Conversation(
+  _id: BSONObjectID = BSONObjectID.generate(),
   client: String,
   id: String,
   status: ConversationStatus,
@@ -33,5 +35,6 @@ final case class Conversation(
 )
 
 object Conversation {
+  implicit val objectIdFormat = ReactiveMongoFormats.objectIdFormats
   implicit val conversationFormat: OFormat[Conversation] = Json.format[Conversation]
 }

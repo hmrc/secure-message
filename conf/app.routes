@@ -98,6 +98,21 @@ GET         /conversations  uk.gov.hmrc.securemessage.controllers.SecureMessageC
 GET         /conversation/:client/:conversationId   uk.gov.hmrc.securemessage.controllers.SecureMessageController.getConversationContent(client: ClientName, conversationId: String)
 
 ###
+# summary: Gets conversation/message by id
+# security:
+#   - bearerToken: []
+# responses:
+#   200:
+#     description: conversation/message was received
+#   401:
+#     description: unauthorised customer when they don't have an enrolment
+#   404:
+#     description: conversation/message not found
+###
+GET        /messages/:type/:id   uk.gov.hmrc.securemessage.controllers.SecureMessageController.getContentDetail(id: String, type: MessageType)
+
+
+###
 # summary: Adds a date and time that a participant read the conversation
 # security:
 #   - bearerToken: []

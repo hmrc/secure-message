@@ -21,15 +21,15 @@ import play.api.mvc.{ Action, AnyContent, ControllerComponents }
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ ExecutionContext }
 
 @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
-class TestOnlyController @Inject()(cc: ControllerComponents, repository: ConversationRepository)(
+class TestOnlyController @Inject()(cc: ControllerComponents, conversationRepository: ConversationRepository)(
   implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
   def deleteConversation(conversationId: String, client: String): Action[AnyContent] = Action.async { _ =>
-    repository.deleteConversationForTestOnly(conversationId, client).map { _ =>
+    conversationRepository.deleteConversationForTestOnly(conversationId, client).map { _ =>
       Ok(s"$conversationId deleted successfully")
     }
   }
