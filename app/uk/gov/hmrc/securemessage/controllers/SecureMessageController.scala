@@ -18,8 +18,8 @@ package uk.gov.hmrc.securemessage.controllers
 
 import javax.inject.Inject
 import play.api.i18n.I18nSupport
-import play.api.libs.json.{ JsValue, Json }
-import play.api.mvc.{ Action, AnyContent, ControllerComponents }
+import play.api.libs.json.{JsValue, Json}
+import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
@@ -33,10 +33,11 @@ import uk.gov.hmrc.securemessage.controllers.model.common.read._
 import uk.gov.hmrc.securemessage.controllers.model.common.write._
 import uk.gov.hmrc.securemessage.controllers.utils.EnrolmentHelper._
 import uk.gov.hmrc.securemessage.controllers.utils.QueryStringValidation
-import uk.gov.hmrc.securemessage.services.{ Auditing, ErrorHandling, SecureMessageService }
+import uk.gov.hmrc.securemessage.services.{Auditing, ErrorHandling, SecureMessageService}
 import uk.gov.hmrc.time.DateTimeUtils
 
-import scala.concurrent.{ ExecutionContext, Future }
+import java.net.{URLDecoder, URLEncoder}
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
@@ -150,6 +151,22 @@ class SecureMessageController @Inject()(
           }
         }
   }
+
+  def getContentDetail(id: String): Action[AnyContent] = Action.async {
+    implicit request =>
+
+
+
+
+
+     URLDecoder.decode(id, "UTF-8")
+
+     Future.successful(Ok(Json.toJson(   "")))
+
+  }
+
+
+
 
   def addCustomerReadTime(client: ClientName, conversationId: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
