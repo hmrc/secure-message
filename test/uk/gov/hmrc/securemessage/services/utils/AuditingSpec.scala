@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.securemessage.services.utils
 
+import java.util.UUID
+
 import cats.data.NonEmptyList
 import org.joda.time.DateTime
 import org.mockito.Mockito.verify
@@ -30,11 +32,10 @@ import uk.gov.hmrc.play.audit.model.EventTypes
 import uk.gov.hmrc.securemessage.controllers.model.ClientName.CDCM
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
-import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryMessageRequest, RequestCommon, RequestDetail }
 import uk.gov.hmrc.securemessage.models.core._
+import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryMessageRequest, RequestCommon, RequestDetail }
 import uk.gov.hmrc.securemessage.services.Auditing
 
-import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
@@ -61,28 +62,32 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
       alert)
 
     "send correct audit details when new conversation created" in {
-      val _ = auditCreateConversation(EventTypes.Succeeded, conversation)
+      val responseMessage = "Conversation Created"
+      val _ = auditCreateConversation(EventTypes.Succeeded, conversation, responseMessage)
       verify(auditConnector).sendExplicitAudit(
         EventTypes.Succeeded,
         Map[String, String](
-          "subject"        -> "MRN: DMS7324874993",
-          "id"             -> "D-80542-20210327",
-          "initialMessage" -> messageContent,
-          "client"         -> CDCM.entryName,
+          "subject"         -> "MRN: DMS7324874993",
+          "id"              -> "D-80542-20210327",
+          "responseMessage" -> responseMessage,
+          "initialMessage"  -> messageContent,
+          "client"          -> CDCM.entryName,
           newConversationTxnName,
         )
       )
     }
 
     "send correct audit details when new conversation not created" in {
-      val _ = auditCreateConversation(EventTypes.Failed, conversation)
+      val responseMessage = "Conversation not found for identifier: 123"
+      val _ = auditCreateConversation(EventTypes.Failed, conversation, responseMessage)
       verify(auditConnector).sendExplicitAudit(
         EventTypes.Failed,
         Map[String, String](
-          "subject"        -> "MRN: DMS7324874993",
-          "id"             -> "D-80542-20210327",
-          "initialMessage" -> messageContent,
-          "client"         -> CDCM.entryName,
+          "subject"         -> "MRN: DMS7324874993",
+          "id"              -> "D-80542-20210327",
+          "responseMessage" -> responseMessage,
+          "initialMessage"  -> messageContent,
+          "client"          -> CDCM.entryName,
           newConversationTxnName,
         )
       )
@@ -264,10 +269,12 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
         EventTypes.Succeeded,
         Map(
           messageForwardedTxnName,
-          "eisResponseCode" -> "204",
-          "conversationId"  -> conversationId,
-          "x-request-id"    -> xRequestId,
-          "message"         -> messageContent)
+          "eisResponseCode"          -> "204",
+          "conversationId"           -> conversationId,
+          "x-request-id"             -> xRequestId,
+          "message"                  -> messageContent,
+          "acknowledgementReference" -> "acknowledgementReference"
+        )
       )
     }
 
@@ -283,10 +290,12 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
         EventTypes.Failed,
         Map(
           messageForwardedTxnName,
-          "eisResponseCode" -> "500",
-          "conversationId"  -> conversationId,
-          "x-request-id"    -> xRequestId,
-          "message"         -> messageContent)
+          "eisResponseCode"          -> "500",
+          "conversationId"           -> conversationId,
+          "x-request-id"             -> xRequestId,
+          "message"                  -> messageContent,
+          "acknowledgementReference" -> "acknowledgementReference"
+        )
       )
     }
   }

@@ -45,18 +45,20 @@ trait Auditing {
   protected val messageReadTxnName: (String, String) = txnName      -> "Message is Read"
   protected val messageForwardedTxnName: (String, String) = txnName -> "Message forwarded to caseworker"
 
-  def auditCreateConversation(txnStatus: String, conversation: Conversation)(
+  def auditCreateConversation(txnStatus: String, conversation: Conversation, responseMessage: String)(
     implicit hc: HeaderCarrier,
     ec: ExecutionContext): Unit = {
     val detail = Map(
       newConversationTxnName,
-      "client"         -> conversation.client,
-      "id"             -> conversation.id,
-      "subject"        -> conversation.subject,
-      "initialMessage" -> conversation.messages.head.content
+      "client"          -> conversation.client,
+      "id"              -> conversation.id,
+      "subject"         -> conversation.subject,
+      "initialMessage"  -> conversation.messages.head.content,
+      "responseMessage" -> responseMessage
     )
     auditConnector.sendExplicitAudit(txnStatus, detail)
   }
+
   def auditRetrieveEmail(emailAddress: Option[EmailAddress])(implicit hc: HeaderCarrier, ec: ExecutionContext): Unit =
     emailAddress match {
       case Some(email) =>
@@ -123,11 +125,12 @@ trait Auditing {
     implicit hc: HeaderCarrier,
     ec: ExecutionContext): Unit = {
     val detail = Map(
-      txnName           -> "Message forwarded to caseworker",
-      "eisResponseCode" -> eisResponseCode.toString,
-      "conversationId"  -> qrw.requestDetail.conversationId,
-      "x-request-id"    -> qrw.requestDetail.id,
-      "message"         -> qrw.requestDetail.message
+      txnName                    -> "Message forwarded to caseworker",
+      "eisResponseCode"          -> eisResponseCode.toString,
+      "conversationId"           -> qrw.requestDetail.conversationId,
+      "x-request-id"             -> qrw.requestDetail.id,
+      "acknowledgementReference" -> qrw.requestCommon.acknowledgementReference,
+      "message"                  -> qrw.requestDetail.message
     )
     auditConnector.sendExplicitAudit(txnStatus, detail)
   }
