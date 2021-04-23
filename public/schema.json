@@ -112,43 +112,13 @@
         },
         "required" : [ "sender", "recipients", "alert", "tags", "subject", "message" ]
       },
-      "uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage.SystemIdentifier" : {
-        "properties" : {
-          "name" : {
-            "type" : "string"
-          },
-          "value" : {
-            "type" : "string"
-          }
-        },
-        "required" : [ "name", "value" ]
-      },
-      "uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage.System" : {
-        "properties" : {
-          "identifier" : {
-            "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage.SystemIdentifier"
-          }
-        },
-        "required" : [ "identifier" ]
-      },
-      "uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage.Sender" : {
-        "properties" : {
-          "system" : {
-            "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage.System"
-          }
-        },
-        "required" : [ "system" ]
-      },
       "uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage" : {
         "properties" : {
-          "sender" : {
-            "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage.Sender"
-          },
           "content" : {
             "type" : "string"
           }
         },
-        "required" : [ "sender", "content" ]
+        "required" : [ "content" ]
       },
       "uk.gov.hmrc.securemessage.controllers.model.common.write.ReadTime" : {
         "properties" : {
@@ -411,6 +381,35 @@
         } ]
       }
     },
+    "/secure-messaging/messages/{id}" : {
+      "get" : {
+        "operationId" : "getContentDetail",
+        "tags" : [ "app" ],
+        "summary" : "Gets conversation/message by id",
+        "security" : [ {
+          "bearerToken" : [ ]
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "conversation/message was received"
+          },
+          "401" : {
+            "description" : "unauthorised customer when they don't have an enrolment"
+          },
+          "404" : {
+            "description" : "conversation/message not found"
+          }
+        },
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : true
+        } ]
+      }
+    },
     "/secure-messaging/conversation/{client}/{conversationId}/read-time" : {
       "post" : {
         "operationId" : "addCustomerReadTime",
@@ -458,7 +457,7 @@
   },
   "info" : {
     "title" : "Secure Message API",
-    "version" : "0.64.0-SNAPSHOT"
+    "version" : "0.78.0-SNAPSHOT"
   },
   "tags" : [ {
     "name" : "app"

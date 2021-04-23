@@ -88,6 +88,7 @@ class ConversationMetadataSpec extends PlaySpec {
       val messages = NonEmptyList(Message(2, DateTime.parse("2020-11-10T15:00:01.000"), ""), Nil)
 
       val coreConversation = Conversation(
+        None,
         "",
         "",
         ConversationStatus.Open,
@@ -113,6 +114,7 @@ class ConversationMetadataSpec extends PlaySpec {
       )
 
       val coreConversation = Conversation(
+        None,
         "",
         "",
         ConversationStatus.Open,
@@ -121,7 +123,8 @@ class ConversationMetadataSpec extends PlaySpec {
         Language.English,
         participants,
         messages,
-        uk.gov.hmrc.securemessage.models.core.Alert("", None))
+        uk.gov.hmrc.securemessage.models.core.Alert("", None)
+      )
 
       ConversationMetadata.anyUnreadMessages(coreConversation, identifier) mustBe false
     }
@@ -138,6 +141,7 @@ class ConversationMetadataSpec extends PlaySpec {
       )
 
       val coreConversation = Conversation(
+        None,
         "",
         "",
         ConversationStatus.Open,
@@ -146,7 +150,8 @@ class ConversationMetadataSpec extends PlaySpec {
         Language.English,
         participants,
         messages,
-        uk.gov.hmrc.securemessage.models.core.Alert("", None))
+        uk.gov.hmrc.securemessage.models.core.Alert("", None)
+      )
 
       ConversationMetadata.anyUnreadMessages(coreConversation, identifier) mustBe true
     }

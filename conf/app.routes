@@ -109,7 +109,7 @@ GET         /conversation/:client/:conversationId   uk.gov.hmrc.securemessage.co
 #   404:
 #     description: conversation/message not found
 ###
-GET        /messages/:id   uk.gov.hmrc.securemessage.controllers.SecureMessageController.getConversationContent(client: ClientName, conversationId: String)
+GET        /messages/:id   uk.gov.hmrc.securemessage.controllers.SecureMessageController.getContentDetail(id: String)
 
 
 

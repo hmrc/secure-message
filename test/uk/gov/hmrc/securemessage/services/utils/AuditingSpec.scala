@@ -30,8 +30,8 @@ import uk.gov.hmrc.play.audit.model.EventTypes
 import uk.gov.hmrc.securemessage.controllers.model.ClientName.CDCM
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
-import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryMessageRequest, RequestCommon, RequestDetail }
 import uk.gov.hmrc.securemessage.models.core._
+import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryMessageRequest, RequestCommon, RequestDetail }
 import uk.gov.hmrc.securemessage.services.Auditing
 
 import java.util.UUID
@@ -50,6 +50,7 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
     val message = Message(1, DateTime.now, messageContent)
     val alert = Alert("", None)
     val conversation = Conversation(
+      None,
       CDCM.entryName,
       "D-80542-20210327",
       ConversationStatus.Open,
@@ -58,7 +59,8 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
       Language.English,
       List(),
       NonEmptyList.one(message),
-      alert)
+      alert
+    )
 
     "send correct audit details when new conversation created" in {
       val _ = auditCreateConversation(EventTypes.Succeeded, conversation)

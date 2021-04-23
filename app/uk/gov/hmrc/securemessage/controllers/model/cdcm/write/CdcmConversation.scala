@@ -44,15 +44,15 @@ final case class CdcmConversation(
     val initialParticipants = getSenderParticipant(client, conversationId, sender.system) :: getRecipientParticipants(
       recipients)
     Conversation(
-      client,
-      conversationId,
-      ConversationStatus.Open,
-      Some(Map("mrn" -> tags.mrn, "notificationType" -> tags.notificationType.entryName)), //TODO: remove option as empty map can take place of that
-      subject,
-      getLanguage(language),
-      initialParticipants,
-      NonEmptyList.one(initialMessage),
-      core.Alert(alert.templateId, alert.parameters)
+      client = client,
+      id = conversationId,
+      status = ConversationStatus.Open,
+      tags = Some(Map("mrn" -> tags.mrn, "notificationType" -> tags.notificationType.entryName)), //TODO: remove option as empty map can take place of that
+      subject = subject,
+      language = getLanguage(language),
+      participants = initialParticipants,
+      messages = NonEmptyList.one(initialMessage),
+      alert = core.Alert(alert.templateId, alert.parameters)
     )
   }
 

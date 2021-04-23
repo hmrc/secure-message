@@ -51,6 +51,7 @@ object ConversationUtil {
     messageCreationDate: String = "2020-11-10T15:00:01.000"
   ): Conversation =
     Conversation(
+      None,
       "CDCM",
       id,
       ConversationStatus.Open,
@@ -89,6 +90,7 @@ object ConversationUtil {
 
   def getMinimalConversation(id: String): Conversation =
     Conversation(
+      None,
       "cdcm",
       id,
       ConversationStatus.Open,

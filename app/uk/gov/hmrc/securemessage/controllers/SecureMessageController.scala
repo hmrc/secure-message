@@ -18,14 +18,15 @@ package uk.gov.hmrc.securemessage.controllers
 
 import javax.inject.Inject
 import play.api.i18n.I18nSupport
-import play.api.libs.json.{JsValue, Json}
-import play.api.mvc.{Action, AnyContent, ControllerComponents}
+import play.api.libs.json.{ JsValue, Json }
+import play.api.mvc.{ Action, AnyContent, ControllerComponents }
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.audit.model.EventTypes
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.securemessage._
+import uk.gov.hmrc.securemessage.controllers.TempFake.FakeData
 import uk.gov.hmrc.securemessage.controllers.model.ClientName
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write._
 import uk.gov.hmrc.securemessage.controllers.model.common.CustomerEnrolment
@@ -33,11 +34,11 @@ import uk.gov.hmrc.securemessage.controllers.model.common.read._
 import uk.gov.hmrc.securemessage.controllers.model.common.write._
 import uk.gov.hmrc.securemessage.controllers.utils.EnrolmentHelper._
 import uk.gov.hmrc.securemessage.controllers.utils.QueryStringValidation
-import uk.gov.hmrc.securemessage.services.{Auditing, ErrorHandling, SecureMessageService}
+import uk.gov.hmrc.securemessage.services.{ Auditing, ErrorHandling, SecureMessageService }
 import uk.gov.hmrc.time.DateTimeUtils
-
-import java.net.{URLDecoder, URLEncoder}
-import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.Message._
+import java.net.URLDecoder
+import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.control.NonFatal
 
 @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
@@ -152,21 +153,16 @@ class SecureMessageController @Inject()(
         }
   }
 
-  def getContentDetail(id: String): Action[AnyContent] = Action.async {
-    implicit request =>
+  def getContentDetail(id: String): Action[AnyContent] = Action.async { implicit request =>
+    val decodedId = URLDecoder.decode(id, "UTF-8")
 
+    logger.logger.debug(request.toString())
 
+    val jsonMessage = Json.toJson(FakeData.message(decodedId))
 
-
-
-     URLDecoder.decode(id, "UTF-8")
-
-     Future.successful(Ok(Json.toJson(   "")))
+    Future.successful(Ok(jsonMessage))
 
   }
-
-
-
 
   def addCustomerReadTime(client: ClientName, conversationId: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>

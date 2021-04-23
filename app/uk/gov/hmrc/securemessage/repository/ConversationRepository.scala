@@ -115,6 +115,19 @@ class ConversationRepository @Inject()(implicit connector: MongoConnector)
         Left(ConversationNotFound(s"Conversation not found for identifier: $identifiers"))
     }
 
+  def getConversation(id: BSONObjectID, identifiers: Set[Identifier])(
+    implicit ec: ExecutionContext): Future[Either[ConversationNotFound, Conversation]] =
+    collection
+      .find[JsObject, Conversation](
+        selector = Json.obj("_id" -> id)
+          deepMerge identifierQuery(identifiers),
+        None)
+      .one[Conversation] map {
+      case Some(c) => Right(c)
+      case None =>
+        Left(ConversationNotFound(s"Conversation not found for identifier: $identifiers"))
+    }
+
   private def identifierQuery(identifiers: Set[Identifier]): JsObject =
     Json.obj(
       "$or" ->
