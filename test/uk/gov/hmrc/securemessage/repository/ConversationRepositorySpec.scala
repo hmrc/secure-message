@@ -20,6 +20,7 @@ import org.joda.time.DateTime
 import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.play.PlaySpec
 import play.api.test.Helpers._
+import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.mongo.MongoSpecSupport
 import uk.gov.hmrc.securemessage.controllers.model.common.read.FilterTag
 import uk.gov.hmrc.securemessage.helpers.ConversationUtil
@@ -36,13 +37,20 @@ import scala.concurrent.Future
 class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with BeforeAndAfterEach {
 
   val conversation1: Conversation =
-    ConversationUtil.getFullConversation("123", "HMRC-CUS-ORG", "EORINumber", "GB1234567890")
+    ConversationUtil.getFullConversation(BSONObjectID.generate, "123", "HMRC-CUS-ORG", "EORINumber", "GB1234567890")
   val conversation2: Conversation =
-    ConversationUtil.getFullConversation("234", "HMRC-CUS-ORG", "EORINumber", "GB1234567890")
+    ConversationUtil.getFullConversation(BSONObjectID.generate, "234", "HMRC-CUS-ORG", "EORINumber", "GB1234567890")
   val conversation3: Conversation =
-    ConversationUtil.getFullConversation("345", "IR-SA", "UTR", "123456789", Some(Map("sourceId" -> "self-assessment")))
+    ConversationUtil.getFullConversation(
+      BSONObjectID.generate,
+      "345",
+      "IR-SA",
+      "UTR",
+      "123456789",
+      Some(Map("sourceId" -> "self-assessment")))
   val conversation4: Conversation =
-    ConversationUtil.getFullConversation("456", "IR-CT", "UTR", "345678901", Some(Map("caseId" -> "CT-11345")))
+    ConversationUtil
+      .getFullConversation(BSONObjectID.generate, "456", "IR-CT", "UTR", "345678901", Some(Map("caseId" -> "CT-11345")))
   val allConversations = Seq(conversation1, conversation2, conversation3, conversation4)
 
   //TODO: group test by their function name
@@ -51,7 +59,7 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
       conversations = Seq()
     ) {
       val conversation: Conversation =
-        ConversationUtil.getFullConversation("123", "HMRC-CUS-ORG", "EORINumber", "GB1234567890")
+        ConversationUtil.getFullConversation(BSONObjectID.generate, "123", "HMRC-CUS-ORG", "EORINumber", "GB1234567890")
       await(repository.insert(conversation))
       val count: Int = await(repository.count)
       count mustEqual 1
@@ -62,7 +70,7 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
     "be inserted into the repository successfully" in new TestContext(
       conversations = Seq()
     ) {
-      val conversation: Conversation = ConversationUtil.getMinimalConversation("123")
+      val conversation: Conversation = ConversationUtil.getMinimalConversation(id = "123")
       await(repository.insert(conversation))
       val count: Int = await(repository.count)
       count mustEqual 1
@@ -206,7 +214,7 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
   }
 
   "No conversation with the given conversation ID" should {
-    val conversation = ConversationUtil.getMinimalConversation("123")
+    val conversation = ConversationUtil.getMinimalConversation(id = "123")
     "be returned if the enrolment is not a participant" in new TestContext(
       conversations = Seq(conversation)
     ) {
@@ -218,7 +226,7 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
     }
   }
   "Adding a message to conversation" must {
-    val conversation: Conversation = ConversationUtil.getMinimalConversation("123")
+    val conversation: Conversation = ConversationUtil.getMinimalConversation(id = "123")
     "increase the message array size" in new TestContext(
       conversations = Seq(conversation)
     ) {
@@ -237,7 +245,8 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
   }
 
   "Update conversation with new read time" should {
-    val conversation = ConversationUtil.getFullConversation("123", "HMRC-CUS-ORG", "EORINumber", "GB1234567890")
+    val conversation =
+      ConversationUtil.getFullConversation(BSONObjectID.generate, "123", "HMRC-CUS-ORG", "EORINumber", "GB1234567890")
     "return true when a conversation has been successfully update with a new read time" in new TestContext(
       conversations = Seq(conversation)
     ) {

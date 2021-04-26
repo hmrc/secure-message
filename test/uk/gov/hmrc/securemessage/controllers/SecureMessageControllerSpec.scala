@@ -32,6 +32,7 @@ import play.api.libs.json.{ JsObject, JsValue, Json }
 import play.api.mvc.{ Request, Result }
 import play.api.test.Helpers.{ POST, PUT, contentAsJson, contentAsString, defaultAwaitTimeout, status, stubMessages }
 import play.api.test.{ FakeHeaders, FakeRequest, Helpers, NoMaterializer }
+import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.authorise.Predicate
 import uk.gov.hmrc.auth.core.retrieve.Retrieval
@@ -48,7 +49,6 @@ import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core.Conversation
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
 import uk.gov.hmrc.securemessage.services.SecureMessageService
-
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -64,6 +64,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
   implicit val messages: Messages = stubMessages()
   private val testEnrolment = CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789")
   private val cdcm = ClientName.CDCM
+  private val objectID = BSONObjectID.generate()
 
   "createConversation" must {
 
@@ -90,10 +91,11 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
 
     "return CREATED (201) when sending email in but ignore it" in new CreateConversationTestCase(
       requestBody = Resources.readJson("model/api/cdcm/write/create-conversation-with-email.json"),
-      serviceResponse = Future.successful(Right(()))) {
+      serviceResponse = Future.successful(Right(())),
+      objectID) {
       private val response = controller.createConversation(client, conversationId)(fakeRequest)
       verify(mockSecureMessageService, times(1))
-        .createConversation(eqTo(expectedConversation))(any[HeaderCarrier], any[ExecutionContext])
+        .createConversation(any[Conversation])(any[HeaderCarrier], any[ExecutionContext])
       status(response) mustBe CREATED
     }
 
@@ -386,7 +388,10 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
   )
 
   @SuppressWarnings(Array("org.wartremover.warts.OptionPartial"))
-  class CreateConversationTestCase(requestBody: JsValue, serviceResponse: Future[Either[SecureMessageError, Unit]])
+  class CreateConversationTestCase(
+    requestBody: JsValue,
+    serviceResponse: Future[Either[SecureMessageError, Unit]],
+    objectID: BSONObjectID = BSONObjectID.generate())
       extends TestCase {
     val fakeRequest: FakeRequest[JsValue] = FakeRequest(
       method = PUT,
@@ -397,9 +402,12 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     val client: ClientName = cdcm
     val conversationId = "123"
     private lazy val conversation: Conversation =
-      requestBody.as[CdcmConversation].asConversationWithCreatedDate(client.entryName, conversationId, now)
+      requestBody
+        .as[CdcmConversation]
+        .asConversationWithCreatedDate(client.entryName, conversationId, now)
+        .copy(_id = objectID)
     private lazy val expectedParticipants = conversation.participants.map(p => p.copy(email = None))
-    lazy val expectedConversation: Conversation = conversation.copy(participants = expectedParticipants)
+    lazy val expectedConversation: Conversation = conversation.copy(participants = expectedParticipants, _id = objectID)
     when(mockSecureMessageService.createConversation(any[Conversation])(any[HeaderCarrier], any[ExecutionContext]))
       .thenReturn(serviceResponse)
   }

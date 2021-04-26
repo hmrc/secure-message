@@ -19,29 +19,38 @@ package uk.gov.hmrc.securemessage.controllers.model.cdcm
 import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
 import org.scalatestplus.play.PlaySpec
-import play.api.libs.json.{ JsError, JsSuccess, JsValue }
+import play.api.libs.json.{ JsError, JsObject, JsSuccess, JsValue, Json }
+import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CdcmConversation
 import uk.gov.hmrc.securemessage.controllers.model.common.CustomerEnrolment
 import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core.Conversation
+import Conversation._
 
 class CdcmConversationSpec extends PlaySpec {
 
   "A full conversation API request model" should {
+    val objectID = BSONObjectID.generate()
+
     "be converted correctly to a core conversation model" in {
       val formatter = ISODateTimeFormat.dateTime()
       val dateInString = "2020-11-10T15:00:01.000Z"
       val dateTime = DateTime.parse(dateInString, formatter)
-      val fullConversationRequestJson: JsValue = Resources.readJson("model/api/cdcm/write/create-conversation.json")
+      val fullConversationRequestJson: JsValue = Resources
+        .readJson("model/api/cdcm/write/create-conversation.json")
+        .as[JsObject] +
+        ("_id" -> Json.toJson(objectID))
       fullConversationRequestJson.validate[CdcmConversation] match {
         case s: JsSuccess[CdcmConversation] =>
           val conversationRequest: CdcmConversation = s.getOrElse(fail("Unable to get conversation"))
           val conversation = conversationRequest.asConversationWithCreatedDate("CDCM", "D-80542-20201120", dateTime)
-          val expectedConversationJson: JsValue = Resources.readJson("model/core/conversation.json")
+          val expectedConversationJson: JsValue = Resources
+            .readJson("model/core/conversation.json")
+            .as[JsObject] + ("_id" -> Json.toJson(objectID))
           expectedConversationJson.validate[Conversation] match {
             case success: JsSuccess[Conversation] =>
               val expectedConversation = success.getOrElse(fail("Unable to get conversation"))
-              conversation mustEqual expectedConversation
+              conversation.copy(_id = objectID) mustEqual expectedConversation
             case _: JsError => fail("There was a problem reading the core model JSON file")
           }
         case _: JsError => fail("There was a problem reading the api model JSON file")

@@ -18,7 +18,7 @@ package uk.gov.hmrc.securemessage.controllers.TempFake
 
 import org.joda.time.DateTime
 import reactivemongo.bson.BSONObjectID
-import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.{FirstReaderInformation, Letter, SenderInformation}
+import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.{ FirstReaderInformation, Letter, SenderInformation }
 
 object FakeData {
 

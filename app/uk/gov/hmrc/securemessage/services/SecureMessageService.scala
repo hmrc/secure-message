@@ -17,13 +17,13 @@
 package uk.gov.hmrc.securemessage.services
 
 import java.util.UUID
-
 import cats.data._
 import cats.implicits._
 import com.google.inject.Inject
 import org.joda.time.DateTime
 import play.api.i18n.Messages
 import play.api.mvc.Request
+import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.auth.core.Enrolments
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
@@ -83,6 +83,14 @@ class SecureMessageService @Inject()(
     val identifiers = enrolments.map(_.asIdentifier)
     for {
       conversation <- EitherT(repo.getConversation(client, conversationId, identifiers))
+    } yield ApiConversation.fromCore(conversation, identifiers)
+  }.value
+
+  def getConversation(id: BSONObjectID, enrolments: Set[CustomerEnrolment])(
+    implicit ec: ExecutionContext): Future[Either[ConversationNotFound, ApiConversation]] = {
+    val identifiers = enrolments.map(_.asIdentifier)
+    for {
+      conversation <- EitherT(repo.getConversation(id, identifiers))
     } yield ApiConversation.fromCore(conversation, identifiers)
   }.value
 

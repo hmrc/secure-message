@@ -16,17 +16,16 @@
 
 package uk.gov.hmrc.securemessage.controllers
 
-import javax.inject.Inject
 import play.api.i18n.I18nSupport
 import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc.{ Action, AnyContent, ControllerComponents }
+import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.audit.model.EventTypes
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.securemessage._
-import uk.gov.hmrc.securemessage.controllers.TempFake.FakeData
 import uk.gov.hmrc.securemessage.controllers.model.ClientName
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write._
 import uk.gov.hmrc.securemessage.controllers.model.common.CustomerEnrolment
@@ -36,8 +35,8 @@ import uk.gov.hmrc.securemessage.controllers.utils.EnrolmentHelper._
 import uk.gov.hmrc.securemessage.controllers.utils.QueryStringValidation
 import uk.gov.hmrc.securemessage.services.{ Auditing, ErrorHandling, SecureMessageService }
 import uk.gov.hmrc.time.DateTimeUtils
-import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.Message._
 import java.net.URLDecoder
+import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.control.NonFatal
 
@@ -156,11 +155,23 @@ class SecureMessageController @Inject()(
   def getContentDetail(id: String): Action[AnyContent] = Action.async { implicit request =>
     val decodedId = URLDecoder.decode(id, "UTF-8")
 
+    val objectID = BSONObjectID.parse(decodedId).get
     logger.logger.debug(request.toString())
 
-    val jsonMessage = Json.toJson(FakeData.message(decodedId))
-
-    Future.successful(Ok(jsonMessage))
+    authorised()
+      .retrieve(Retrievals.allEnrolments) { authEnrolments =>
+        if (authEnrolments.enrolments.isEmpty) {
+          Future.successful(Unauthorized(Json.toJson("No enrolment found")))
+        } else {
+          val customerEnrolments = mapToCustomerEnrolments(authEnrolments)
+          secureMessageService
+            .getConversation(objectID, customerEnrolments)
+            .map {
+              case Right(apiConversation) => Ok(Json.toJson(apiConversation))
+              case _                      => NotFound(Json.toJson("No conversation found"))
+            }
+        }
+      }
 
   }
 
