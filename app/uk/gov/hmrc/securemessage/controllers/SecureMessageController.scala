@@ -56,13 +56,13 @@ class SecureMessageController @Inject()(
           .createConversation(conversation)
           .map {
             case Right(_) =>
-              val _ = auditCreateConversation(EventTypes.Succeeded, conversation, "Conversation Created")
+              auditCreateConversation(EventTypes.Succeeded, conversation, "Conversation Created")
               Created
             case Left(error: SecureMessageError) =>
+              auditCreateConversation(EventTypes.Failed, conversation, "Conversation Created")
               handleErrors(ClientName.withName(conversation.client), conversation.id, error)
           }
       }
-
   }
 
   def addCaseworkerMessage(client: ClientName, conversationId: String): Action[JsValue] = Action.async(parse.json) {
@@ -89,10 +89,10 @@ class SecureMessageController @Inject()(
             .addCustomerMessageToConversation(client.entryName, conversationId, customerMessageRequest, enrolments)
             .map {
               case Right(_) =>
-                val _ = auditCustomerReply(EventTypes.Succeeded, client, conversationId, customerMessageRequest)
+                auditCustomerReply(EventTypes.Succeeded, client, conversationId, customerMessageRequest)
                 Created(Json.toJson(s"Created customer message for client $client and conversationId $conversationId"))
               case Left(error) =>
-                val _ = auditCustomerReply(EventTypes.Failed, client, conversationId, customerMessageRequest)
+                auditCustomerReply(EventTypes.Failed, client, conversationId, customerMessageRequest)
                 handleErrors(client, conversationId, error)
             }
         }
