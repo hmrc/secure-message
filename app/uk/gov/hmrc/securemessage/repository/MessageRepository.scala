@@ -19,8 +19,8 @@ package uk.gov.hmrc.securemessage.repository
 import play.api.libs.json.{ JsObject, Json }
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.mongo.{ MongoConnector, ReactiveRepository }
-import uk.gov.hmrc.securemessage.{ LetterNotFound }
-import uk.gov.hmrc.securemessage.models.core.Letter
+import uk.gov.hmrc.securemessage.LetterNotFound
+import uk.gov.hmrc.securemessage.models.core.{ Identifier, Letter }
 
 import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
@@ -32,14 +32,43 @@ class MessageRepository @Inject()(implicit connector: MongoConnector)
       Letter.letterFormat
     ) {
 
-  def getLetter(id: BSONObjectID)(implicit ec: ExecutionContext): Future[Either[LetterNotFound, Letter]] =
+  def getLetter(id: BSONObjectID, identifiers: Set[Identifier])(
+    implicit ec: ExecutionContext): Future[Either[LetterNotFound, Letter]] =
     collection
       .find[JsObject, Letter](
         selector = Json.obj("_id" -> id)
+          deepMerge
+            //identifierQuery(identifiers)
+            Json.obj("recipient.identifier.value" -> "GB1234567890") // findByIdentifierQuery(identifiers.find(_.name == "HMRC-CUS-ORG"))
       )
       .one[Letter] map {
       case Some(c) => Right(c)
-      case None =>
+      case None => {
+        logger.debug(identifiers.toString())
         Left(LetterNotFound(s"Letter not found"))
+      }
     }
+
+//  private def identifierQuery(identifiers: Set[Identifier]): JsObject =
+//    Json.obj(
+//      "$or" ->
+//        identifiers.foldLeft(JsArray())((acc, i) => acc ++ Json.arr(Json.obj(findByIdentifierQuery(i): _*)))
+//    )
+//
+//  //TODO: remove this
+//  private def findByIdentifierQuery(identifier: Identifier): Seq[(String, JsValueWrapper)] =
+//    identifier.enrolment match {
+//      case Some(enrolment) =>
+//        Seq(
+//          "recipient.identifier.name"      -> JsString(identifier.name),
+//          "recipient.identifier.value"     -> JsString(identifier.value),
+//          "recipient.identifier.enrolment" -> JsString(enrolment)
+//        )
+//      case None =>
+//        Seq(
+//          "recipient.identifier.name"  -> JsString(identifier.name),
+//          "recipient.identifier.value" -> JsString(identifier.value)
+//        )
+//    }
+
 }

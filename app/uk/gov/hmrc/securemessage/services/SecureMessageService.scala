@@ -24,7 +24,7 @@ import org.joda.time.DateTime
 import play.api.i18n.Messages
 import play.api.mvc.Request
 import reactivemongo.bson.BSONObjectID
-import uk.gov.hmrc.auth.core.Enrolments
+import uk.gov.hmrc.auth.core.{ Enrolments }
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.securemessage._
@@ -41,6 +41,7 @@ import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryMessageRequest, QueryMessageWrapper, RequestCommon, core }
 import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository }
 import uk.gov.hmrc.securemessage.services.utils.ContentValidator
+
 import scala.concurrent.{ ExecutionContext, Future }
 
 //TODO: refactor service to only accept core model classes as params
@@ -95,9 +96,11 @@ class SecureMessageService @Inject()(
     } yield ApiConversation.fromCore(conversation, identifiers)
   }.value
 
-  def getLetter(id: BSONObjectID)(implicit ec: ExecutionContext): Future[Either[LetterNotFound, ApiLetter]] = {
+  def getLetter(id: BSONObjectID, enrolments: Set[CustomerEnrolment])(
+    implicit ec: ExecutionContext): Future[Either[LetterNotFound, ApiLetter]] = {
+    val identifiers = enrolments.map(_.asIdentifier)
     for {
-      letter <- EitherT(messageRepository.getLetter(id))
+      letter <- EitherT(messageRepository.getLetter(id, identifiers))
     } yield ApiLetter.fromCore(letter)
   }.value
 

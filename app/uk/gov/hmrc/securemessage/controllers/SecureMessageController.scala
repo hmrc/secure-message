@@ -26,21 +26,24 @@ import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.audit.model.EventTypes
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.securemessage._
-import uk.gov.hmrc.securemessage.controllers.model.ClientName
+import uk.gov.hmrc.securemessage.controllers.model.ContentType.{ Conversation, Letter }
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write._
 import uk.gov.hmrc.securemessage.controllers.model.common.CustomerEnrolment
 import uk.gov.hmrc.securemessage.controllers.model.common.read._
 import uk.gov.hmrc.securemessage.controllers.model.common.write._
+import uk.gov.hmrc.securemessage.controllers.model.{ ClientName, ContentType }
 import uk.gov.hmrc.securemessage.controllers.utils.EnrolmentHelper._
 import uk.gov.hmrc.securemessage.controllers.utils.QueryStringValidation
 import uk.gov.hmrc.securemessage.services.{ Auditing, ErrorHandling, SecureMessageService }
 import uk.gov.hmrc.time.DateTimeUtils
+
 import java.net.URLDecoder
 import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.{ Failure, Success }
 import scala.util.control.NonFatal
 
-@SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
+@SuppressWarnings(Array("org.wartremover.warts.All"))
 class SecureMessageController @Inject()(
   cc: ControllerComponents,
   val authConnector: AuthConnector,
@@ -152,16 +155,34 @@ class SecureMessageController @Inject()(
         }
   }
 
-  def getContentDetail(id: String): Action[AnyContent] = Action.async { implicit request =>
-    val decodedId = URLDecoder.decode(id, "UTF-8")
-
-    val objectID = BSONObjectID.parse(decodedId).get
-    logger.logger.debug(request.toString())
-
-    secureMessageService.getLetter(objectID).map {
-      case Right(apiLetter) => Ok(Json.toJson(apiLetter))
-      case _                => NotFound(Json.toJson("No Letter found"))
-    }
+  def getContentDetail(unsafeId: String, contentType: ContentType): Action[AnyContent] = Action.async {
+    implicit request =>
+      BSONObjectID.parse(URLDecoder.decode(unsafeId, "UTF-8")) match {
+        case Success(id) =>
+          authorised()
+            .retrieve(Retrievals.allEnrolments) { authEnrolments =>
+              if (authEnrolments.enrolments.isEmpty) {
+                Future.successful(Unauthorized(Json.toJson("No enrolment found")))
+              } else {
+                val customerEnrolments = mapToCustomerEnrolments(authEnrolments)
+                contentType match {
+                  case Conversation =>
+                    secureMessageService
+                      .getConversation(id, customerEnrolments)
+                      .map {
+                        case Right(apiConversation) => Ok(Json.toJson(apiConversation))
+                        case _                      => NotFound(Json.toJson("No conversation found"))
+                      }
+                  case Letter =>
+                    secureMessageService.getLetter(id, customerEnrolments).map {
+                      case Right(apiLetter) => Ok(Json.toJson(apiLetter))
+                      case _                => NotFound(Json.toJson("No Letter found"))
+                    }
+                }
+              }
+            }
+        case Failure(exception) => Future.successful(BadRequest(Json.toJson(s"Invalid request $exception")))
+      }
   }
 
   def addCustomerReadTime(client: ClientName, conversationId: String): Action[JsValue] = Action.async(parse.json) {
