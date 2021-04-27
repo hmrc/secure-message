@@ -53,9 +53,9 @@ trait ImplicitClassesExtensions {
         if (customerEnrolments.isEmpty) {
           enrolmentKeysFiltered
         } else {
-          enrolmentKeysFiltered.intersect(customerEnrolments)
+          originalEnrolments.intersect(customerEnrolments)
         }
-      customerEnrolmentsFiltered
+      enrolmentKeysFiltered ++ customerEnrolmentsFiltered
     }
   }
 
