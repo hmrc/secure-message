@@ -158,20 +158,23 @@ class SecureMessageController @Inject()(
     val objectID = BSONObjectID.parse(decodedId).get
     logger.logger.debug(request.toString())
 
-    authorised()
-      .retrieve(Retrievals.allEnrolments) { authEnrolments =>
-        if (authEnrolments.enrolments.isEmpty) {
-          Future.successful(Unauthorized(Json.toJson("No enrolment found")))
-        } else {
-          val customerEnrolments = mapToCustomerEnrolments(authEnrolments)
-          secureMessageService
-            .getConversation(objectID, customerEnrolments)
-            .map {
-              case Right(apiConversation) => Ok(Json.toJson(apiConversation))
-              case _                      => NotFound(Json.toJson("No conversation found"))
-            }
-        }
-      }
+//    authorised()
+//      .retrieve(Retrievals.allEnrolments) { authEnrolments =>
+//        if (authEnrolments.enrolments.isEmpty) {
+//          Future.successful(Unauthorized(Json.toJson("No enrolment found")))
+//        } else {
+
+    secureMessageService.getLetter(objectID).map(x => Ok(Json.toJson(x)))
+
+  //  val customerEnrolments = mapToCustomerEnrolments(authEnrolments)
+//          secureMessageService
+//            .getConversation(objectID, customerEnrolments)
+//            .map {
+//              case Right(apiConversation) => Ok(Json.toJson(apiConversation))
+//              case _                      => NotFound(Json.toJson("No conversation found"))
+//            }
+  //    }
+  //  }
 
   }
 

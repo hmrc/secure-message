@@ -22,7 +22,7 @@ import play.api.libs.json.JodaReads.jodaDateReads
 import play.api.libs.json.JodaWrites.jodaDateWrites
 import reactivemongo.bson.BSONObjectID
 
-final case class Letter(
+final case class ApiLetter(
   id: BSONObjectID,
   subject: String,
   senderInformation: SenderInformation,
@@ -50,6 +50,6 @@ object Letter {
   implicit val bsonObjectIdFormat: Format[BSONObjectID] =
     Json.format[BSONObjectID]
 
-  implicit val messageFormat: Format[Letter] =
-    Json.format[Letter]
+  implicit val messageFormat: Format[ApiLetter] =
+    Json.format[ApiLetter]
 }

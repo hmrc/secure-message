@@ -38,7 +38,7 @@ import uk.gov.hmrc.securemessage.models.core.ParticipantType.Customer.eqCustomer
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.{ Customer => PCustomer }
 import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryMessageRequest, QueryMessageWrapper, RequestCommon, core }
-import uk.gov.hmrc.securemessage.repository.ConversationRepository
+import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository }
 import uk.gov.hmrc.securemessage.services.utils.ContentValidator
 
 import scala.concurrent.{ ExecutionContext, Future }
@@ -50,7 +50,8 @@ import scala.concurrent.{ ExecutionContext, Future }
     "org.wartremover.warts.Product",
     "org.wartremover.warts.Serializable"))
 class SecureMessageService @Inject()(
-  repo: ConversationRepository,
+  conversationRepository: ConversationRepository,
+  messageRepository: MessageRepository,
   emailConnector: EmailConnector,
   channelPrefConnector: ChannelPreferencesConnector,
   eisConnector: EISConnector,
@@ -63,7 +64,7 @@ class SecureMessageService @Inject()(
     for {
       _            <- ContentValidator.validate(conversation.messages.head.content)
       participants <- addMissingEmails(conversation.participants)
-      _            <- EitherT(repo.insertIfUnique(conversation.copy(participants = participants.all)))
+      _            <- EitherT(conversationRepository.insertIfUnique(conversation.copy(participants = participants.all)))
       _            <- sendAlert(participants.customer, conversation.alert)
     } yield ()
   }.value
@@ -72,7 +73,7 @@ class SecureMessageService @Inject()(
     implicit ec: ExecutionContext,
     messages: Messages): Future[List[ConversationMetadata]] = {
     val enrolmentsToIdentifiers: Set[Identifier] = enrolments.map(_.asIdentifier)
-    repo.getConversationsFiltered(enrolmentsToIdentifiers, tags).map {
+    conversationRepository.getConversationsFiltered(enrolmentsToIdentifiers, tags).map {
       _.map(ConversationMetadata.coreToConversationMetadata(_, enrolments.map(_.asIdentifier)))
         .sortBy(_.issueDate.getMillis)(Ordering[Long].reverse)
     }
@@ -82,7 +83,7 @@ class SecureMessageService @Inject()(
     implicit ec: ExecutionContext): Future[Either[ConversationNotFound, ApiConversation]] = {
     val identifiers = enrolments.map(_.asIdentifier)
     for {
-      conversation <- EitherT(repo.getConversation(client, conversationId, identifiers))
+      conversation <- EitherT(conversationRepository.getConversation(client, conversationId, identifiers))
     } yield ApiConversation.fromCore(conversation, identifiers)
   }.value
 
@@ -90,9 +91,12 @@ class SecureMessageService @Inject()(
     implicit ec: ExecutionContext): Future[Either[ConversationNotFound, ApiConversation]] = {
     val identifiers = enrolments.map(_.asIdentifier)
     for {
-      conversation <- EitherT(repo.getConversation(id, identifiers))
+      conversation <- EitherT(conversationRepository.getConversation(id, identifiers))
     } yield ApiConversation.fromCore(conversation, identifiers)
   }.value
+
+  def getLetter(id: BSONObjectID)(implicit ec: ExecutionContext): Future[Option[Letter]] =
+    messageRepository.findById(id)
 
   def addCaseWorkerMessageToConversation(client: String, conversationId: String, messagesRequest: CaseworkerMessage)(
     implicit ec: ExecutionContext,
@@ -101,10 +105,10 @@ class SecureMessageService @Inject()(
     def message(sender: Participant) = Message(sender.id, new DateTime(), messagesRequest.content)
     for {
       _            <- ContentValidator.validate(messagesRequest.content)
-      conversation <- EitherT(repo.getConversation(client, conversationId, Set(senderIdentifier)))
+      conversation <- EitherT(conversationRepository.getConversation(client, conversationId, Set(senderIdentifier)))
       sender       <- EitherT(Future(conversation.participantWith(Set(senderIdentifier))))
       participants <- addMissingEmails(conversation.participants)
-      _            <- EitherT(repo.addMessageToConversation(client, conversationId, message(sender)))
+      _            <- EitherT(conversationRepository.addMessageToConversation(client, conversationId, message(sender)))
       _            <- sendAlert(participants.customer, conversation.alert)
     } yield ()
   }.value
@@ -121,10 +125,11 @@ class SecureMessageService @Inject()(
       Message(sender.id, new DateTime(), messagesRequest.content)
     val identifiers: Set[Identifier] = enrolments.asIdentifiers
     for {
-      conversation <- EitherT(repo.getConversation(client, conversationId, identifiers))
+      conversation <- EitherT(conversationRepository.getConversation(client, conversationId, identifiers))
       sender       <- EitherT(Future(conversation.participantWith(identifiers)))
       _            <- forwardMessage(conversationId, messagesRequest)
-      _            <- EitherT(repo.addMessageToConversation(client, conversationId, message(sender))).leftWiden[SecureMessageError]
+      _ <- EitherT(conversationRepository.addMessageToConversation(client, conversationId, message(sender)))
+            .leftWiden[SecureMessageError]
     } yield ()
   }.value
 
@@ -158,9 +163,11 @@ class SecureMessageService @Inject()(
     implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] = {
     val identifiers: Set[Identifier] = enrolments.asIdentifiers
     for {
-      conversation <- EitherT(repo.getConversation(client, conversationId, identifiers)).leftWiden[SecureMessageError]
-      reader       <- EitherT(Future(conversation.participantWith(identifiers))).leftWiden[SecureMessageError]
-      _            <- EitherT(repo.addReadTime(client, conversationId, reader.id, readTime)).leftWiden[SecureMessageError]
+      conversation <- EitherT(conversationRepository.getConversation(client, conversationId, identifiers))
+                       .leftWiden[SecureMessageError]
+      reader <- EitherT(Future(conversation.participantWith(identifiers))).leftWiden[SecureMessageError]
+      _ <- EitherT(conversationRepository.addReadTime(client, conversationId, reader.id, readTime))
+            .leftWiden[SecureMessageError]
     } yield ()
   }.value
 

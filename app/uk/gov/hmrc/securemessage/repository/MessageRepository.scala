@@ -16,12 +16,26 @@
 
 package uk.gov.hmrc.securemessage.repository
 
-class MessageRepository {
-//    extends ReactiveRepository[Message, BSONObjectID](
-//      "message",
-//      connector.db,
-//    ) {
-//
-//  def findById(id: BSONObjectID)(implicit ec: ExecutionContext): Future[Option[Message]] = findById(id, false)
+import play.api.libs.json.{ JsObject, Json }
+import reactivemongo.bson.BSONObjectID
+import uk.gov.hmrc.mongo.{ MongoConnector, ReactiveRepository }
+import uk.gov.hmrc.securemessage.models.core.{ Letter }
+
+import javax.inject.Inject
+import scala.concurrent.{ ExecutionContext, Future }
+
+class MessageRepository @Inject()(implicit connector: MongoConnector)
+    extends ReactiveRepository[Letter, BSONObjectID](
+      "message",
+      connector.db,
+      Letter.letterFormat
+    ) {
+
+  def findById(id: BSONObjectID)(implicit ec: ExecutionContext): Future[Option[Letter]] =
+    collection
+      .find[JsObject, Letter](
+        selector = Json.obj("_id" -> id)
+      )
+      .one[Letter]
 
 }

@@ -35,6 +35,6 @@ final case class Conversation(
 )
 
 object Conversation {
-  implicit val format = ReactiveMongoFormats.objectIdFormats
+  implicit val objectIdFormat = ReactiveMongoFormats.objectIdFormats
   implicit val conversationFormat: OFormat[Conversation] = Json.format[Conversation]
 }
