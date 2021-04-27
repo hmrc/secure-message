@@ -21,28 +21,29 @@ import play.api.libs.json.{ Format, Json }
 import play.api.libs.json.JodaReads.jodaDateReads
 import play.api.libs.json.JodaWrites.jodaDateWrites
 import reactivemongo.bson.BSONObjectID
+import uk.gov.hmrc.securemessage.models.core.Letter
 
 final case class ApiLetter(
-  id: BSONObjectID,
   subject: String,
-  senderInformation: SenderInformation,
-  firstReaderInformation: FirstReaderInformation,
   content: String,
+  firstReaderInformation: FirstReaderInformation,
   readTime: Option[DateTime] = None
 )
 
-final case class SenderInformation(name: Option[String], sent: DateTime)
-
 final case class FirstReaderInformation(name: Option[String], read: DateTime)
 
-object Letter {
+object ApiLetter {
+  def fromCore(letter: Letter): ApiLetter =
+    ApiLetter(
+      letter.subject,
+      letter.content,
+      FirstReaderInformation(None, DateTime.now())
+    )
+
   private val dateFormatString = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
 
   implicit val dateFormat: Format[DateTime] =
     Format(jodaDateReads(dateFormatString), jodaDateWrites(dateFormatString))
-
-  implicit val senderInformationFormat: Format[SenderInformation] =
-    Json.format[SenderInformation]
 
   implicit val firstReaderTime: Format[FirstReaderInformation] =
     Json.format[FirstReaderInformation]

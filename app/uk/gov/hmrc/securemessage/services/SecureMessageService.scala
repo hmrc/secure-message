@@ -31,6 +31,7 @@ import uk.gov.hmrc.securemessage._
 import uk.gov.hmrc.securemessage.connectors.{ ChannelPreferencesConnector, EISConnector, EmailConnector }
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.{ ApiConversation, ConversationMetadata }
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage
+import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.ApiLetter
 import uk.gov.hmrc.securemessage.controllers.model.common.CustomerEnrolment
 import uk.gov.hmrc.securemessage.controllers.model.common.read.FilterTag
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
@@ -40,7 +41,6 @@ import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryMessageRequest, QueryMessageWrapper, RequestCommon, core }
 import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository }
 import uk.gov.hmrc.securemessage.services.utils.ContentValidator
-
 import scala.concurrent.{ ExecutionContext, Future }
 
 //TODO: refactor service to only accept core model classes as params
@@ -95,8 +95,11 @@ class SecureMessageService @Inject()(
     } yield ApiConversation.fromCore(conversation, identifiers)
   }.value
 
-  def getLetter(id: BSONObjectID)(implicit ec: ExecutionContext): Future[Option[Letter]] =
-    messageRepository.findById(id)
+  def getLetter(id: BSONObjectID)(implicit ec: ExecutionContext): Future[Either[LetterNotFound, ApiLetter]] = {
+    for {
+      letter <- EitherT(messageRepository.getLetter(id))
+    } yield ApiLetter.fromCore(letter)
+  }.value
 
   def addCaseWorkerMessageToConversation(client: String, conversationId: String, messagesRequest: CaseworkerMessage)(
     implicit ec: ExecutionContext,

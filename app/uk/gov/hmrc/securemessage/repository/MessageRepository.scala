@@ -19,7 +19,8 @@ package uk.gov.hmrc.securemessage.repository
 import play.api.libs.json.{ JsObject, Json }
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.mongo.{ MongoConnector, ReactiveRepository }
-import uk.gov.hmrc.securemessage.models.core.{ Letter }
+import uk.gov.hmrc.securemessage.{ LetterNotFound }
+import uk.gov.hmrc.securemessage.models.core.Letter
 
 import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
@@ -31,11 +32,14 @@ class MessageRepository @Inject()(implicit connector: MongoConnector)
       Letter.letterFormat
     ) {
 
-  def findById(id: BSONObjectID)(implicit ec: ExecutionContext): Future[Option[Letter]] =
+  def getLetter(id: BSONObjectID)(implicit ec: ExecutionContext): Future[Either[LetterNotFound, Letter]] =
     collection
       .find[JsObject, Letter](
         selector = Json.obj("_id" -> id)
       )
-      .one[Letter]
-
+      .one[Letter] map {
+      case Some(c) => Right(c)
+      case None =>
+        Left(LetterNotFound(s"Letter not found"))
+    }
 }
