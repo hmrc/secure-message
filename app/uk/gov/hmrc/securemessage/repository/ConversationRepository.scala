@@ -28,9 +28,8 @@ import reactivemongo.bson.BSONObjectID
 import reactivemongo.core.errors.DatabaseException
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.mongo.{ MongoConnector, ReactiveRepository }
-import uk.gov.hmrc.securemessage.controllers.model.common.read.FilterTag
 import uk.gov.hmrc.securemessage.models.core.Message.dateFormat
-import uk.gov.hmrc.securemessage.models.core.{ Conversation, Identifier, Message }
+import uk.gov.hmrc.securemessage.models.core.{ Conversation, FilterTag, Identifier, Message }
 import uk.gov.hmrc.securemessage.{ ConversationNotFound, DuplicateConversationError, SecureMessageError, StoreError }
 
 import scala.collection.Seq
@@ -72,7 +71,7 @@ class ConversationRepository @Inject()(implicit connector: MongoConnector)
     implicit ec: ExecutionContext): Future[List[Conversation]] = {
     import uk.gov.hmrc.securemessage.models.core.Conversation.conversationFormat
     val querySelector = (identifiers, tags) match {
-      case (identifiers, _) if identifiers.isEmpty =>
+      case (identifiers, _) if identifiers.isEmpty => //TODO: move this case to service
         JsObject.empty
       case (identifiers, None) =>
         identifierQuery(identifiers)
@@ -121,7 +120,6 @@ class ConversationRepository @Inject()(implicit connector: MongoConnector)
         identifiers.foldLeft(JsArray())((acc, i) => acc ++ Json.arr(Json.obj(findByIdentifierQuery(i): _*)))
     )
 
-  //TODO: remove this
   private def findByIdentifierQuery(identifier: Identifier): Seq[(String, JsValueWrapper)] =
     identifier.enrolment match {
       case Some(enrolment) =>

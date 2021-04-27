@@ -21,9 +21,8 @@ import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.play.PlaySpec
 import play.api.test.Helpers._
 import uk.gov.hmrc.mongo.MongoSpecSupport
-import uk.gov.hmrc.securemessage.controllers.model.common.read.FilterTag
 import uk.gov.hmrc.securemessage.helpers.ConversationUtil
-import uk.gov.hmrc.securemessage.models.core.{ Conversation, Identifier, Message }
+import uk.gov.hmrc.securemessage.models.core.{ Conversation, FilterTag, Identifier, Message }
 import uk.gov.hmrc.securemessage.{ ConversationNotFound, StoreError }
 
 import scala.collection.immutable
