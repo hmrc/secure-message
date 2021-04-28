@@ -40,7 +40,7 @@ import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage
 import uk.gov.hmrc.securemessage.controllers.model.common.CustomerEnrolment
 import uk.gov.hmrc.securemessage.controllers.model.common.read.FilterTag
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
-import uk.gov.hmrc.securemessage.helpers.{ConversationUtil, Resources}
+import uk.gov.hmrc.securemessage.helpers.{ConversationUtil, MessageUtil, Resources}
 import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.securemessage.models.{EmailRequest, QueryMessageWrapper}
 import uk.gov.hmrc.securemessage.repository.{ConversationRepository, MessageRepository}
@@ -260,7 +260,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
 
   "getConversation by id" must {
     "return a message with ApiConversation" in {
-      when(mockConversationRepository.getConversation(any[BSONObjectID], any[Set[Identifier]])(any[ExecutionContext]))
+      when(mockConversationRepository.getConversation(any[String], any[Set[Identifier]])(any[ExecutionContext]))
         .thenReturn(
           Future.successful(
             Right(
@@ -273,7 +273,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
       val result = await(
         service
           .getConversation(
-            BSONObjectID.generate(),
+            BSONObjectID.generate().stringify,
             Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777"))))
       result.right.get.client mustBe "CDCM"
       result.right.get.messages.size mustBe 1
@@ -283,13 +283,13 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
     "return a Left(ConversationNotFound)" in {
       when(
         mockConversationRepository
-          .getConversation(any[BSONObjectID], any[Set[Identifier]])(any[ExecutionContext]))
+          .getConversation(any[String], any[Set[Identifier]])(any[ExecutionContext]))
         .thenReturn(Future(Left(ConversationNotFound(
           "Conversation not found for client: cdcm, conversationId: D-80542-20201120, enrolment: GB1234567890"))))
       val result = await(
         service
           .getConversation(
-            BSONObjectID.generate(),
+            BSONObjectID.generate().stringify,
             Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777"))))
       result mustBe
         Left(
@@ -301,41 +301,34 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
 
   "getMessage by id" must {
     "return a message with ApiLetter" in {
-      when(mockConversationRepository.getLetter(any[BSONObjectID], any[Set[Identifier]])(any[ExecutionContext]))
+      when(mockMessageRepository.getLetter(any[String], any[Set[Identifier]])(any[ExecutionContext]))
         .thenReturn(
-          Future.successful(
+          Future(
             Right(
-              ConversationUtil.getFullConversation(
-                BSONObjectID.generate,
-                "D-80542-20201120",
-                "HMRC-CUS-ORG",
-                "EORINumber",
-                "GB1234567890"))))
+              MessageUtil.getMessage("subject", "content"))))
       val result = await(
         service
-          .getConversation(
-            BSONObjectID.generate(),
+          .getLetter(
+            BSONObjectID.generate().stringify,
             Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777"))))
-      result.right.get.client mustBe "CDCM"
-      result.right.get.messages.size mustBe 1
-      result.right.get.subject mustBe "MRN: 19GB4S24GC3PPFGVR7"
+      result.right.get.subject mustBe "subject"
+      result.right.get.content mustBe "content"
     }
 
-    "return a Left(ConversationNotFound)" in {
+    "return a Left(LetterNotFound)" in {
       when(
-        mockConversationRepository
-          .getConversation(any[BSONObjectID], any[Set[Identifier]])(any[ExecutionContext]))
-        .thenReturn(Future(Left(ConversationNotFound(
-          "Conversation not found for client: cdcm, conversationId: D-80542-20201120, enrolment: GB1234567890"))))
+        mockMessageRepository.getLetter(any[String], any[Set[Identifier]])(any[ExecutionContext]))
+        .thenReturn(Future(Left(LetterNotFound(
+          "Letter not found"))))
       val result = await(
         service
-          .getConversation(
-            BSONObjectID.generate(),
+          .getLetter(
+            BSONObjectID.generate().stringify,
             Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777"))))
       result mustBe
         Left(
-          ConversationNotFound(
-            s"Conversation not found for client: cdcm, conversationId: D-80542-20201120, enrolment: GB1234567890"))
+          LetterNotFound(
+            s"Letter not found"))
     }
   }
 

@@ -25,21 +25,21 @@ import uk.gov.hmrc.securemessage._
 
 trait ErrorHandling extends Logging {
 
-  def handleErrors(client: ClientName, conversationId: String, error: Throwable): Result = {
+  def handleErrors(messageId: String, error: Throwable, clientName: Option[ClientName] = None): Result = {
     val errMsg =
-      s"Error on conversation with client: $client, conversationId: $conversationId, error message: ${error.getMessage}"
+      s"Error on conversation with client: $clientName, conversationId: $messageId, error message: ${error.getMessage}"
     logger.error(error.getMessage, error.getCause)
     val jsonError = Json.toJson(errMsg)
     error match {
-      case EmailSendingError(_)                        => Created(jsonError)
-      case NoReceiverEmailError(_)                     => Created(jsonError)
-      case DuplicateConversationError(_, _)            => Conflict(jsonError)
-      case InvalidContent(_, _) | InvalidRequest(_, _) => BadRequest(jsonError)
-      case ParticipantNotFound(_)                      => Unauthorized(jsonError)
-      case ConversationNotFound(_)                     => NotFound(jsonError)
-      case EisForwardingError(_)                       => BadGateway(jsonError)
-      case StoreError(_, _)                            => InternalServerError(jsonError)
-      case _                                           => InternalServerError(jsonError)
+      case EmailSendingError(_)                                              => Created(jsonError)
+      case NoReceiverEmailError(_)                                           => Created(jsonError)
+      case DuplicateConversationError(_, _)                                  => Conflict(jsonError)
+      case InvalidContent(_, _) | InvalidRequest(_, _) | InvalidBsonId(_, _) => BadRequest(jsonError)
+      case ParticipantNotFound(_)                                            => Unauthorized(jsonError)
+      case ConversationNotFound(_) | LetterNotFound(_)                       => NotFound(jsonError)
+      case EisForwardingError(_)                                             => BadGateway(jsonError)
+      case StoreError(_, _)                                                  => InternalServerError(jsonError)
+      case _                                                                 => InternalServerError(jsonError)
     }
   }
 

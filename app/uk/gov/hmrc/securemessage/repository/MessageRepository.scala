@@ -17,15 +17,15 @@
 package uk.gov.hmrc.securemessage.repository
 
 import play.api.libs.json.Json.JsValueWrapper
-import play.api.libs.json.{JsArray, JsObject, JsString, Json}
+import play.api.libs.json.{ JsArray, JsObject, JsString, Json }
 import reactivemongo.bson.BSONObjectID
-import uk.gov.hmrc.mongo.{MongoConnector, ReactiveRepository}
-import uk.gov.hmrc.securemessage.{InvalidBsonId, LetterNotFound, SecureMessageError}
-import uk.gov.hmrc.securemessage.models.core.{Identifier, Letter}
+import uk.gov.hmrc.mongo.{ MongoConnector, ReactiveRepository }
+import uk.gov.hmrc.securemessage.{ InvalidBsonId, LetterNotFound, SecureMessageError }
+import uk.gov.hmrc.securemessage.models.core.{ Identifier, Letter }
 
 import javax.inject.Inject
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
+import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.{ Failure, Success }
 
 class MessageRepository @Inject()(implicit connector: MongoConnector)
     extends ReactiveRepository[Letter, BSONObjectID](
@@ -35,25 +35,25 @@ class MessageRepository @Inject()(implicit connector: MongoConnector)
     ) {
 
   def getLetter(id: String, identifiers: Set[Identifier])(
-    implicit ec: ExecutionContext): Future[Either[SecureMessageError, Letter]] = {
-
+    implicit ec: ExecutionContext): Future[Either[SecureMessageError, Letter]] =
     BSONObjectID.parse(id) match {
-      case Success(bsonId) => collection
-        .find[JsObject, Letter](
-          selector = Json.obj("_id" -> bsonId)
-            deepMerge
-            identifierQuery(identifiers)
-        )
-        .one[Letter] map {
-        case Some(c) => Right(c)
-        case None => {
-          logger.debug(identifiers.toString())
-          Left(LetterNotFound(s"Letter not found"))
+      case Success(bsonId) =>
+        collection
+          .find[JsObject, Letter](
+            selector = Json.obj("_id" -> bsonId)
+              deepMerge
+                identifierQuery(identifiers)
+          )
+          .one[Letter] map {
+          case Some(c) => Right(c)
+          case None => {
+            logger.debug(identifiers.toString())
+            Left(LetterNotFound(s"Letter not found"))
+          }
         }
-      }
-      case Failure(exception) => Future.successful(Left(InvalidBsonId(s"Invalid BsonId: ${exception.getMessage} ", Some(exception))))
+      case Failure(exception) =>
+        Future.successful(Left(InvalidBsonId(s"Invalid BsonId: ${exception.getMessage} ", Some(exception))))
     }
-  }
 
   private def identifierQuery(identifiers: Set[Identifier]): JsObject =
     Json.obj(

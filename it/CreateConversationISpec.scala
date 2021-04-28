@@ -93,7 +93,7 @@ class CreateConversationISpec extends ISpec {
           .put(new File("./it/resources/cdcm/conversation-request-invalid-html.json"))
           .futureValue
       response.status mustBe BAD_REQUEST
-      response.body mustBe "\"Error on conversation with client: CDCM, conversationId: D-80542-20201120, error message: Html contains disallowed tags, attributes or protocols within the tags: matt. For allowed elements see class org.jsoup.safety.Whitelist.relaxed()\""
+      response.body mustBe "\"Error on conversation with client: Some(CDCM), conversationId: D-80542-20201120, error message: Html contains disallowed tags, attributes or protocols within the tags: matt. For allowed elements see class org.jsoup.safety.Whitelist.relaxed()\""
     }
   }
 

@@ -31,10 +31,10 @@ import uk.gov.hmrc.mongo.{ MongoConnector, ReactiveRepository }
 import uk.gov.hmrc.securemessage.controllers.model.common.read.FilterTag
 import uk.gov.hmrc.securemessage.models.core.Message.dateFormat
 import uk.gov.hmrc.securemessage.models.core.{ Conversation, Identifier, Message }
-import uk.gov.hmrc.securemessage.{ ConversationNotFound, DuplicateConversationError, SecureMessageError, StoreError }
-
+import uk.gov.hmrc.securemessage.{ ConversationNotFound, DuplicateConversationError, InvalidBsonId, SecureMessageError, StoreError }
 import scala.collection.Seq
 import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.{ Failure, Success }
 
 @Singleton
 @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.Nothing"))
@@ -115,17 +115,23 @@ class ConversationRepository @Inject()(implicit connector: MongoConnector)
         Left(ConversationNotFound(s"Conversation not found for identifier: $identifiers"))
     }
 
-  def getConversation(id: BSONObjectID, identifiers: Set[Identifier])(
+  def getConversation(id: String, identifiers: Set[Identifier])(
     implicit ec: ExecutionContext): Future[Either[SecureMessageError, Conversation]] =
-    collection
-      .find[JsObject, Conversation](
-        selector = Json.obj("_id" -> id)
-          deepMerge identifierQuery(identifiers),
-        None)
-      .one[Conversation] map {
-      case Some(c) => Right(c)
-      case None =>
-        Left(ConversationNotFound(s"Conversation not found for identifier: $identifiers"))
+    BSONObjectID.parse(id) match {
+      case Success(bsonId) =>
+        collection
+          .find[JsObject, Conversation](
+            selector = Json.obj("_id" -> bsonId)
+              deepMerge identifierQuery(identifiers),
+            None)
+          .one[Conversation] map {
+          case Some(c) => Right(c)
+          case None =>
+            Left(ConversationNotFound(s"Conversation not found for identifier: $identifiers"))
+        }
+      case Failure(exception) =>
+        Future.successful(Left(InvalidBsonId(s"Invalid BsonId: ${exception.getMessage} ", Some(exception))))
+
     }
 
   private def identifierQuery(identifiers: Set[Identifier]): JsObject =
