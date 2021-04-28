@@ -258,6 +258,88 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
     }
   }
 
+  "getConversation by id" must {
+    "return a message with ApiConversation" in {
+      when(mockConversationRepository.getConversation(any[BSONObjectID], any[Set[Identifier]])(any[ExecutionContext]))
+        .thenReturn(
+          Future.successful(
+            Right(
+              ConversationUtil.getFullConversation(
+                BSONObjectID.generate,
+                "D-80542-20201120",
+                "HMRC-CUS-ORG",
+                "EORINumber",
+                "GB1234567890"))))
+      val result = await(
+        service
+          .getConversation(
+            BSONObjectID.generate(),
+            Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777"))))
+      result.right.get.client mustBe "CDCM"
+      result.right.get.messages.size mustBe 1
+      result.right.get.subject mustBe "MRN: 19GB4S24GC3PPFGVR7"
+    }
+
+    "return a Left(ConversationNotFound)" in {
+      when(
+        mockConversationRepository
+          .getConversation(any[BSONObjectID], any[Set[Identifier]])(any[ExecutionContext]))
+        .thenReturn(Future(Left(ConversationNotFound(
+          "Conversation not found for client: cdcm, conversationId: D-80542-20201120, enrolment: GB1234567890"))))
+      val result = await(
+        service
+          .getConversation(
+            BSONObjectID.generate(),
+            Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777"))))
+      result mustBe
+        Left(
+          ConversationNotFound(
+            s"Conversation not found for client: cdcm, conversationId: D-80542-20201120, enrolment: GB1234567890"))
+    }
+  }
+
+
+  "getMessage by id" must {
+    "return a message with ApiLetter" in {
+      when(mockConversationRepository.getLetter(any[BSONObjectID], any[Set[Identifier]])(any[ExecutionContext]))
+        .thenReturn(
+          Future.successful(
+            Right(
+              ConversationUtil.getFullConversation(
+                BSONObjectID.generate,
+                "D-80542-20201120",
+                "HMRC-CUS-ORG",
+                "EORINumber",
+                "GB1234567890"))))
+      val result = await(
+        service
+          .getConversation(
+            BSONObjectID.generate(),
+            Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777"))))
+      result.right.get.client mustBe "CDCM"
+      result.right.get.messages.size mustBe 1
+      result.right.get.subject mustBe "MRN: 19GB4S24GC3PPFGVR7"
+    }
+
+    "return a Left(ConversationNotFound)" in {
+      when(
+        mockConversationRepository
+          .getConversation(any[BSONObjectID], any[Set[Identifier]])(any[ExecutionContext]))
+        .thenReturn(Future(Left(ConversationNotFound(
+          "Conversation not found for client: cdcm, conversationId: D-80542-20201120, enrolment: GB1234567890"))))
+      val result = await(
+        service
+          .getConversation(
+            BSONObjectID.generate(),
+            Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777"))))
+      result mustBe
+        Left(
+          ConversationNotFound(
+            s"Conversation not found for client: cdcm, conversationId: D-80542-20201120, enrolment: GB1234567890"))
+    }
+  }
+
+
   "Adding a customer message to a conversation" must {
 
     "update the database when the customer has a participating enrolment" in new AddCustomerMessageTestContext(

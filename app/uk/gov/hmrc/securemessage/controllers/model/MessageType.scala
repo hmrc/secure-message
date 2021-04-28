@@ -14,19 +14,15 @@
  * limitations under the License.
  */
 
-class GetMessagesISpec extends ISpec {
+package uk.gov.hmrc.securemessage.controllers.model
 
-  " GET request to /secure-messaging/messages/id" must {
-    "return correct message" in {
-      val response =
-        wsClient
-          .url(resource("/secure-messaging/messages/607d5f924a0000a569a9c328"))
-          .get()
-          .futureValue
-      response.status mustBe (200)
-      val responseBody = response.body
-      responseBody must include("This is subject of message")
-      responseBody must include("Message content")
-    }
-  }
+import enumeratum.EnumEntry.Snakecase
+import enumeratum.{ Enum, EnumEntry, PlayEnum }
+
+sealed trait MessageType extends EnumEntry with Snakecase
+
+object MessageType extends Enum[MessageType] with PlayEnum[MessageType] {
+  val values = findValues
+  case object Conversation extends MessageType
+  case object Letter extends MessageType
 }

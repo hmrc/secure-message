@@ -116,7 +116,7 @@ class ConversationRepository @Inject()(implicit connector: MongoConnector)
     }
 
   def getConversation(id: BSONObjectID, identifiers: Set[Identifier])(
-    implicit ec: ExecutionContext): Future[Either[ConversationNotFound, Conversation]] =
+    implicit ec: ExecutionContext): Future[Either[SecureMessageError, Conversation]] =
     collection
       .find[JsObject, Conversation](
         selector = Json.obj("_id" -> id)
