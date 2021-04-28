@@ -32,25 +32,28 @@ import play.api.libs.json.{ JsObject, JsValue, Json }
 import play.api.mvc.{ Request, Result }
 import play.api.test.Helpers.{ POST, PUT, contentAsJson, contentAsString, defaultAwaitTimeout, status, stubMessages }
 import play.api.test.{ FakeHeaders, FakeRequest, Helpers, NoMaterializer }
-import reactivemongo.bson.BSONObjectID
+import reactivemongo.bson.{ BSONObjectID }
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.authorise.Predicate
 import uk.gov.hmrc.auth.core.retrieve.Retrieval
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.securemessage._
-import uk.gov.hmrc.securemessage.controllers.model.ClientName
+import uk.gov.hmrc.securemessage.controllers.model.{ ClientName, MessageType }
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.{ ApiConversation, ConversationMetadata }
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.{ CaseworkerMessage, CdcmConversation }
+import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.{ ApiLetter, FirstReaderInformation }
 import uk.gov.hmrc.securemessage.controllers.model.common.CustomerEnrolment
 import uk.gov.hmrc.securemessage.controllers.model.common.read.FilterTag
 import uk.gov.hmrc.securemessage.controllers.model.common.write.{ CustomerMessage, ReadTime }
 import uk.gov.hmrc.securemessage.helpers.Resources
-import uk.gov.hmrc.securemessage.models.core.Conversation
+import uk.gov.hmrc.securemessage.models.core.{ Conversation, Letter }
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
 import uk.gov.hmrc.securemessage.services.SecureMessageService
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ ExecutionContext, Future }
+import uk.gov.hmrc.securemessage.models.core.Letter._
 
 @SuppressWarnings(
   Array(
@@ -277,6 +280,104 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     }
   }
 
+  "getContentDetail" must {
+    val objectID = BSONObjectID.generate()
+    "return a conversation" in new GetConversationByIdTestCase(
+      storedConversation = Some(
+        Resources.readJson("model/api/cdcm/read/api-conversation.json").as[JsObject] + ("_id" -> Json.toJson(
+          objectID)))) {
+      val response: Future[Result] = controller
+        .getContentDetail(objectID.stringify, MessageType.Conversation)
+        .apply(FakeRequest("GET", "/"))
+      status(response) mustBe OK
+      contentAsJson(response).as[ApiConversation] mustBe apiConversation.right.get
+
+    }
+
+    "return a conversation when auth enrolments hold multiple identifiers and enrolments" in new GetConversationByIdTestCase(
+      storedConversation = Some(
+        Resources.readJson("model/api/cdcm/read/api-conversation.json").as[JsObject] + ("_id" -> Json.toJson(
+          objectID))),
+      Set(
+        testEnrolment,
+        CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB023456800"),
+        CustomerEnrolment("IR-SA", "NINO", "0123456789")
+      )
+    ) {
+      val response: Future[Result] = controller
+        .getContentDetail(objectID.stringify, MessageType.Conversation)
+        .apply(FakeRequest("GET", "/"))
+      status(response) mustBe OK
+      contentAsJson(response).as[ApiConversation] mustBe apiConversation.right.get
+
+    }
+
+    "return Not Found (404) with a JSON body of No conversation found" in new GetConversationByIdTestCase(
+      storedConversation = None) {
+      val response: Future[Result] = controller
+        .getContentDetail(objectID.stringify, MessageType.Conversation)
+        .apply(FakeRequest("GET", "/"))
+      status(response) mustBe NOT_FOUND
+      contentAsString(response) mustBe "\"No conversation found\""
+    }
+
+    "return Unauthorized (401) when no enrolment found" in new TestCase(Set.empty[CustomerEnrolment]) {
+      private val response = controller
+        .getContentDetail(objectID.stringify, MessageType.Conversation)
+        .apply(FakeRequest("GET", "/"))
+      status(response) mustBe UNAUTHORIZED
+      contentAsString(response) mustBe "\"No enrolment found\""
+    }
+
+    "return a letter" in new GetMessageByIdTestCase(
+      storedLetter = Some(Resources.readJson("model/core/letter.json").as[JsObject] + ("_id" -> Json.toJson(objectID))
+        + ("lastUpdated"                                                                     -> Json.toJson(DateTime.now())))) {
+      val response: Future[Result] = controller
+        .getContentDetail(objectID.stringify, MessageType.Letter)
+        .apply(FakeRequest("GET", "/"))
+      status(response) mustBe OK
+      contentAsJson(response).as[ApiLetter] mustBe apiLetter.get
+
+    }
+
+    "return a letter when auth enrolments hold multiple identifiers and enrolments " in new GetMessageByIdTestCase(
+      storedLetter = Some(
+        Resources.readJson("model/core/letter.json").as[JsObject] + ("_id" -> Json.toJson(objectID))
+          + ("lastUpdated"                                                 -> Json.toJson(DateTime.now()))),
+      Set(
+        testEnrolment,
+        CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB023456800"),
+        CustomerEnrolment("IR-SA", "NINO", "0123456789")
+      )
+    ) {
+      val response: Future[Result] = controller
+        .getContentDetail(objectID.stringify, MessageType.Letter)
+        .apply(FakeRequest("GET", "/"))
+      status(response) mustBe OK
+      contentAsJson(response).as[ApiLetter] mustBe apiLetter.get
+
+    }
+
+    "return Not Found (404) with a JSON body of No letter found" in new TestCase {
+      when(mockSecureMessageService.getLetter(any[BSONObjectID], any[Set[CustomerEnrolment]])(any[ExecutionContext]))
+        .thenReturn(Future.successful(Left(LetterNotFound("letter not found"))))
+
+      val response: Future[Result] = controller
+        .getContentDetail(objectID.stringify, MessageType.Letter)
+        .apply(FakeRequest("GET", "/"))
+      status(response) mustBe NOT_FOUND
+      contentAsString(response) mustBe "\"No Letter found\""
+    }
+
+    "return Unauthorized (401) when no enrolment found for a letter" in new TestCase(Set.empty[CustomerEnrolment]) {
+      private val response = controller
+        .getContentDetail(objectID.stringify, MessageType.Letter)
+        .apply(FakeRequest("GET", "/"))
+      status(response) mustBe UNAUTHORIZED
+      contentAsString(response) mustBe "\"No enrolment found\""
+    }
+  }
+
   "createCaseworkerMessage" must {
     "return CREATED (201) when with valid payload" in new CreateCaseWorkerMessageTestCase(
       requestBody = Resources.readJson("model/api/cdcm/write/caseworker-message.json"),
@@ -455,6 +556,31 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       mockSecureMessageService.getConversation(any[String], any[String], any[Set[CustomerEnrolment]])(
         any[ExecutionContext]))
       .thenReturn(Future.successful(apiConversation))
+  }
+
+  @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
+  class GetConversationByIdTestCase(
+    storedConversation: Option[JsValue],
+    authEnrolments: Set[CustomerEnrolment] = Set(testEnrolment))
+      extends TestCase(authEnrolments) {
+    val apiConversation: Either[ConversationNotFound, ApiConversation] = storedConversation match {
+      case Some(conversation) => Right(conversation.as[ApiConversation])
+      case _                  => Left(ConversationNotFound("conversations not found"))
+    }
+    when(
+      mockSecureMessageService.getConversation(any[BSONObjectID], any[Set[CustomerEnrolment]])(any[ExecutionContext]))
+      .thenReturn(Future.successful(apiConversation))
+  }
+
+  class GetMessageByIdTestCase(
+    storedLetter: Option[JsValue],
+    authEnrolments: Set[CustomerEnrolment] = Set(testEnrolment))
+      extends TestCase(authEnrolments) {
+    val letter = storedLetter.map(l => l.validate[Letter]).map(_.get)
+    val apiLetter = letter.map(l => ApiLetter(l.subject, l.content, FirstReaderInformation(None, DateTime.now()), None))
+    val successLetter: Either[Nothing, ApiLetter] = Right(apiLetter.get)
+    when(mockSecureMessageService.getLetter(any[BSONObjectID], any[Set[CustomerEnrolment]])(any[ExecutionContext]))
+      .thenReturn(Future.successful(successLetter))
   }
 
   class CreateCaseWorkerMessageTestCase(requestBody: JsValue, serviceResponse: Future[Either[SecureMessageError, Unit]])

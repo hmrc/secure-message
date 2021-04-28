@@ -16,14 +16,16 @@
 
 package uk.gov.hmrc.securemessage.repository
 
-import play.api.libs.json.{ JsObject, Json }
+import play.api.libs.json.Json.JsValueWrapper
+import play.api.libs.json.{JsArray, JsObject, JsString, Json}
 import reactivemongo.bson.BSONObjectID
-import uk.gov.hmrc.mongo.{ MongoConnector, ReactiveRepository }
-import uk.gov.hmrc.securemessage.LetterNotFound
-import uk.gov.hmrc.securemessage.models.core.{ Identifier, Letter }
+import uk.gov.hmrc.mongo.{MongoConnector, ReactiveRepository}
+import uk.gov.hmrc.securemessage.{InvalidBsonId, LetterNotFound, SecureMessageError}
+import uk.gov.hmrc.securemessage.models.core.{Identifier, Letter}
 
 import javax.inject.Inject
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 class MessageRepository @Inject()(implicit connector: MongoConnector)
     extends ReactiveRepository[Letter, BSONObjectID](
@@ -32,43 +34,46 @@ class MessageRepository @Inject()(implicit connector: MongoConnector)
       Letter.letterFormat
     ) {
 
-  def getLetter(id: BSONObjectID, identifiers: Set[Identifier])(
-    implicit ec: ExecutionContext): Future[Either[LetterNotFound, Letter]] =
-    collection
-      .find[JsObject, Letter](
-        selector = Json.obj("_id" -> id)
-          deepMerge
-            //identifierQuery(identifiers)
-            Json.obj("recipient.identifier.value" -> "GB1234567890") // findByIdentifierQuery(identifiers.find(_.name == "HMRC-CUS-ORG"))
-      )
-      .one[Letter] map {
-      case Some(c) => Right(c)
-      case None => {
-        logger.debug(identifiers.toString())
-        Left(LetterNotFound(s"Letter not found"))
-      }
-    }
+  def getLetter(id: String, identifiers: Set[Identifier])(
+    implicit ec: ExecutionContext): Future[Either[SecureMessageError, Letter]] = {
 
-//  private def identifierQuery(identifiers: Set[Identifier]): JsObject =
-//    Json.obj(
-//      "$or" ->
-//        identifiers.foldLeft(JsArray())((acc, i) => acc ++ Json.arr(Json.obj(findByIdentifierQuery(i): _*)))
-//    )
-//
-//  //TODO: remove this
-//  private def findByIdentifierQuery(identifier: Identifier): Seq[(String, JsValueWrapper)] =
-//    identifier.enrolment match {
-//      case Some(enrolment) =>
-//        Seq(
-//          "recipient.identifier.name"      -> JsString(identifier.name),
-//          "recipient.identifier.value"     -> JsString(identifier.value),
-//          "recipient.identifier.enrolment" -> JsString(enrolment)
-//        )
-//      case None =>
-//        Seq(
-//          "recipient.identifier.name"  -> JsString(identifier.name),
-//          "recipient.identifier.value" -> JsString(identifier.value)
-//        )
-//    }
+    BSONObjectID.parse(id) match {
+      case Success(bsonId) => collection
+        .find[JsObject, Letter](
+          selector = Json.obj("_id" -> bsonId)
+            deepMerge
+            identifierQuery(identifiers)
+        )
+        .one[Letter] map {
+        case Some(c) => Right(c)
+        case None => {
+          logger.debug(identifiers.toString())
+          Left(LetterNotFound(s"Letter not found"))
+        }
+      }
+      case Failure(exception) => Future.successful(Left(InvalidBsonId(s"Invalid BsonId: ${exception.getMessage} ", Some(exception))))
+    }
+  }
+
+  private def identifierQuery(identifiers: Set[Identifier]): JsObject =
+    Json.obj(
+      "$or" ->
+        identifiers.foldLeft(JsArray())((acc, i) => acc ++ Json.arr(Json.obj(findByIdentifierQuery(i): _*)))
+    )
+
+  private def findByIdentifierQuery(identifier: Identifier): Seq[(String, JsValueWrapper)] =
+    identifier.enrolment match {
+      case Some(enrolment) =>
+        Seq(
+          "recipient.identifier.name"      -> JsString(identifier.name),
+          "recipient.identifier.value"     -> JsString(identifier.value),
+          "recipient.identifier.enrolment" -> JsString(enrolment)
+        )
+      case None =>
+        Seq(
+          "recipient.identifier.name"  -> JsString(identifier.name),
+          "recipient.identifier.value" -> JsString(identifier.value)
+        )
+    }
 
 }

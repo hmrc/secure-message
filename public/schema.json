@@ -381,7 +381,7 @@
         } ]
       }
     },
-    "/secure-messaging/messages/{id}" : {
+    "/secure-messaging/messages/{content}/{id}" : {
       "get" : {
         "operationId" : "getContentDetail",
         "tags" : [ "app" ],
@@ -405,6 +405,13 @@
           "name" : "id",
           "schema" : {
             "type" : "string"
+          },
+          "required" : true
+        }, {
+          "in" : "path",
+          "name" : "content",
+          "schema" : {
+            "type" : "contenttype"
           },
           "required" : true
         } ]

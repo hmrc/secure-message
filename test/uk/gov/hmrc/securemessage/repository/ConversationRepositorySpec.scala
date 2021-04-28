@@ -256,6 +256,27 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
     }
   }
 
+  "A conversation with object Id" should {
+    val conversation = ConversationUtil.getMinimalConversation("123")
+    "be returned for a participating enrolment" in new TestContext(conversations = Seq(conversation)) {
+      val result: Either[ConversationNotFound, Conversation] =
+        await(
+          repository
+            .getConversation(conversation._id, conversation.participants.map(_.identifier).toSet))
+      result.right.get mustBe conversation
+    }
+
+    "not be returned if the enrolment is not a participant" in new TestContext(
+      conversations = Seq(conversation)
+    ) {
+      private val modifierParticipantEnrolments: Set[Identifier] =
+        conversation.participants.map(id => id.identifier.copy(value = id.identifier.value + "1")).toSet
+      val result: Either[ConversationNotFound, Conversation] =
+        await(repository.getConversation(conversation._id, modifierParticipantEnrolments))
+      result mustBe Left(ConversationNotFound(s"Conversation not found for identifier: $modifierParticipantEnrolments"))
+    }
+  }
+
   class TestContext(conversations: Seq[Conversation]) {
     val repository: ConversationRepository = new ConversationRepository()
     await(Future.sequence(conversations.map(repository.insert)))

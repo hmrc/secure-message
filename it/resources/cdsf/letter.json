@@ -8,7 +8,9 @@
     },
     "email" : "test@test.com"
   },
-
+  "tags" : {
+    "notificationType" : "DIRECT-DEBIT"
+  },
   "subject" : "Test have subjects11",
   "renderUrl" : {
     "service" : "message",
@@ -34,6 +36,11 @@
       "surname" : "Banner",
       "honours" : "Green",
       "line1" : "Line1"
+    },
+    "data" : {
+      "email" : "test@test.com",
+      "date" : "2021-04-26",
+      "subject" : "Test have subjects"
     }
   },
   "alerts" : {
