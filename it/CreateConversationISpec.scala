@@ -20,7 +20,6 @@ import play.api.http.{ ContentTypes, HeaderNames }
 import play.api.libs.json.Json
 import play.api.libs.ws.{ WSClient, WSResponse }
 import play.api.test.Helpers._
-
 import java.io.File
 
 @DoNotDiscover
@@ -93,7 +92,10 @@ class CreateConversationISpec extends ISpec {
           .put(new File("./it/resources/cdcm/conversation-request-invalid-html.json"))
           .futureValue
       response.status mustBe BAD_REQUEST
-      response.body mustBe """"Error on conversation with client: CDCM, conversationId: D-80542-20201120, error message: Html contains disallowed tags, attributes or protocols within the tags: matt. For allowed elements see class org.jsoup.safety.Whitelist.relaxed()"""".stripMargin
+      response.body mustBe
+        "\"Error on conversation with client: Some(CDCM), conversationId: D-80542-20201120, " +
+          "error message: Html contains disallowed tags, " +
+          "attributes or protocols within the tags: matt. For allowed elements see class org.jsoup.safety.Whitelist.relaxed()\""
     }
   }
 

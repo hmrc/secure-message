@@ -18,6 +18,7 @@ package uk.gov.hmrc.securemessage.helpers
 
 import cats.data.NonEmptyList
 import org.joda.time.DateTime
+import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CdcmConversation
 import uk.gov.hmrc.securemessage.controllers.model.common.write.{ Customer, Recipient }
 import uk.gov.hmrc.securemessage.models.core
@@ -37,6 +38,7 @@ object ConversationUtil {
   }
   @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
   def getFullConversation(
+    objectId: BSONObjectID = BSONObjectID.generate,
     id: String,
     enrolmentKey: String,
     enrolmentName: String,
@@ -50,6 +52,7 @@ object ConversationUtil {
     messageCreationDate: String = "2020-11-10T15:00:01.000"
   ): Conversation =
     Conversation(
+      objectId,
       "CDCM",
       id,
       ConversationStatus.Open,
@@ -86,8 +89,9 @@ object ConversationUtil {
       alert
     )
 
-  def getMinimalConversation(id: String): Conversation =
+  def getMinimalConversation(id: String, objectId: BSONObjectID = BSONObjectID.generate): Conversation =
     Conversation(
+      objectId,
       "cdcm",
       id,
       ConversationStatus.Open,

@@ -14,17 +14,8 @@
  * limitations under the License.
  */
 
-import sbt.Keys.parallelExecution
-import sbt._
-import scoverage.ScoverageKeys
+package uk.gov.hmrc.securemessage.filters
 
-object ScoverageSettings {
-  def apply(): Seq[Def.Setting[_ >: String with Double with Boolean]] =
-    Seq( // Semicolon-separated list of regexes matching classes to exclude
-      ScoverageKeys.coverageExcludedPackages := "<empty>;.*Reverse.*;.*(config|testonly).*;.*(BuildInfo|Routes).*",
-      ScoverageKeys.coverageMinimum := 86.00,
-      ScoverageKeys.coverageFailOnMinimum := true,
-      ScoverageKeys.coverageHighlighting := true,
-      parallelExecution in ConfigKey.configurationToKey(Test) := false
-    )
+object EnrolmentKey {
+  val HMRC_CUS_ORG = "HMRC-CUS-ORG"
 }

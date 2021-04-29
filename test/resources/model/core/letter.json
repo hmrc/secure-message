@@ -1,0 +1,43 @@
+{
+  "recipient" : {
+    "regime" : "cds",
+    "identifier" : {
+      "name" : "EORINumber",
+      "value" : "GB1234567890",
+      "enrolment" : "HMRC-CUS-ORG"
+    },
+    "email" : "test@test.com"
+  },
+
+  "subject" : "Test have subjects11",
+  "renderUrl" : {
+    "service" : "message",
+    "url" : "/messages/6086dc1f4700009fed2f5745/content"
+  },
+  "validFrom" : "2021-04-26",
+  "externalRef" : {
+    "id" : "1234567891234567892",
+    "source" : "mdtp"
+  },
+  "hash" : "LfK755SXhY2rlc9kL50ohJZ2dvRzZGjU74kjcdJMAcY=",
+  "alertQueue" : "DEFAULT",
+  "alertFrom" : "2021-04-26",
+  "status" : "succeeded",
+  "content" : "<h2>Test content</h2>",
+  "statutory" : false,
+  "alertDetails" : {
+    "templateId" : "cds_ddi_setup_dcs_alert",
+    "recipientName" : {
+      "title" : "Dr",
+      "forename" : "Bruce",
+      "secondForename" : "Hulk",
+      "surname" : "Banner",
+      "honours" : "Green",
+      "line1" : "Line1"
+    }
+  },
+  "alerts" : {
+    "emailAddress" : "test@test.com",
+    "success" : true
+  }
+}

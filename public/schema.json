@@ -381,6 +381,42 @@
         } ]
       }
     },
+    "/secure-messaging/messages/{content}/{id}" : {
+      "get" : {
+        "operationId" : "getContentDetail",
+        "tags" : [ "app" ],
+        "summary" : "Gets conversation/message by id",
+        "security" : [ {
+          "bearerToken" : [ ]
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "conversation/message was received"
+          },
+          "401" : {
+            "description" : "unauthorised customer when they don't have an enrolment"
+          },
+          "404" : {
+            "description" : "conversation/message not found"
+          }
+        },
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : true
+        }, {
+          "in" : "path",
+          "name" : "content",
+          "schema" : {
+            "type" : "contenttype"
+          },
+          "required" : true
+        } ]
+      }
+    },
     "/secure-messaging/conversation/{client}/{conversationId}/read-time" : {
       "post" : {
         "operationId" : "addCustomerReadTime",
