@@ -17,23 +17,30 @@
 package uk.gov.hmrc.securemessage.models.core
 
 import org.scalatestplus.play.PlaySpec
-import play.api.libs.json.{ JsSuccess, JsValue }
+import play.api.libs.json.{ JsObject, JsSuccess, JsValue, Json }
+import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.securemessage.helpers.{ ConversationUtil, Resources }
+import Conversation._
 
 class ConversationSpec extends PlaySpec {
 
   "Validating a conversation" must {
-
+    val objectID = BSONObjectID.generate
     "be successful when optional fields are present" in {
-      val conversationJson: JsValue = Resources.readJson("model/core/conversation.json")
+      val conversationJson = Resources.readJson("model/core/conversation.json").as[JsObject] + ("_id" -> Json.toJson(
+        objectID))
+      println(conversationJson)
       conversationJson.validate[Conversation] mustBe JsSuccess(
-        ConversationUtil.getFullConversation("D-80542-20201120", "HMRC-CUS-ORG", "EORINumber", "GB1234567890"))
+        ConversationUtil
+          .getFullConversation(objectID, "D-80542-20201120", "HMRC-CUS-ORG", "EORINumber", "GB1234567890"))
     }
 
     "be successful when optional fields are not present" in {
-      val conversationJson: JsValue = Resources.readJson("model/core/conversation-minimal.json")
+      val conversationJson: JsValue = Resources
+        .readJson("model/core/conversation-minimal.json")
+        .as[JsObject] + ("_id" -> Json.toJson(objectID))
       conversationJson.validate[Conversation] mustBe JsSuccess(
-        ConversationUtil.getMinimalConversation("D-80542-20201120"))
+        ConversationUtil.getMinimalConversation("D-80542-20201120", objectID))
     }
   }
 

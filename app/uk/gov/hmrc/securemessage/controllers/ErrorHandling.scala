@@ -25,19 +25,21 @@ import uk.gov.hmrc.securemessage._
 
 trait ErrorHandling extends Logging {
 
-  def handleErrors(client: ClientName, conversationId: String, error: SecureMessageError): Result = {
+  def handleErrors(conversationId: String, error: SecureMessageError, client: Option[ClientName] = None): Result = {
     val errMsg =
       s"Error on conversation with client: $client, conversationId: $conversationId, error message: ${error.message}"
     logger.error(error.message, error.cause.orNull)
     val jsonError = Json.toJson(errMsg)
     error match {
-      case EmailSendingError(_) | NoReceiverEmailError(_) | EmailLookupError(_) => Created(jsonError)
-      case DuplicateConversationError(_, _)                                     => Conflict(jsonError)
-      case InvalidContent(_, _) | InvalidRequest(_, _)                          => BadRequest(jsonError)
-      case ParticipantNotFound(_)                                               => Unauthorized(jsonError)
-      case ConversationNotFound(_)                                              => NotFound(jsonError)
-      case EisForwardingError(_)                                                => BadGateway(jsonError)
-      case _: SecureMessageError                                                => InternalServerError(jsonError)
+      case EmailSendingError(_)                                              => Created(jsonError)
+      case NoReceiverEmailError(_)                                           => Created(jsonError)
+      case DuplicateConversationError(_, _)                                  => Conflict(jsonError)
+      case InvalidContent(_, _) | InvalidRequest(_, _) | InvalidBsonId(_, _) => BadRequest(jsonError)
+      case ParticipantNotFound(_)                                            => Unauthorized(jsonError)
+      case ConversationNotFound(_) | LetterNotFound(_)                       => NotFound(jsonError)
+      case EisForwardingError(_)                                             => BadGateway(jsonError)
+      case StoreError(_, _)                                                  => InternalServerError(jsonError)
+      case _                                                                 => InternalServerError(jsonError)
     }
   }
 

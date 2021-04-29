@@ -14,17 +14,27 @@
  * limitations under the License.
  */
 
-import sbt.Keys.parallelExecution
-import sbt._
-import scoverage.ScoverageKeys
+package uk.gov.hmrc.securemessage.helpers
 
-object ScoverageSettings {
-  def apply(): Seq[Def.Setting[_ >: String with Double with Boolean]] =
-    Seq( // Semicolon-separated list of regexes matching classes to exclude
-      ScoverageKeys.coverageExcludedPackages := "<empty>;.*Reverse.*;.*(config|testonly).*;.*(BuildInfo|Routes).*",
-      ScoverageKeys.coverageMinimum := 86.00,
-      ScoverageKeys.coverageFailOnMinimum := true,
-      ScoverageKeys.coverageHighlighting := true,
-      parallelExecution in ConfigKey.configurationToKey(Test) := false
-    )
+import org.joda.time.DateTime
+import reactivemongo.bson.BSONObjectID
+import uk.gov.hmrc.securemessage.models.core._
+
+object MessageUtil {
+  def getMessage(subject: String, content: String): Letter = Letter(
+    BSONObjectID.generate(),
+    subject,
+    DateTime.now.toString,
+    "",
+    "",
+    "",
+    "",
+    content,
+    false,
+    DateTime.now(),
+    Recipient("", Identifier("", "", None), ""),
+    RenderUrl("", ""),
+    ExternalReference("", ""),
+    AlertDetails("", RecipientName("", "", "", "", "", ""))
+  )
 }
