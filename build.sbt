@@ -158,7 +158,9 @@ swaggerDomainNameSpaces := Seq(
   "uk.gov.hmrc.securemessage.controllers.model.cdcm.write",
   "uk.gov.hmrc.securemessage.controllers.model.common",
   "uk.gov.hmrc.securemessage.controllers.model.common.read",
-  "uk.gov.hmrc.securemessage.controllers.model.common.write"
+  "uk.gov.hmrc.securemessage.controllers.model.common.write",
+  "uk.gov.hmrc.securemessage.models.core.CustomerEnrolment",
+  "uk.gov.hmrc.securemessage.models.core.FilterTag"
 )
 swaggerTarget := baseDirectory.value / "public"
 swaggerFileName := "schema.json"
