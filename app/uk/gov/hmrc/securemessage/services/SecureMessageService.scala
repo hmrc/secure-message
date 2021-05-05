@@ -78,10 +78,11 @@ class SecureMessageService @Inject()(
   }
 
   def getConversation(client: String, conversationId: String, enrolments: Set[CustomerEnrolment])(
-    implicit ec: ExecutionContext): Future[Either[ConversationNotFound, ApiConversation]] = {
+    implicit ec: ExecutionContext): Future[Either[SecureMessageError, ApiConversation]] = {
     val identifiers = enrolments.map(_.asIdentifier)
     for {
       conversation <- EitherT(conversationRepository.getConversation(client, conversationId, identifiers))
+      _            <- addReadTime(conversation, identifiers, DateTime.now())
     } yield ApiConversation.fromCore(conversation, identifiers)
   }.value
 
@@ -162,17 +163,13 @@ class SecureMessageService @Inject()(
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.Any"))
-  def updateReadTime(client: String, conversationId: String, enrolments: Enrolments, readTime: DateTime)(
-    implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] = {
-    val identifiers: Set[Identifier] = enrolments.asIdentifiers
+  private def addReadTime(conversation: Conversation, identifiers: Set[Identifier], readTime: DateTime)(
+    implicit ec: ExecutionContext): EitherT[Future, SecureMessageError, Unit] =
     for {
-      conversation <- EitherT(conversationRepository.getConversation(client, conversationId, identifiers))
-                       .leftWiden[SecureMessageError]
       reader <- EitherT(Future(conversation.participantWith(identifiers))).leftWiden[SecureMessageError]
-      _ <- EitherT(conversationRepository.addReadTime(client, conversationId, reader.id, readTime))
+      _ <- EitherT(conversationRepository.addReadTime(conversation.client, conversation.id, reader.id, readTime))
             .leftWiden[SecureMessageError]
     } yield ()
-  }.value
 
   private def addMissingEmails(participants: List[Participant])(
     implicit hc: HeaderCarrier,

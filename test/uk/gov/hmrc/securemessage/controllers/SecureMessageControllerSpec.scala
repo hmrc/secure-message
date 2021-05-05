@@ -43,7 +43,7 @@ import uk.gov.hmrc.securemessage._
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.{ ApiConversation, ConversationMetadata }
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.{ CaseworkerMessage, CdcmConversation }
 import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.{ ApiLetter, FirstReaderInformation }
-import uk.gov.hmrc.securemessage.controllers.model.common.write.{ CustomerMessage, ReadTime }
+import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
 import uk.gov.hmrc.securemessage.controllers.model.{ ClientName, MessageType }
 import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core.Letter._
@@ -441,39 +441,6 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     }
   }
 
-  "updateReadTime" must {
-    "return CREATED (201) with a JSON body of read time successfully added when a readTime has successfully been created " in new UpdateReadTimeTestCase(
-      dbResult = Right(())) {
-      val response: Future[Result] = controller.addCustomerReadTime(cdcm, "D-80542-20201120")(fakeRequest)
-      status(response) mustBe CREATED
-      contentAsString(response) mustBe "\"read time successfully added\""
-    }
-
-    "return INTERNAL_SERVER_ERROR (500) with a JSON body of issue with updating read time" in new UpdateReadTimeTestCase(
-      dbResult = Left(StoreError("errMsg", None))) {
-      val response: Future[Result] = controller.addCustomerReadTime(cdcm, "D-80542-20201120")(fakeRequest)
-      status(response) mustBe INTERNAL_SERVER_ERROR
-      contentAsString(response) mustBe "\"Error on conversation with client: Some(CDCM), conversationId: D-80542-20201120, error message: errMsg\""
-    }
-  }
-
-  "Base64 decoding" must {
-    "return messageType letter and id" in new TestCase {
-      val nakedPath = "letter/6086dc1f4700009fed2f5745"
-      val path = encodedPath(nakedPath)
-      controller.decodePath(path).right.get mustBe (("letter", "6086dc1f4700009fed2f5745"))
-    }
-    "return messageType conversation and id" in new TestCase {
-      val nakedPath = "conversation/6086dc1f4700009fed2f5745"
-      val path = encodedPath(nakedPath)
-      controller.decodePath(path).right.get mustBe (("conversation", "6086dc1f4700009fed2f5745"))
-    }
-    "return only messageType and Id" in new TestCase {
-      val nakedPath = "conversation/6086dc1f4700009fed2f5745/test"
-      val path = encodedPath(nakedPath)
-      controller.decodePath(path).right.get mustBe (("conversation", "6086dc1f4700009fed2f5745"))
-    }
-  }
   @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
   class TestCase(authEnrolments: Set[CustomerEnrolment] = Set(testEnrolment)) {
     val mockRepository: ConversationRepository = mock[ConversationRepository]
@@ -619,18 +586,5 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       mockSecureMessageService.addCaseWorkerMessageToConversation(any[String], any[String], any[CaseworkerMessage])(
         any[ExecutionContext],
         any[HeaderCarrier])).thenReturn(serviceResponse)
-  }
-
-  class UpdateReadTimeTestCase(dbResult: Either[SecureMessageError, Unit]) extends TestCase {
-    when(
-      mockSecureMessageService.updateReadTime(any[String], any[String], any[Enrolments], any[DateTime])(
-        any[ExecutionContext]))
-      .thenReturn(Future.successful(dbResult))
-    val fakeRequest: FakeRequest[JsValue] = FakeRequest(
-      method = POST,
-      uri = routes.SecureMessageController.addCustomerReadTime(cdcm, "123").url,
-      headers = FakeHeaders(Seq(CONTENT_TYPE -> JSON)),
-      body = Json.toJson(ReadTime(DateTime.now))
-    )
   }
 }

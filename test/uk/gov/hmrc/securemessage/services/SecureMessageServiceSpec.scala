@@ -20,32 +20,32 @@ import akka.stream.Materializer
 import org.joda.time.DateTime
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.{never, times, verify, when}
+import org.mockito.Mockito.{ never, times, verify, when }
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.i18n.Messages
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.{ JsObject, Json }
 import play.api.mvc.AnyContentAsEmpty
 import play.api.test.Helpers._
-import play.api.test.{FakeRequest, NoMaterializer}
+import play.api.test.{ FakeRequest, NoMaterializer }
 import reactivemongo.bson.BSONObjectID
-import uk.gov.hmrc.auth.core.{Enrolment, EnrolmentIdentifier, Enrolments}
+import uk.gov.hmrc.auth.core.{ Enrolment, EnrolmentIdentifier, Enrolments }
 import uk.gov.hmrc.emailaddress.EmailAddress
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import uk.gov.hmrc.securemessage.connectors.{ChannelPreferencesConnector, EISConnector, EmailConnector}
+import uk.gov.hmrc.securemessage.connectors.{ ChannelPreferencesConnector, EISConnector, EmailConnector }
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.ConversationMetadata
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
-import uk.gov.hmrc.securemessage.helpers.{ConversationUtil, MessageUtil, Resources}
+import uk.gov.hmrc.securemessage.helpers.{ ConversationUtil, MessageUtil, Resources }
 import uk.gov.hmrc.securemessage.models.core._
-import uk.gov.hmrc.securemessage.models.{EmailRequest, QueryMessageWrapper}
-import uk.gov.hmrc.securemessage.repository.{ConversationRepository, MessageRepository}
-import uk.gov.hmrc.securemessage.{DuplicateConversationError, EmailLookupError, NoReceiverEmailError, SecureMessageError, _}
+import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryMessageWrapper }
+import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository }
+import uk.gov.hmrc.securemessage.{ DuplicateConversationError, EmailLookupError, NoReceiverEmailError, SecureMessageError, _ }
 import Conversation._
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 
 //TODO: move test data and mocks to TextContexts
 @SuppressWarnings(Array("org.wartremover.warts.All"))
@@ -216,24 +216,18 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
   }
 
   "getConversation" must {
-
-    "return a message with ApiConversation" in {
-      when(mockConversationRepository.getConversation(any[String], any[String], any[Set[Identifier]])(any[ExecutionContext]))
-        .thenReturn(
-          Future.successful(
-            Right(
-              ConversationUtil.getFullConversation(
-                BSONObjectID.generate,
-                "D-80542-20201120",
-                "HMRC-CUS-ORG",
-                "EORINumber",
-                "GB1234567890"))))
-      val result = await(
+    val hmrcCusOrg = "HMRC-CUS-ORG"
+    val conversationId = "D-80542-20201120"
+    val eoriName = "EORIName"
+    val enrolmentValue = "GB7777777777"
+    "return a message with ApiConversation" in new GetConversationTestContext(
+      getConversationResult = Right(
+        ConversationUtil
+          .getFullConversation(BSONObjectID.generate, conversationId, hmrcCusOrg, eoriName, enrolmentValue))
+    ) {
+      private val result = await(
         service
-          .getConversation(
-            "CDCM",
-            "D-80542-20201120",
-            Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777"))))
+          .getConversation("CDCM", conversationId, Set(CustomerEnrolment(hmrcCusOrg, eoriName, enrolmentValue))))
       result.right.get.client mustBe "CDCM"
       result.right.get.messages.size mustBe 1
       result.right.get.subject mustBe "MRN: 19GB4S24GC3PPFGVR7"
@@ -298,14 +292,10 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
     }
   }
 
-
   "getMessage by id" must {
     "return a message with ApiLetter" in {
       when(mockMessageRepository.getLetter(any[String], any[Set[Identifier]])(any[ExecutionContext]))
-        .thenReturn(
-          Future(
-            Right(
-              MessageUtil.getMessage("subject", "content"))))
+        .thenReturn(Future(Right(MessageUtil.getMessage("subject", "content"))))
       val result = await(
         service
           .getLetter(
@@ -316,22 +306,17 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
     }
 
     "return a Left(LetterNotFound)" in {
-      when(
-        mockMessageRepository.getLetter(any[String], any[Set[Identifier]])(any[ExecutionContext]))
-        .thenReturn(Future(Left(LetterNotFound(
-          "Letter not found"))))
+      when(mockMessageRepository.getLetter(any[String], any[Set[Identifier]])(any[ExecutionContext]))
+        .thenReturn(Future(Left(LetterNotFound("Letter not found"))))
       val result = await(
         service
           .getLetter(
             BSONObjectID.generate().stringify,
             Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777"))))
       result mustBe
-        Left(
-          LetterNotFound(
-            s"Letter not found"))
+        Left(LetterNotFound(s"Letter not found"))
     }
   }
-
 
   "Adding a customer message to a conversation" must {
 
@@ -410,33 +395,6 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
     }
   }
 
-  "updateReadTime" must {
-
-    "return Right(()) when a readTime has been added to the db" in new UpdateReadTimeTestContext(
-      addReadTime = Right(())) {
-      val result: Either[SecureMessageError, Unit] =
-        await(
-          service.updateReadTime(
-            "CDCM",
-            "D-80542-20201120",
-            customerEnrolment,
-            DateTime.parse("2020-11-10T15:00:18.000+0000")
-          ))
-      result mustBe Right(())
-    }
-
-    "return Left(storeError) when something went wrong with adding a readTime to the db" in new UpdateReadTimeTestContext(
-      addReadTime = Left(StoreError("errMsg", None))) {
-      val result: Either[SecureMessageError, Unit] =
-        await(
-          service.updateReadTime(
-            "CDCM",
-            "D-80542-20201120",
-            customerEnrolment,
-            DateTime.parse("2020-11-10T15:00:18.000+0000")))
-      result mustBe Left(StoreError("errMsg", None))
-    }
-  }
   @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   class CreateMessageTestContext(
     dbInsertResult: Either[SecureMessageError, Unit] = Right(()),
@@ -449,8 +407,12 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
 
   @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   class GetConversationTestContext(getConversationResult: Either[ConversationNotFound, Conversation]) {
-    when(mockConversationRepository.getConversation(any[String], any[String], any[Set[Identifier]])(any[ExecutionContext]))
+    when(
+      mockConversationRepository.getConversation(any[String], any[String], any[Set[Identifier]])(any[ExecutionContext]))
       .thenReturn(Future(getConversationResult))
+    when(
+      mockConversationRepository.addReadTime(any[String], any[String], any[Int], any[DateTime])(any[ExecutionContext]))
+      .thenReturn(Future.successful(Right(())))
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
@@ -458,9 +420,12 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
     getConversationResult: Either[ConversationNotFound, Conversation],
     addMessageResult: Either[SecureMessageError, Unit] = Right(()))
       extends TestHelpers {
-    when(mockConversationRepository.getConversation(any[String], any[String], any[Set[Identifier]])(any[ExecutionContext]))
+    when(
+      mockConversationRepository.getConversation(any[String], any[String], any[Set[Identifier]])(any[ExecutionContext]))
       .thenReturn(Future(getConversationResult))
-    when(mockConversationRepository.addMessageToConversation(any[String], any[String], any[Message])(any[ExecutionContext]))
+    when(
+      mockConversationRepository.addMessageToConversation(any[String], any[String], any[Message])(
+        any[ExecutionContext]))
       .thenReturn(Future(addMessageResult))
   }
 
@@ -469,21 +434,14 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
     getConversationResult: Either[ConversationNotFound, Conversation] = Right(cnvWithNoEmail),
     addMessageResult: Either[SecureMessageError, Unit] = Right(()),
     sendEmailResult: Either[EmailSendingError, Unit] = Right(())) {
-    when(mockConversationRepository.getConversation(any[String], any[String], any[Set[Identifier]])(any[ExecutionContext]))
+    when(
+      mockConversationRepository.getConversation(any[String], any[String], any[Set[Identifier]])(any[ExecutionContext]))
       .thenReturn(Future(getConversationResult))
-    when(mockConversationRepository.addMessageToConversation(any[String], any[String], any[Message])(any[ExecutionContext]))
+    when(
+      mockConversationRepository.addMessageToConversation(any[String], any[String], any[Message])(
+        any[ExecutionContext]))
       .thenReturn(Future(addMessageResult))
     when(mockEmailConnector.send(any[EmailRequest])(any[HeaderCarrier])).thenReturn(Future(sendEmailResult))
-  }
-
-  @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
-  class UpdateReadTimeTestContext(
-    getConversationResult: Either[ConversationNotFound, Conversation] = Right(cnvWithNoEmail),
-    addReadTime: Either[StoreError, Unit]) {
-    when(mockConversationRepository.getConversation(any[String], any[String], any[Set[Identifier]])(any[ExecutionContext]))
-      .thenReturn(Future(getConversationResult))
-    when(mockConversationRepository.addReadTime(any[String], any[String], any[Int], any[DateTime])(any[ExecutionContext]))
-      .thenReturn(Future(addReadTime))
   }
 }
 
