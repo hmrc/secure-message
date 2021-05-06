@@ -40,15 +40,21 @@ class MessageRepositorySpec extends PlaySpec with MongoSpecSupport with BeforeAn
       result.right.get mustBe letter
     }
 
-    "be returned for a participating enrolment with no tag" in new TestContext() {
+    "be returned for a participating enrolment with no name" in new TestContext() {
       val result =
-        await(repository.getLetter(objectID.stringify, Set(Identifier("EORINumber", "GB1234567890", None))))
+        await(repository.getLetter(objectID.stringify, Set(Identifier("", "GB1234567890", Some("HMRC-CUS-ORG")))))
       result.right.get mustBe letter
     }
 
-    "be returned for a participating enrolment without Enrolment" in {
+    "not be returned for a participating enrolment with no enrolment HMRC-CUS-ORG" in new TestContext() {
+      val result =
+        await(repository.getLetter(objectID.stringify, Set(Identifier("EORINumber", "GB1234567890", enrolment = None))))
+      result.left.get.message mustBe "Letter not found"
+    }
+
+    "not be returned for a participating enrolment with different Enrolment" in {
       val objectID: BSONObjectID = BSONObjectID.generate()
-      val letterJsonWithOutEnrolment = Resources.readJson("model/core/letterWithOutEnrolment.json").as[JsObject] +
+      val letterJsonWithOutEnrolment = Resources.readJson("model/core/letterWithOutHmrcCusOrg.json").as[JsObject] +
         ("_id"         -> Json.toJson(objectID)) +
         ("lastUpdated" -> Json.toJson(DateTime.now()))
       val repository: MessageRepository = new MessageRepository()
@@ -56,9 +62,10 @@ class MessageRepositorySpec extends PlaySpec with MongoSpecSupport with BeforeAn
       await(repository.insert(letterWithoutEnrolment))
 
       val result =
-        await(repository.getLetter(objectID.stringify, Set(Identifier("EORINumber", "GB1234567890", None))))
+        await(
+          repository.getLetter(objectID.stringify, Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")))))
 
-      result.right.get mustBe letterWithoutEnrolment
+      result.left.get.message mustBe "Letter not found"
     }
 
     "not be returned if the enrolment is not a recipient" in new TestContext() {

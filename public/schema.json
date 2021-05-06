@@ -381,7 +381,7 @@
         } ]
       }
     },
-    "/secure-messaging/messages/{type}/{id}" : {
+    "/secure-messaging/messages/{id}" : {
       "get" : {
         "operationId" : "getContentDetail",
         "tags" : [ "app" ],
@@ -405,13 +405,6 @@
           "name" : "id",
           "schema" : {
             "type" : "string"
-          },
-          "required" : true
-        }, {
-          "in" : "path",
-          "name" : "type",
-          "schema" : {
-            "type" : "messagetype"
           },
           "required" : true
         } ]
@@ -464,7 +457,7 @@
   },
   "info" : {
     "title" : "Secure Message API",
-    "version" : "0.84.0-SNAPSHOT"
+    "version" : "0.86.0-SNAPSHOT"
   },
   "tags" : [ {
     "name" : "app"
