@@ -110,4 +110,3 @@ GET         /conversation/:client/:conversationId   uk.gov.hmrc.securemessage.co
 #     description: conversation/message not found
 ###
 GET        /messages/:id   uk.gov.hmrc.securemessage.controllers.SecureMessageController.getContentDetail(id: String)
-

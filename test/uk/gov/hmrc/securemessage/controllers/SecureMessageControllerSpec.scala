@@ -17,8 +17,8 @@
 package uk.gov.hmrc.securemessage.controllers
 
 import akka.stream.Materializer
-import com.github.nscala_time.time.Imports.LocalDate
 import org.apache.commons.codec.binary.Base64
+import org.joda.time.{ LocalDate }
 import org.joda.time.DateTime
 import org.mockito.ArgumentMatchers.{ any, eq => eqTo }
 import org.mockito.Mockito.{ times, verify, when }
@@ -43,8 +43,7 @@ import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.securemessage._
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.{ ApiConversation, ConversationMetadata }
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.{ CaseworkerMessage, CdcmConversation }
-import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.{ SenderInformation }
-import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.{ ApiLetter }
+import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.{ ApiLetter, SenderInformation }
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
 import uk.gov.hmrc.securemessage.controllers.model.{ ClientName, MessageType }
 import uk.gov.hmrc.securemessage.helpers.Resources
@@ -467,6 +466,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     "return messageType letter and id" in new TestCase {
       val nakedPath = "letter/6086dc1f4700009fed2f5745"
       val path = encodedPath(nakedPath)
+
       controller.decodePath(path).right.get mustBe (("letter", "6086dc1f4700009fed2f5745"))
     }
     "return messageType conversation and id" in new TestCase {
@@ -485,6 +485,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       controller.decodePath(path).left.get.message mustBe ("Invalid URL path")
     }
   }
+
   @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
   class TestCase(authEnrolments: Set[CustomerEnrolment] = Set(testEnrolment)) {
     val mockRepository: ConversationRepository = mock[ConversationRepository]
@@ -612,7 +613,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     authEnrolments: Set[CustomerEnrolment] = Set(testEnrolment))
       extends TestCase(authEnrolments) {
     val letter = storedLetter.map(l => l.validate[Letter]).map(_.get)
-    val apiLetter = letter.map(l => ApiLetter(l.subject, l.content, None, SenderInformation("", LocalDate.now())))
+    val apiLetter = letter.map(l => ApiLetter(l.subject, l.content, None, SenderInformation("HMRC", LocalDate.now)))
     val successLetter: Either[Nothing, ApiLetter] = Right(apiLetter.get)
     when(mockSecureMessageService.getLetter(any[String], any[Set[CustomerEnrolment]])(any[ExecutionContext]))
       .thenReturn(Future.successful(successLetter))
