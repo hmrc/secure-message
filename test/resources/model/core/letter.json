@@ -2,9 +2,8 @@
   "recipient" : {
     "regime" : "cds",
     "identifier" : {
-      "name" : "EORINumber",
-      "value" : "GB1234567890",
-      "enrolment" : "HMRC-CUS-ORG"
+      "name" : "HMRC-CUS-ORG",
+      "value" : "GB1234567890"
     },
     "email" : "test@test.com"
   },
