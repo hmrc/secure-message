@@ -17,9 +17,10 @@
 package uk.gov.hmrc.securemessage.controllers
 
 import akka.stream.Materializer
+import org.apache.commons.codec.binary.Base64
 import org.joda.time.DateTime
-import org.mockito.ArgumentMatchers.{ any, eq => eqTo }
-import org.mockito.Mockito.{ times, verify, when }
+import org.mockito.ArgumentMatchers.{any, eq => eqTo}
+import org.mockito.Mockito.{times, verify, when}
 import org.scalatest.OptionValues
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
@@ -28,10 +29,10 @@ import play.api.http.ContentTypes._
 import play.api.http.HeaderNames._
 import play.api.http.Status._
 import play.api.i18n.Messages
-import play.api.libs.json.{ JsObject, JsValue, Json }
-import play.api.mvc.{ Request, Result }
-import play.api.test.Helpers.{ POST, PUT, contentAsJson, contentAsString, defaultAwaitTimeout, status, stubMessages }
-import play.api.test.{ FakeHeaders, FakeRequest, Helpers, NoMaterializer }
+import play.api.libs.json.{JsObject, JsValue, Json}
+import play.api.mvc.{Request, Result}
+import play.api.test.Helpers.{POST, PUT, contentAsJson, contentAsString, defaultAwaitTimeout, status, stubMessages}
+import play.api.test.{FakeHeaders, FakeRequest, Helpers, NoMaterializer}
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.authorise.Predicate
@@ -39,18 +40,18 @@ import uk.gov.hmrc.auth.core.retrieve.Retrieval
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.securemessage._
-import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.{ ApiConversation, ConversationMetadata }
-import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.{ CaseworkerMessage, CdcmConversation }
-import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.{ ApiLetter, FirstReaderInformation }
-import uk.gov.hmrc.securemessage.controllers.model.common.write.{ CustomerMessage, ReadTime }
-import uk.gov.hmrc.securemessage.controllers.model.{ ClientName, MessageType }
+import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.{ApiConversation, ConversationMetadata}
+import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.{CaseworkerMessage, CdcmConversation}
+import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.{ApiLetter, FirstReaderInformation}
+import uk.gov.hmrc.securemessage.controllers.model.common.write.{CustomerMessage, ReadTime}
+import uk.gov.hmrc.securemessage.controllers.model.{ClientName, MessageType}
 import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core.Letter._
 import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
 import uk.gov.hmrc.securemessage.services.SecureMessageService
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ ExecutionContext, ExecutionException, Future }
+import scala.concurrent.{ExecutionContext, ExecutionException, Future}
 
 @SuppressWarnings(
   Array(
@@ -294,7 +295,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
         Resources.readJson("model/api/cdcm/read/api-conversation.json").as[JsObject] + ("_id" -> Json.toJson(
           objectID)))) {
       val response: Future[Result] = controller
-        .getContentDetail(objectID.stringify, MessageType.Conversation)
+        .getContentDetail(encodedPath(s"${MessageType.Conversation.entryName}/${objectID.stringify}"))
         .apply(FakeRequest("GET", "/"))
       status(response) mustBe OK
       contentAsJson(response).as[ApiConversation] mustBe apiConversation.right.get
@@ -312,7 +313,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       )
     ) {
       val response: Future[Result] = controller
-        .getContentDetail(objectID.stringify, MessageType.Conversation)
+        .getContentDetail(encodedPath(s"${MessageType.Conversation.entryName}/${objectID.stringify}"))
         .apply(FakeRequest("GET", "/"))
       status(response) mustBe OK
       contentAsJson(response).as[ApiConversation] mustBe apiConversation.right.get
@@ -322,7 +323,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     "return Not Found (404) with a JSON body of No conversation found" in new GetConversationByIdTestCase(
       storedConversation = None) {
       val response: Future[Result] = controller
-        .getContentDetail(objectID.stringify, MessageType.Conversation)
+        .getContentDetail(encodedPath(s"${MessageType.Conversation.entryName}/${objectID.stringify}"))
         .apply(FakeRequest("GET", "/"))
       status(response) mustBe NOT_FOUND
       contentAsString(response) must include("conversations not found")
@@ -330,7 +331,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
 
     "return Unauthorized (401) when no enrolment found" in new TestCase(Set.empty[CustomerEnrolment]) {
       private val response = controller
-        .getContentDetail(objectID.stringify, MessageType.Conversation)
+        .getContentDetail(encodedPath(s"${MessageType.Conversation.entryName}/${objectID.stringify}"))
         .apply(FakeRequest("GET", "/"))
       status(response) mustBe UNAUTHORIZED
       contentAsString(response) mustBe "\"No enrolment found\""
@@ -340,7 +341,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       storedLetter = Some(Resources.readJson("model/core/letter.json").as[JsObject] + ("_id" -> Json.toJson(objectID))
         + ("lastUpdated"                                                                     -> Json.toJson(DateTime.now())))) {
       val response: Future[Result] = controller
-        .getContentDetail(objectID.stringify, MessageType.Letter)
+        .getContentDetail(encodedPath(s"${MessageType.Letter.entryName}/${objectID.stringify}"))
         .apply(FakeRequest("GET", "/"))
       status(response) mustBe OK
       contentAsJson(response).as[ApiLetter] mustBe apiLetter.get
@@ -358,7 +359,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       )
     ) {
       val response: Future[Result] = controller
-        .getContentDetail(objectID.stringify, MessageType.Letter)
+        .getContentDetail(encodedPath(s"${MessageType.Letter.entryName}/${objectID.stringify}"))
         .apply(FakeRequest("GET", "/"))
       status(response) mustBe OK
       contentAsJson(response).as[ApiLetter] mustBe apiLetter.get
@@ -370,7 +371,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
         .thenReturn(Future.successful(Left(LetterNotFound("letter not found"))))
 
       val response: Future[Result] = controller
-        .getContentDetail(objectID.stringify, MessageType.Letter)
+        .getContentDetail(encodedPath(s"${MessageType.Letter.entryName}/${objectID.stringify}"))
         .apply(FakeRequest("GET", "/"))
       status(response) mustBe NOT_FOUND
       // contentAsString(response) mustBe "\"No Letter found\""
@@ -378,7 +379,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
 
     "return Unauthorized (401) when no enrolment found for a letter" in new TestCase(Set.empty[CustomerEnrolment]) {
       private val response = controller
-        .getContentDetail(objectID.stringify, MessageType.Letter)
+        .getContentDetail(encodedPath(s"${MessageType.Letter.entryName}/${objectID.stringify}"))
         .apply(FakeRequest("GET", "/"))
       status(response) mustBe UNAUTHORIZED
       contentAsString(response) mustBe "\"No enrolment found\""
@@ -456,6 +457,25 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     }
   }
 
+  "Base64 decoding" must {
+    "return messageType letter and id" in new TestCase {
+      val nakedPath = "letter/6086dc1f4700009fed2f5745"
+      val path = encodedPath(nakedPath)
+     controller.decodePath(path).right.get mustBe (("letter", "6086dc1f4700009fed2f5745"))
+    }
+    "return messageType conversation and id" in new TestCase {
+      val nakedPath = "conversation/6086dc1f4700009fed2f5745"
+      val path = encodedPath(nakedPath)
+      controller.decodePath(path).right.get mustBe (("conversation", "6086dc1f4700009fed2f5745"))
+    }
+    "return only messageType and Id"  in new TestCase {
+      val nakedPath = "conversation/6086dc1f4700009fed2f5745/test"
+      val path = encodedPath(nakedPath)
+      controller.decodePath(path).right.get mustBe (("conversation", "6086dc1f4700009fed2f5745"))
+    }
+  }
+
+
   @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
   class TestCase(authEnrolments: Set[CustomerEnrolment] = Set(testEnrolment)) {
     val mockRepository: ConversationRepository = mock[ConversationRepository]
@@ -464,6 +484,8 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     val mockSecureMessageService: SecureMessageService = mock[SecureMessageService]
     when(mockRepository.insertIfUnique(any[Conversation])(any[ExecutionContext]))
       .thenReturn(Future.successful(Right(())))
+
+   protected def encodedPath(path: String) = Base64.encodeBase64String(path.getBytes("UTF-8"))
 
     val controller =
       new SecureMessageController(

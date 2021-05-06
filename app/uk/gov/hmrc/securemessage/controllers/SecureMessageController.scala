@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.securemessage.controllers
 
+import org.apache.commons.codec.binary.Base64
 import javax.inject.Inject
 import play.api.Logging
 import play.api.i18n.I18nSupport
@@ -144,29 +145,40 @@ class SecureMessageController @Inject()(
         }
   }
 
-  def getContentDetail(id: String, contentType: MessageType): Action[AnyContent] = Action.async { implicit request =>
-    authorised()
-      .retrieve(Retrievals.allEnrolments) { authEnrolments =>
-        if (authEnrolments.enrolments.isEmpty) {
-          Future.successful(Unauthorized(Json.toJson("No enrolment found")))
-        } else {
-          contentType match {
-            case Conversation =>
-              secureMessageService
-                .getConversation(id, authEnrolments.asCustomerEnrolments)
-                .map {
-                  case Right(apiConversation) => Ok(Json.toJson(apiConversation))
-                  case Left(error)            => handleErrors(id, error)
-                }
-            case Letter =>
-              secureMessageService.getLetter(id, authEnrolments.asCustomerEnrolments).map {
-                case Right(apiLetter) => Ok(Json.toJson(apiLetter))
-                case Left(error)      => handleErrors(id, error)
+  def getContentDetail(rawId: String): Action[AnyContent] = Action.async { implicit request =>
+    decodePath(rawId) match {
+      case Right((messageType, id)) =>
+        authorised()
+          .retrieve(Retrievals.allEnrolments) { authEnrolments =>
+            if (authEnrolments.enrolments.isEmpty) {
+              Future.successful(Unauthorized(Json.toJson("No enrolment found")))
+            } else {
+              MessageType.withNameOption(messageType) match {
+                case Some(Conversation) =>
+                  secureMessageService
+                    .getConversation(id, authEnrolments.asCustomerEnrolments)
+                    .map {
+                      case Right(apiConversation) => Ok(Json.toJson(apiConversation))
+                      case Left(error)            => handleErrors(id, error)
+                    }
+                case Some(Letter) =>
+                  secureMessageService.getLetter(id, authEnrolments.asCustomerEnrolments).map {
+                    case Right(apiLetter) => Ok(Json.toJson(apiLetter))
+                    case Left(error)      => handleErrors(id, error)
+                  }
+                case None => Future.successful(BadRequest(Json.toJson("Invalid message type")))
               }
+            }
           }
-        }
-      }
+      case Left(error) => Future.successful(BadRequest(Json.toJson(error.message)))
+    }
   }
+
+  private[controllers] def decodePath(path: String): Either[SecureMessageError, (String, String)] =
+    new String(Base64.decodeBase64(path.getBytes("UTF-8"))).split("/").toList match {
+      case messageType :: id :: _ => Right((messageType, id))
+      case _                      => Left(InvalidPath("Invalid URL path"))
+    }
 
   def addCustomerReadTime(client: ClientName, conversationId: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
