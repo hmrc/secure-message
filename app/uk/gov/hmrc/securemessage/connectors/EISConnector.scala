@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.securemessage.connectors
 
-import java.time.{ ZoneOffset, ZonedDateTime }
 import java.time.format.DateTimeFormatter
+import java.time.{ ZoneOffset, ZonedDateTime }
 
 import controllers.Assets.{ ACCEPT, CONTENT_TYPE, DATE }
 import javax.inject.{ Inject, Singleton }
@@ -26,7 +26,6 @@ import play.api.http.MimeTypes
 import play.api.http.Status._
 import uk.gov.hmrc.http.{ HeaderCarrier, HttpClient }
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import uk.gov.hmrc.play.audit.model.EventTypes
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.securemessage.EisForwardingError
 import uk.gov.hmrc.securemessage.connectors.utils.CustomHeaders
@@ -68,10 +67,14 @@ class EISConnector @Inject()(
       .flatMap { response =>
         response.status match {
           case NO_CONTENT =>
-            val _ = auditMessageForwarded(EventTypes.Succeeded, queryMessageWrapper.queryMessageRequest, NO_CONTENT)
+            val _ = auditMessageForwarded(
+              "MessageForwardedToCaseworkerSuccess",
+              queryMessageWrapper.queryMessageRequest,
+              NO_CONTENT)
             Future.successful(Right(()))
           case code =>
-            val _ = auditMessageForwarded(EventTypes.Failed, queryMessageWrapper.queryMessageRequest, code)
+            val _ =
+              auditMessageForwarded("MessageForwardedToCaseworkerFailed", queryMessageWrapper.queryMessageRequest, code)
             Future.successful(Left(EisForwardingError(
               s"There was an issue with forwarding the message to EIS, response code is: $code, response body is: ${response.body}")))
         }

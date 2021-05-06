@@ -17,15 +17,14 @@
 package uk.gov.hmrc.securemessage.connectors
 
 import javax.inject.{ Inject, Singleton }
+import play.api.http.Status.ACCEPTED
 import uk.gov.hmrc.http.HttpReads.Implicits.readRaw
 import uk.gov.hmrc.http.{ HeaderCarrier, HttpClient, HttpResponse }
+import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import uk.gov.hmrc.securemessage.EmailSendingError
 import uk.gov.hmrc.securemessage.models.EmailRequest
 import uk.gov.hmrc.securemessage.models.EmailRequest.emailRequestWrites
-import play.api.http.Status.ACCEPTED
-import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import uk.gov.hmrc.play.audit.model.EventTypes
-import uk.gov.hmrc.securemessage.EmailSendingError
 import uk.gov.hmrc.securemessage.services.Auditing
 
 import scala.concurrent.{ ExecutionContext, Future }
@@ -44,10 +43,10 @@ class EmailConnector @Inject()(
     httpClient.POST[EmailRequest, HttpResponse](s"$emailBaseUrl/hmrc/email", emailRequest).map { response =>
       response.status match {
         case ACCEPTED =>
-          val _ = auditEmailSent(EventTypes.Succeeded, emailRequest, ACCEPTED)
+          val _ = auditEmailSent("NotificationEmailSent", emailRequest, ACCEPTED)
           Right(())
         case status =>
-          val _ = auditEmailSent(EventTypes.Failed, emailRequest, status)
+          val _ = auditEmailSent("NotificationEmailSentFailed", emailRequest, status)
           val errMsg = s"Email request failed: got response status $status from email service"
           Left(EmailSendingError(errMsg))
       }
