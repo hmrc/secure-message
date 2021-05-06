@@ -66,12 +66,12 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
 
     "send correct audit details when new conversation created" in {
       val responseMessage = "Conversation Created"
-      val _ = auditCreateConversation(EventTypes.Succeeded, conversation, responseMessage)
+      val _ = auditCreateConversation("CreateQueryConversationSuccess", conversation, responseMessage)
       verify(auditConnector).sendExplicitAudit(
-        EventTypes.Succeeded,
+        "CreateQueryConversationSuccess",
         Map[String, String](
           "subject"         -> "MRN: DMS7324874993",
-          "id"              -> "D-80542-20210327",
+          "messageId"       -> "D-80542-20210327",
           "responseMessage" -> responseMessage,
           "initialMessage"  -> messageContent,
           "client"          -> CDCM.entryName,
@@ -82,12 +82,12 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
 
     "send correct audit details when new conversation not created" in {
       val responseMessage = "Conversation not found for identifier: 123"
-      val _ = auditCreateConversation(EventTypes.Failed, conversation, responseMessage)
+      val _ = auditCreateConversation("CreateNewQueryConversationFailed", conversation, responseMessage)
       verify(auditConnector).sendExplicitAudit(
-        EventTypes.Failed,
+        "CreateNewQueryConversationFailed",
         Map[String, String](
           "subject"         -> "MRN: DMS7324874993",
-          "id"              -> "D-80542-20210327",
+          "messageId"       -> "D-80542-20210327",
           "responseMessage" -> responseMessage,
           "initialMessage"  -> messageContent,
           "client"          -> CDCM.entryName,
@@ -103,14 +103,14 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
       val emailAddress = Some(EmailAddress("test@test.com"))
       val _ = auditRetrieveEmail(emailAddress)
       verify(auditConnector)
-        .sendExplicitAudit(EventTypes.Succeeded, Map(retrieveEmailTxnName, "email" -> "test@test.com"))
+        .sendExplicitAudit("EmailExistsOrVerifiedSuccess", Map(retrieveEmailTxnName, "email" -> "test@test.com"))
     }
 
     "send correct audit details when email was not retrieved" in {
       val emailAddress = None
       val _ = auditRetrieveEmail(emailAddress)
       verify(auditConnector)
-        .sendExplicitAudit(EventTypes.Failed, Map(retrieveEmailTxnName))
+        .sendExplicitAudit("EmailExistsOrVerifiedFailed", Map(retrieveEmailTxnName))
     }
   }
 
@@ -120,25 +120,26 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
       CaseworkerMessage(messageContent)
 
     "send correct audit details when the casework reply is sent" in {
-      val _ = auditCaseworkerReply(EventTypes.Succeeded, CDCM, conversationId, message)
+      val _ = auditCaseworkerReply("CaseWorkerReplyToConversationSuccess", CDCM, conversationId, message)
       verify(auditConnector).sendExplicitAudit(
-        EventTypes.Succeeded,
+        "CaseWorkerReplyToConversationSuccess",
         Map(
           caseworkerReplyTxnName,
-          "client"         -> CDCM.entryName,
-          "conversationId" -> conversationId,
-          "content"        -> messageContent))
+          "client"    -> CDCM.entryName,
+          "messageId" -> conversationId,
+          "content"   -> messageContent)
+      )
     }
 
     "send correct audit details when the caseworker reply is not sent" in {
-      val _ = auditCaseworkerReply(EventTypes.Failed, CDCM, conversationId, message)
+      val _ = auditCaseworkerReply("CaseWorkerReplyToConversationFailed", CDCM, conversationId, message)
       verify(auditConnector).sendExplicitAudit(
-        EventTypes.Failed,
+        "CaseWorkerReplyToConversationFailed",
         Map(
           caseworkerReplyTxnName,
-          "client"         -> CDCM.entryName,
-          "conversationId" -> conversationId,
-          "content"        -> messageContent))
+          "client"    -> CDCM.entryName,
+          "messageId" -> conversationId,
+          "content"   -> messageContent))
     }
   }
 
@@ -148,7 +149,7 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
 
     "send correct audit details when read time is recorded" in {
       val _ = auditConversationRead(
-        EventTypes.Succeeded,
+        "QueryMessageReadSuccess",
         CDCM,
         conversationId,
         readTime,
@@ -158,20 +159,20 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
           ))
       )
       verify(auditConnector).sendExplicitAudit(
-        EventTypes.Succeeded,
+        "QueryMessageReadSuccess",
         Map(
           messageReadTxnName,
-          "client"         -> CDCM.entryName,
-          "conversationId" -> conversationId,
-          "readTime"       -> isoDtf.print(readTime),
-          "enrolments"     -> "HMRC-CUS-ORG:EORINumber=GB1234567890"
+          "client"     -> CDCM.entryName,
+          "messageId"  -> conversationId,
+          "readTime"   -> isoDtf.print(readTime),
+          "enrolments" -> "HMRC-CUS-ORG:EORINumber=GB1234567890"
         )
       )
     }
 
     "send correct audit details when read time is not recorded" in {
       val _ = auditConversationRead(
-        EventTypes.Failed,
+        "QueryMessageReadFailed",
         CDCM,
         conversationId,
         readTime,
@@ -181,13 +182,13 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
           ))
       )
       verify(auditConnector).sendExplicitAudit(
-        EventTypes.Failed,
+        "QueryMessageReadFailed",
         Map(
           messageReadTxnName,
-          "client"         -> CDCM.entryName,
-          "conversationId" -> conversationId,
-          "readTime"       -> isoDtf.print(readTime),
-          "enrolments"     -> "HMRC-CUS-ORG:EORINumber=GB1234567890"
+          "client"     -> CDCM.entryName,
+          "messageId"  -> conversationId,
+          "readTime"   -> isoDtf.print(readTime),
+          "enrolments" -> "HMRC-CUS-ORG:EORINumber=GB1234567890"
         )
       )
     }
@@ -196,25 +197,27 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
   "auditCustomerReply" must {
 
     "send correct audit details when the customer reply is sent" in {
-      val _ = auditCustomerReply(EventTypes.Succeeded, CDCM, conversationId, CustomerMessage(messageContent))
+      val _ =
+        auditCustomerReply("CustomerReplyToConversationSuccess", CDCM, conversationId, CustomerMessage(messageContent))
       verify(auditConnector).sendExplicitAudit(
-        EventTypes.Succeeded,
+        "CustomerReplyToConversationSuccess",
         Map(
           customerReplyTxnName,
-          "client"         -> CDCM.entryName,
-          "conversationId" -> conversationId,
-          "content"        -> messageContent))
+          "client"    -> CDCM.entryName,
+          "messageId" -> conversationId,
+          "content"   -> messageContent))
     }
 
     "send correct audit details when the customer reply is not sent" in {
-      val _ = auditCustomerReply(EventTypes.Failed, CDCM, conversationId, CustomerMessage(messageContent))
+      val _ =
+        auditCustomerReply("CustomerReplyToConversationFailed", CDCM, conversationId, CustomerMessage(messageContent))
       verify(auditConnector).sendExplicitAudit(
-        EventTypes.Failed,
+        "CustomerReplyToConversationFailed",
         Map(
           customerReplyTxnName,
-          "client"         -> CDCM.entryName,
-          "conversationId" -> conversationId,
-          "content"        -> messageContent))
+          "client"    -> CDCM.entryName,
+          "messageId" -> conversationId,
+          "content"   -> messageContent))
     }
   }
 
@@ -262,18 +265,18 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
 
     "send correct audit details when message forwarded" in {
       val _ = auditMessageForwarded(
-        EventTypes.Succeeded,
+        "MessageForwardedToCaseworkerSuccess",
         QueryMessageRequest(
           RequestCommon("dc-secure-message", DateTime.now(), "acknowledgementReference"),
           RequestDetail(xRequestId, conversationId, messageContent)),
         NO_CONTENT
       )
       verify(auditConnector).sendExplicitAudit(
-        EventTypes.Succeeded,
+        "MessageForwardedToCaseworkerSuccess",
         Map(
           messageForwardedTxnName,
           "eisResponseCode"          -> "204",
-          "conversationId"           -> conversationId,
+          "messageId"                -> conversationId,
           "x-request-id"             -> xRequestId,
           "message"                  -> messageContent,
           "acknowledgementReference" -> "acknowledgementReference"
@@ -283,18 +286,18 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
 
     "send correct audit details when message not forwarded" in {
       val _ = auditMessageForwarded(
-        EventTypes.Failed,
+        "MessageForwardedToCaseworkerFailed",
         QueryMessageRequest(
           RequestCommon("dc-secure-message", DateTime.now(), "acknowledgementReference"),
           RequestDetail(xRequestId, conversationId, messageContent)),
         INTERNAL_SERVER_ERROR
       )
       verify(auditConnector).sendExplicitAudit(
-        EventTypes.Failed,
+        "MessageForwardedToCaseworkerFailed",
         Map(
           messageForwardedTxnName,
           "eisResponseCode"          -> "500",
-          "conversationId"           -> conversationId,
+          "messageId"                -> conversationId,
           "x-request-id"             -> xRequestId,
           "message"                  -> messageContent,
           "acknowledgementReference" -> "acknowledgementReference"

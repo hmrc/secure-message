@@ -22,7 +22,6 @@ import uk.gov.hmrc.auth.core.Enrolments
 import uk.gov.hmrc.emailaddress.EmailAddress
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import uk.gov.hmrc.play.audit.model.EventTypes
 import uk.gov.hmrc.securemessage.controllers.model.ClientName
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
@@ -51,7 +50,7 @@ trait Auditing {
     val detail = Map(
       newConversationTxnName,
       "client"          -> conversation.client,
-      "id"              -> conversation.id,
+      "messageId"       -> conversation.id,
       "subject"         -> conversation.subject,
       "initialMessage"  -> conversation.messages.head.content,
       "responseMessage" -> responseMessage
@@ -62,9 +61,10 @@ trait Auditing {
   def auditRetrieveEmail(emailAddress: Option[EmailAddress])(implicit hc: HeaderCarrier, ec: ExecutionContext): Unit =
     emailAddress match {
       case Some(email) =>
-        auditConnector.sendExplicitAudit(EventTypes.Succeeded, Map(retrieveEmailTxnName, "email" -> email.value))
+        auditConnector
+          .sendExplicitAudit("EmailExistsOrVerifiedSuccess", Map(retrieveEmailTxnName, "email" -> email.value))
       case _ =>
-        auditConnector.sendExplicitAudit(EventTypes.Failed, Map(retrieveEmailTxnName))
+        auditConnector.sendExplicitAudit("EmailExistsOrVerifiedFailed", Map(retrieveEmailTxnName))
     }
 
   def auditEmailSent(txnStatus: String, emailRequest: EmailRequest, emailResponseCode: Int)(
@@ -85,9 +85,9 @@ trait Auditing {
     ec: ExecutionContext): Unit = {
     val detail = Map(
       caseworkerReplyTxnName,
-      "client"         -> client.entryName,
-      "conversationId" -> conversationId,
-      "content"        -> cwm.content
+      "client"    -> client.entryName,
+      "messageId" -> conversationId,
+      "content"   -> cwm.content
     )
     auditConnector.sendExplicitAudit(txnStatus, detail)
   }
@@ -99,9 +99,9 @@ trait Auditing {
     customerMessage: CustomerMessage)(implicit hc: HeaderCarrier, ec: ExecutionContext): Unit = {
     val detail = Map(
       customerReplyTxnName,
-      "client"         -> client.entryName,
-      "conversationId" -> conversationId,
-      "content"        -> customerMessage.content)
+      "client"    -> client.entryName,
+      "messageId" -> conversationId,
+      "content"   -> customerMessage.content)
     auditConnector.sendExplicitAudit(txnStatus, detail)
   }
 
@@ -113,10 +113,10 @@ trait Auditing {
     enrolments: Enrolments)(implicit hc: HeaderCarrier, ec: ExecutionContext): Unit = {
     val detail = Map(
       messageReadTxnName,
-      "client"         -> client.entryName,
-      "conversationId" -> conversationId,
-      "readTime"       -> isoDtf.print(readTime),
-      "enrolments"     -> prettyPrintEnrolments(enrolments)
+      "client"     -> client.entryName,
+      "messageId"  -> conversationId,
+      "readTime"   -> isoDtf.print(readTime),
+      "enrolments" -> prettyPrintEnrolments(enrolments)
     )
     auditConnector.sendExplicitAudit(txnStatus, detail)
   }
@@ -127,7 +127,7 @@ trait Auditing {
     val detail = Map(
       txnName                    -> "Message forwarded to caseworker",
       "eisResponseCode"          -> eisResponseCode.toString,
-      "conversationId"           -> qrw.requestDetail.conversationId,
+      "messageId"                -> qrw.requestDetail.conversationId,
       "x-request-id"             -> qrw.requestDetail.id,
       "acknowledgementReference" -> qrw.requestCommon.acknowledgementReference,
       "message"                  -> qrw.requestDetail.message
