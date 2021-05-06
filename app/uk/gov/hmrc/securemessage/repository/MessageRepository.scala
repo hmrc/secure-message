@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.securemessage.repository
 
-import play.api.libs.json.Json.JsValueWrapper
+import play.api.libs.json.Json.{ JsValueWrapper, arr }
 import play.api.libs.json.{ JsArray, JsObject, JsString, Json }
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.mongo.{ MongoConnector, ReactiveRepository }
@@ -64,15 +64,10 @@ class MessageRepository @Inject()(implicit connector: MongoConnector)
     identifier.enrolment match {
       case Some(enrolment) =>
         Seq(
-          "recipient.identifier.name"      -> JsString(identifier.name),
-          "recipient.identifier.value"     -> JsString(identifier.value),
-          "recipient.identifier.enrolment" -> JsString(enrolment)
-        )
-      case None =>
-        Seq(
-          "recipient.identifier.name"  -> JsString(identifier.name),
+          "recipient.identifier.name"  -> JsString(enrolment),
           "recipient.identifier.value" -> JsString(identifier.value)
         )
+      case None => Seq("" -> arr())
     }
 
 }
