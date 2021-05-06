@@ -17,7 +17,6 @@
 package uk.gov.hmrc.securemessage.controllers
 
 import akka.stream.Materializer
-import com.github.nscala_time.time.Imports.LocalDate
 import org.apache.commons.codec.binary.Base64
 import org.joda.time.DateTime
 import org.mockito.ArgumentMatchers.{ any, eq => eqTo }
@@ -43,7 +42,7 @@ import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.securemessage._
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.{ ApiConversation, ConversationMetadata }
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.{ CaseworkerMessage, CdcmConversation }
-import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.{ ApiLetter, SenderInformation }
+import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.{ ApiLetter, FirstReaderInformation }
 import uk.gov.hmrc.securemessage.controllers.model.common.write.{ CustomerMessage, ReadTime }
 import uk.gov.hmrc.securemessage.controllers.model.{ ClientName, MessageType }
 import uk.gov.hmrc.securemessage.helpers.Resources
@@ -385,26 +384,6 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       status(response) mustBe UNAUTHORIZED
       contentAsString(response) mustBe "\"No enrolment found\""
     }
-
-    "return BadRequest(Invalid message type) if messageType is invalid" in new GetMessageByIdTestCase(
-      storedLetter = Some(Resources.readJson("model/core/letter.json").as[JsObject] + ("_id" -> Json.toJson(objectID))
-        + ("lastUpdated"                                                                     -> Json.toJson(DateTime.now())))) {
-      val response: Future[Result] = controller
-        .getContentDetail(encodedPath(s"invalid/${objectID.stringify}"))
-        .apply(FakeRequest("GET", "/"))
-      status(response) mustBe BAD_REQUEST
-      contentAsString(response) mustBe "\"Invalid message type\""
-    }
-
-    "return BadRequest if decoding cant find id" in new GetMessageByIdTestCase(
-      storedLetter = Some(Resources.readJson("model/core/letter.json").as[JsObject] + ("_id" -> Json.toJson(objectID))
-        + ("lastUpdated"                                                                     -> Json.toJson(DateTime.now())))) {
-      val response: Future[Result] = controller
-        .getContentDetail(encodedPath(s"${MessageType.Letter.entryName}"))
-        .apply(FakeRequest("GET", "/"))
-      status(response) mustBe BAD_REQUEST
-      contentAsString(response) mustBe "\"Invalid URL path\""
-    }
   }
 
   "createCaseworkerMessage" must {
@@ -493,11 +472,6 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       val nakedPath = "conversation/6086dc1f4700009fed2f5745/test"
       val path = encodedPath(nakedPath)
       controller.decodePath(path).right.get mustBe (("conversation", "6086dc1f4700009fed2f5745"))
-    }
-    "return InvalidPath if path is not valid" in new TestCase {
-      val nakedPath = "123456"
-      val path = encodedPath(nakedPath)
-      controller.decodePath(path).left.get.message mustBe ("Invalid URL path")
     }
   }
   @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
@@ -627,7 +601,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     authEnrolments: Set[CustomerEnrolment] = Set(testEnrolment))
       extends TestCase(authEnrolments) {
     val letter = storedLetter.map(l => l.validate[Letter]).map(_.get)
-    val apiLetter = letter.map(l => ApiLetter(l.subject, l.content, None, SenderInformation("", LocalDate.now())))
+    val apiLetter = letter.map(l => ApiLetter(l.subject, l.content, FirstReaderInformation(None, DateTime.now()), None))
     val successLetter: Either[Nothing, ApiLetter] = Right(apiLetter.get)
     when(mockSecureMessageService.getLetter(any[String], any[Set[CustomerEnrolment]])(any[ExecutionContext]))
       .thenReturn(Future.successful(successLetter))
