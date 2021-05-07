@@ -27,7 +27,7 @@ import uk.gov.hmrc.play.bootstrap.backend.http.JsonErrorHandler
 
 import scala.concurrent.Future
 
-class ErrorHandlerTest extends FreeSpec with MockitoSugar with MustMatchers {
+class ErrorHandlerSpec extends FreeSpec with MockitoSugar with MustMatchers {
   val jsonErrorHandler: JsonErrorHandler = mock[JsonErrorHandler]
   when(jsonErrorHandler.onClientError(any[RequestHeader], any[Int], any[String])).thenReturn(Future.successful(Ok("")))
   when(jsonErrorHandler.onServerError(any[RequestHeader], any[Throwable])).thenReturn(Future.successful(Ok("")))
