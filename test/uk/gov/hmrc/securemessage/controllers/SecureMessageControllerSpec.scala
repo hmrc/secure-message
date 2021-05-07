@@ -211,10 +211,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     "return an OK (200) with a JSON body of a list of conversations when provided with a list of valid query parameters" in new GetConversationsTestCase(
       storedConversationsMetadata = Resources.readJson("model/api/cdcm/read/conversations-metadata.json")) {
       val response: Future[Result] = controller
-        .getMetadataForConversationsFiltered(
-          None,
-          Some(List(CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789"))),
-          None)
+        .getConversations(None, Some(List(CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB123456789"))), None)
         .apply(FakeRequest("GET", "/"))
       status(response) mustBe OK
       contentAsJson(response).as[List[ConversationMetadata]] must be(conversationsMetadata)
@@ -224,13 +221,13 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     "return Ok (200) with empty list for query parameters/auth record mismatch" in new TestCase(
       authEnrolments = Set(CustomerEnrolment("SOME_ENROLMENT_KEY", "SOME_IDENTIFIER_KEY", "SOME_IDENTIFIER_VALUE"))) {
       private val someEnrolments: Some[List[CustomerEnrolment]] = Some(List(testEnrolment))
-      private val filters: ConversationFilters = ConversationFilters(None, someEnrolments, None)
+      private val filters: Filters = Filters(None, someEnrolments, None)
       when(
         mockSecureMessageService
-          .getConversationsFiltered(eqTo(enrolments), eqTo(filters))(any[ExecutionContext], any[Messages]))
+          .getConversations(eqTo(enrolments), eqTo(filters))(any[ExecutionContext], any[Messages]))
         .thenReturn(Future.successful(List()))
       val response: Future[Result] = controller
-        .getMetadataForConversationsFiltered(None, someEnrolments, None)
+        .getConversations(None, someEnrolments, None)
         .apply(FakeRequest("GET", "/"))
       status(response) mustBe OK
       contentAsString(response) mustBe "[]"
@@ -239,7 +236,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     "return Bad Request (400) error when invalid query parameters are provided" in new TestCase(
       authEnrolments = Set(CustomerEnrolment("SOME_ENROLMENT_KEY", "SOME_IDENTIFIER_KEY", "SOME_IDENTIFIER_VALUE"))) {
       val response: Future[Result] = controller
-        .getMetadataForConversationsFiltered(None, Some(List(testEnrolment)), None)
+        .getConversations(None, Some(List(testEnrolment)), None)
         .apply(FakeRequest("GET", "/some?x=123&Z=12&a=abc&test=ABCDEF"))
       status(response) mustBe BAD_REQUEST
       contentAsString(response) mustBe "\"Invalid query parameter(s) found: [Z, a, test, x]\""
@@ -250,7 +247,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     "return Ok (200) with a JSON body of a ApiConversations" in new GetConversationTestCase(
       storedConversation = Some(Resources.readJson("model/api/cdcm/read/api-conversation.json"))) {
       val response: Future[Result] = controller
-        .getConversationContent(cdcm, "D-80542-20201120")
+        .getConversation(cdcm, "D-80542-20201120")
         .apply(FakeRequest("GET", "/"))
       status(response) mustBe OK
       contentAsJson(response).as[ApiConversation] mustBe apiConversation.right.get
@@ -265,7 +262,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       )
     ) {
       val response: Future[Result] = controller
-        .getConversationContent(cdcm, "D-80542-20201120")
+        .getConversation(cdcm, "D-80542-20201120")
         .apply(FakeRequest("GET", "/"))
       status(response) mustBe OK
       contentAsJson(response).as[ApiConversation] mustBe apiConversation.right.get
@@ -274,7 +271,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     "return Not Found (404) with a JSON body of No conversation found" in new GetConversationTestCase(
       storedConversation = None) {
       val response: Future[Result] = controller
-        .getConversationContent(cdcm, "D-80542-20201120")
+        .getConversation(cdcm, "D-80542-20201120")
         .apply(FakeRequest("GET", "/"))
       status(response) mustBe NOT_FOUND
       contentAsString(response) mustBe "\"No conversation found\""
@@ -282,7 +279,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
 
     "return Unauthorized (401) when no enrolment found" in new TestCase(Set.empty[CustomerEnrolment]) {
       private val response = controller
-        .getConversationContent(cdcm, "D-80542-20201120")
+        .getConversation(cdcm, "D-80542-20201120")
         .apply(FakeRequest("GET", "/"))
       status(response) mustBe UNAUTHORIZED
       contentAsString(response) mustBe "\"No enrolment found\""
@@ -296,7 +293,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
         Resources.readJson("model/api/cdcm/read/api-conversation.json").as[JsObject] + ("_id" -> Json.toJson(
           objectID)))) {
       val response: Future[Result] = controller
-        .getContentDetail(encodedPath(s"${MessageType.Conversation.entryName}/${objectID.stringify}"))
+        .getMessage(encodedPath(s"${MessageType.Conversation.entryName}/${objectID.stringify}"))
         .apply(FakeRequest("GET", "/"))
       status(response) mustBe OK
       contentAsJson(response).as[ApiConversation] mustBe apiConversation.right.get
@@ -314,7 +311,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       )
     ) {
       val response: Future[Result] = controller
-        .getContentDetail(encodedPath(s"${MessageType.Conversation.entryName}/${objectID.stringify}"))
+        .getMessage(encodedPath(s"${MessageType.Conversation.entryName}/${objectID.stringify}"))
         .apply(FakeRequest("GET", "/"))
       status(response) mustBe OK
       contentAsJson(response).as[ApiConversation] mustBe apiConversation.right.get
@@ -324,7 +321,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     "return Not Found (404) with a JSON body of No conversation found" in new GetConversationByIdTestCase(
       storedConversation = None) {
       val response: Future[Result] = controller
-        .getContentDetail(encodedPath(s"${MessageType.Conversation.entryName}/${objectID.stringify}"))
+        .getMessage(encodedPath(s"${MessageType.Conversation.entryName}/${objectID.stringify}"))
         .apply(FakeRequest("GET", "/"))
       status(response) mustBe NOT_FOUND
       contentAsString(response) must include("conversations not found")
@@ -332,7 +329,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
 
     "return Unauthorized (401) when no enrolment found" in new TestCase(Set.empty[CustomerEnrolment]) {
       private val response = controller
-        .getContentDetail(encodedPath(s"${MessageType.Conversation.entryName}/${objectID.stringify}"))
+        .getMessage(encodedPath(s"${MessageType.Conversation.entryName}/${objectID.stringify}"))
         .apply(FakeRequest("GET", "/"))
       status(response) mustBe UNAUTHORIZED
       contentAsString(response) mustBe "\"No enrolment found\""
@@ -342,7 +339,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       storedLetter = Some(Resources.readJson("model/core/letter.json").as[JsObject] + ("_id" -> Json.toJson(objectID))
         + ("lastUpdated"                                                                     -> Json.toJson(DateTime.now())))) {
       val response: Future[Result] = controller
-        .getContentDetail(encodedPath(s"${MessageType.Letter.entryName}/${objectID.stringify}"))
+        .getMessage(encodedPath(s"${MessageType.Letter.entryName}/${objectID.stringify}"))
         .apply(FakeRequest("GET", "/"))
       status(response) mustBe OK
       contentAsJson(response).as[ApiLetter] mustBe apiLetter.get
@@ -360,7 +357,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       )
     ) {
       val response: Future[Result] = controller
-        .getContentDetail(encodedPath(s"${MessageType.Letter.entryName}/${objectID.stringify}"))
+        .getMessage(encodedPath(s"${MessageType.Letter.entryName}/${objectID.stringify}"))
         .apply(FakeRequest("GET", "/"))
       status(response) mustBe OK
       contentAsJson(response).as[ApiLetter] mustBe apiLetter.get
@@ -369,10 +366,10 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
 
     "return Not Found (404) with a JSON body of No letter found" in new TestCase {
       when(mockSecureMessageService.getLetter(any[String], any[Set[CustomerEnrolment]])(any[ExecutionContext]))
-        .thenReturn(Future.successful(Left(LetterNotFound("letter not found"))))
+        .thenReturn(Future.successful(Left(MessageNotFound("letter not found"))))
 
       val response: Future[Result] = controller
-        .getContentDetail(encodedPath(s"${MessageType.Letter.entryName}/${objectID.stringify}"))
+        .getMessage(encodedPath(s"${MessageType.Letter.entryName}/${objectID.stringify}"))
         .apply(FakeRequest("GET", "/"))
       status(response) mustBe NOT_FOUND
       // contentAsString(response) mustBe "\"No Letter found\""
@@ -380,7 +377,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
 
     "return Unauthorized (401) when no enrolment found for a letter" in new TestCase(Set.empty[CustomerEnrolment]) {
       private val response = controller
-        .getContentDetail(encodedPath(s"${MessageType.Letter.entryName}/${objectID.stringify}"))
+        .getMessage(encodedPath(s"${MessageType.Letter.entryName}/${objectID.stringify}"))
         .apply(FakeRequest("GET", "/"))
       status(response) mustBe UNAUTHORIZED
       contentAsString(response) mustBe "\"No enrolment found\""
@@ -389,18 +386,21 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     "return BadRequest(Invalid message type) if messageType is invalid" in new GetMessageByIdTestCase(
       storedLetter = Some(Resources.readJson("model/core/letter.json").as[JsObject] + ("_id" -> Json.toJson(objectID))
         + ("lastUpdated"                                                                     -> Json.toJson(DateTime.now())))) {
+      private val objId: String = objectID.stringify
+      private val messageType = "SomeRandomType"
+      private val rawId: String = encodedPath(s"$messageType/$objId")
       val response: Future[Result] = controller
-        .getContentDetail(encodedPath(s"invalid/${objectID.stringify}"))
+        .getMessage(rawId)
         .apply(FakeRequest("GET", "/"))
       status(response) mustBe BAD_REQUEST
-      contentAsString(response) mustBe "\"Invalid message type\""
+      contentAsString(response) mustBe s""""Invalid message type: $messageType, rawId is: $rawId""""
     }
 
     "return BadRequest if decoding cant find id" in new GetMessageByIdTestCase(
       storedLetter = Some(Resources.readJson("model/core/letter.json").as[JsObject] + ("_id" -> Json.toJson(objectID))
         + ("lastUpdated"                                                                     -> Json.toJson(DateTime.now())))) {
       val response: Future[Result] = controller
-        .getContentDetail(encodedPath(s"${MessageType.Letter.entryName}"))
+        .getMessage(encodedPath(s"${MessageType.Letter.entryName}"))
         .apply(FakeRequest("GET", "/"))
       status(response) mustBe BAD_REQUEST
       contentAsString(response) mustBe "\"Invalid URL path\""
@@ -451,7 +451,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       status(response) mustBe UNAUTHORIZED
     }
     "return NOT_FOUND (404) when the conversation ID is not recognised" in new CreateCustomerMessageTestCase(
-      serviceResponse = Future.successful(Left(ConversationNotFound("Conversation ID not known")))) {
+      serviceResponse = Future.successful(Left(MessageNotFound("Conversation ID not known")))) {
       private val response = controller.addCustomerMessage(cdcm, "D-80542-20201120")(fakeRequest)
       status(response) mustBe NOT_FOUND
     }
@@ -572,9 +572,9 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     val conversationsMetadata: List[ConversationMetadata] = storedConversationsMetadata.as[List[ConversationMetadata]]
     when(
       mockSecureMessageService
-        .getConversationsFiltered(
+        .getConversations(
           eqTo(authEnrolmentsFrom(authEnrolments)),
-          eqTo(ConversationFilters(filterEnrolmentKeys, Some(customerEnrolments.toList), filterTags)))(
+          eqTo(Filters(filterEnrolmentKeys, Some(customerEnrolments.toList), filterTags)))(
           any[ExecutionContext],
           any[Messages]))
       .thenReturn(Future.successful(conversationsMetadata))
@@ -585,9 +585,9 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     storedConversation: Option[JsValue],
     authEnrolments: Set[CustomerEnrolment] = Set(testEnrolment))
       extends TestCase(authEnrolments) {
-    val apiConversation: Either[ConversationNotFound, ApiConversation] = storedConversation match {
+    val apiConversation: Either[MessageNotFound, ApiConversation] = storedConversation match {
       case Some(conversation) => Right(conversation.as[ApiConversation])
-      case _                  => Left(ConversationNotFound("conversations not found"))
+      case _                  => Left(MessageNotFound("conversations not found"))
     }
     when(
       mockSecureMessageService.getConversation(any[String], any[String], any[Set[CustomerEnrolment]])(
@@ -600,9 +600,9 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     storedConversation: Option[JsValue],
     authEnrolments: Set[CustomerEnrolment] = Set(testEnrolment))
       extends TestCase(authEnrolments) {
-    val apiConversation: Either[ConversationNotFound, ApiConversation] = storedConversation match {
+    val apiConversation: Either[MessageNotFound, ApiConversation] = storedConversation match {
       case Some(conversation) => Right(conversation.as[ApiConversation])
-      case _                  => Left(ConversationNotFound("conversations not found"))
+      case _                  => Left(MessageNotFound("conversations not found"))
     }
     when(mockSecureMessageService.getConversation(any[String], any[Set[CustomerEnrolment]])(any[ExecutionContext]))
       .thenReturn(Future.successful(apiConversation))

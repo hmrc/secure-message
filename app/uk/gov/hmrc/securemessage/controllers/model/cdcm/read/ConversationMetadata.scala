@@ -66,7 +66,7 @@ object ConversationMetadata {
     )
   }
 
-  private def findLatestMessage(coreConversation: Conversation): Message =
+  private def findLatestMessage(coreConversation: Conversation): ConversationMessage =
     coreConversation.messages.sortBy(_.created.getMillis).reverse.head
 
   private def isLatestMessageBySender(coreConversation: Conversation, participant: Participant) =

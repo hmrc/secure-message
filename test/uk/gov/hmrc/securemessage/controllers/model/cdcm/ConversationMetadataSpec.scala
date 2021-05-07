@@ -94,7 +94,7 @@ class ConversationMetadataSpec extends PlaySpec {
       val identifier = Set(Identifier("name", "value", None))
 
       val participants = List(Participant(2, ParticipantType.System, identifier.head, None, None, None, None))
-      val messages = NonEmptyList(Message(2, DateTime.parse("2020-11-10T15:00:01.000"), ""), Nil)
+      val messages = NonEmptyList(ConversationMessage(2, DateTime.parse("2020-11-10T15:00:01.000"), ""), Nil)
 
       val coreConversation = Conversation(
         BSONObjectID.generate,
@@ -117,10 +117,10 @@ class ConversationMetadataSpec extends PlaySpec {
 
       val participants = List(Participant(2, ParticipantType.System, identifier.head, None, None, None, None))
       val messages = NonEmptyList(
-        Message(2, DateTime.parse("2020-11-10T15:00:01.000"), ""),
+        ConversationMessage(2, DateTime.parse("2020-11-10T15:00:01.000"), ""),
         List(
-          Message(1, DateTime.parse("2020-10-10T15:00:01.000"), ""),
-          Message(1, DateTime.parse("2020-9-10T15:00:01.000"), ""))
+          ConversationMessage(1, DateTime.parse("2020-10-10T15:00:01.000"), ""),
+          ConversationMessage(1, DateTime.parse("2020-9-10T15:00:01.000"), ""))
       )
 
       val coreConversation = Conversation(
@@ -144,10 +144,10 @@ class ConversationMetadataSpec extends PlaySpec {
 
       val participants = List(Participant(2, ParticipantType.System, identifier.head, None, None, None, None))
       val messages = NonEmptyList(
-        Message(1, DateTime.parse("2020-11-10T15:00:01.000"), ""),
+        ConversationMessage(1, DateTime.parse("2020-11-10T15:00:01.000"), ""),
         List(
-          Message(2, DateTime.parse("2020-10-10T15:00:01.000"), ""),
-          Message(1, DateTime.parse("2020-9-10T15:00:01.000"), ""))
+          ConversationMessage(2, DateTime.parse("2020-10-10T15:00:01.000"), ""),
+          ConversationMessage(1, DateTime.parse("2020-9-10T15:00:01.000"), ""))
       )
 
       val coreConversation = Conversation(

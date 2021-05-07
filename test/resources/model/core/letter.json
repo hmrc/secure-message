@@ -38,5 +38,8 @@
   "alerts" : {
     "emailAddress" : "test@test.com",
     "success" : true
+  },
+  "tags": {
+    "notificationType": "Direct Debit"
   }
 }

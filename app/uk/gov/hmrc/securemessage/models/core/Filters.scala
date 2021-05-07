@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.securemessage.models.core
 
-case class ConversationFilters(
+case class Filters(
   enrolmentKeys: Option[List[String]],
   customerEnrolments: Option[List[CustomerEnrolment]],
   tags: Option[List[FilterTag]]) {

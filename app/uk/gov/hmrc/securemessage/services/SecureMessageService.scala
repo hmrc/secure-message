@@ -66,15 +66,25 @@ class SecureMessageService @Inject()(
     } yield ()
   }.value
 
-  def getConversationsFiltered(authEnrolments: Enrolments, filters: ConversationFilters)(
+  def getConversations(authEnrolments: Enrolments, filters: Filters)(
     implicit ec: ExecutionContext,
     messages: Messages): Future[List[ConversationMetadata]] = {
     val filteredEnrolments = authEnrolments.filter(filters.enrolmentKeysFilter, filters.enrolmentsFilter)
     val identifiers: Set[Identifier] = filteredEnrolments.map(_.asIdentifier)
-    conversationRepository.getConversationsFiltered(identifiers, filters.tags).map {
+    conversationRepository.getConversations(identifiers, filters.tags).map {
       _.map(ConversationMetadata.coreToConversationMetadata(_, identifiers)) //TODO: move this to controllers
         .sortBy(_.issueDate.getMillis)(Ordering[Long].reverse)
     }
+  }
+
+  def getMessages(authEnrolments: Enrolments, filters: Filters)(
+    implicit ec: ExecutionContext): Future[List[Message]] = {
+    val filteredEnrolments = authEnrolments.filter(filters.enrolmentKeysFilter, filters.enrolmentsFilter)
+    val identifiers: Set[Identifier] = filteredEnrolments.map(_.asIdentifier)
+    for {
+      conversations <- conversationRepository.getConversations(identifiers, filters.tags)
+      letters       <- messageRepository.getLetters(identifiers, filters.tags)
+    } yield conversations ++ letters
   }
 
   def getConversation(client: String, conversationId: String, enrolments: Set[CustomerEnrolment])(
@@ -108,7 +118,7 @@ class SecureMessageService @Inject()(
     implicit ec: ExecutionContext,
     hc: HeaderCarrier): Future[Either[SecureMessageError, Unit]] = {
     val senderIdentifier: Identifier = messagesRequest.senderIdentifier(client, conversationId)
-    def message(sender: Participant) = Message(sender.id, new DateTime(), messagesRequest.content)
+    def message(sender: Participant) = ConversationMessage(sender.id, new DateTime(), messagesRequest.content)
     for {
       _            <- ContentValidator.validate(messagesRequest.content)
       conversation <- EitherT(conversationRepository.getConversation(client, conversationId, Set(senderIdentifier)))
@@ -128,7 +138,7 @@ class SecureMessageService @Inject()(
     implicit ec: ExecutionContext,
     request: Request[_]): Future[Either[SecureMessageError, Unit]] = {
     def message(sender: Participant) =
-      Message(sender.id, new DateTime(), messagesRequest.content)
+      ConversationMessage(sender.id, new DateTime(), messagesRequest.content)
     val identifiers: Set[Identifier] = enrolments.asIdentifiers
     for {
       conversation <- EitherT(conversationRepository.getConversation(client, conversationId, identifiers))

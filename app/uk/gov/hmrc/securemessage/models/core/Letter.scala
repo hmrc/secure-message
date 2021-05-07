@@ -87,8 +87,9 @@ final case class Letter(
   externalRef: Option[ExternalReference],
   alertDetails: AlertDetails,
   alerts: Option[EmailAlert] = None,
-  readTime: Option[DateTime]
-)
+  readTime: Option[DateTime],
+  tags: Option[Map[String, String]] = None
+) extends Message
 
 object Letter {
 

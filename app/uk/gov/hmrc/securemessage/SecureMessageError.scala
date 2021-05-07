@@ -35,7 +35,7 @@ final case class EmailLookupError(override val message: String) extends SecureMe
 final case class InvalidContent(override val message: String, override val cause: Option[Throwable] = None)
     extends SecureMessageError(message, cause)
 
-final case class ConversationNotFound(override val message: String) extends SecureMessageError(message)
+final case class MessageNotFound(override val message: String) extends SecureMessageError(message)
 
 final case class InvalidBsonId(override val message: String, override val cause: Option[Throwable])
     extends SecureMessageError(message, cause)
@@ -47,7 +47,5 @@ final case class EisForwardingError(override val message: String) extends Secure
 @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
 final case class InvalidRequest(override val message: String, override val cause: Option[Throwable] = None)
     extends SecureMessageError(message, cause)
-
-final case class LetterNotFound(override val message: String) extends SecureMessageError(message)
 
 final case class InvalidPath(override val message: String) extends SecureMessageError(message)

@@ -30,9 +30,9 @@ final case class Conversation(
   subject: String,
   language: Language,
   participants: List[Participant],
-  messages: NonEmptyList[Message],
+  messages: NonEmptyList[ConversationMessage],
   alert: Alert
-)
+) extends Message
 
 object Conversation {
   implicit val objectIdFormat = ReactiveMongoFormats.objectIdFormats

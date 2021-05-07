@@ -32,7 +32,7 @@ import uk.gov.hmrc.securemessage.controllers.model.cdcm.write._
 import uk.gov.hmrc.securemessage.controllers.model.common.write._
 import uk.gov.hmrc.securemessage.controllers.model.{ ClientName, MessageType }
 import uk.gov.hmrc.securemessage.controllers.utils.QueryStringValidation
-import uk.gov.hmrc.securemessage.models.core.{ ConversationFilters, CustomerEnrolment, FilterTag }
+import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag, Filters }
 import uk.gov.hmrc.securemessage.services.{ Auditing, ImplicitClassesExtensions, SecureMessageService }
 import uk.gov.hmrc.time.DateTimeUtils
 
@@ -108,7 +108,7 @@ class SecureMessageController @Inject()(
       }
   }
 
-  def getMetadataForConversationsFiltered(
+  def getConversations(
     enrolmentKeys: Option[List[String]],
     customerEnrolments: Option[List[CustomerEnrolment]],
     tags: Option[List[FilterTag]]): Action[AnyContent] =
@@ -119,16 +119,16 @@ class SecureMessageController @Inject()(
           case _ =>
             authorised()
               .retrieve(Retrievals.allEnrolments) { authEnrolments =>
-                val filters = ConversationFilters(enrolmentKeys, customerEnrolments, tags)
+                val filters = Filters(enrolmentKeys, customerEnrolments, tags)
                 secureMessageService
-                  .getConversationsFiltered(authEnrolments, filters)
+                  .getConversations(authEnrolments, filters)
                   .map(conversationDetails => Ok(Json.toJson(conversationDetails)))
               }
         }
       }
     }
 
-  def getConversationContent(client: ClientName, conversationId: String): Action[AnyContent] = Action.async {
+  def getConversation(client: ClientName, conversationId: String): Action[AnyContent] = Action.async {
     implicit request =>
       authorised()
         .retrieve(Retrievals.allEnrolments) { authEnrolments =>
@@ -145,7 +145,27 @@ class SecureMessageController @Inject()(
         }
   }
 
-  def getContentDetail(rawId: String): Action[AnyContent] = Action.async { implicit request =>
+  def getMessages(
+    enrolmentKeys: Option[List[String]],
+    customerEnrolments: Option[List[CustomerEnrolment]],
+    tags: Option[List[FilterTag]]): Action[AnyContent] =
+    Action.async { implicit request =>
+      {
+        validateQueryParameters(request.queryString, "enrolment", "enrolmentKey", "tag") match {
+          case Left(e) => Future.successful(BadRequest(Json.toJson(e.getMessage)))
+          case _ =>
+            authorised()
+              .retrieve(Retrievals.allEnrolments) { authEnrolments =>
+                val filters = Filters(enrolmentKeys, customerEnrolments, tags)
+                secureMessageService
+                  .getConversations(authEnrolments, filters)
+                  .map(conversationDetails => Ok(Json.toJson(conversationDetails)))
+              }
+        }
+      }
+    }
+
+  def getMessage(rawId: String): Action[AnyContent] = Action.async { implicit request =>
     decodePath(rawId) match {
       case Right((messageType, id)) =>
         authorised()
@@ -166,7 +186,8 @@ class SecureMessageController @Inject()(
                     case Right(apiLetter) => Ok(Json.toJson(apiLetter))
                     case Left(error)      => handleErrors(id, error)
                   }
-                case None => Future.successful(BadRequest(Json.toJson("Invalid message type")))
+                case None =>
+                  Future.successful(BadRequest(Json.toJson(s"Invalid message type: $messageType, rawId is: $rawId")))
               }
             }
           }
