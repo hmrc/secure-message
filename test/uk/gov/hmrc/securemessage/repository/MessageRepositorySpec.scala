@@ -46,6 +46,13 @@ class MessageRepositorySpec extends PlaySpec with MongoSpecSupport with BeforeAn
       result.right.get mustBe letter
     }
 
+    "be returned for a participating enrolment without readTime timestamp" in new TestContextWithOutReadTime {
+      val result =
+        await(
+          repository.getLetter(objectID.stringify, Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")))))
+      result.right.get.readTime mustBe None
+    }
+
     "not be returned for a participating enrolment with no enrolment HMRC-CUS-ORG" in new TestContext() {
       val result =
         await(repository.getLetter(objectID.stringify, Set(Identifier("EORINumber", "GB1234567890", enrolment = None))))
@@ -83,6 +90,17 @@ class MessageRepositorySpec extends PlaySpec with MongoSpecSupport with BeforeAn
   }
 
   class TestContext() {
+    val objectID = BSONObjectID.generate()
+    val letterJson = Resources.readJson("model/core/letter.json").as[JsObject] +
+      ("_id"         -> Json.toJson(objectID)) +
+      ("lastUpdated" -> Json.toJson(DateTime.now())) +
+      ("readTime"    -> Json.toJson(DateTime.now()))
+    val repository: MessageRepository = new MessageRepository()
+    val letter = letterJson.validate[Letter].get
+    await(repository.insert(letter))
+  }
+
+  class TestContextWithOutReadTime() {
     val objectID = BSONObjectID.generate()
     val letterJson = Resources.readJson("model/core/letter.json").as[JsObject] +
       ("_id"         -> Json.toJson(objectID)) +
