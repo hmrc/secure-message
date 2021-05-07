@@ -180,35 +180,4 @@ class SecureMessageController @Inject()(
       case _                      => Left(InvalidPath("Invalid URL path"))
     }
 
-  def addCustomerReadTime(client: ClientName, conversationId: String): Action[JsValue] = Action.async(parse.json) {
-    implicit request =>
-      authorised()
-        .retrieve(Retrievals.allEnrolments) { enrolments: Enrolments =>
-          withJsonBody[ReadTime] { readTime: ReadTime =>
-            secureMessageService
-              .updateReadTime(client.entryName, conversationId, enrolments, readTime.timestamp)
-              .map {
-                case Right(_) =>
-                  val _ =
-                    auditConversationRead(
-                      "QueryMessageReadSuccess",
-                      client,
-                      conversationId,
-                      readTime.timestamp,
-                      enrolments)
-                  Created(Json.toJson("read time successfully added"))
-                case Left(error) =>
-                  val _ =
-                    auditConversationRead(
-                      "QueryMessageReadFailed",
-                      client,
-                      conversationId,
-                      readTime.timestamp,
-                      enrolments)
-                  handleErrors(conversationId, error, Some(client))
-              }
-          }
-        }
-  }
-
 }
