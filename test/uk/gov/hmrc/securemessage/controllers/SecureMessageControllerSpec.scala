@@ -20,8 +20,8 @@ import akka.stream.Materializer
 import com.github.nscala_time.time.Imports.LocalDate
 import org.apache.commons.codec.binary.Base64
 import org.joda.time.DateTime
-import org.mockito.ArgumentMatchers.{any, eq => eqTo}
-import org.mockito.Mockito.{times, verify, when}
+import org.mockito.ArgumentMatchers.{ any, eq => eqTo }
+import org.mockito.Mockito.{ times, verify, when }
 import org.scalatest.OptionValues
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
@@ -30,10 +30,10 @@ import play.api.http.ContentTypes._
 import play.api.http.HeaderNames._
 import play.api.http.Status._
 import play.api.i18n.Messages
-import play.api.libs.json.{JsObject, JsValue, Json}
-import play.api.mvc.{Request, Result}
-import play.api.test.Helpers.{POST, PUT, contentAsJson, contentAsString, defaultAwaitTimeout, status, stubMessages}
-import play.api.test.{FakeHeaders, FakeRequest, Helpers, NoMaterializer}
+import play.api.libs.json.{ JsObject, JsValue, Json }
+import play.api.mvc.{ Request, Result }
+import play.api.test.Helpers.{ POST, PUT, contentAsJson, contentAsString, defaultAwaitTimeout, status, stubMessages }
+import play.api.test.{ FakeHeaders, FakeRequest, Helpers, NoMaterializer }
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.authorise.Predicate
@@ -41,18 +41,18 @@ import uk.gov.hmrc.auth.core.retrieve.Retrieval
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.securemessage._
-import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.{ApiConversation, ConversationMetadata}
-import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.{CaseworkerMessage, CdcmConversation}
-import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.{ApiLetter, SenderInformation}
+import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.{ ApiConversation, ConversationMetadata }
+import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.{ CaseworkerMessage, CdcmConversation }
+import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.{ ApiLetter, SenderInformation }
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
-import uk.gov.hmrc.securemessage.controllers.model.{ClientName, MessageType}
+import uk.gov.hmrc.securemessage.controllers.model.{ ClientName, MessageType }
 import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core.Letter._
 import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
 import uk.gov.hmrc.securemessage.services.SecureMessageService
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ExecutionContext, ExecutionException, Future}
+import scala.concurrent.{ ExecutionContext, ExecutionException, Future }
 
 @SuppressWarnings(
   Array(
