@@ -16,15 +16,19 @@
 
 package uk.gov.hmrc.securemessage.helpers
 
-import org.joda.time.DateTime
+import org.joda.time.{ DateTime, LocalDate }
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.securemessage.models.core._
 
 object MessageUtil {
-  def getMessage(subject: String, content: String): Letter = Letter(
+  def getMessage(
+    subject: String,
+    content: String,
+    validFrom: LocalDate = LocalDate.now(),
+    readTime: DateTime = DateTime.now()): Letter = Letter(
     BSONObjectID.generate(),
     subject,
-    DateTime.now.toString,
+    validFrom,
     "",
     "",
     "",
@@ -35,6 +39,8 @@ object MessageUtil {
     Recipient("", Identifier("", "", None), ""),
     RenderUrl("", ""),
     ExternalReference("", ""),
-    AlertDetails("", RecipientName("", "", "", "", "", ""))
+    AlertDetails("", RecipientName("", "", "", "", "", "")),
+    None,
+    Some(readTime)
   )
 }

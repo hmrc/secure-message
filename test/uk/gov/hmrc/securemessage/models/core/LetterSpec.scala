@@ -20,37 +20,37 @@ import org.joda.time.DateTime
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json.{ JsObject, Json }
 import reactivemongo.bson.BSONObjectID
+import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.{ ApiLetter, FirstReaderInformation, SenderInformation }
 import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core.Letter._
-//import uk.gov.hmrc.mongo.json.ReactiveMongoFormats.dateTimeFormats
 
 class LetterSpec extends PlaySpec {
-
   "Letter" must {
     "be parsed from json object" in {
-
-//      implicit val bsonDateWrites = new Writes[BSONDateTime] {
-//        override def writes(bTime: BSONDateTime): JsValue = Json.obj("lastUpdated" -> new DateTime(bTime.value))
-//      }
-
       val objectID = BSONObjectID.generate
-      // val dateTime: BSONDateTime = BSONDateTime(DateTime.now().getMillis)
-
-      // val test: BSONDateTime = new BSONDateTime(DateTime.now().getMillis)
-
-      //   val test =BSONDateTime(DateTime.parse(("2021-04-26T15:28:36.622Z")).getMillis)
-
       val letterJson = Resources.readJson("model/core/letter.json").as[JsObject] +
-        ("_id" -> Json.toJson(objectID)) + ("lastUpdated" -> Json.toJson(DateTime.now()))
-
-      println(letterJson)
-
+        ("_id"         -> Json.toJson(objectID)) +
+        ("lastUpdated" -> Json.toJson(DateTime.now())) +
+        ("readTime"    -> Json.toJson(DateTime.now()))
       val letter = letterJson.validate[Letter].get
-      println(letter)
-      //  letter mustBe Letter(objectID, "Message subject","2021-04-26","Lf=","DEFAULT","2021-04-26","succeeded", "<h2>Test content</h2>", false, "" )
-
+      val apiLetter = ApiLetter.fromCore(letter)
+      apiLetter.subject mustBe (letter.subject)
+      apiLetter.content mustBe (letter.content)
+      apiLetter.senderInformation mustBe SenderInformation("HMRC", letter.validFrom)
+      apiLetter.firstReaderInformation.get mustBe (FirstReaderInformation(None, letter.readTime.get))
     }
 
+    "be parsed without readTime from json object" in {
+      val objectID = BSONObjectID.generate
+      val letterJson = Resources.readJson("model/core/letter.json").as[JsObject] +
+        ("_id"         -> Json.toJson(objectID)) +
+        ("lastUpdated" -> Json.toJson(DateTime.now()))
+      val letter = letterJson.validate[Letter].get
+      val apiLetter = ApiLetter.fromCore(letter)
+      apiLetter.subject mustBe (letter.subject)
+      apiLetter.content mustBe (letter.content)
+      apiLetter.senderInformation mustBe SenderInformation("HMRC", letter.validFrom)
+      apiLetter.firstReaderInformation mustBe None
+    }
   }
-
 }
