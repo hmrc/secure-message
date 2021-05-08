@@ -16,37 +16,47 @@
 
 package uk.gov.hmrc.securemessage.controllers.model.cdsf.read
 
-import org.joda.time.DateTime
+import org.joda.time.{ DateTime, LocalDate }
+import play.api.libs.json.JodaReads.{ jodaDateReads, jodaLocalDateReads }
+import play.api.libs.json.JodaWrites.{ jodaDateWrites, jodaLocalDateWrites }
 import play.api.libs.json.{ Format, Json }
-import play.api.libs.json.JodaReads.jodaDateReads
-import play.api.libs.json.JodaWrites.jodaDateWrites
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.securemessage.models.core.Letter
 
 final case class ApiLetter(
   subject: String,
   content: String,
-  firstReaderInformation: FirstReaderInformation,
+  firstReaderInformation: Option[FirstReaderInformation],
+  senderInformation: SenderInformation,
   readTime: Option[DateTime] = None
 )
 
 final case class FirstReaderInformation(name: Option[String], read: DateTime)
+final case class SenderInformation(name: String, sent: LocalDate)
 
 object ApiLetter {
   def fromCore(letter: Letter): ApiLetter =
     ApiLetter(
       letter.subject,
       letter.content,
-      FirstReaderInformation(None, DateTime.now())
+      letter.readTime.map(FirstReaderInformation(None, _)),
+      SenderInformation("HMRC", letter.validFrom)
     )
 
-  private val dateFormatString = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+  private val dateTimeFormatString = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+  private val dateFormatString = "yyyy-MM-dd"
 
-  implicit val dateFormat: Format[DateTime] =
-    Format(jodaDateReads(dateFormatString), jodaDateWrites(dateFormatString))
+  implicit val datetimeFormat: Format[DateTime] =
+    Format(jodaDateReads(dateTimeFormatString), jodaDateWrites(dateTimeFormatString))
 
-  implicit val firstReaderTime: Format[FirstReaderInformation] =
+  implicit val dateFormat: Format[LocalDate] =
+    Format(jodaLocalDateReads(dateFormatString), jodaLocalDateWrites(dateFormatString))
+
+  implicit val firstReaderInformationFormat: Format[FirstReaderInformation] =
     Json.format[FirstReaderInformation]
+
+  implicit val senderInformationFormat: Format[SenderInformation] =
+    Json.format[SenderInformation]
 
   implicit val bsonObjectIdFormat: Format[BSONObjectID] =
     Json.format[BSONObjectID]
