@@ -43,8 +43,8 @@ import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.securemessage._
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.{ ApiConversation, ConversationMetadata }
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.{ CaseworkerMessage, CdcmConversation }
-import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.{ ApiLetter, SenderInformation }
-import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.{ ApiLetter, FirstReaderInformation }
+import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.{ SenderInformation }
+import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.{ ApiLetter }
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
 import uk.gov.hmrc.securemessage.controllers.model.{ ClientName, MessageType }
 import uk.gov.hmrc.securemessage.helpers.Resources
@@ -463,7 +463,6 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     }
   }
 
-
   "Base64 decoding" must {
     "return messageType letter and id" in new TestCase {
       val nakedPath = "letter/6086dc1f4700009fed2f5745"
@@ -486,8 +485,6 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       controller.decodePath(path).left.get.message mustBe ("Invalid URL path")
     }
   }
-
-
   @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
   class TestCase(authEnrolments: Set[CustomerEnrolment] = Set(testEnrolment)) {
     val mockRepository: ConversationRepository = mock[ConversationRepository]

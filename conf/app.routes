@@ -108,6 +108,6 @@ GET         /conversation/:client/:conversationId   uk.gov.hmrc.securemessage.co
 #     description: unauthorised customer when they don't have an enrolment
 #   404:
 #     description: conversation/message not found
-  /messages/:id   uk.gov.hmrc.securemessage.controllers.SecureMessageController.getContentDetail(id: String
+###
 GET        /messages/:id   uk.gov.hmrc.securemessage.controllers.SecureMessageController.getContentDetail(id: String)
 
