@@ -46,6 +46,7 @@ class MessageRepositorySpec extends PlaySpec with MongoSpecSupport with BeforeAn
       result.right.get mustBe letter
     }
 
+
     "be returned for a participating enrolment without readTime timestamp" in new TestContextWithOutReadTime {
       val result =
         await(
