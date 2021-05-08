@@ -179,5 +179,4 @@ class SecureMessageController @Inject()(
       case messageType :: id :: _ => Right((messageType, id))
       case _                      => Left(InvalidPath("Invalid URL path"))
     }
-
 }
