@@ -81,7 +81,7 @@ final case class Letter(
   status: String,
   content: String,
   statutory: Boolean,
-  lastUpdated: DateTime,
+  lastUpdated: Option[DateTime],
   recipient: Recipient,
   renderUrl: RenderUrl,
   externalRef: ExternalReference,
