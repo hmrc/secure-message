@@ -35,7 +35,7 @@ object MessageUtil {
     "",
     content,
     false,
-    DateTime.now(),
+    Some(DateTime.now()),
     Recipient("", Identifier("", "", None), ""),
     RenderUrl("", ""),
     ExternalReference("", ""),
