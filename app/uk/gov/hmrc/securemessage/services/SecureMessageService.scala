@@ -91,6 +91,7 @@ class SecureMessageService @Inject()(
     val identifiers = enrolments.map(_.asIdentifier)
     for {
       conversation <- EitherT(conversationRepository.getConversation(id, identifiers))
+      _            <- addReadTime(conversation, identifiers, DateTime.now())
     } yield ApiConversation.fromCore(conversation, identifiers)
   }.value
 
@@ -99,6 +100,7 @@ class SecureMessageService @Inject()(
     val identifiers = enrolments.map(_.asIdentifier)
     for {
       letter <- EitherT(messageRepository.getLetter(id, identifiers))
+      _      <- EitherT(messageRepository.addReadTime(id))
     } yield ApiLetter.fromCore(letter)
   }.value
 

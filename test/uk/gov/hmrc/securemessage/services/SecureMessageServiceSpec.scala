@@ -253,25 +253,33 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
   }
 
   "getConversation by id" must {
-    "return a message with ApiConversation" in {
-      when(mockConversationRepository.getConversation(any[String], any[Set[Identifier]])(any[ExecutionContext]))
-        .thenReturn(
-          Future.successful(
-            Right(
-              ConversationUtil.getFullConversation(
-                BSONObjectID.generate,
-                "D-80542-20201120",
-                "HMRC-CUS-ORG",
-                "EORINumber",
-                "GB1234567890"))))
+    val hmrcCusOrg = "HMRC-CUS-ORG"
+    val conversationId = "D-80542-20201120"
+    val eoriName = "EORIName"
+    val enrolmentValue = "GB7777777777"
+    val id = BSONObjectID.generate
+    "return a message with ApiConversation" in new GetConversationByIDTestContext(
+      getConversationResult = Right(
+        ConversationUtil
+          .getFullConversation(id, conversationId, hmrcCusOrg, eoriName, enrolmentValue))
+    ) {
       val result = await(
-        service
-          .getConversation(
-            BSONObjectID.generate().stringify,
-            Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777"))))
-      result.right.get.client mustBe "CDCM"
-      result.right.get.messages.size mustBe 1
-      result.right.get.subject mustBe "MRN: 19GB4S24GC3PPFGVR7"
+        service.getConversation(id.stringify, Set(CustomerEnrolment(hmrcCusOrg, eoriName, enrolmentValue)))).right.get
+
+      result.client mustBe "CDCM"
+      result.messages.size mustBe 1
+      result.subject mustBe "MRN: 19GB4S24GC3PPFGVR7"
+    }
+
+    "return a message with ApiConversation 2" in new GetConversationByIDWithReadTimeErrorTestContext(
+      getConversationResult = Right(
+        ConversationUtil
+          .getFullConversation(id, conversationId, hmrcCusOrg, eoriName, enrolmentValue))
+    ) {
+      val result =
+        await(service.getConversation(id.stringify, Set(CustomerEnrolment(hmrcCusOrg, eoriName, enrolmentValue))))
+
+      result.left.get.message mustBe "Can not store read time"
     }
 
     "return a Left(ConversationNotFound)" in {
@@ -296,6 +304,8 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
     "return a message with ApiLetter" in {
       when(mockMessageRepository.getLetter(any[String], any[Set[Identifier]])(any[ExecutionContext]))
         .thenReturn(Future(Right(MessageUtil.getMessage("subject", "content"))))
+      when(mockMessageRepository.addReadTime(any[String])(any[ExecutionContext]))
+        .thenReturn(Future(Right(())))
       val result = await(
         service
           .getLetter(
@@ -308,6 +318,8 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
     "return a Left(LetterNotFound)" in {
       when(mockMessageRepository.getLetter(any[String], any[Set[Identifier]])(any[ExecutionContext]))
         .thenReturn(Future(Left(LetterNotFound("Letter not found"))))
+      when(mockMessageRepository.addReadTime(any[String])(any[ExecutionContext]))
+        .thenReturn(Future(Right(())))
       val result = await(
         service
           .getLetter(
@@ -316,6 +328,20 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
       result mustBe
         Left(LetterNotFound(s"Letter not found"))
     }
+
+    "return a left if update readTime fails" in {
+      when(mockMessageRepository.getLetter(any[String], any[Set[Identifier]])(any[ExecutionContext]))
+        .thenReturn(Future(Right(MessageUtil.getMessage("subject", "content"))))
+      when(mockMessageRepository.addReadTime(any[String])(any[ExecutionContext]))
+        .thenReturn(Future(Left(StoreError("cant store readTime", None))))
+      val result = await(
+        service
+          .getLetter(
+            BSONObjectID.generate().stringify,
+            Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777"))))
+      result.left.get.message mustBe "cant store readTime"
+    }
+
   }
 
   "Adding a customer message to a conversation" must {
@@ -413,6 +439,25 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
     when(
       mockConversationRepository.addReadTime(any[String], any[String], any[Int], any[DateTime])(any[ExecutionContext]))
       .thenReturn(Future.successful(Right(())))
+  }
+
+  @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
+  class GetConversationByIDTestContext(getConversationResult: Either[ConversationNotFound, Conversation]) {
+    when(mockConversationRepository.getConversation(any[String], any[Set[Identifier]])(any[ExecutionContext]))
+      .thenReturn(Future(getConversationResult))
+    when(
+      mockConversationRepository.addReadTime(any[String], any[String], any[Int], any[DateTime])(any[ExecutionContext]))
+      .thenReturn(Future.successful(Right(())))
+  }
+
+  @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
+  class GetConversationByIDWithReadTimeErrorTestContext(
+    getConversationResult: Either[ConversationNotFound, Conversation]) {
+    when(mockConversationRepository.getConversation(any[String], any[Set[Identifier]])(any[ExecutionContext]))
+      .thenReturn(Future(getConversationResult))
+    when(
+      mockConversationRepository.addReadTime(any[String], any[String], any[Int], any[DateTime])(any[ExecutionContext]))
+      .thenReturn(Future.successful(Left(StoreError("Can not store read time", None))))
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
