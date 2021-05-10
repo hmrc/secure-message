@@ -16,12 +16,13 @@
 
 package uk.gov.hmrc.securemessage.models.core
 
-import org.joda.time.{ DateTime, LocalDate }
+import org.joda.time.LocalDate
 import play.api.libs.json.JodaReads.{ jodaDateReads, jodaLocalDateReads }
 import play.api.libs.json.JodaWrites.{ jodaDateWrites, jodaLocalDateWrites }
 import play.api.libs.json.{ Format, Json, OFormat, Reads, Writes, __ }
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
+import org.joda.time.DateTime
 
 final case class RecipientName(
   title: String,
