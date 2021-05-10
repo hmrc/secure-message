@@ -475,8 +475,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
-  class GetConversationByIDWithReadTimeErrorTestContext(
-                                                         getConversationResult: Either[MessageNotFound, Conversation]) {
+  class GetConversationByIDWithReadTimeErrorTestContext(getConversationResult: Either[MessageNotFound, Conversation]) {
     when(mockConversationRepository.getConversation(any[String], any[Set[Identifier]])(any[ExecutionContext]))
       .thenReturn(Future(getConversationResult))
     when(

@@ -16,15 +16,15 @@
 
 package uk.gov.hmrc.securemessage.repository
 import play.api.libs.json.Json._
-import play.api.libs.json.{JsArray, JsObject, JsString, Json}
-import reactivemongo.bson.{BSONDateTime, BSONDocument, BSONNull, BSONObjectID}
+import play.api.libs.json.{ JsArray, JsObject, JsString, Json }
+import reactivemongo.bson.{ BSONDateTime, BSONDocument, BSONNull, BSONObjectID }
 import uk.gov.hmrc.mongo.MongoConnector
-import uk.gov.hmrc.securemessage.{SecureMessageError, StoreError}
-import uk.gov.hmrc.securemessage.models.core.{FilterTag, Identifier, Letter}
-
+import uk.gov.hmrc.securemessage.{ SecureMessageError, StoreError }
+import uk.gov.hmrc.securemessage.models.core.{ FilterTag, Identifier, Letter }
+import reactivemongo.play.json.ImplicitBSONHandlers.BSONDocumentWrites
 import javax.inject.Inject
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
+import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.{ Failure, Success }
 
 class MessageRepository @Inject()(implicit connector: MongoConnector)
     extends SecureMessageRepository[Letter, BSONObjectID](

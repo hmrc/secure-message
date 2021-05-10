@@ -32,7 +32,8 @@ import uk.gov.hmrc.securemessage.models.core.{ FilterTag, Identifier, Letter }
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class MessageRepositorySpec extends PlaySpec with MongoSpecSupport with BeforeAndAfterEach with ScalaFutures {
+class MessageRepositorySpec
+    extends PlaySpec with MongoSpecSupport with BeforeAndAfterEach with ScalaFutures with StaticTestData {
 
   "A letter" should {
     "be returned for a participating enrolment" in new TestContext() {
@@ -48,7 +49,7 @@ class MessageRepositorySpec extends PlaySpec with MongoSpecSupport with BeforeAn
     }
 
     "be returned for a participating enrolment without readTime timestamp" in new TestContext(
-      coreLetters = List(Resources.readJson("model/core/letter.json").add(Seq(lastUpdatedField)))
+      coreLetters = lettersWithoutReadTime
     ) {
       val result: Either[SecureMessageError, Letter] =
         await(
@@ -87,27 +88,25 @@ class MessageRepositorySpec extends PlaySpec with MongoSpecSupport with BeforeAn
   }
 
   "Update letter with new read time" should {
-    "update readTime only if its empty" in new TestContext(
-      coreLetters = List(Resources.readJson("model/core/letter.json").add(Seq(lastUpdatedField)))
-    ){
+    "update readTime only if its empty" in new TestContext(coreLetters = lettersWithoutReadTime) {
       await(repository.addReadTime(objectID.stringify))
-      val result =
+      val result: Either[SecureMessageError, Letter] =
         await(
           repository
             .getLetter(objectID.stringify, Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")))))
       result.right.get.readTime must not be empty
     }
-    "not update readTime if it already exists" in new TestContext(DateTime.parse("2020-11-10T15:00:01.000")) {
+    "not update readTime if it already exists" in new TestContext() {
       await(repository.addReadTime(objectID.stringify))
-      val result =
+      val result: Either[SecureMessageError, Letter] =
         await(
           repository
             .getLetter(objectID.stringify, Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")))))
-      result.right.get.readTime.get mustBe DateTime.parse("2020-11-10T15:00:01.000Z")
+      result.right.get.readTime mustBe letters.head.readTime
     }
 
     "return left if Bsonid is invalid" in new TestContext() {
-      val result = await(repository.addReadTime("not valid id"))
+      val result: Either[SecureMessageError, Unit] = await(repository.addReadTime("not valid id"))
       result.left.get.message must include("Wrong ObjectId")
     }
 
@@ -146,18 +145,24 @@ class MessageRepositorySpec extends PlaySpec with MongoSpecSupport with BeforeAn
     }
   }
 
-  private val lastUpdatedField: (String, JsValue) = "lastUpdated" -> Json.toJson(DateTime.now())
-  private val readTimeField: (String, JsValue) = "readTime"       -> Json.toJson(DateTime.now())
-  private val timeFields = Seq(lastUpdatedField, readTimeField)
-
-  class TestContext(coreLetters: List[JsValue] = List(Resources.readJson("model/core/letter.json").add(timeFields))) {
+  class TestContext(coreLetters: List[JsValue] = lettersWithTimeFields) {
     val objectID: BSONObjectID = BSONObjectID.generate()
     val letters: List[Letter] = coreLetters.map(_.add(Seq(("_id" -> Json.toJson(objectID)))).as[Letter])
-    val identifiers: Set[Identifier] = Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")))
+
     val repository: MessageRepository = new MessageRepository()
     repository.drop
     letters.map(letter => repository.insert(letter).futureValue)
   }
+
+}
+
+trait StaticTestData {
+  val lastUpdatedField: (String, JsValue) = "lastUpdated" -> Json.toJson(DateTime.now())
+  val readTimeField: (String, JsValue) = "readTime"       -> Json.toJson(DateTime.now())
+  val timeFields = Seq(lastUpdatedField, readTimeField)
+  val lettersWithTimeFields = List(Resources.readJson("model/core/letter.json").add(timeFields))
+  val lettersWithoutReadTime = List(Resources.readJson("model/core/letter.json").add(Seq(lastUpdatedField)))
+  val identifiers: Set[Identifier] = Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")))
 
   implicit class JsonLetterExtensions(letter: JsValue) {
     def add(fields: Seq[(String, JsValue)]): JsObject =
@@ -168,6 +173,5 @@ class MessageRepositorySpec extends PlaySpec with MongoSpecSupport with BeforeAn
       fields.foldLeft(letter.as[JsObject]) { (nextLetter, field) =>
         nextLetter - field
       }
-
   }
 }
