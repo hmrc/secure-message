@@ -16,15 +16,22 @@
 
 package uk.gov.hmrc.securemessage.repository
 
-import play.api.libs.json.Json.{ JsValueWrapper, arr }
+import play.api.libs.json.JodaWrites.{ JodaDateTimeWrites => _ }
+import play.api.libs.json.Json.arr
+import uk.gov.hmrc.securemessage.models.core.Letter
+import uk.gov.hmrc.securemessage.{ InvalidBsonId, LetterNotFound, SecureMessageError, StoreError }
+import play.api.libs.json.JodaWrites.{ JodaDateTimeWrites => _ }
+import play.api.libs.json.Json.JsValueWrapper
 import play.api.libs.json.{ JsArray, JsObject, JsString, Json }
-import reactivemongo.bson.BSONObjectID
-import uk.gov.hmrc.mongo.{ MongoConnector, ReactiveRepository }
-import uk.gov.hmrc.securemessage.{ InvalidBsonId, LetterNotFound, SecureMessageError }
-import uk.gov.hmrc.securemessage.models.core.{ Identifier, Letter }
+import reactivemongo.bson.{ BSONDateTime, BSONDocument, BSONNull, BSONObjectID }
+import uk.gov.hmrc.mongo.MongoConnector
+import uk.gov.hmrc.securemessage.models.core.Identifier
 import javax.inject.Inject
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.collection.Seq
 import scala.util.{ Failure, Success }
+import uk.gov.hmrc.mongo.ReactiveRepository
+import reactivemongo.play.json.ImplicitBSONHandlers.BSONDocumentWrites
+import scala.concurrent.{ ExecutionContext, Future }
 
 class MessageRepository @Inject()(implicit connector: MongoConnector)
     extends ReactiveRepository[Letter, BSONObjectID](
@@ -32,6 +39,21 @@ class MessageRepository @Inject()(implicit connector: MongoConnector)
       connector.db,
       Letter.letterFormat
     ) {
+
+  def addReadTime(id: String)(implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] =
+    withCurrentTime { implicit time =>
+      BSONObjectID.parse(id) match {
+        case Success(bsonId) =>
+          collection
+            .update(ordered = false)
+            .one(
+              BSONDocument("_id"  -> bsonId, "readTime" -> BSONNull),
+              BSONDocument("$set" -> BSONDocument("readTime" -> BSONDateTime(time.getMillis)))
+            )
+            .map(_ => Right(()))
+        case Failure(error) => Future.successful(Left(StoreError(error.getMessage, None)))
+      }
+    }
 
   def getLetter(id: String, identifiers: Set[Identifier])(
     implicit ec: ExecutionContext): Future[Either[SecureMessageError, Letter]] =
