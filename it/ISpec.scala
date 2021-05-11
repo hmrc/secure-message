@@ -15,14 +15,13 @@
  */
 
 import java.io.File
-
 import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.play.PlaySpec
 import play.api.http.{ ContentTypes, HeaderNames }
 import play.api.libs.ws.{ WSClient, WSResponse }
 import play.api.test.Helpers.{ await, defaultAwaitTimeout }
 import uk.gov.hmrc.integration.ServiceSpec
-import uk.gov.hmrc.securemessage.repository.ConversationRepository
+import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository }
 import utils.AuthHelper
 
 import scala.concurrent.{ ExecutionContext, Future }
@@ -35,10 +34,13 @@ trait ISpec extends PlaySpec with ServiceSpec with BeforeAndAfterEach with AuthH
   override val ggAuthPort: Int = 8585
   override val wsClient: WSClient = app.injector.instanceOf[WSClient]
 
-  protected val repository: ConversationRepository = app.injector.instanceOf[ConversationRepository]
+  protected val conversationRepo: ConversationRepository = app.injector.instanceOf[ConversationRepository]
+  protected val messageRepo: MessageRepository = app.injector.instanceOf[MessageRepository]
 
   override protected def beforeEach(): Unit = {
-    val _ = await(repository.removeAll())
+    await(conversationRepo.removeAll())
+    await(messageRepo.removeAll())
+    ()
   }
 
   protected def createConversation: Future[WSResponse] = {
