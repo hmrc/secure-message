@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.securemessage.controllers.model.common.read
 
-import org.joda.time.{ DateTime, LocalTime }
+import org.joda.time.{ DateTime, DateTimeZone, LocalTime }
 import play.api.i18n.Messages
 import play.api.libs.json.{ Json, OFormat }
 import uk.gov.hmrc.auth.core.Enrolments
@@ -64,7 +64,7 @@ object MessageMetadata extends ApiFormats with ImplicitClassesExtensions {
       `type` = messageType,
       id = IdCoder.encodeId(messageType, letter._id.stringify),
       subject = al.subject,
-      issueDate = al.senderInformation.sent.toDateTime(LocalTime.MIDNIGHT),
+      issueDate = al.senderInformation.sent.toDateTime(LocalTime.MIDNIGHT, DateTimeZone.UTC),
       senderName = Some(al.senderInformation.name),
       unreadMessages = al.readTime.isEmpty,
       count = 1
