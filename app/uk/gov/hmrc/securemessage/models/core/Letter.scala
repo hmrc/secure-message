@@ -36,13 +36,13 @@ object RecipientName {
   implicit val recipientNameFormat = Json.format[RecipientName]
 }
 
-final case class Recipient(regime: String, identifier: Identifier, email: String)
+final case class Recipient(regime: String, identifier: Identifier, email: Option[String])
 
 object Recipient {
   implicit val recipientFormat = Json.format[Recipient]
 }
 
-final case class AlertDetails(templateId: String, recipientName: RecipientName)
+final case class AlertDetails(templateId: String, recipientName: Option[RecipientName])
 
 object AlertDetails {
   implicit val format: Format[AlertDetails] = Json.format[AlertDetails]
@@ -77,14 +77,14 @@ final case class Letter(
   validFrom: LocalDate,
   hash: String,
   alertQueue: String,
-  alertFrom: String,
+  alertFrom: Option[String],
   status: String,
   content: String,
   statutory: Boolean,
   lastUpdated: Option[DateTime],
   recipient: Recipient,
   renderUrl: RenderUrl,
-  externalRef: ExternalReference,
+  externalRef: Option[ExternalReference],
   alertDetails: AlertDetails,
   alerts: Option[EmailAlert] = None,
   readTime: Option[DateTime]
