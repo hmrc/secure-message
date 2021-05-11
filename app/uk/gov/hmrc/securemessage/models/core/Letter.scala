@@ -25,12 +25,12 @@ import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import org.joda.time.DateTime
 
 final case class RecipientName(
-  title: String,
-  forename: String,
-  secondForename: String,
-  surname: String,
-  honours: String,
-  line1: String)
+  title: Option[String],
+  forename: Option[String],
+  secondForename: Option[String],
+  surname: Option[String],
+  honours: Option[String],
+  line1: Option[String])
 
 object RecipientName {
   implicit val recipientNameFormat = Json.format[RecipientName]
