@@ -17,17 +17,11 @@
 package uk.gov.hmrc.securemessage.models.core
 
 import org.joda.time.DateTime
-import play.api.libs.json.JodaReads.jodaDateReads
-import play.api.libs.json.JodaWrites.jodaDateWrites
-import play.api.libs.json.{ Format, Json, OFormat }
+import play.api.libs.json.{ Json, OFormat }
+import uk.gov.hmrc.securemessage.controllers.model.ApiFormats
 
 final case class ConversationMessage(senderId: Int, created: DateTime, content: String)
-object ConversationMessage {
-
-  private val dateFormatString = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
-
-  implicit val dateFormat: Format[DateTime] =
-    Format(jodaDateReads(dateFormatString), jodaDateWrites(dateFormatString))
+object ConversationMessage extends ApiFormats {
 
   implicit val messageFormat: OFormat[ConversationMessage] =
     Json.format[ConversationMessage]

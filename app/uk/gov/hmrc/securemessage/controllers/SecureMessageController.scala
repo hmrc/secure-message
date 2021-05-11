@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.securemessage.controllers
 
-import org.apache.commons.codec.binary.Base64
-import javax.inject.Inject
 import play.api.Logging
 import play.api.i18n.I18nSupport
 import play.api.libs.json.{ JsValue, Json }
@@ -27,15 +25,17 @@ import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.securemessage._
+import uk.gov.hmrc.securemessage.controllers.model.ClientName
 import uk.gov.hmrc.securemessage.controllers.model.MessageType.{ Conversation, Letter }
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write._
+import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata
 import uk.gov.hmrc.securemessage.controllers.model.common.write._
-import uk.gov.hmrc.securemessage.controllers.model.{ ClientName, MessageType }
-import uk.gov.hmrc.securemessage.controllers.utils.QueryStringValidation
+import uk.gov.hmrc.securemessage.controllers.utils.{ IdCoder, QueryStringValidation }
 import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag, Filters }
 import uk.gov.hmrc.securemessage.services.{ Auditing, ImplicitClassesExtensions, SecureMessageService }
 import uk.gov.hmrc.time.DateTimeUtils
 
+import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
 
 @SuppressWarnings(Array("org.wartremover.warts.All"))
@@ -158,46 +158,42 @@ class SecureMessageController @Inject()(
               .retrieve(Retrievals.allEnrolments) { authEnrolments =>
                 val filters = Filters(enrolmentKeys, customerEnrolments, tags)
                 secureMessageService
-                  .getConversations(authEnrolments, filters)
-                  .map(conversationDetails => Ok(Json.toJson(conversationDetails)))
+                  .getMessages(authEnrolments, filters)
+                  .map { messagesList =>
+                    val messageMetadataList: List[MessageMetadata] =
+                      messagesList.map(m => MessageMetadata(m, authEnrolments))
+                    Ok(Json.toJson(messageMetadataList))
+                  }
               }
         }
       }
     }
 
   def getMessage(rawId: String): Action[AnyContent] = Action.async { implicit request =>
-    decodePath(rawId) match {
+    IdCoder.decodeId(rawId) match {
       case Right((messageType, id)) =>
         authorised()
           .retrieve(Retrievals.allEnrolments) { authEnrolments =>
             if (authEnrolments.enrolments.isEmpty) {
               Future.successful(Unauthorized(Json.toJson("No enrolment found")))
             } else {
-              MessageType.withNameOption(messageType) match {
-                case Some(Conversation) =>
+              messageType match {
+                case Conversation =>
                   secureMessageService
                     .getConversation(id, authEnrolments.asCustomerEnrolments)
                     .map {
                       case Right(apiConversation) => Ok(Json.toJson(apiConversation))
                       case Left(error)            => handleErrors(id, error)
                     }
-                case Some(Letter) =>
+                case Letter =>
                   secureMessageService.getLetter(id, authEnrolments.asCustomerEnrolments).map {
                     case Right(apiLetter) => Ok(Json.toJson(apiLetter))
                     case Left(error)      => handleErrors(id, error)
                   }
-                case None =>
-                  Future.successful(BadRequest(Json.toJson(s"Invalid message type: $messageType, rawId is: $rawId")))
               }
             }
           }
-      case Left(error) => Future.successful(BadRequest(Json.toJson(error.message)))
+      case Left(error) => Future.successful(handleErrors(rawId, error))
     }
   }
-
-  private[controllers] def decodePath(path: String): Either[SecureMessageError, (String, String)] =
-    new String(Base64.decodeBase64(path.getBytes("UTF-8"))).split("/").toList match {
-      case messageType :: id :: _ => Right((messageType, id))
-      case _                      => Left(InvalidPath("Invalid URL path"))
-    }
 }

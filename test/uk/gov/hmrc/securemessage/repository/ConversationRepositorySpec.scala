@@ -37,6 +37,7 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
 
   val conversation1: Conversation =
     ConversationUtil.getFullConversation(BSONObjectID.generate, "123", "HMRC-CUS-ORG", "EORINumber", "GB1234567890")
+
   val conversation2: Conversation =
     ConversationUtil.getFullConversation(BSONObjectID.generate, "234", "HMRC-CUS-ORG", "EORINumber", "GB1234567890")
   val conversation3: Conversation =
@@ -284,6 +285,7 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
 
   class TestContext(conversations: Seq[Conversation]) {
     val repository: ConversationRepository = new ConversationRepository()
+    repository.drop
     await(Future.sequence(conversations.map(repository.insert)))
   }
 

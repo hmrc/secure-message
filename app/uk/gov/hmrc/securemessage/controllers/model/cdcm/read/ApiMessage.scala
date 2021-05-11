@@ -17,9 +17,8 @@
 package uk.gov.hmrc.securemessage.controllers.model.cdcm.read
 
 import org.joda.time.DateTime
-import play.api.libs.json.JodaReads.jodaDateReads
-import play.api.libs.json.JodaWrites.jodaDateWrites
 import play.api.libs.json.{ Format, Json }
+import uk.gov.hmrc.securemessage.controllers.model.ApiFormats
 
 final case class ApiMessage(
   senderInformation: Option[SenderInformation],
@@ -30,12 +29,7 @@ final case class SenderInformation(name: Option[String], sent: DateTime, self: B
 
 final case class FirstReaderInformation(name: Option[String], read: DateTime)
 
-object ApiMessage {
-
-  private val dateFormatString = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
-
-  implicit val dateFormat: Format[DateTime] =
-    Format(jodaDateReads(dateFormatString), jodaDateWrites(dateFormatString))
+object ApiMessage extends ApiFormats {
 
   implicit val senderInformationFormat: Format[SenderInformation] =
     Json.format[SenderInformation]

@@ -18,8 +18,7 @@ package uk.gov.hmrc.securemessage.controllers
 
 import akka.stream.Materializer
 import org.apache.commons.codec.binary.Base64
-import org.joda.time.{ LocalDate }
-import org.joda.time.DateTime
+import org.joda.time.{ DateTime, LocalDate }
 import org.mockito.ArgumentMatchers.{ any, eq => eqTo }
 import org.mockito.Mockito.{ times, verify, when }
 import org.scalatest.OptionValues
@@ -31,7 +30,7 @@ import play.api.http.HeaderNames._
 import play.api.http.Status._
 import play.api.i18n.Messages
 import play.api.libs.json.{ JsObject, JsValue, Json }
-import play.api.mvc.{ Request, Result }
+import play.api.mvc.{ AnyContentAsEmpty, Request, Result }
 import play.api.test.Helpers.{ POST, PUT, contentAsJson, contentAsString, defaultAwaitTimeout, status, stubMessages }
 import play.api.test.{ FakeHeaders, FakeRequest, Helpers, NoMaterializer }
 import reactivemongo.bson.BSONObjectID
@@ -44,6 +43,7 @@ import uk.gov.hmrc.securemessage._
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.{ ApiConversation, ConversationMetadata }
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.{ CaseworkerMessage, CdcmConversation }
 import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.{ ApiLetter, SenderInformation }
+import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
 import uk.gov.hmrc.securemessage.controllers.model.{ ClientName, MessageType }
 import uk.gov.hmrc.securemessage.helpers.Resources
@@ -51,6 +51,7 @@ import uk.gov.hmrc.securemessage.models.core.Letter._
 import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
 import uk.gov.hmrc.securemessage.services.SecureMessageService
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ ExecutionContext, ExecutionException, Future }
 
@@ -115,7 +116,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       private val response = controller.createConversation(cdcm, "123")(fakeRequest)
       status(response) mustBe CONFLICT
       contentAsJson(response) mustBe Json.toJson(
-        "Error on conversation with client: Some(CDCM), conversationId: 123, error message: conflict error")
+        "Error on conversation with client: Some(CDCM), message id: 123, error message: conflict error")
     }
 
     "return InternalServerError (500) when there is an error storing the conversation" in new CreateConversationTestCase(
@@ -125,7 +126,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       private val response = controller.createConversation(cdcm, "123")(fakeRequest)
       status(response) mustBe INTERNAL_SERVER_ERROR
       contentAsJson(response) mustBe Json.toJson(
-        """Error on conversation with client: Some(CDCM), conversationId: 123, error message: mongo error""")
+        """Error on conversation with client: Some(CDCM), message id: 123, error message: mongo error""")
     }
 
     "return CREATED (201) when there is an error sending the email" in new CreateConversationTestCase(
@@ -135,7 +136,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       private val response = controller.createConversation(cdcm, "123")(fakeRequest)
       status(response) mustBe CREATED
       contentAsJson(response) mustBe Json.toJson(
-        "Error on conversation with client: Some(CDCM), conversationId: 123, error message: email error")
+        "Error on conversation with client: Some(CDCM), message id: 123, error message: email error")
     }
 
     "return CREATED (201) when no email can be found" in new CreateConversationTestCase(
@@ -145,7 +146,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       private val response = controller.createConversation(cdcm, "123")(fakeRequest)
       status(response) mustBe CREATED
       contentAsJson(response) mustBe Json.toJson(
-        "Error on conversation with client: Some(CDCM), conversationId: 123, error message: Verified email address could not be found")
+        "Error on conversation with client: Some(CDCM), message id: 123, error message: Verified email address could not be found")
     }
 
     "return InternalServerError (500) if unexpected SecureMessageError returned" in new CreateConversationTestCase(
@@ -155,7 +156,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       private val response = controller.createConversation(cdcm, "123")(fakeRequest)
       status(response) mustBe INTERNAL_SERVER_ERROR
       contentAsJson(response) mustBe Json.toJson(
-        "Error on conversation with client: Some(CDCM), conversationId: 123, error message: some unknown err")
+        "Error on conversation with client: Some(CDCM), message id: 123, error message: some unknown err")
     }
 
     "return BAD_REQUEST (400) when the message content is not base64 encoded" in new CreateConversationTestCase(
@@ -165,7 +166,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       private val response = controller.createConversation(cdcm, "123")(fakeRequest)
       status(response) mustBe BAD_REQUEST
       contentAsJson(response) mustBe Json.toJson(
-        "Error on conversation with client: Some(CDCM), conversationId: 123, error message: Not valid base64 content")
+        "Error on conversation with client: Some(CDCM), message id: 123, error message: Not valid base64 content")
     }
 
     "return BAD_REQUEST (400) when the message content is not valid HTML" in new CreateConversationTestCase(
@@ -175,7 +176,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       private val response = controller.createConversation(cdcm, "123")(fakeRequest)
       status(response) mustBe BAD_REQUEST
       contentAsJson(response) mustBe Json.toJson(
-        "Error on conversation with client: Some(CDCM), conversationId: 123, error message: Not valid html content")
+        "Error on conversation with client: Some(CDCM), message id: 123, error message: Not valid html content")
     }
 
     "do not handle non SecureMessageError exceptions" in new CreateConversationTestCase(
@@ -393,7 +394,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
         .getMessage(rawId)
         .apply(FakeRequest("GET", "/"))
       status(response) mustBe BAD_REQUEST
-      contentAsString(response) mustBe s""""Invalid message type: $messageType, rawId is: $rawId""""
+      contentAsString(response) must include("Invalid encoded id")
     }
 
     "return BadRequest if decoding cant find id" in new GetMessageByIdTestCase(
@@ -403,7 +404,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
         .getMessage(encodedPath(s"${MessageType.Letter.entryName}"))
         .apply(FakeRequest("GET", "/"))
       status(response) mustBe BAD_REQUEST
-      contentAsString(response) mustBe "\"Invalid URL path\""
+      contentAsString(response) must include("Invalid encoded id")
     }
   }
 
@@ -427,7 +428,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     ) {
       private val response = controller.addCaseworkerMessage(cdcm, "123")(fakeRequest)
       status(response) mustBe BAD_REQUEST
-      contentAsString(response) mustBe "\"Error on conversation with client: Some(CDCM), conversationId: 123, error message: Not valid base64 content\""
+      contentAsString(response) mustBe "\"Error on conversation with client: Some(CDCM), message id: 123, error message: Not valid base64 content\""
     }
     "return BAD_REQUEST (400) when the message content is not valid HTML" in new CreateCaseWorkerMessageTestCase(
       requestBody = Resources.readJson("model/api/cdcm/write/caseworker-message.json"),
@@ -435,7 +436,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     ) {
       private val response = controller.addCaseworkerMessage(cdcm, "123")(fakeRequest)
       status(response) mustBe BAD_REQUEST
-      contentAsString(response) mustBe "\"Error on conversation with client: Some(CDCM), conversationId: 123, error message: Not valid HTML content\""
+      contentAsString(response) mustBe "\"Error on conversation with client: Some(CDCM), message id: 123, error message: Not valid HTML content\""
     }
   }
 
@@ -462,27 +463,28 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     }
   }
 
-  "Base64 decoding" must {
-    "return messageType letter and id" in new TestCase {
-      val nakedPath = "letter/6086dc1f4700009fed2f5745"
-      val path = encodedPath(nakedPath)
-
-      controller.decodePath(path).right.get mustBe (("letter", "6086dc1f4700009fed2f5745"))
+  "getMessages" must {
+    "return metadata for both conversations and letters" in new GetMessagesTestCase() {
+      val response: Future[Result] = controller.getMessages(None, Some(List(testEnrolment)), None)(fakeRequest)
+      status(response) mustBe OK
+      contentAsJson(response).as[List[MessageMetadata]] mustBe messagesMetadata
     }
-    "return messageType conversation and id" in new TestCase {
-      val nakedPath = "conversation/6086dc1f4700009fed2f5745"
-      val path = encodedPath(nakedPath)
-      controller.decodePath(path).right.get mustBe (("conversation", "6086dc1f4700009fed2f5745"))
+    "return metadata for conversations when no letters" in new GetMessagesTestCase(storedLetters = List()) {
+      val response: Future[Result] = controller.getMessages(None, Some(List(testEnrolment)), None)(fakeRequest)
+      status(response) mustBe OK
+      contentAsJson(response).as[List[MessageMetadata]] mustBe conversationsMetadata
     }
-    "return only messageType and Id" in new TestCase {
-      val nakedPath = "conversation/6086dc1f4700009fed2f5745/test"
-      val path = encodedPath(nakedPath)
-      controller.decodePath(path).right.get mustBe (("conversation", "6086dc1f4700009fed2f5745"))
+    "return metadata for letters when no conversations" in new GetMessagesTestCase(storedConversations = List()) {
+      val response: Future[Result] = controller.getMessages(None, Some(List(testEnrolment)), None)(fakeRequest)
+      status(response) mustBe OK
+      contentAsJson(response).as[List[MessageMetadata]] mustBe lettersMetadata
     }
-    "return InvalidPath if path is not valid" in new TestCase {
-      val nakedPath = "123456"
-      val path = encodedPath(nakedPath)
-      controller.decodePath(path).left.get.message mustBe ("Invalid URL path")
+    "return empty list when no conversations and no letters" in new GetMessagesTestCase(
+      storedConversations = List(),
+      storedLetters = List()) {
+      val response: Future[Result] = controller.getMessages(None, Some(List(testEnrolment)), None)(fakeRequest)
+      status(response) mustBe OK
+      contentAsJson(response).as[List[MessageMetadata]] mustBe empty
     }
   }
 
@@ -495,7 +497,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     when(mockRepository.insertIfUnique(any[Conversation])(any[ExecutionContext]))
       .thenReturn(Future.successful(Right(())))
 
-    protected def encodedPath(path: String) = Base64.encodeBase64String(path.getBytes("UTF-8"))
+    protected def encodedPath(path: String): String = Base64.encodeBase64String(path.getBytes("UTF-8"))
 
     val controller =
       new SecureMessageController(
@@ -578,6 +580,33 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
           any[ExecutionContext],
           any[Messages]))
       .thenReturn(Future.successful(conversationsMetadata))
+  }
+
+  @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments", "org.wartremover.warts.EitherProjectionPartial"))
+  class GetMessagesTestCase(
+    storedConversations: List[JsValue] = List(Resources.readJson("model/core/full-db-conversation.json")),
+    storedLetters: List[JsValue] = List(Resources.readJson("model/core/full-db-letter.json")),
+    authEnrolments: Set[CustomerEnrolment] = Set(testEnrolment),
+    customerEnrolments: Set[CustomerEnrolment] = Set(testEnrolment),
+    filterTags: Option[List[FilterTag]] = None,
+    filterEnrolmentKeys: Option[List[String]] = None
+  ) extends TestCase(authEnrolments) {
+    val conversations: List[Conversation] = storedConversations.map(_.as[Conversation])
+    val conversationsMetadata: List[MessageMetadata] = List(
+      Resources.readJson("model/core/full-db-conversation-metadata.json").as[MessageMetadata])
+    val letters: List[Letter] = storedLetters.map(_.as[Letter])
+    val lettersMetadata: List[MessageMetadata] = List(
+      Resources.readJson("model/core/full-db-letter-metadata.json").as[MessageMetadata])
+    val messages: List[Message] = conversations ++ letters
+    val messagesMetadata: List[MessageMetadata] = conversationsMetadata ++ lettersMetadata
+    when(
+      mockSecureMessageService
+        .getMessages(
+          eqTo(authEnrolmentsFrom(authEnrolments)),
+          eqTo(Filters(filterEnrolmentKeys, Some(customerEnrolments.toList), filterTags)))(any[ExecutionContext]))
+      .thenReturn(Future.successful(messages))
+
+    val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest("GET", "/")
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))

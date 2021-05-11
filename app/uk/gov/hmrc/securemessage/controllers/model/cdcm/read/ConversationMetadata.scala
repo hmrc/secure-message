@@ -20,9 +20,8 @@ import cats.implicits._
 import cats.kernel.Eq
 import org.joda.time.DateTime
 import play.api.i18n.Messages
-import play.api.libs.json.JodaReads.jodaDateReads
-import play.api.libs.json.JodaWrites.jodaDateWrites
-import play.api.libs.json.{ Format, Json, OFormat }
+import play.api.libs.json.{ Json, OFormat }
+import uk.gov.hmrc.securemessage.controllers.model.ApiFormats
 import uk.gov.hmrc.securemessage.models.core._
 
 final case class ConversationMetadata(
@@ -34,7 +33,7 @@ final case class ConversationMetadata(
   unreadMessages: Boolean,
   count: Int)
 
-object ConversationMetadata {
+object ConversationMetadata extends ApiFormats {
 
   @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
   def coreToConversationMetadata(coreConversation: Conversation, identifier: Identifier)(
@@ -117,11 +116,6 @@ object ConversationMetadata {
           .fold(true)(_.getMillis < findLatestMessage(coreConversation).created.getMillis)
       case _ => true
     }
-
-  private val dateFormatString = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
-
-  implicit val dateFormat: Format[DateTime] =
-    Format(jodaDateReads(dateFormatString), jodaDateWrites(dateFormatString))
 
   implicit val conversationMetadataFormat: OFormat[ConversationMetadata] =
     Json.format[ConversationMetadata]

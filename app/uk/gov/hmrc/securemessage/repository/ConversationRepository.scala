@@ -26,7 +26,7 @@ import reactivemongo.bson.BSONObjectID
 import reactivemongo.core.errors.DatabaseException
 import uk.gov.hmrc.mongo.MongoConnector
 import uk.gov.hmrc.securemessage._
-import uk.gov.hmrc.securemessage.models.core.ConversationMessage.dateFormat
+import uk.gov.hmrc.securemessage.models.core.ConversationMessage.dateTimeFormat
 import uk.gov.hmrc.securemessage.models.core.{ Conversation, ConversationMessage, FilterTag, Identifier }
 
 import javax.inject.{ Inject, Singleton }
