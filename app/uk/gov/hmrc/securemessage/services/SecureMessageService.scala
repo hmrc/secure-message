@@ -53,7 +53,7 @@ class SecureMessageService @Inject()(
   channelPrefConnector: ChannelPreferencesConnector,
   eisConnector: EISConnector,
   override val auditConnector: AuditConnector)
-    extends Auditing with ImplicitClassesExtensions {
+    extends Auditing with ImplicitClassesExtensions with OrderingDefinitions {
 
   def createConversation(conversation: Conversation)(
     implicit hc: HeaderCarrier,
@@ -84,7 +84,7 @@ class SecureMessageService @Inject()(
     for {
       conversations <- conversationRepository.getConversations(identifiers, filters.tags)
       letters       <- messageRepository.getLetters(identifiers, filters.tags)
-    } yield conversations ++ letters
+    } yield (conversations ++ letters).sortBy(_.issueDate)(dateTimeDescending)
   }
 
   def getConversation(client: String, conversationId: String, enrolments: Set[CustomerEnrolment])(
