@@ -27,7 +27,7 @@ trait ErrorHandling extends Logging {
 
   def handleErrors(conversationId: String, error: SecureMessageError, client: Option[ClientName] = None): Result = {
     val errMsg =
-      s"Error on conversation with client: $client, message id: $conversationId, error message: ${error.message}"
+      s"Error on message with client: $client, message id: $conversationId, error message: ${error.message}"
     logger.error(error.message, error.cause.orNull)
     val jsonError = Json.toJson(errMsg)
     error match {

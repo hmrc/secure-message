@@ -116,7 +116,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       private val response = controller.createConversation(cdcm, "123")(fakeRequest)
       status(response) mustBe CONFLICT
       contentAsJson(response) mustBe Json.toJson(
-        "Error on conversation with client: Some(CDCM), message id: 123, error message: conflict error")
+        "Error on message with client: Some(CDCM), message id: 123, error message: conflict error")
     }
 
     "return InternalServerError (500) when there is an error storing the conversation" in new CreateConversationTestCase(
@@ -126,7 +126,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       private val response = controller.createConversation(cdcm, "123")(fakeRequest)
       status(response) mustBe INTERNAL_SERVER_ERROR
       contentAsJson(response) mustBe Json.toJson(
-        """Error on conversation with client: Some(CDCM), message id: 123, error message: mongo error""")
+        """Error on message with client: Some(CDCM), message id: 123, error message: mongo error""")
     }
 
     "return CREATED (201) when there is an error sending the email" in new CreateConversationTestCase(
@@ -136,7 +136,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       private val response = controller.createConversation(cdcm, "123")(fakeRequest)
       status(response) mustBe CREATED
       contentAsJson(response) mustBe Json.toJson(
-        "Error on conversation with client: Some(CDCM), message id: 123, error message: email error")
+        "Error on message with client: Some(CDCM), message id: 123, error message: email error")
     }
 
     "return CREATED (201) when no email can be found" in new CreateConversationTestCase(
@@ -146,7 +146,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       private val response = controller.createConversation(cdcm, "123")(fakeRequest)
       status(response) mustBe CREATED
       contentAsJson(response) mustBe Json.toJson(
-        "Error on conversation with client: Some(CDCM), message id: 123, error message: Verified email address could not be found")
+        "Error on message with client: Some(CDCM), message id: 123, error message: Verified email address could not be found")
     }
 
     "return InternalServerError (500) if unexpected SecureMessageError returned" in new CreateConversationTestCase(
@@ -156,7 +156,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       private val response = controller.createConversation(cdcm, "123")(fakeRequest)
       status(response) mustBe INTERNAL_SERVER_ERROR
       contentAsJson(response) mustBe Json.toJson(
-        "Error on conversation with client: Some(CDCM), message id: 123, error message: some unknown err")
+        "Error on message with client: Some(CDCM), message id: 123, error message: some unknown err")
     }
 
     "return BAD_REQUEST (400) when the message content is not base64 encoded" in new CreateConversationTestCase(
@@ -166,7 +166,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       private val response = controller.createConversation(cdcm, "123")(fakeRequest)
       status(response) mustBe BAD_REQUEST
       contentAsJson(response) mustBe Json.toJson(
-        "Error on conversation with client: Some(CDCM), message id: 123, error message: Not valid base64 content")
+        "Error on message with client: Some(CDCM), message id: 123, error message: Not valid base64 content")
     }
 
     "return BAD_REQUEST (400) when the message content is not valid HTML" in new CreateConversationTestCase(
@@ -176,7 +176,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       private val response = controller.createConversation(cdcm, "123")(fakeRequest)
       status(response) mustBe BAD_REQUEST
       contentAsJson(response) mustBe Json.toJson(
-        "Error on conversation with client: Some(CDCM), message id: 123, error message: Not valid html content")
+        "Error on message with client: Some(CDCM), message id: 123, error message: Not valid html content")
     }
 
     "do not handle non SecureMessageError exceptions" in new CreateConversationTestCase(
@@ -428,7 +428,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     ) {
       private val response = controller.addCaseworkerMessage(cdcm, "123")(fakeRequest)
       status(response) mustBe BAD_REQUEST
-      contentAsString(response) mustBe "\"Error on conversation with client: Some(CDCM), message id: 123, error message: Not valid base64 content\""
+      contentAsString(response) mustBe "\"Error on message with client: Some(CDCM), message id: 123, error message: Not valid base64 content\""
     }
     "return BAD_REQUEST (400) when the message content is not valid HTML" in new CreateCaseWorkerMessageTestCase(
       requestBody = Resources.readJson("model/api/cdcm/write/caseworker-message.json"),
@@ -436,7 +436,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     ) {
       private val response = controller.addCaseworkerMessage(cdcm, "123")(fakeRequest)
       status(response) mustBe BAD_REQUEST
-      contentAsString(response) mustBe "\"Error on conversation with client: Some(CDCM), message id: 123, error message: Not valid HTML content\""
+      contentAsString(response) mustBe "\"Error on message with client: Some(CDCM), message id: 123, error message: Not valid HTML content\""
     }
   }
 
