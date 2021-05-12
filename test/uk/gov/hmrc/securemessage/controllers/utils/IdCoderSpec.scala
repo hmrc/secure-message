@@ -23,12 +23,6 @@ import uk.gov.hmrc.securemessage.controllers.model.MessageType
 class IdCoderSpec extends FreeSpec with MustMatchers {
 
   "decodeId should" - {
-    "decode a valid encoded id" in {}
-    "return error for decoded String without separator" in {}
-
-    "return error for invalid message type" in {}
-
-    "return error for empty id" in {}
 
     "return messageType letter and id" in {
       val nakedPath = "letter/6086dc1f4700009fed2f5745"
