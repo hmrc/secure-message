@@ -14,12 +14,16 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.securemessage.controllers.utils
+package uk.gov.hmrc.securemessage.models.core
 
-import org.apache.commons.codec.binary.Base64
+import org.joda.time.DateTime
+import play.api.libs.json.{ Json, OFormat }
+import uk.gov.hmrc.securemessage.controllers.model.ApiFormats
 
-@SuppressWarnings(Array("org.wartremover.warts.PlatformDefault"))
-object Formats {
-  def decodeBase64String(input: String): String =
-    new String(Base64.decodeBase64(input.getBytes("UTF-8")))
+final case class ConversationMessage(senderId: Int, created: DateTime, content: String)
+object ConversationMessage extends ApiFormats {
+
+  implicit val messageFormat: OFormat[ConversationMessage] =
+    Json.format[ConversationMessage]
+
 }

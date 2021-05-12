@@ -16,11 +16,9 @@
 
 package uk.gov.hmrc.securemessage.models.core
 
-case class ConversationFilters(
-  enrolmentKeys: Option[List[String]],
-  customerEnrolments: Option[List[CustomerEnrolment]],
-  tags: Option[List[FilterTag]]) {
-  def enrolmentKeysFilter: Set[String] = enrolmentKeys.toSet.flatten
-  def enrolmentsFilter: Set[CustomerEnrolment] = customerEnrolments.toSet.flatten
-  def tagsFilter: Set[FilterTag] = tags.toSet.flatten
+import org.joda.time.DateTime
+
+trait OrderingDefinitions {
+  val dateTimeAscending: Ordering[DateTime] = Ordering.fromLessThan(_ isBefore _)
+  val dateTimeDescending: Ordering[DateTime] = Ordering.fromLessThan(_ isAfter _)
 }

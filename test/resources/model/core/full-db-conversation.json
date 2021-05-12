@@ -1,0 +1,48 @@
+{
+  "_id": {
+    "$oid": "609a5e4e0100006ef0f7eaf7"
+  },
+  "client": "CDCM",
+  "id": "123",
+  "status": "open",
+  "tags": {
+    "mrn": "DMS7324874993",
+    "notificationType": "CDS-EXPORTS"
+  },
+  "subject": "MRN: 19GB4S24GC3PPFGVR7",
+  "language": "en",
+  "participants": [
+    {
+      "id": 1,
+      "participantType": "system",
+      "identifier": {
+        "name": "CDCM",
+        "value": "D-80542-20201120"
+      },
+      "name": "CDS Exports Team"
+    },
+    {
+      "id": 2,
+      "participantType": "customer",
+      "identifier": {
+        "name": "EORINumber",
+        "value": "GB1234567890",
+        "enrolment": "HMRC-CUS-ORG"
+      }
+    }
+  ],
+  "messages": [
+    {
+      "senderId": 1,
+      "created": "2020-11-10T15:00:01.000+0000",
+      "content": "QmxhaCBibGFoIGJsYWg="
+    }
+  ],
+  "alert": {
+    "templateId": "emailTemplateId",
+    "parameters": {
+      "param1": "value1",
+      "param2": "value2"
+    }
+  }
+}

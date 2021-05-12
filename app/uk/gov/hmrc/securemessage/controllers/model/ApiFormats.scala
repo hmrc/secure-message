@@ -16,15 +16,19 @@
 
 package uk.gov.hmrc.securemessage.controllers.model
 
-import enumeratum.EnumEntry.Lowercase
-import enumeratum.{ Enum, EnumEntry, PlayEnum }
+import org.joda.time.{ DateTime, LocalDate }
+import play.api.libs.json.Format
+import play.api.libs.json.JodaReads.{ jodaDateReads, jodaLocalDateReads }
+import play.api.libs.json.JodaWrites.{ jodaDateWrites, jodaLocalDateWrites }
 
-import scala.collection.immutable
+trait ApiFormats {
+  private val dateTimeFormatString = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
 
-sealed trait MessageType extends EnumEntry with Lowercase
+  implicit val dateTimeFormat: Format[DateTime] =
+    Format(jodaDateReads(dateTimeFormatString), jodaDateWrites(dateTimeFormatString))
 
-object MessageType extends Enum[MessageType] with PlayEnum[MessageType] {
-  val values: immutable.IndexedSeq[MessageType] = findValues
-  case object Conversation extends MessageType
-  case object Letter extends MessageType
+  private val dateFormatString = "yyyy-MM-dd"
+
+  implicit val dateFormat: Format[LocalDate] =
+    Format(jodaLocalDateReads(dateFormatString), jodaLocalDateWrites(dateFormatString))
 }

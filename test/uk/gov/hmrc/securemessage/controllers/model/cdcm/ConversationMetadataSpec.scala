@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.securemessage.controllers.model.cdcm
 
-import cats.data.NonEmptyList
-import com.github.nscala_time.time.Imports.DateTime
 import org.scalatestplus.play.PlaySpec
 import play.api.i18n.Messages
 import play.api.libs.json.{ JsObject, JsValue, Json }
@@ -25,8 +23,8 @@ import play.api.test.Helpers._
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.ConversationMetadata
 import uk.gov.hmrc.securemessage.helpers.Resources
+import uk.gov.hmrc.securemessage.models.core.Conversation._
 import uk.gov.hmrc.securemessage.models.core._
-import Conversation._
 
 @SuppressWarnings(Array("org.wartremover.warts.All"))
 class ConversationMetadataSpec extends PlaySpec {
@@ -43,7 +41,7 @@ class ConversationMetadataSpec extends PlaySpec {
       val conversationMetadataJson: JsValue = Resources.readJson("model/api/cdcm/read/conversation-metadata.json")
       val conversationMetadata: ConversationMetadata = conversationMetadataJson.validate[ConversationMetadata].get
       ConversationMetadata
-        .coreToConversationMetadata(coreConversation, identifier) mustEqual conversationMetadata
+        .coreToConversationMetadata(coreConversation, Set(identifier)) mustEqual conversationMetadata
       Json.toJson(conversationMetadata) mustBe Json.parse("""{
                                                             |    "client": "cdcm",
                                                             |    "conversationId": "D-80542-20201120",
@@ -78,93 +76,5 @@ class ConversationMetadataSpec extends PlaySpec {
                                                             |    "unreadMessages": true
                                                             |}""".stripMargin)
     }
-
-    "Messages should be marked read if message is viewed by same user who created it" in {
-      val identifier = Set(Identifier(name = "EORINumber", value = "GB1234567890", enrolment = Some("HMRC-CUS-ORG")))
-      val conversationJson: JsValue = Resources
-        .readJson("model/core/conversation-created-marked-as-read.json")
-        .as[JsObject] + ("_id" -> Json.toJson(objectID))
-      val coreConversation: Conversation = conversationJson.validate[Conversation].get
-      ConversationMetadata
-        .coreToConversationMetadata(coreConversation, identifier)
-        .unreadMessages mustBe false
-    }
-
-    "latest message sender is same as participant we mark this as read" in {
-      val identifier = Set(Identifier("name", "value", None))
-
-      val participants = List(Participant(2, ParticipantType.System, identifier.head, None, None, None, None))
-      val messages = NonEmptyList(Message(2, DateTime.parse("2020-11-10T15:00:01.000"), ""), Nil)
-
-      val coreConversation = Conversation(
-        BSONObjectID.generate,
-        "",
-        "",
-        ConversationStatus.Open,
-        None,
-        "",
-        Language.English,
-        participants,
-        messages,
-        uk.gov.hmrc.securemessage.models.core.Alert("", None)
-      )
-
-      ConversationMetadata.anyUnreadMessages(coreConversation, identifier) mustBe false
-    }
-
-    "latest message sender is same as participant that has multiple messages we mark this as read" in {
-      val identifier = Set(Identifier("name", "value", None))
-
-      val participants = List(Participant(2, ParticipantType.System, identifier.head, None, None, None, None))
-      val messages = NonEmptyList(
-        Message(2, DateTime.parse("2020-11-10T15:00:01.000"), ""),
-        List(
-          Message(1, DateTime.parse("2020-10-10T15:00:01.000"), ""),
-          Message(1, DateTime.parse("2020-9-10T15:00:01.000"), ""))
-      )
-
-      val coreConversation = Conversation(
-        BSONObjectID.generate,
-        "",
-        "",
-        ConversationStatus.Open,
-        None,
-        "",
-        Language.English,
-        participants,
-        messages,
-        uk.gov.hmrc.securemessage.models.core.Alert("", None)
-      )
-
-      ConversationMetadata.anyUnreadMessages(coreConversation, identifier) mustBe false
-    }
-
-    "latest message sender(organisation) is not participant(customer) we mark this as unread" in {
-      val identifier = Set(Identifier("name", "value", None))
-
-      val participants = List(Participant(2, ParticipantType.System, identifier.head, None, None, None, None))
-      val messages = NonEmptyList(
-        Message(1, DateTime.parse("2020-11-10T15:00:01.000"), ""),
-        List(
-          Message(2, DateTime.parse("2020-10-10T15:00:01.000"), ""),
-          Message(1, DateTime.parse("2020-9-10T15:00:01.000"), ""))
-      )
-
-      val coreConversation = Conversation(
-        BSONObjectID.generate,
-        "",
-        "",
-        ConversationStatus.Open,
-        None,
-        "",
-        Language.English,
-        participants,
-        messages,
-        uk.gov.hmrc.securemessage.models.core.Alert("", None)
-      )
-
-      ConversationMetadata.anyUnreadMessages(coreConversation, identifier) mustBe true
-    }
-
   }
 }

@@ -49,7 +49,7 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
   private val messageContent = "QmxhaCBibGFoIGJsYWg="
 
   "auditCreateConversation" must {
-    val message = Message(1, DateTime.now, messageContent)
+    val message = ConversationMessage(1, DateTime.now, messageContent)
     val alert = Alert("", None)
     val conversation = Conversation(
       BSONObjectID.generate,

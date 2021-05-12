@@ -20,29 +20,26 @@ import org.joda.time.DateTime
 import play.api.libs.json.JodaWrites.{ JodaDateTimeWrites => _ }
 import play.api.libs.json.Json.JsValueWrapper
 import play.api.libs.json.{ JsArray, JsObject, JsString, Json }
-import reactivemongo.api.Cursor.ErrorHandler
+import reactivemongo.api.WriteConcern
 import reactivemongo.api.indexes.{ Index, IndexType }
-import reactivemongo.api.{ Cursor, WriteConcern }
 import reactivemongo.bson.BSONObjectID
 import reactivemongo.core.errors.DatabaseException
-import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
-import uk.gov.hmrc.mongo.{ MongoConnector, ReactiveRepository }
-import uk.gov.hmrc.securemessage.models.core.Message.dateFormat
-import uk.gov.hmrc.securemessage.models.core.{ Conversation, FilterTag, Identifier, Message }
+import uk.gov.hmrc.mongo.MongoConnector
 import uk.gov.hmrc.securemessage._
+import uk.gov.hmrc.securemessage.models.core.ConversationMessage.dateTimeFormat
+import uk.gov.hmrc.securemessage.models.core.{ Conversation, ConversationMessage, FilterTag, Identifier }
+
 import javax.inject.{ Inject, Singleton }
 import scala.collection.Seq
 import scala.concurrent.{ ExecutionContext, Future }
-import scala.util.{ Failure, Success }
 
 @Singleton
 @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.Nothing"))
 class ConversationRepository @Inject()(implicit connector: MongoConnector)
-    extends ReactiveRepository[Conversation, BSONObjectID](
+    extends SecureMessageRepository[Conversation, BSONObjectID](
       "conversation",
       connector.db,
-      Conversation.conversationFormat,
-      ReactiveMongoFormats.objectIdFormats) {
+      Conversation.conversationFormat) {
 
   private val DuplicateKey = 11000
 
@@ -67,42 +64,12 @@ class ConversationRepository @Inject()(implicit connector: MongoConnector)
           Future.successful(Left(StoreError(errMsg, Some(e))))
       }
 
-  def getConversationsFiltered(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
-    implicit ec: ExecutionContext): Future[List[Conversation]] = {
-    import uk.gov.hmrc.securemessage.models.core.Conversation.conversationFormat
-    val querySelector = (identifiers, tags) match {
-      case (identifiers, _) if identifiers.isEmpty => //TODO: move this case to service
-        JsObject.empty
-      case (identifiers, None) =>
-        identifierQuery(identifiers)
-      case (identifiers, Some(Nil)) =>
-        identifierQuery(identifiers)
-      case (identifiers, Some(tags)) =>
-        Json.obj(
-          "$and" -> Json.arr(
-            identifierQuery(identifiers),
-            tagQuery(tags)
-          ))
-      case _ =>
-        JsObject.empty
-    }
-    if (querySelector != JsObject.empty) {
-      collection
-        .find[JsObject, Conversation](
-          selector = querySelector,
-          None
-        )
-        .sort(Json.obj("_id" -> -1))
-        .cursor[Conversation]()
-        .collect[List](-1, dbErrorHandler[List[Conversation]])
-    } else {
-      Future(List())
-    }
-  }
+  def getConversations(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
+    implicit ec: ExecutionContext): Future[List[Conversation]] = getMessages(identifiers, tags)
 
   @SuppressWarnings(Array("org.wartremover.warts.OptionPartial"))
   def getConversation(client: String, conversationId: String, identifiers: Set[Identifier])(
-    implicit ec: ExecutionContext): Future[Either[ConversationNotFound, Conversation]] =
+    implicit ec: ExecutionContext): Future[Either[MessageNotFound, Conversation]] =
     collection
       .find[JsObject, Conversation](
         selector = Json.obj("client" -> client, "id" -> conversationId)
@@ -111,56 +78,14 @@ class ConversationRepository @Inject()(implicit connector: MongoConnector)
       .one[Conversation] map {
       case Some(c) => Right(c)
       case None =>
-        Left(ConversationNotFound(s"Conversation not found for identifier: $identifiers"))
+        Left(MessageNotFound(s"Conversation not found for identifier: $identifiers"))
     }
 
   def getConversation(id: String, identifiers: Set[Identifier])(
     implicit ec: ExecutionContext): Future[Either[SecureMessageError, Conversation]] =
-    BSONObjectID.parse(id) match {
-      case Success(bsonId) =>
-        collection
-          .find[JsObject, Conversation](
-            selector = Json.obj("_id" -> bsonId)
-              deepMerge identifierQuery(identifiers),
-            None)
-          .one[Conversation] map {
-          case Some(c) => Right(c)
-          case None =>
-            Left(ConversationNotFound(s"Conversation not found for identifier: $identifiers"))
-        }
-      case Failure(exception) =>
-        Future.successful(Left(InvalidBsonId(s"Invalid BsonId: ${exception.getMessage} ", Some(exception))))
+    getMessage(id, identifiers)
 
-    }
-
-  private def identifierQuery(identifiers: Set[Identifier]): JsObject =
-    Json.obj(
-      "$or" ->
-        identifiers.foldLeft(JsArray())((acc, i) => acc ++ Json.arr(Json.obj(findByIdentifierQuery(i): _*)))
-    )
-
-  private def findByIdentifierQuery(identifier: Identifier): Seq[(String, JsValueWrapper)] =
-    identifier.enrolment match {
-      case Some(enrolment) =>
-        Seq(
-          "participants.identifier.name"      -> JsString(identifier.name),
-          "participants.identifier.value"     -> JsString(identifier.value),
-          "participants.identifier.enrolment" -> JsString(enrolment)
-        )
-      case None =>
-        Seq(
-          "participants.identifier.name"  -> JsString(identifier.name),
-          "participants.identifier.value" -> JsString(identifier.value)
-        )
-    }
-
-  private def tagQuery(tags: List[FilterTag]): JsObject =
-    Json.obj(
-      "$or" ->
-        tags.foldLeft(JsArray())((acc, t) => acc ++ Json.arr(Json.obj(s"tags.${t.key}" -> JsString(t.value))))
-    )
-
-  def addMessageToConversation(client: String, conversationId: String, message: Message)(
+  def addMessageToConversation(client: String, conversationId: String, message: ConversationMessage)(
     implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] =
     collection
       .update(ordered = false)
@@ -203,9 +128,25 @@ class ConversationRepository @Inject()(implicit connector: MongoConnector)
         Nil)
       .map(_ => ())
 
-  //TODO: replace this with returning the error as an Either.Left upstream.
-  private def dbErrorHandler[A]: ErrorHandler[A] = Cursor.FailOnError[A] { (_, error) =>
-    logger.error(s"db error: ${error.getMessage}", error)
-  }
+  override protected def findByIdentifierQuery(identifier: Identifier): Seq[(String, JsValueWrapper)] =
+    identifier.enrolment match {
+      case Some(enrolment) =>
+        Seq(
+          "participants.identifier.name"      -> JsString(identifier.name),
+          "participants.identifier.value"     -> JsString(identifier.value),
+          "participants.identifier.enrolment" -> JsString(enrolment)
+        )
+      case None =>
+        Seq(
+          "participants.identifier.name"  -> JsString(identifier.name),
+          "participants.identifier.value" -> JsString(identifier.value)
+        )
+    }
+
+  override protected def tagQuery(tags: List[FilterTag]): JsObject =
+    Json.obj(
+      "$or" ->
+        tags.foldLeft(JsArray())((acc, t) => acc ++ Json.arr(Json.obj(s"tags.${t.key}" -> JsString(t.value))))
+    )
 
 }

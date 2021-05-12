@@ -16,13 +16,12 @@
 
 package uk.gov.hmrc.securemessage.models.core
 
-import org.joda.time.LocalDate
+import org.joda.time.{ DateTime, DateTimeZone, LocalDate, LocalTime }
 import play.api.libs.json.JodaReads.{ jodaDateReads, jodaLocalDateReads }
 import play.api.libs.json.JodaWrites.{ jodaDateWrites, jodaLocalDateWrites }
 import play.api.libs.json.{ Format, Json, OFormat, Reads, Writes, __ }
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
-import org.joda.time.DateTime
 
 final case class RecipientName(
   title: Option[String],
@@ -33,13 +32,13 @@ final case class RecipientName(
   line1: Option[String])
 
 object RecipientName {
-  implicit val recipientNameFormat = Json.format[RecipientName]
+  implicit val recipientNameFormat: OFormat[RecipientName] = Json.format[RecipientName]
 }
 
 final case class Recipient(regime: String, identifier: Identifier, email: Option[String])
 
 object Recipient {
-  implicit val recipientFormat = Json.format[Recipient]
+  implicit val recipientFormat: OFormat[Recipient] = Json.format[Recipient]
 }
 
 final case class AlertDetails(templateId: String, recipientName: Option[RecipientName])
@@ -51,13 +50,13 @@ object AlertDetails {
 final case class RenderUrl(service: String, url: String)
 
 object RenderUrl {
-  implicit val renderUrlFormat = Json.format[RenderUrl]
+  implicit val renderUrlFormat: OFormat[RenderUrl] = Json.format[RenderUrl]
 }
 
 final case class ExternalReference(id: String, source: String)
 
 object ExternalReference {
-  implicit val externalReferenceFormat = Json.format[ExternalReference]
+  implicit val externalReferenceFormat: OFormat[ExternalReference] = Json.format[ExternalReference]
 }
 
 case class EmailAlert(
@@ -87,8 +86,11 @@ final case class Letter(
   externalRef: Option[ExternalReference],
   alertDetails: AlertDetails,
   alerts: Option[EmailAlert] = None,
-  readTime: Option[DateTime]
-)
+  readTime: Option[DateTime],
+  tags: Option[Map[String, String]] = None
+) extends Message {
+  override def issueDate: DateTime = validFrom.toDateTime(LocalTime.MIDNIGHT, DateTimeZone.UTC)
+}
 
 object Letter {
 

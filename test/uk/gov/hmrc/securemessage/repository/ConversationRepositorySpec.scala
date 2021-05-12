@@ -23,8 +23,8 @@ import play.api.test.Helpers._
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.mongo.MongoSpecSupport
 import uk.gov.hmrc.securemessage.helpers.ConversationUtil
-import uk.gov.hmrc.securemessage.models.core.{ Conversation, FilterTag, Identifier, Message }
-import uk.gov.hmrc.securemessage.{ ConversationNotFound, StoreError }
+import uk.gov.hmrc.securemessage.models.core.{ Conversation, ConversationMessage, FilterTag, Identifier }
+import uk.gov.hmrc.securemessage.{ MessageNotFound, StoreError }
 
 import scala.collection.immutable
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -37,6 +37,7 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
 
   val conversation1: Conversation =
     ConversationUtil.getFullConversation(BSONObjectID.generate, "123", "HMRC-CUS-ORG", "EORINumber", "GB1234567890")
+
   val conversation2: Conversation =
     ConversationUtil.getFullConversation(BSONObjectID.generate, "234", "HMRC-CUS-ORG", "EORINumber", "GB1234567890")
   val conversation3: Conversation =
@@ -82,8 +83,8 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
     "be returned for a single specific enrolment filter and no tag filter" in new TestContext(
       conversations = allConversations
     ) {
-      val result: immutable.Seq[Conversation] = await(
-        repository.getConversationsFiltered(Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))), None))
+      val result: immutable.Seq[Conversation] =
+        await(repository.getConversations(Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))), None))
       result.map(_.id) must contain theSameElementsAs List("234", "123")
     }
 
@@ -92,7 +93,7 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
     ) {
       val result: immutable.Seq[Conversation] = await(
         repository
-          .getConversationsFiltered(Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))), Some(List())))
+          .getConversations(Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))), Some(List())))
       result.map(_.id) must contain theSameElementsAs List("234", "123")
     }
 
@@ -100,7 +101,7 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
       conversations = allConversations
     ) {
       val result: immutable.Seq[Conversation] = await(
-        repository.getConversationsFiltered(
+        repository.getConversations(
           Set(
             Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")),
             Identifier("UTR", "123456789", Some("IR-SA"))),
@@ -112,7 +113,7 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
       conversations = allConversations
     ) {
       val result: immutable.Seq[Conversation] = await(
-        repository.getConversationsFiltered(
+        repository.getConversations(
           Set(
             Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")),
             Identifier("UTR", "123456789", Some("IR-SA"))),
@@ -124,7 +125,7 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
       conversations = allConversations
     ) {
       val result: immutable.Seq[Conversation] =
-        await(repository.getConversationsFiltered(Set.empty, Some(List(FilterTag("notificationType", "CDS Exports")))))
+        await(repository.getConversations(Set.empty, Some(List(FilterTag("notificationType", "CDS Exports")))))
       result mustBe Nil
     }
 
@@ -133,7 +134,7 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
     ) {
       val result: immutable.Seq[Conversation] = await(
         repository
-          .getConversationsFiltered(
+          .getConversations(
             Set.empty,
             Some(List(FilterTag("sourceId", "self-assessment"), FilterTag("caseId", "CT-11345")))))
       result mustBe Nil
@@ -143,7 +144,7 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
       conversations = allConversations
     ) {
       val result: immutable.Seq[Conversation] = await(
-        repository.getConversationsFiltered(
+        repository.getConversations(
           Set(Identifier("UTR", "345678901", Some("IR-CT"))),
           Some(List(FilterTag("sourceId", "self-assessment")))))
       result mustBe Nil
@@ -153,7 +154,7 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
       conversations = allConversations
     ) {
       val result: immutable.Seq[Conversation] = await(
-        repository.getConversationsFiltered(
+        repository.getConversations(
           Set(Identifier("UTR", "123456789", Some("IR-SA"))),
           Some(List(FilterTag("sourceId", "self-assessment")))))
       result.map(_.id) mustBe Seq("345")
@@ -163,7 +164,7 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
       conversations = allConversations
     ) {
       val result: immutable.Seq[Conversation] = await(
-        repository.getConversationsFiltered(
+        repository.getConversations(
           Set(
             Identifier("UTR", "123456789", Some("IR-SA")),
             Identifier("UTR", "345678901", Some("IR-CT")),
@@ -178,7 +179,7 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
       conversations = allConversations
     ) {
       val result: immutable.Seq[Conversation] = await(
-        repository.getConversationsFiltered(
+        repository.getConversations(
           Set(Identifier("UTR", "123456789", Some("IR-SA"))),
           Some(List(FilterTag("sourceId", "self-assessment"), FilterTag("caseId", "CT-11345")))))
       result.map(_.id) mustBe Seq("345")
@@ -188,7 +189,7 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
       conversations = allConversations
     ) {
       val result: immutable.Seq[Conversation] = await(
-        repository.getConversationsFiltered(
+        repository.getConversations(
           Set(
             Identifier("UTR", "123456789", Some("IR-SA")),
             Identifier("UTR", "345678901", Some("IR-CT"))
@@ -204,7 +205,7 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
     "be returned for a participating enrolment" in new TestContext(
       conversations = Seq(conversation)
     ) {
-      val result: Either[ConversationNotFound, Conversation] =
+      val result: Either[MessageNotFound, Conversation] =
         await(
           repository
             .getConversation(conversation.client, conversation.id, conversation.participants.map(_.identifier).toSet))
@@ -219,9 +220,9 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
     ) {
       private val modifierParticipantEnrolments: Set[Identifier] =
         conversation.participants.map(id => id.identifier.copy(value = id.identifier.value + "1")).toSet
-      val result: Either[ConversationNotFound, Conversation] =
+      val result: Either[MessageNotFound, Conversation] =
         await(repository.getConversation(conversation.client, conversation.id, modifierParticipantEnrolments))
-      result mustBe Left(ConversationNotFound(s"Conversation not found for identifier: $modifierParticipantEnrolments"))
+      result mustBe Left(MessageNotFound(s"Conversation not found for identifier: $modifierParticipantEnrolments"))
     }
   }
   "Adding a message to conversation" must {
@@ -229,10 +230,10 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
     "increase the message array size" in new TestContext(
       conversations = Seq(conversation)
     ) {
-      val message: Message = Message(2, new DateTime(), "test")
+      val message: ConversationMessage = ConversationMessage(2, new DateTime(), "test")
       await(repository.addMessageToConversation(conversation.client, conversation.id, message))
       await(repository.addMessageToConversation(conversation.client, conversation.id, message))
-      val updated: Either[ConversationNotFound, Conversation] = await(
+      val updated: Either[MessageNotFound, Conversation] = await(
         repository
           .getConversation(
             conversation.client,
@@ -272,7 +273,7 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
         conversation.participants.map(id => id.identifier.copy(value = id.identifier.value + "1")).toSet
       val result =
         await(repository.getConversation(conversation._id.stringify, modifierParticipantEnrolments))
-      result mustBe Left(ConversationNotFound(s"Conversation not found for identifier: $modifierParticipantEnrolments"))
+      result mustBe Left(MessageNotFound(s"Conversation not found for identifiers: $modifierParticipantEnrolments"))
     }
 
     "not be returned and BsonInInvalid" in new TestContext(Seq.empty) {
@@ -284,6 +285,7 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
 
   class TestContext(conversations: Seq[Conversation]) {
     val repository: ConversationRepository = new ConversationRepository()
+    repository.drop
     await(Future.sequence(conversations.map(repository.insert)))
   }
 

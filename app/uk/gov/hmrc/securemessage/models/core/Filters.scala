@@ -14,16 +14,13 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.securemessage.controllers.utils
+package uk.gov.hmrc.securemessage.models.core
 
-import org.scalatestplus.play.PlaySpec
-import uk.gov.hmrc.securemessage.controllers.utils.Formats.decodeBase64String
-
-class FormatsSpec extends PlaySpec {
-
-  "decodeBase64String method" must {
-    "decode from Base64 format" in {
-      decodeBase64String("PHA+TXkgZmlyc3QgcGFyYWdyYXBoLjwvcD4=") mustBe ("<p>My first paragraph.</p>")
-    }
-  }
+case class Filters(
+  enrolmentKeys: Option[List[String]],
+  customerEnrolments: Option[List[CustomerEnrolment]],
+  tags: Option[List[FilterTag]]) {
+  def enrolmentKeysFilter: Set[String] = enrolmentKeys.toSet.flatten
+  def enrolmentsFilter: Set[CustomerEnrolment] = customerEnrolments.toSet.flatten
+  def tagsFilter: Set[FilterTag] = tags.toSet.flatten
 }

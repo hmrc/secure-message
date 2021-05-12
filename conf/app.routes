@@ -81,7 +81,19 @@ POST        /conversation/:client/:conversationId/customer-message  uk.gov.hmrc.
 #   401:
 #     description: unauthorised customer when they don't have an enrolment
 ###
-GET         /conversations  uk.gov.hmrc.securemessage.controllers.SecureMessageController.getMetadataForConversationsFiltered(enrolmentKey: Option[List[String]], enrolment: Option[List[CustomerEnrolment]], tag: Option[List[FilterTag]])
+GET         /conversations  uk.gov.hmrc.securemessage.controllers.SecureMessageController.getConversations(enrolmentKey: Option[List[String]], enrolment: Option[List[CustomerEnrolment]], tag: Option[List[FilterTag]])
+
+###
+# summary: Gets a list of messages via enrolmentKeys, enrolments and tags filters
+# security:
+#   - bearerToken: []
+# responses:
+#   200:
+#     description: list of messages
+#   401:
+#     description: unauthorised customer when they don't have an enrolment
+###
+GET         /messages  uk.gov.hmrc.securemessage.controllers.SecureMessageController.getMessages(enrolmentKey: Option[List[String]], enrolment: Option[List[CustomerEnrolment]], tag: Option[List[FilterTag]])
 
 ###
 # summary: Gets a conversation via client ID and conversation ID
@@ -95,7 +107,7 @@ GET         /conversations  uk.gov.hmrc.securemessage.controllers.SecureMessageC
 #   404:
 #     description: conversation not found
 ###
-GET         /conversation/:client/:conversationId   uk.gov.hmrc.securemessage.controllers.SecureMessageController.getConversationContent(client: ClientName, conversationId: String)
+GET         /conversation/:client/:conversationId   uk.gov.hmrc.securemessage.controllers.SecureMessageController.getConversation(client: ClientName, conversationId: String)
 
 ###
 # summary: Gets conversation/message by id
@@ -109,4 +121,4 @@ GET         /conversation/:client/:conversationId   uk.gov.hmrc.securemessage.co
 #   404:
 #     description: conversation/message not found
 ###
-GET        /messages/:id   uk.gov.hmrc.securemessage.controllers.SecureMessageController.getContentDetail(id: String)
+GET        /messages/:id   uk.gov.hmrc.securemessage.controllers.SecureMessageController.getMessage(id: String)
