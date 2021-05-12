@@ -18,6 +18,6 @@ package uk.gov.hmrc.securemessage.models.core
 
 import org.joda.time.DateTime
 
-trait Message {
-  def issueDate: DateTime
+trait OrderingDefinitions {
+  val dateTimeAscending: Ordering[DateTime] = Ordering.fromLessThan(_ isBefore _)
 }

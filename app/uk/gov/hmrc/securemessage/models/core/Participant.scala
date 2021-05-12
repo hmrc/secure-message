@@ -31,6 +31,9 @@ final case class Participant(
   email: Option[EmailAddress],
   parameters: Option[Map[String, String]],
   readTimes: Option[List[DateTime]])
+    extends OrderingDefinitions {
+  def lastReadTime: Option[DateTime] = readTimes.map(_.max(dateTimeAscending))
+}
 
 object Participant {
   private val dateFormatString = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"

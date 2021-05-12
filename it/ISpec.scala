@@ -17,14 +17,13 @@
 import java.io.File
 import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.play.PlaySpec
-import play.api.http.{ ContentTypes, HeaderNames }
-import play.api.libs.ws.{ WSClient, WSResponse }
-import play.api.test.Helpers.{ await, defaultAwaitTimeout }
+import play.api.http.{ContentTypes, HeaderNames}
+import play.api.libs.ws.{WSClient, WSResponse}
+import play.api.test.Helpers.{await, defaultAwaitTimeout}
 import uk.gov.hmrc.integration.ServiceSpec
-import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository }
-import utils.AuthHelper
+import uk.gov.hmrc.securemessage.repository.{ConversationRepository, MessageRepository}
 
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.{ExecutionContext, Future}
 
 trait ISpec extends PlaySpec with ServiceSpec with BeforeAndAfterEach with AuthHelper {
 

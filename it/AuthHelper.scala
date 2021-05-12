@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-package utils
-
 import org.scalatest.concurrent.ScalaFutures
 import play.api.libs.json.{ Json, Reads }
 import play.api.libs.ws.WSClient
