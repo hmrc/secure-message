@@ -24,7 +24,7 @@ import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.securemessage.helpers.{ ConversationUtil, Resources }
 import uk.gov.hmrc.securemessage.models.core.Conversation._
 
-class ConversationSpec extends PlaySpec with ConversationTestData {
+class ConversationSpec extends PlaySpec with ConversationTestData with OrderingDefinitions {
 
   "Validating a conversation" must {
     val objectID = BSONObjectID.generate
@@ -63,6 +63,32 @@ class ConversationSpec extends PlaySpec with ConversationTestData {
     "return empty if latest read message is after latest message" in {
       val conversation = conversationWith(messages = readMessagesWith(3))
       conversation.unreadMessagesFor(Set(customerWith().identifier)) mustBe empty
+    }
+  }
+
+  "issueDate" must {
+    "be the latest message created date" in {
+      val messages = unreadMessagesWith(count = 3).sortBy(_.created)(dateTimeDescending)
+      val conversation = conversationWith(messages = messages)
+      conversation.issueDate mustBe dateTime.plusDays(3)
+    }
+  }
+
+  "latestMessage" must {
+    "be the one with the latest created date" in {
+      val messages = unreadMessagesWith(count = 3).sortBy(_.created)(dateTimeDescending)
+      val conversation = conversationWith(messages = messages)
+      conversation.latestMessage mustBe messages.head
+    }
+  }
+
+  "latestParticipant" must {
+    "be the one who sent the last message" in {
+      val systemMessages = unreadMessagesWith(count = 2)
+      val customer = customerWith()
+      val customerMessage = messageWith(sender = customer, created = dateTime.plusDays(3))
+      val conversation = conversationWith(messages = customerMessage :: systemMessages)
+      conversation.latestParticipant mustBe Some(customer)
     }
   }
 

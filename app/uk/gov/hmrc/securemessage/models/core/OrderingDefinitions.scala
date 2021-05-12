@@ -20,4 +20,5 @@ import org.joda.time.DateTime
 
 trait OrderingDefinitions {
   val dateTimeAscending: Ordering[DateTime] = Ordering.fromLessThan(_ isBefore _)
+  val dateTimeDescending: Ordering[DateTime] = Ordering.fromLessThan(_ isAfter _)
 }
