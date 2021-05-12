@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.securemessage.controllers.model.common.read
 
-import org.joda.time.{ DateTime, DateTimeZone, LocalTime }
+import org.joda.time.DateTime
 import play.api.i18n.Messages
 import play.api.libs.json.{ Json, OFormat }
 import uk.gov.hmrc.auth.core.Enrolments
@@ -28,7 +28,7 @@ import uk.gov.hmrc.securemessage.models.core.{ Conversation, Letter, Message }
 import uk.gov.hmrc.securemessage.services.ImplicitClassesExtensions
 
 final case class MessageMetadata(
-  `type`: MessageType,
+  messageType: MessageType,
   id: String,
   subject: String,
   issueDate: DateTime,
@@ -48,12 +48,12 @@ object MessageMetadata extends ApiFormats with ImplicitClassesExtensions {
     val cm = ConversationMetadata.coreToConversationMetadata(conversation, reader.asIdentifiers)
     val messageType = MessageType.Conversation
     MessageMetadata(
-      `type` = messageType,
+      messageType = messageType,
       id = IdCoder.encodeId(messageType, conversation._id.stringify),
-      subject = cm.subject,
-      issueDate = cm.issueDate,
+      subject = conversation.subject,
+      issueDate = conversation.issueDate,
       senderName = cm.senderName,
-      unreadMessages = cm.unreadMessages,
+      unreadMessages = conversation.unreadMessagesFor(reader.asIdentifiers).nonEmpty,
       count = cm.count
     )
   }
@@ -61,12 +61,12 @@ object MessageMetadata extends ApiFormats with ImplicitClassesExtensions {
     val messageType = MessageType.Letter
     val al = ApiLetter.fromCore(letter)
     new MessageMetadata(
-      `type` = messageType,
+      messageType = messageType,
       id = IdCoder.encodeId(messageType, letter._id.stringify),
-      subject = al.subject,
-      issueDate = al.senderInformation.sent.toDateTime(LocalTime.MIDNIGHT, DateTimeZone.UTC),
+      subject = letter.subject,
+      issueDate = letter.issueDate,
       senderName = Some(al.senderInformation.name),
-      unreadMessages = al.readTime.isEmpty,
+      unreadMessages = letter.readTime.isEmpty,
       count = 1
     )
   }

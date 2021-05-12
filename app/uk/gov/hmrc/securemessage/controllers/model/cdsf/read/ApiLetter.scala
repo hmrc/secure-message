@@ -27,7 +27,7 @@ final case class ApiLetter(
   content: String,
   firstReaderInformation: Option[FirstReaderInformation],
   senderInformation: SenderInformation,
-  readTime: Option[DateTime] = None
+  readTime: Option[DateTime] = None //TODO: why is this always NONE ?
 )
 
 final case class FirstReaderInformation(name: Option[String], read: DateTime)
