@@ -17,10 +17,9 @@
 package uk.gov.hmrc.securemessage.controllers.model.cdsf.read
 
 import org.joda.time.{ DateTime, LocalDate }
-import play.api.libs.json.JodaReads.{ jodaDateReads, jodaLocalDateReads }
-import play.api.libs.json.JodaWrites.{ jodaDateWrites, jodaLocalDateWrites }
 import play.api.libs.json.{ Format, Json }
 import reactivemongo.bson.BSONObjectID
+import uk.gov.hmrc.securemessage.controllers.model.ApiFormats
 import uk.gov.hmrc.securemessage.models.core.Letter
 
 final case class ApiLetter(
@@ -28,13 +27,13 @@ final case class ApiLetter(
   content: String,
   firstReaderInformation: Option[FirstReaderInformation],
   senderInformation: SenderInformation,
-  readTime: Option[DateTime] = None
+  readTime: Option[DateTime] = None //TODO: why is this always NONE ?
 )
 
 final case class FirstReaderInformation(name: Option[String], read: DateTime)
 final case class SenderInformation(name: String, sent: LocalDate)
 
-object ApiLetter {
+object ApiLetter extends ApiFormats {
   def fromCore(letter: Letter): ApiLetter =
     ApiLetter(
       letter.subject,
@@ -42,15 +41,6 @@ object ApiLetter {
       letter.readTime.map(FirstReaderInformation(None, _)),
       SenderInformation("HMRC", letter.validFrom)
     )
-
-  private val dateTimeFormatString = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
-  private val dateFormatString = "yyyy-MM-dd"
-
-  implicit val datetimeFormat: Format[DateTime] =
-    Format(jodaDateReads(dateTimeFormatString), jodaDateWrites(dateTimeFormatString))
-
-  implicit val dateFormat: Format[LocalDate] =
-    Format(jodaLocalDateReads(dateFormatString), jodaLocalDateWrites(dateFormatString))
 
   implicit val firstReaderInformationFormat: Format[FirstReaderInformation] =
     Json.format[FirstReaderInformation]

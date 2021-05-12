@@ -15,12 +15,14 @@
  */
 
 package uk.gov.hmrc.securemessage.models.core
-
 import cats.data.NonEmptyList
-import play.api.libs.json.{ Json, OFormat }
+import com.github.ghik.silencer.silent
+import org.joda.time.DateTime
+import play.api.libs.json.{ Format, Json, OFormat }
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
-import uk.gov.hmrc.securemessage.models.utils.NonEmptyListOps._
+import uk.gov.hmrc.securemessage.models.utils.NonEmptyListOps
+
 final case class Conversation(
   _id: BSONObjectID = BSONObjectID.generate(),
   client: String,
@@ -30,11 +32,29 @@ final case class Conversation(
   subject: String,
   language: Language,
   participants: List[Participant],
-  messages: NonEmptyList[Message],
-  alert: Alert
-)
+  messages: NonEmptyList[ConversationMessage],
+  alert: Alert)
+    extends Message with OrderingDefinitions {
 
-object Conversation {
-  implicit val objectIdFormat = ReactiveMongoFormats.objectIdFormats
+  override def issueDate: DateTime = latestMessage.created
+
+  def latestMessage: ConversationMessage = messages.toList.maxBy(_.created)(dateTimeAscending)
+
+  def latestParticipant: Option[Participant] = participants.find(_.id == latestMessage.senderId)
+
+  @silent def unreadMessagesFor(reader: Set[Identifier]): List[ConversationMessage] = {
+    val maybeParticipant = participants.find(p => reader.contains(p.identifier))
+    val maybeLastRead = maybeParticipant.flatMap(_.lastReadTime.orElse(Some(new DateTime(0))))
+    for {
+      participant <- maybeParticipant.toList
+      message     <- messages.toList
+      lastRead    <- maybeLastRead
+      if participant.id != message.senderId && lastRead.isBefore(message.created)
+    } yield message
+  }
+
+}
+object Conversation extends NonEmptyListOps {
+  implicit val objectIdFormat: Format[BSONObjectID] = ReactiveMongoFormats.objectIdFormats
   implicit val conversationFormat: OFormat[Conversation] = Json.format[Conversation]
 }

@@ -54,7 +54,7 @@ object ApiConversation {
 
   private def convertToApiMessage(
     coreConversation: Conversation,
-    message: Message,
+    message: ConversationMessage,
     identifiers: Set[Identifier]): ApiMessage = {
     val senderPossibly: Option[Participant] = findParticipantViaId(coreConversation, message.senderId)
     val readerPossibly: Option[Participant] = findParticipantViaIdentifiers(coreConversation, identifiers)
@@ -72,7 +72,9 @@ object ApiConversation {
     }
   }
 
-  private def findFirstReaderDetails(message: Message, coreConversation: Conversation): Option[(DateTime, Int)] = {
+  private def findFirstReaderDetails(
+    message: ConversationMessage,
+    coreConversation: Conversation): Option[(DateTime, Int)] = {
     val messageCreated = message.created.getMillis
     getReadTimesWithId(coreConversation.participants)
       .filter(_._2 =!= message.senderId)
@@ -81,7 +83,9 @@ object ApiConversation {
       .headOption
   }
 
-  private def firstReaderInformation(coreConversation: Conversation, message: Message): Option[FirstReaderInformation] =
+  private def firstReaderInformation(
+    coreConversation: Conversation,
+    message: ConversationMessage): Option[FirstReaderInformation] =
     findFirstReaderDetails(message, coreConversation).flatMap { details =>
       findParticipantViaId(coreConversation, details._2).map { participantDetails =>
         FirstReaderInformation(participantDetails.name, details._1)
