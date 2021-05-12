@@ -59,24 +59,6 @@ class ConversationSpec extends PlaySpec with ConversationTestData {
       val conversation = conversationWith(messages = unreadMessages ++ readMessages)
       conversation.unreadMessagesFor(reader = Set(customerWith().identifier)) mustBe unreadMessages
     }
-    "return empty if latest message is sent by the reader" in {
-      val readMessage: ConversationMessage = messageWith(created = dateTime.minusDays(2))
-      val customer: Participant = customerWith(readTime = dateTime.minusDays(1))
-      val unreadMessage: ConversationMessage = messageWith(created = dateTime.plusDays(1))
-      val customerMsg: ConversationMessage = messageWith(sender = customer, created = dateTime.plusDays(2))
-      val conversation: Conversation =
-        conversationWith(reader = customer, messages = List(readMessage, unreadMessage, customerMsg))
-      conversation.unreadMessagesFor(reader = Set(customer.identifier)) mustBe empty
-    }
-
-    "return empty if the reader has no read times but created the last message" in {
-      val unreadMessagesCustomer = customerWith().copy(readTimes = None)
-      val systemMessage = messageWith(created = dateTime.minusDays(1))
-      val customerMessage = messageWith(sender = unreadMessagesCustomer, created = dateTime.plusDays(1))
-      val conversation =
-        conversationWith(reader = unreadMessagesCustomer, messages = List(systemMessage, customerMessage))
-      conversation.unreadMessagesFor(Set(unreadMessagesCustomer.identifier)) mustBe empty
-    }
 
     "return empty if latest read message is after latest message" in {
       val conversation = conversationWith(messages = readMessagesWith(3))

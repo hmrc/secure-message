@@ -76,17 +76,5 @@ class ConversationMetadataSpec extends PlaySpec {
                                                             |    "unreadMessages": true
                                                             |}""".stripMargin)
     }
-
-    "mark conversation as read if message is viewed by same user who created it" in {
-      val identifier = Set(Identifier(name = "EORINumber", value = "GB1234567890", enrolment = Some("HMRC-CUS-ORG")))
-      val conversationJson: JsValue = Resources
-        .readJson("model/core/conversation-created-marked-as-read.json")
-        .as[JsObject] + ("_id" -> Json.toJson(objectID))
-      val coreConversation: Conversation = conversationJson.validate[Conversation].get
-      ConversationMetadata
-        .coreToConversationMetadata(coreConversation, identifier)
-        .unreadMessages mustBe false
-    }
-
   }
 }
