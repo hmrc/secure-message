@@ -22,23 +22,23 @@ import uk.gov.hmrc.securemessage.controllers.model.MessageType
 
 class IdCoderSpec extends FreeSpec with MustMatchers {
 
+  val id = "6086dc1f4700009fed2f5745"
   "decodeId should" - {
-
     "return messageType letter and id" in {
-      val nakedPath = "letter/6086dc1f4700009fed2f5745"
+      val nakedPath = "letter/" + id
       val path = encodedPath(nakedPath)
 
-      IdCoder.decodeId(path).right.get mustBe MessageType.Letter -> "6086dc1f4700009fed2f5745"
+      IdCoder.decodeId(path).right.get mustBe MessageType.Letter -> id
     }
     "return messageType conversation and id" in {
-      val nakedPath = "conversation/6086dc1f4700009fed2f5745"
+      val nakedPath = "conversation/" + id
       val path = encodedPath(nakedPath)
-      IdCoder.decodeId(path).right.get mustBe MessageType.Conversation -> "6086dc1f4700009fed2f5745"
+      IdCoder.decodeId(path).right.get mustBe MessageType.Conversation -> id
     }
     "return only messageType and Id" in {
-      val nakedPath = "conversation/6086dc1f4700009fed2f5745/test"
+      val nakedPath = "conversation/" + id + "/test"
       val path = encodedPath(nakedPath)
-      IdCoder.decodeId(path).right.get mustBe MessageType.Conversation -> "6086dc1f4700009fed2f5745"
+      IdCoder.decodeId(path).right.get mustBe MessageType.Conversation -> id
     }
     "return InvalidPath if path is not valid" in {
       val nakedPath = "123456"
@@ -50,9 +50,14 @@ class IdCoderSpec extends FreeSpec with MustMatchers {
 
   "encodeId should" - {
     "encode message type and id" in {
-      IdCoder.encodeId(MessageType.Conversation, "a4b5c4") mustBe "Q29udmVyc2F0aW9uL2E0YjVjNA=="
+      IdCoder.encodeId(MessageType.Conversation, id) mustBe encodedPath(s"conversation/$id")
+    }
+    "encode message type with lower case" in {
+      val result = IdCoder.encodeId(MessageType.Conversation, id)
+      decodePath(result) mustBe s"conversation/$id"
     }
   }
 
   protected def encodedPath(path: String): String = Base64.encodeBase64String(path.getBytes("UTF-8"))
+  protected def decodePath(path: String): String = new String(Base64.decodeBase64(path))
 }

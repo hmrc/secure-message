@@ -37,7 +37,7 @@ object IdCoder {
   }
 
   private[controllers] def encodeId(messageType: MessageType, id: DecodedId): EncodedId = {
-    val decodedString: DecodedId = messageType + "/" + id
+    val decodedString: DecodedId = messageType.entryName + "/" + id
     Base64.encodeBase64String(decodedString.getBytes(StandardCharsets.UTF_8))
   }
 }
