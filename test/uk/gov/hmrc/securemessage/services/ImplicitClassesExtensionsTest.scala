@@ -18,203 +18,75 @@ package uk.gov.hmrc.securemessage.services
 
 import org.scalatest.{ FreeSpec, MustMatchers }
 import uk.gov.hmrc.auth.core.{ EnrolmentIdentifier, Enrolments }
-import uk.gov.hmrc.securemessage.models.core
 import uk.gov.hmrc.securemessage.models.core.CustomerEnrolment
 
-class ImplicitClassesExtensionsTest extends FreeSpec with MustMatchers with ImplicitClassesExtensions {
-
-  "ConversationExtensions" - {}
+class ImplicitClassesExtensionsTest
+    extends FreeSpec with MustMatchers with ImplicitClassesExtensions with EnrolmentsTestData {
 
   "EnrolmentsExtensions" - {
-    val hmrcCusOrg = "HMRC-CUS-ORG"
-    val eORINumber = "EORINumber"
-    val eori89 = "GB123456789"
 
-    "find" - {
-      "returns a specific enrolment found within a list of enrolments designated by it's key and name" in {
-        val expectedEnrolment = core.CustomerEnrolment(hmrcCusOrg, eORINumber, eori89)
-        val enrolments = Enrolments(
-          Set(uk.gov.hmrc.auth.core
-            .Enrolment(key = hmrcCusOrg, identifiers = Seq(EnrolmentIdentifier(eORINumber, eori89)), state = "", None)))
-        enrolments.find(hmrcCusOrg, eORINumber) mustBe Some(expectedEnrolment)
+    "find must" - {
+      "return the enrolment by key and name if found" in {
+        authEnrolments(utrEnrolments).find(ctUtrEnrolment.key, ctUtrEnrolment.name) mustBe Some(ctUtrEnrolment)
       }
 
-      "returns a specific enrolment found within a list of enrolments designated by it's key and name in a case insensitive manner" in {
-        val expectedEnrolment = core.CustomerEnrolment(hmrcCusOrg, eORINumber, eori89)
-        val enrolments = Enrolments(
-          Set(uk.gov.hmrc.auth.core
-            .Enrolment(key = hmrcCusOrg, identifiers = Seq(EnrolmentIdentifier(eORINumber, eori89)), state = "", None)))
-        enrolments.find("hmrc-cUs-oRG", "eoriNumber") mustBe Some(expectedEnrolment)
+      "returns None if key not found" in {
+        allAuthEnrolments.find("non-existing-key", allEnrolments.head.name) mustBe None
       }
 
-      "returns None when a specific enrolment cannot be found within a list of enrolments" in {
-        val enrolments = Enrolments(
-          Set(
-            uk.gov.hmrc.auth.core.Enrolment(
-              key = hmrcCusOrg,
-              identifiers = Seq(EnrolmentIdentifier("Some other name", "some value")),
-              state = "",
-              None)))
-        enrolments.find(hmrcCusOrg, eORINumber) mustBe None
+      "returns None if name not found" in {
+        allAuthEnrolments.find(allEnrolments.head.key, "non-existing-name") mustBe None
       }
     }
 
-    "filter should" - {
-      val eoriEnrolment = CustomerEnrolment(hmrcCusOrg, eORINumber, eori89 + "0")
-      val eoriEnrolment1 = eoriEnrolment.copy(value = eori89 + "1")
-      val eoriEnrolment2 = eoriEnrolment.copy(value = eori89 + "2")
-      val saUtrEnrolment = CustomerEnrolment("IR-SA", "UTR", "123456789")
-      val ctUtrEnrolment = CustomerEnrolment("IR-CT", "UTR", "345678901")
-      val enrolmentIdentifier = EnrolmentIdentifier(eORINumber, eori89 + "0")
-      val enrolmentIdentifier1 = EnrolmentIdentifier(eORINumber, eori89 + "1")
-      val enrolmentIdentifier2 = EnrolmentIdentifier(eORINumber, eori89 + "2")
-
-      "returns a specific customer enrolment out of all the ones provided and ensures only the one available as an auth enrolment are returned" in {
-        val authEnrolments = Enrolments(Set(
-          uk.gov.hmrc.auth.core.Enrolment(key = hmrcCusOrg, identifiers = Seq(enrolmentIdentifier), state = "", None)))
-
-        val enrolments = Set(
-          eoriEnrolment,
-          saUtrEnrolment,
-          ctUtrEnrolment
-        )
-
-        authEnrolments.filter(Set(), enrolments) mustBe Set(eoriEnrolment)
+    "filter must" - {
+      "return original auth enrolments when all filters are empty" in {
+        allAuthEnrolments
+          .filter(enrolmentKeys = Set(), customerEnrolments = Set()) must contain theSameElementsAs allEnrolments
       }
 
-      "returns multiple customer enrolments for same enrolments with multiple identifiers provided and held in auth" in {
-        val authEnrolments = Enrolments(
-          Set(
-            uk.gov.hmrc.auth.core.Enrolment(
-              key = hmrcCusOrg,
-              identifiers = Seq(
-                enrolmentIdentifier,
-                enrolmentIdentifier1,
-                enrolmentIdentifier2
-              ),
-              state = "",
-              None
-            )))
-
-        val enrolments = Set(
-          eoriEnrolment,
-          eoriEnrolment1,
-          eoriEnrolment2,
-          saUtrEnrolment,
-          ctUtrEnrolment
-        )
-
-        authEnrolments.filter(Set(), enrolments) mustBe Set(
-          eoriEnrolment,
-          eoriEnrolment1,
-          eoriEnrolment2
-        )
+      "return just 'customerEnrolments' filtered auth enrolments when enrolmentKeys filter is empty" in {
+        allAuthEnrolments
+          .filter(enrolmentKeys = Set(), customerEnrolments = eoriEnrolments) must contain theSameElementsAs eoriEnrolments
       }
 
-      "returns multiple customer enrolments based on enrolment keys when multiple identifiers are held in auth" in {
-        val authEnrolments = Enrolments(
-          Set(
-            uk.gov.hmrc.auth.core.Enrolment(
-              key = hmrcCusOrg,
-              identifiers = Seq(
-                enrolmentIdentifier,
-                enrolmentIdentifier1,
-                enrolmentIdentifier2
-              ),
-              state = "",
-              None
-            )))
-
-        val enrolmentKeys = Set(hmrcCusOrg)
-        authEnrolments.filter(enrolmentKeys, Set()) mustBe Set(
-          eoriEnrolment,
-          eoriEnrolment1,
-          eoriEnrolment2
-        )
+      "return just 'enrolmentKey' filtered auth enrolments when customerEnrolments filter is empty" in {
+        allAuthEnrolments
+          .filter(enrolmentKeys = Set(saUtrEnrolment.key), customerEnrolments = Set()) must contain theSameElementsAs Set(
+          saUtrEnrolment)
       }
 
-      val utrEnrolmentIdentifier = EnrolmentIdentifier("UTR", "345678901")
-      "returns specific customer enrolments when provided with customer enrolments filters (no enrolment keys) and a specific set of auth enrolments" in {
-        val authEnrolments = Enrolments(
-          Set(
-            uk.gov.hmrc.auth.core.Enrolment(key = hmrcCusOrg, identifiers = Seq(enrolmentIdentifier), state = "", None),
-            uk.gov.hmrc.auth.core
-              .Enrolment(key = "IR-CT", identifiers = Seq(utrEnrolmentIdentifier), state = "", None)
-          ))
-
-        val enrolments = Set(
-          eoriEnrolment,
-          saUtrEnrolment,
-          ctUtrEnrolment
-        )
-
-        authEnrolments.filter(Set(), enrolments) mustBe
-          Set(
-            eoriEnrolment,
-            ctUtrEnrolment
-          )
-      }
-
-      "returns a specific enrolment out of all the enrolment keys provided and ensures only the one available as an auth enrolment are returned" in {
-        val authEnrolments = Enrolments(Set(
-          uk.gov.hmrc.auth.core.Enrolment(key = hmrcCusOrg, identifiers = Seq(enrolmentIdentifier), state = "", None)))
-
-        val enrolmentKeys = Set(hmrcCusOrg, "IR-SA", "IR-CT")
-
-        authEnrolments.filter(enrolmentKeys, Set()) mustBe Set(eoriEnrolment)
-      }
-
-      "returns another specific enrolment out of all the enrolment keys provided and ensures only the ones available as auth enrolments are returned" in {
-        val authEnrolments = Enrolments(
-          Set(
-            uk.gov.hmrc.auth.core.Enrolment(key = hmrcCusOrg, identifiers = Seq(enrolmentIdentifier), state = "", None),
-            uk.gov.hmrc.auth.core
-              .Enrolment(key = "IR-SA", identifiers = Seq(EnrolmentIdentifier("UTR", "123456789")), state = "", None)
-          ))
-
-        val enrolmentKeys = Set(hmrcCusOrg, "IR-SA", "IR-CT")
-
-        authEnrolments.filter(enrolmentKeys, Set()) mustBe Set(eoriEnrolment, saUtrEnrolment)
-      }
-
-      "returns customer enrolments out of all the ones provided plus enrolment keys and ensures only the ones available as auth enrolments are returned" in {
-        val authEnrolments = Enrolments(
-          Set(
-            uk.gov.hmrc.auth.core.Enrolment(key = hmrcCusOrg, identifiers = Seq(enrolmentIdentifier), state = "", None),
-            uk.gov.hmrc.auth.core
-              .Enrolment(key = "IR-CT", identifiers = Seq(utrEnrolmentIdentifier), state = "", None)
-          ))
-
-        val enrolmentKeys = Set(hmrcCusOrg, "IR-SA", "IR-CT")
-        val enrolments = Set(
-          eoriEnrolment,
-          CustomerEnrolment("IR-SA", "UTR", "123456789"),
-          ctUtrEnrolment
-        )
-
-        authEnrolments.filter(enrolmentKeys, enrolments) mustBe
-          Set(
-            eoriEnrolment,
-            ctUtrEnrolment
-          )
-      }
-
-      "returns specific customer enrolments out of all the ones available as auth enrolments when no filters are passed" in {
-        val authEnrolments = Enrolments(
-          Set(
-            uk.gov.hmrc.auth.core.Enrolment(key = hmrcCusOrg, identifiers = Seq(enrolmentIdentifier), state = "", None),
-            uk.gov.hmrc.auth.core
-              .Enrolment(key = "IR-CT", identifiers = Seq(utrEnrolmentIdentifier), state = "", None)
-          ))
-
-        val expectedResult =
-          Set(
-            eoriEnrolment,
-            ctUtrEnrolment
-          )
-
-        authEnrolments.filter(Set(), Set()) mustBe expectedResult
+      "combine the filtering results when all filters are non empty" in {
+        allAuthEnrolments
+          .filter(enrolmentKeys = Set(saUtrEnrolment.key), customerEnrolments = Set(ctUtrEnrolment)) must contain theSameElementsAs utrEnrolments
       }
     }
   }
+}
+
+trait EnrolmentsTestData {
+  val hmrcCusOrg = "HMRC-CUS-ORG"
+  val eORINumber = "EORINumber"
+  val eori89 = "GB123456789"
+  val eoriEnrolment: CustomerEnrolment = CustomerEnrolment(hmrcCusOrg, eORINumber, eori89 + "0")
+  val eoriEnrolment1: CustomerEnrolment = eoriEnrolment.copy(value = eori89 + "1")
+  val eoriEnrolment2: CustomerEnrolment = eoriEnrolment.copy(value = eori89 + "2")
+  val eoriEnrolments: Set[CustomerEnrolment] = Set(eoriEnrolment, eoriEnrolment1, eoriEnrolment2)
+
+  val saUtrEnrolment: CustomerEnrolment = CustomerEnrolment("IR-SA", "UTR", "123456789")
+  val ctUtrEnrolment: CustomerEnrolment = CustomerEnrolment("IR-CT", "UTR", "345678901")
+  val utrEnrolments = Set(saUtrEnrolment, ctUtrEnrolment)
+
+  val allEnrolments: Set[CustomerEnrolment] = eoriEnrolments ++ utrEnrolments
+
+  def authEnrolments(customerEnrolments: Set[CustomerEnrolment]): Enrolments = {
+    require(customerEnrolments.nonEmpty, "Customer enrolments cannot be empty")
+    Enrolments(
+      customerEnrolments.map { ce =>
+        val enrolmentIdentifier = EnrolmentIdentifier(ce.name, ce.value)
+        uk.gov.hmrc.auth.core.Enrolment(key = ce.key, identifiers = Seq(enrolmentIdentifier), state = "", None)
+      }
+    )
+  }
+  val allAuthEnrolments: Enrolments = authEnrolments(allEnrolments)
 }
