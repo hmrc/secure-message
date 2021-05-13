@@ -42,8 +42,11 @@ final case class Conversation(
 
   def latestParticipant: Option[Participant] = participants.find(_.id == latestMessage.senderId)
 
+  def findParticipant(identifiers: Set[Identifier]): Option[Participant] =
+    participants.find(p => identifiers.contains(p.identifier))
+
   @silent def unreadMessagesFor(reader: Set[Identifier]): List[ConversationMessage] = {
-    val maybeParticipant = participants.find(p => reader.contains(p.identifier))
+    val maybeParticipant = findParticipant(reader)
     val maybeLastRead = maybeParticipant.flatMap(_.lastReadTime.orElse(Some(new DateTime(0))))
     for {
       participant <- maybeParticipant.toList

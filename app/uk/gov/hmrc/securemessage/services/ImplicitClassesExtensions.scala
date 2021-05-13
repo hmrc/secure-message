@@ -43,25 +43,20 @@ trait ImplicitClassesExtensions {
     @SuppressWarnings(Array("org.wartremover.warts.Option2Iterable"))
     def filter(enrolmentKeys: Set[String], customerEnrolments: Set[CustomerEnrolment]): Set[CustomerEnrolment] = {
       val originalEnrolments: Set[CustomerEnrolment] = enrolments.asCustomerEnrolments
-      val enrolmentKeysFiltered =
-        if (enrolmentKeys.isEmpty) {
-          originalEnrolments
-        } else {
-          originalEnrolments.filter(e => enrolmentKeys.contains(e.key))
-        }
-      val customerEnrolmentsFiltered =
-        if (customerEnrolments.isEmpty) {
-          enrolmentKeysFiltered
-        } else {
-          originalEnrolments.intersect(customerEnrolments)
-        }
-      enrolmentKeysFiltered ++ customerEnrolmentsFiltered
+      def enrolmentKeysFiltered: Set[CustomerEnrolment] = originalEnrolments.filter(e => enrolmentKeys.contains(e.key))
+      def customerEnrolmentsFiltered: Set[CustomerEnrolment] = originalEnrolments.intersect(customerEnrolments)
+      (enrolmentKeys.isEmpty, customerEnrolments.isEmpty) match {
+        case (true, true)   => originalEnrolments
+        case (false, true)  => enrolmentKeysFiltered
+        case (true, false)  => customerEnrolmentsFiltered
+        case (false, false) => enrolmentKeysFiltered ++ customerEnrolmentsFiltered
+      }
     }
   }
 
   implicit class ConversationExtensions(conversation: Conversation) {
     def participantWith(identifiers: Set[Identifier]): Either[ParticipantNotFound, Participant] =
-      conversation.participants.find(p => identifiers.contains(p.identifier)) match {
+      conversation.findParticipant(identifiers) match {
         case Some(participant) => Right(participant)
         case None =>
           Left(ParticipantNotFound(
