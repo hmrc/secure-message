@@ -35,6 +35,11 @@ import scala.concurrent.Future
 class MessageRepositorySpec
     extends PlaySpec with MongoSpecSupport with BeforeAndAfterEach with ScalaFutures with StaticTestData {
 
+  override def beforeEach(): Unit = {
+    val repository: MessageRepository = new MessageRepository()
+    repository.removeAll().map(_ => ()).futureValue
+  }
+
   "A letter" should {
     "be returned for a participating enrolment" in new TestContext() {
       val result: Future[Either[SecureMessageError, Letter]] =
@@ -150,7 +155,6 @@ class MessageRepositorySpec
     val letters: List[Letter] = coreLetters.map(_.add(Seq(("_id" -> Json.toJson(objectID)))).as[Letter])
 
     val repository: MessageRepository = new MessageRepository()
-    repository.drop
     letters.map(letter => repository.insert(letter).futureValue)
   }
 
