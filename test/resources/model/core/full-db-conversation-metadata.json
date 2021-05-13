@@ -5,5 +5,7 @@
   "issueDate": "2020-11-10T15:00:01.000+0000",
   "senderName": "CDS Exports Team",
   "unreadMessages": false,
-  "count": 1
+  "count": 1,
+  "conversationId":"123",
+  "client":"CDCM"
 }
