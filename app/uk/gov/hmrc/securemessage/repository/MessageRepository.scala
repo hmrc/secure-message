@@ -20,8 +20,9 @@ import play.api.libs.json.{ JsArray, JsObject, JsString, Json }
 import reactivemongo.bson.{ BSONDateTime, BSONDocument, BSONNull, BSONObjectID }
 import uk.gov.hmrc.mongo.MongoConnector
 import uk.gov.hmrc.securemessage.{ SecureMessageError, StoreError }
-import uk.gov.hmrc.securemessage.models.core.{ FilterTag, Identifier, Letter }
+import uk.gov.hmrc.securemessage.models.core.{ Count, FilterTag, Identifier, Letter }
 import reactivemongo.play.json.ImplicitBSONHandlers.BSONDocumentWrites
+
 import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success }
@@ -39,6 +40,10 @@ class MessageRepository @Inject()(implicit connector: MongoConnector)
 
   def getLetter(id: String, identifiers: Set[Identifier])(
     implicit ec: ExecutionContext): Future[Either[SecureMessageError, Letter]] = getMessage(id, identifiers)
+
+  def getCount(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
+    implicit ec: ExecutionContext): Future[Count] =
+    getMessagesCount(identifiers, tags)
 
   def addReadTime(id: String)(implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] =
     withCurrentTime { implicit time =>

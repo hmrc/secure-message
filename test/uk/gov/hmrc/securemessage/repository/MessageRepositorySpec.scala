@@ -20,14 +20,14 @@ import org.joda.time.DateTime
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.play.PlaySpec
-import play.api.libs.json.{ JsObject, JsValue, Json }
-import play.api.test.Helpers.{ await, defaultAwaitTimeout }
+import play.api.libs.json.{JsObject, JsValue, Json}
+import play.api.test.Helpers.{await, defaultAwaitTimeout}
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.mongo.MongoSpecSupport
-import uk.gov.hmrc.securemessage.{ MessageNotFound, SecureMessageError }
+import uk.gov.hmrc.securemessage.{MessageNotFound, SecureMessageError}
 import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core.Letter._
-import uk.gov.hmrc.securemessage.models.core.{ FilterTag, Identifier, Letter }
+import uk.gov.hmrc.securemessage.models.core.{Count, FilterTag, Identifier, Letter}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -149,6 +149,16 @@ class MessageRepositorySpec
       result.futureValue mustBe empty
     }
   }
+
+//  "getLettersCount" should {
+//    "return the letters count for matching identifier enrolment and value" in new TestContext() {
+//      val result = repository.getCount(identifiers, None)
+//      result.futureValue mustBe Count(1, 1)
+//    }
+//  }
+
+
+
 
   class TestContext(coreLetters: List[JsValue] = lettersWithTimeFields) {
     val objectID: BSONObjectID = BSONObjectID.generate()

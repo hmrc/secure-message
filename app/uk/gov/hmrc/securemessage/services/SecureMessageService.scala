@@ -20,25 +20,27 @@ import cats.data._
 import cats.implicits._
 import com.google.inject.Inject
 import org.joda.time.DateTime
+import play.api.Logger
 import play.api.i18n.Messages
 import play.api.mvc.Request
 import uk.gov.hmrc.auth.core.Enrolments
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.securemessage._
-import uk.gov.hmrc.securemessage.connectors.{ ChannelPreferencesConnector, EISConnector, EmailConnector }
-import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.{ ApiConversation, ConversationMetadata }
+import uk.gov.hmrc.securemessage.connectors.{ChannelPreferencesConnector, EISConnector, EmailConnector}
+import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.{ApiConversation, ConversationMetadata}
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage
 import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.ApiLetter
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.Customer.eqCustomer
-import uk.gov.hmrc.securemessage.models.core.ParticipantType.{ Customer => PCustomer }
-import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, _ }
+import uk.gov.hmrc.securemessage.models.core.ParticipantType.{Customer => PCustomer}
+import uk.gov.hmrc.securemessage.models.core.{CustomerEnrolment, _}
 import uk.gov.hmrc.securemessage.models._
-import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository }
+import uk.gov.hmrc.securemessage.repository.{ConversationRepository, MessageRepository}
 import uk.gov.hmrc.securemessage.services.utils.ContentValidator
+
 import java.util.UUID
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.{ExecutionContext, Future}
 
 //TODO: refactor service to only accept core model classes as params
 @SuppressWarnings(
@@ -86,6 +88,15 @@ class SecureMessageService @Inject()(
       letters       <- messageRepository.getLetters(identifiers, filters.tags)
     } yield (conversations ++ letters).sortBy(_.issueDate)(dateTimeDescending)
   }
+
+  def getInboxCount(authEnrolments: Enrolments, filters: Filters)(
+    implicit ec: ExecutionContext): Future[Count] = {
+    Logger.logger.info(authEnrolments.toString)
+    Logger.logger.info(filters.toString)
+    Future.successful(Count(2, 3))
+  }
+
+
 
   def getConversation(client: String, conversationId: String, enrolments: Set[CustomerEnrolment])(
     implicit ec: ExecutionContext): Future[Either[SecureMessageError, ApiConversation]] = {
