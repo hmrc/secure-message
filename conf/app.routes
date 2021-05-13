@@ -122,3 +122,15 @@ GET         /conversation/:client/:conversationId   uk.gov.hmrc.securemessage.co
 #     description: conversation/message not found
 ###
 GET        /messages/:id   uk.gov.hmrc.securemessage.controllers.SecureMessageController.getMessage(id: String)
+
+###
+# summary: Gets inbox counts by filter
+# security:
+#   - bearerToken: []
+# responses:
+#   200:
+#     description: count returned
+#   401:
+#     description: unauthorised customer when they don't have an enrolment
+###
+GET        /messages/count   uk.gov.hmrc.securemessage.controllers.SecureMessageController.getMessageCount(enrolmentKey: Option[List[String]], enrolment: Option[List[CustomerEnrolment]], tag: Option[List[FilterTag]])
