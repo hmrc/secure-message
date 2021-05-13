@@ -150,12 +150,12 @@ class MessageRepositorySpec
     }
   }
 
-//  "getLettersCount" should {
-//    "return the letters count for matching identifier enrolment and value" in new TestContext() {
-//      val result = repository.getCount(identifiers, None)
-//      result.futureValue mustBe Count(1, 1)
-//    }
-//  }
+  "getLettersCount" should {
+    "return the letters count for matching identifier enrolment and value" in new TestContext() {
+      val result = repository.getCount(identifiers, None)
+      result.futureValue mustBe Count(1, 1)
+    }
+  }
 
 
 
@@ -177,6 +177,7 @@ trait StaticTestData {
   val lettersWithTimeFields = List(Resources.readJson("model/core/letter.json").add(timeFields))
   val lettersWithoutReadTime = List(Resources.readJson("model/core/letter.json").add(Seq(lastUpdatedField)))
   val identifiers: Set[Identifier] = Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")))
+  val invalidIdentifiers: Set[Identifier] = Set(Identifier("EORINumber", "GB1234569999", Some("HMRC-CUS-ORG")))
 
   implicit class JsonLetterExtensions(letter: JsValue) {
     def add(fields: Seq[(String, JsValue)]): JsObject =

@@ -189,6 +189,7 @@ class SecureMessageController @Inject()(
         }
       }
     }
+      }
 
   def getMessage(rawId: String): Action[AnyContent] = Action.async { implicit request =>
     IdCoder.decodeId(rawId) match {

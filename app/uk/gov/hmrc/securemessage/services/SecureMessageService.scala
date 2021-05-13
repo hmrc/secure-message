@@ -96,8 +96,6 @@ class SecureMessageService @Inject()(
     Future.successful(Count(2, 3))
   }
 
-
-
   def getConversation(client: String, conversationId: String, enrolments: Set[CustomerEnrolment])(
     implicit ec: ExecutionContext): Future[Either[SecureMessageError, ApiConversation]] = {
     val identifiers = enrolments.map(_.asIdentifier)
