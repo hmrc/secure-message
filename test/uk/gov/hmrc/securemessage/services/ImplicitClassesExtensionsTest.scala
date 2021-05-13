@@ -69,7 +69,7 @@ class ImplicitClassesExtensionsTest extends FreeSpec with MustMatchers with Impl
       val enrolmentIdentifier1 = EnrolmentIdentifier(eORINumber, eori89 + "1")
       val enrolmentIdentifier2 = EnrolmentIdentifier(eORINumber, eori89 + "2")
 
-      "returns a specific customer enrolment out of all the ones provided and ensures only the one available as an auth enrolment are returned" in {
+      "return a specific customer enrolment out of all the ones provided and ensures only the one available as an auth enrolment are returned" in {
         val authEnrolments = Enrolments(Set(
           uk.gov.hmrc.auth.core.Enrolment(key = hmrcCusOrg, identifiers = Seq(enrolmentIdentifier), state = "", None)))
 
