@@ -26,8 +26,9 @@ class ImplicitClassesExtensionsTest
   "EnrolmentsExtensions" - {
 
     "find must" - {
-      "return the enrolment by key and name if found" in {
-        authEnrolments(utrEnrolments).find(ctUtrEnrolment.key, ctUtrEnrolment.name) mustBe Some(ctUtrEnrolment)
+      "return the enrolment by case insensitive key and name if found" in {
+        authEnrolments(uppercase(utrEnrolments))
+          .find(ctUtrEnrolment.key.toLowerCase, ctUtrEnrolment.name.toLowerCase) mustBe Some(ctUtrEnrolment)
       }
 
       "returns None if key not found" in {
@@ -56,9 +57,11 @@ class ImplicitClassesExtensionsTest
           saUtrEnrolment)
       }
 
-      "combine the filtering results when all filters are non empty" in {
-        allAuthEnrolments
-          .filter(enrolmentKeys = Set(saUtrEnrolment.key), customerEnrolments = Set(ctUtrEnrolment)) must contain theSameElementsAs utrEnrolments
+      "combine the filtering results when all case insensitive matched filters are non empty" in {
+        authEnrolments(uppercase(allEnrolments))
+          .filter(
+            enrolmentKeys = Set(saUtrEnrolment.key.toLowerCase),
+            customerEnrolments = lowercase(Set(ctUtrEnrolment))) must contain theSameElementsAs utrEnrolments
       }
     }
   }
@@ -78,6 +81,12 @@ trait EnrolmentsTestData {
   val utrEnrolments = Set(saUtrEnrolment, ctUtrEnrolment)
 
   val allEnrolments: Set[CustomerEnrolment] = eoriEnrolments ++ utrEnrolments
+
+  def uppercase(customerEnrolments: Set[CustomerEnrolment]): Set[CustomerEnrolment] =
+    customerEnrolments.map(e => e.copy(key = e.key.toUpperCase, name = e.name.toUpperCase, value = e.value.toUpperCase))
+
+  def lowercase(customerEnrolments: Set[CustomerEnrolment]): Set[CustomerEnrolment] =
+    customerEnrolments.map(e => e.copy(key = e.key.toLowerCase, name = e.name.toLowerCase, value = e.value.toLowerCase))
 
   def authEnrolments(customerEnrolments: Set[CustomerEnrolment]): Enrolments = {
     require(customerEnrolments.nonEmpty, "Customer enrolments cannot be empty")
