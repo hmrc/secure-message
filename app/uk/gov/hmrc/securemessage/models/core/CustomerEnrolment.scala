@@ -22,6 +22,7 @@ import play.api.libs.json.{ Json, Reads }
   * */
 final case class CustomerEnrolment(key: String, name: String, value: String) {
   def asIdentifier: Identifier = Identifier(name, value, Some(key))
+  def upper: CustomerEnrolment = CustomerEnrolment(key.toUpperCase, name.toUpperCase, value.toUpperCase)
 }
 
 object CustomerEnrolment {
