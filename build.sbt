@@ -143,7 +143,8 @@ lazy val microservice = Project(appName, file("."))
     ExternalService("CUSTOMS_FINANCIALS_HODS_STUB"),
     ExternalService("EMAIL"),
     ExternalService("MAILGUN_STUB"),
-    ExternalService("SECURE_MESSAGE_STUB")
+    ExternalService("SECURE_MESSAGE_STUB"),
+    ExternalService("MESSAGE")
   ))
   .settings(silencerSettings)
   .settings(ScoverageSettings())

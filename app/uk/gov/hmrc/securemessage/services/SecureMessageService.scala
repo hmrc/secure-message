@@ -87,6 +87,19 @@ class SecureMessageService @Inject()(
     } yield (conversations ++ letters).sortBy(_.issueDate)(dateTimeDescending)
   }
 
+  def getMessagesCount(authEnrolments: Enrolments, filters: Filters)(implicit ec: ExecutionContext): Future[Count] = {
+    val filteredEnrolments = authEnrolments.filter(filters.enrolmentKeysFilter, filters.enrolmentsFilter)
+    val identifiers: Set[Identifier] = filteredEnrolments.map(_.asIdentifier)
+    for {
+      conversationsCount <- conversationRepository.getConversationsCount(identifiers, filters.tags)
+      lettersCount       <- messageRepository.getLettersCount(identifiers, filters.tags)
+    } yield
+      Count(
+        total = conversationsCount.total + lettersCount.total,
+        unread = conversationsCount.unread + lettersCount.unread
+      )
+  }
+
   def getConversation(client: String, conversationId: String, enrolments: Set[CustomerEnrolment])(
     implicit ec: ExecutionContext): Future[Either[SecureMessageError, ApiConversation]] = {
     val identifiers = enrolments.map(_.asIdentifier)

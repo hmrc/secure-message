@@ -14,15 +14,12 @@
  * limitations under the License.
  */
 
-import org.scalatest.Sequential
+package uk.gov.hmrc.securemessage.models.core
 
-class ItTestSuite
-    extends Sequential(
-      new AddMessageToConversationISpec,
-      new CreateConversationISpec,
-      new GetConversationsISpec,
-      new GetMessagesISpec,
-      new GetMessagesCountISpec,
-      new GetIndividualConversationISpec,
-      new PostCustomerReadTimeISpec
-    )
+import play.api.libs.json.{ Json, OFormat }
+
+final case class Count(total: Long, unread: Long)
+
+object Count {
+  implicit val formatCount: OFormat[Count] = Json.format[Count]
+}

@@ -19,12 +19,13 @@ package uk.gov.hmrc.securemessage.repository
 import play.api.libs.json.Json.JsValueWrapper
 import play.api.libs.json._
 import reactivemongo.api.Cursor.ErrorHandler
-import reactivemongo.api.{ Cursor, DB }
+import reactivemongo.api.{ Cursor, DB, ReadConcern }
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
-import uk.gov.hmrc.securemessage.models.core.{ FilterTag, Identifier }
+import uk.gov.hmrc.securemessage.models.core.{ Count, FilterTag, Identifier }
 import uk.gov.hmrc.securemessage.{ InvalidBsonId, MessageNotFound, SecureMessageError }
+
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success }
 import scala.reflect.runtime.universe.{ TypeTag, typeOf }
@@ -37,9 +38,8 @@ abstract class SecureMessageRepository[A: TypeTag, ID](
     extends ReactiveRepository[A, ID](collectionName, mongo, domainFormat, idFormat) {
   implicit val format: OFormat[A] = domainFormat.asInstanceOf[OFormat[A]]
 
-  protected def getMessages(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
-    implicit ec: ExecutionContext): Future[List[A]] = {
-    val querySelector = (identifiers, tags) match {
+  private def messagesQuerySelector(identifiers: Set[Identifier], tags: Option[List[FilterTag]]): JsObject =
+    (identifiers, tags) match {
       case (identifiers, _) if identifiers.isEmpty => //TODO: move this case to service
         JsObject.empty
       case (identifiers, None) =>
@@ -55,6 +55,10 @@ abstract class SecureMessageRepository[A: TypeTag, ID](
       case _ =>
         JsObject.empty
     }
+
+  protected def getMessages(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
+    implicit ec: ExecutionContext): Future[List[A]] = {
+    val querySelector = messagesQuerySelector(identifiers, tags)
     if (querySelector != JsObject.empty) {
       collection
         .find[JsObject, A](
@@ -68,6 +72,28 @@ abstract class SecureMessageRepository[A: TypeTag, ID](
       Future(List())
     }
   }
+
+  protected def getMessagesCount(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
+    implicit ec: ExecutionContext): Future[Count] = {
+    val querySelector = messagesQuerySelector(identifiers, tags)
+
+    val totalCount = getCount(querySelector)
+    val unreadCount = getCount(Json.obj("$and" -> Json.arr(querySelector, countUnreadQuery)))
+
+    for {
+      total  <- totalCount
+      unread <- unreadCount
+    } yield Count(total, unread)
+  }
+
+  private def getCount(selectorObj: JsObject)(implicit ec: ExecutionContext): Future[Long] =
+    collection.count(
+      selector = Some(selectorObj),
+      limit = None,
+      skip = 0,
+      hint = None,
+      readConcern = ReadConcern.Local
+    )
 
   protected def getMessage(id: String, identifiers: Set[Identifier])(
     implicit ec: ExecutionContext): Future[Either[SecureMessageError, A]] =
@@ -103,5 +129,7 @@ abstract class SecureMessageRepository[A: TypeTag, ID](
   protected def findByIdentifierQuery(identifier: Identifier): Seq[(String, JsValueWrapper)]
 
   protected def tagQuery(tags: List[FilterTag]): JsObject
+
+  protected def countUnreadQuery(): JsObject
 
 }

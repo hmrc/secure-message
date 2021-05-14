@@ -16,13 +16,14 @@
 
 package uk.gov.hmrc.securemessage.repository
 import play.api.libs.json.Json._
-import play.api.libs.json.{ JsArray, JsObject, JsString, Json }
+import play.api.libs.json.{ JsArray, JsNull, JsObject, JsString, Json }
 import reactivemongo.bson.{ BSONDateTime, BSONDocument, BSONNull, BSONObjectID }
 import uk.gov.hmrc.mongo.MongoConnector
 import uk.gov.hmrc.securemessage.{ SecureMessageError, StoreError }
-import uk.gov.hmrc.securemessage.models.core.{ FilterTag, Identifier, Letter }
+import uk.gov.hmrc.securemessage.models.core.{ Count, FilterTag, Identifier, Letter }
 import reactivemongo.play.json.ImplicitBSONHandlers.BSONDocumentWrites
 import javax.inject.Inject
+
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success }
 
@@ -36,6 +37,10 @@ class MessageRepository @Inject()(implicit connector: MongoConnector)
   def getLetters(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
     implicit ec: ExecutionContext): Future[List[Letter]] =
     getMessages(identifiers, tags)
+
+  def getLettersCount(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
+    implicit ec: ExecutionContext): Future[Count] =
+    getMessagesCount(identifiers, tags)
 
   def getLetter(id: String, identifiers: Set[Identifier])(
     implicit ec: ExecutionContext): Future[Either[SecureMessageError, Letter]] = getMessage(id, identifiers)
@@ -71,4 +76,6 @@ class MessageRepository @Inject()(implicit connector: MongoConnector)
         tags.foldLeft(JsArray())((acc, t) => acc ++ Json.arr(Json.obj(s"tags.${t.key}" -> JsString(t.value))))
     )
 
+  override protected def countUnreadQuery(): JsObject =
+    Json.obj("readTime" -> JsNull)
 }
