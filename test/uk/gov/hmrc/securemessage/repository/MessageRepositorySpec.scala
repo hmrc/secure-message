@@ -27,7 +27,7 @@ import uk.gov.hmrc.mongo.MongoSpecSupport
 import uk.gov.hmrc.securemessage.{ MessageNotFound, SecureMessageError }
 import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core.Letter._
-import uk.gov.hmrc.securemessage.models.core.{ FilterTag, Identifier, Letter }
+import uk.gov.hmrc.securemessage.models.core.{ Count, FilterTag, Identifier, Letter }
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -147,6 +147,38 @@ class MessageRepositorySpec
       val result: Future[List[Letter]] =
         repository.getLetters(identifiers, Some(List(FilterTag("notificationType", "non-existing"))))
       result.futureValue mustBe empty
+    }
+  }
+
+  "getLettersCount" should {
+    "return Count when readTime is recorded for matching identifier enrolment and value" in new TestContext() {
+      val result = repository.getLettersCount(identifiers, None)
+      result.futureValue mustBe Count(1, 0)
+    }
+    "return Count when no readTime is recorded for matching identifier enrolment and value" in new TestContext(
+      lettersWithoutReadTime) {
+      val result = repository.getLettersCount(identifiers, None)
+      result.futureValue mustBe Count(1, 1)
+    }
+    "return Count if no identifier enrolment matches" in new TestContext() {
+      val result =
+        repository.getLettersCount(identifiers.map(i => i.copy(enrolment = Some("non-existing"))), None)
+      result.futureValue mustBe Count(0, 0)
+    }
+    "return Count ignoring identifier name matches" in new TestContext() {
+      val result =
+        repository.getLettersCount(identifiers.map(i => i.copy(name = "non-existing")), None)
+      result.futureValue mustBe Count(1, 0)
+    }
+    "return Count matching tags" in new TestContext() {
+      val result =
+        repository.getLettersCount(identifiers, Some(List(FilterTag("notificationType", "Direct Debit"))))
+      result.futureValue mustBe Count(1, 0)
+    }
+    "return an empty Count for non matching tags" in new TestContext() {
+      val result =
+        repository.getLettersCount(identifiers, Some(List(FilterTag("notificationType", "non-existing"))))
+      result.futureValue mustBe Count(0, 0)
     }
   }
 
