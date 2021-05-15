@@ -27,7 +27,7 @@ import uk.gov.hmrc.mongo.MongoSpecSupport
 import uk.gov.hmrc.securemessage.{ MessageNotFound, SecureMessageError }
 import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core.Letter._
-import uk.gov.hmrc.securemessage.models.core.{ FilterTag, Identifier, Letter }
+import uk.gov.hmrc.securemessage.models.core.{ Count, FilterTag, Identifier, Letter }
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -35,10 +35,10 @@ import scala.concurrent.Future
 class MessageRepositorySpec
     extends PlaySpec with MongoSpecSupport with BeforeAndAfterEach with ScalaFutures with StaticTestData {
 
-  override def beforeEach(): Unit = {
-    val repository: MessageRepository = new MessageRepository()
+  val repository: MessageRepository = new MessageRepository()
+
+  override def beforeEach(): Unit =
     repository.removeAll().map(_ => ()).futureValue
-  }
 
   "A letter" should {
     "be returned for a participating enrolment" in new TestContext() {
@@ -150,14 +150,29 @@ class MessageRepositorySpec
     }
   }
 
-  class TestContext(coreLetters: List[JsValue] = lettersWithTimeFields) {
-    val objectID: BSONObjectID = BSONObjectID.generate()
-    val letters: List[Letter] = coreLetters.map(_.add(Seq(("_id" -> Json.toJson(objectID)))).as[Letter])
+  "getLettersCount" should {
 
-    val repository: MessageRepository = new MessageRepository()
-    letters.map(letter => repository.insert(letter).futureValue)
+    "return 0 total messages and 0 unread" in new TestContext(coreLetters = List()) {
+      val result = repository.getLettersCount(identifiers, None)
+      result.futureValue mustBe Count(0, 0)
+    }
+
+    "return 1 total messages and 0 unread" in new TestContext() {
+      val result = repository.getLettersCount(identifiers, None)
+      result.futureValue mustBe Count(1, 0)
+    }
+
+    "return 1 total messages and 1 unread" in new TestContext(coreLetters = lettersWithoutReadTime) {
+      val result = repository.getLettersCount(identifiers, None)
+      result.futureValue mustBe Count(1, 1)
+    }
   }
 
+  class TestContext(coreLetters: List[JsValue] = lettersWithTimeFields) {
+    val objectID: BSONObjectID = BSONObjectID.generate()
+    val letters: List[Letter] = coreLetters.map(_.add(Seq("_id" -> Json.toJson(objectID))).as[Letter])
+    letters.map(letter => repository.insert(letter).futureValue)
+  }
 }
 
 trait StaticTestData {
@@ -178,4 +193,5 @@ trait StaticTestData {
         nextLetter - field
       }
   }
+
 }

@@ -18,12 +18,13 @@ package uk.gov.hmrc.securemessage.repository
 
 import org.joda.time.DateTime
 import org.scalatest.BeforeAndAfterEach
+import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.play.PlaySpec
 import play.api.test.Helpers._
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.mongo.MongoSpecSupport
 import uk.gov.hmrc.securemessage.helpers.ConversationUtil
-import uk.gov.hmrc.securemessage.models.core.{ Conversation, ConversationMessage, FilterTag, Identifier }
+import uk.gov.hmrc.securemessage.models.core.{ Conversation, ConversationMessage, Count, FilterTag, Identifier }
 import uk.gov.hmrc.securemessage.{ MessageNotFound, StoreError }
 
 import scala.collection.immutable
@@ -33,7 +34,9 @@ import scala.concurrent.Future
 //TODO: remove PlaySpec from all tests except controllers
 //TODO: reuse test data as variables, do not have same string twice anywhere
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.EitherProjectionPartial"))
-class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with BeforeAndAfterEach {
+class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with BeforeAndAfterEach with ScalaFutures {
+
+  val repository: ConversationRepository = new ConversationRepository()
 
   val conversation1: Conversation =
     ConversationUtil.getFullConversation(BSONObjectID.generate, "123", "HMRC-CUS-ORG", "EORINumber", "GB1234567890")
@@ -52,6 +55,9 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
     ConversationUtil
       .getFullConversation(BSONObjectID.generate, "456", "IR-CT", "UTR", "345678901", Some(Map("caseId" -> "CT-11345")))
   val allConversations = Seq(conversation1, conversation2, conversation3, conversation4)
+
+  override def beforeEach(): Unit =
+    repository.removeAll().map(_ => ()).futureValue
 
   //TODO: group test by their function name
   "A full conversation" should {
@@ -225,6 +231,7 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
       result mustBe Left(MessageNotFound(s"Conversation not found for identifier: $modifierParticipantEnrolments"))
     }
   }
+
   "Adding a message to conversation" must {
     val conversation: Conversation = ConversationUtil.getMinimalConversation(id = "123")
     "increase the message array size" in new TestContext(
@@ -256,6 +263,40 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
     }
   }
 
+  "getConversationsCount" should {
+
+    val conversation =
+      ConversationUtil.getFullConversation(BSONObjectID.generate, "123", "HMRC-CUS-ORG", "EORINumber", "GB1234567890")
+
+    "return 0 total messages and 0 unread" in new TestContext(
+      conversations = Seq.empty
+    ) {
+      val result: Count =
+        await(
+          repository.getConversationsCount(Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))), None))
+      result must be(Count(total = 0, unread = 0))
+    }
+
+    "return 2 total messages and 2 unread" in new TestContext(
+      conversations = allConversations
+    ) {
+      val result: Count =
+        await(
+          repository.getConversationsCount(Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))), None))
+      result must be(Count(total = 2, unread = 2))
+    }
+
+    "return 2 total messages and 1 unread" in new TestContext(
+      conversations = allConversations
+    ) {
+      await(repository.addReadTime(conversation.client, conversation.id, 234, DateTime.now))
+      val result: Count =
+        await(
+          repository.getConversationsCount(Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))), None))
+      result must be(Count(total = 2, unread = 2))
+    }
+  }
+
   "A conversation with object Id" should {
     val conversation = ConversationUtil.getMinimalConversation("123")
     "be returned for a participating enrolment" in new TestContext(conversations = Seq(conversation)) {
@@ -284,10 +325,6 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
   }
 
   class TestContext(conversations: Seq[Conversation]) {
-    val repository: ConversationRepository = new ConversationRepository()
-    repository.drop
     await(Future.sequence(conversations.map(repository.insert)))
   }
-
-  override protected def afterEach(): Unit = dropTestCollection("conversation")
 }

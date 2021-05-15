@@ -28,7 +28,7 @@ import uk.gov.hmrc.securemessage._
 import uk.gov.hmrc.securemessage.controllers.model.ClientName
 import uk.gov.hmrc.securemessage.controllers.model.MessageType.{ Conversation, Letter }
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write._
-import uk.gov.hmrc.securemessage.controllers.model.common.read.{ Count, MessageMetadata }
+import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata
 import uk.gov.hmrc.securemessage.controllers.model.common.write._
 import uk.gov.hmrc.securemessage.controllers.utils.{ IdCoder, QueryStringValidation }
 import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag, Filters }
@@ -168,17 +168,23 @@ class SecureMessageController @Inject()(
       }
     }
 
-  def getMessageCount(
+  def getMessagesCount(
     enrolmentKeys: Option[List[String]],
     customerEnrolments: Option[List[CustomerEnrolment]],
     tags: Option[List[FilterTag]]): Action[AnyContent] =
     Action.async { implicit request =>
-      {
-        logger.logger.info(request.toString)
-        logger.logger.info(enrolmentKeys.toString)
-        logger.logger.info(customerEnrolments.toString)
-        logger.logger.info(tags.toString)
-        Future.successful(Ok(Json.toJson(Count(1, 0))))
+      validateQueryParameters(request.queryString, "enrolment", "enrolmentKey", "tag") match {
+        case Left(e) => Future.successful(BadRequest(Json.toJson(e.getMessage)))
+        case _ =>
+          authorised()
+            .retrieve(Retrievals.allEnrolments) { authEnrolments =>
+              val filters = Filters(enrolmentKeys, customerEnrolments, tags)
+              secureMessageService
+                .getMessagesCount(authEnrolments, filters)
+                .map { count =>
+                  Ok(Json.toJson(count))
+                }
+            }
       }
     }
 

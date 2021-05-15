@@ -19,7 +19,7 @@ package uk.gov.hmrc.securemessage.repository
 import org.joda.time.DateTime
 import play.api.libs.json.JodaWrites.{ JodaDateTimeWrites => _ }
 import play.api.libs.json.Json.JsValueWrapper
-import play.api.libs.json.{ JsArray, JsObject, JsString, Json }
+import play.api.libs.json.{ JsArray, JsBoolean, JsObject, JsString, Json }
 import reactivemongo.api.WriteConcern
 import reactivemongo.api.indexes.{ Index, IndexType }
 import reactivemongo.bson.BSONObjectID
@@ -27,9 +27,9 @@ import reactivemongo.core.errors.DatabaseException
 import uk.gov.hmrc.mongo.MongoConnector
 import uk.gov.hmrc.securemessage._
 import uk.gov.hmrc.securemessage.models.core.ConversationMessage.dateTimeFormat
-import uk.gov.hmrc.securemessage.models.core.{ Conversation, ConversationMessage, FilterTag, Identifier }
-
+import uk.gov.hmrc.securemessage.models.core.{ Conversation, ConversationMessage, Count, FilterTag, Identifier }
 import javax.inject.{ Inject, Singleton }
+
 import scala.collection.Seq
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -66,6 +66,10 @@ class ConversationRepository @Inject()(implicit connector: MongoConnector)
 
   def getConversations(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
     implicit ec: ExecutionContext): Future[List[Conversation]] = getMessages(identifiers, tags)
+
+  def getConversationsCount(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
+    implicit ec: ExecutionContext): Future[Count] =
+    getMessagesCount(identifiers, tags)
 
   @SuppressWarnings(Array("org.wartremover.warts.OptionPartial"))
   def getConversation(client: String, conversationId: String, identifiers: Set[Identifier])(
@@ -149,4 +153,11 @@ class ConversationRepository @Inject()(implicit connector: MongoConnector)
         tags.foldLeft(JsArray())((acc, t) => acc ++ Json.arr(Json.obj(s"tags.${t.key}" -> JsString(t.value))))
     )
 
+  override protected def countUnreadQuery(): JsObject =
+    Json.obj(
+      "participants" ->
+        Json.obj(
+          "$not" ->
+            Json.obj("$elemMatch" ->
+              Json.obj("readTimes" -> Json.obj("$exists" -> JsBoolean(true))))))
 }
