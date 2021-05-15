@@ -17,9 +17,8 @@
 package uk.gov.hmrc.securemessage.services.utils
 
 import java.util.UUID
-
 import cats.data.NonEmptyList
-import org.joda.time.DateTime
+import org.joda.time.{ DateTime, LocalDate }
 import org.mockito.Mockito.verify
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
@@ -32,6 +31,7 @@ import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.audit.model.EventTypes
 import uk.gov.hmrc.securemessage.controllers.model.ClientName.CDCM
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage
+import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.{ ApiLetter, SenderInformation }
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
 import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryMessageRequest, RequestCommon, RequestDetail }
@@ -145,14 +145,10 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
 
   "auditConversationRead" must {
 
-    val readTime = DateTime.now
-
     "send correct audit details when read time is recorded" in {
       val _ = auditConversationRead(
-        "QueryMessageReadSuccess",
-        CDCM,
+        Some(CDCM),
         conversationId,
-        readTime,
         Enrolments(
           Set(
             Enrolment("HMRC-CUS-ORG", Seq(EnrolmentIdentifier("EORINumber", "GB1234567890")), "")
@@ -162,20 +158,17 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
         "QueryMessageReadSuccess",
         Map(
           messageReadTxnName,
-          "client"     -> CDCM.entryName,
-          "messageId"  -> conversationId,
-          "readTime"   -> isoDtf.print(readTime),
-          "enrolments" -> "HMRC-CUS-ORG:EORINumber=GB1234567890"
+          "client"      -> CDCM.entryName,
+          "messageId"   -> conversationId,
+          "messageType" -> "Conversation",
+          "enrolments"  -> "HMRC-CUS-ORG:EORINumber=GB1234567890"
         )
       )
     }
 
     "send correct audit details when read time is not recorded" in {
-      val _ = auditConversationRead(
-        "QueryMessageReadFailed",
-        CDCM,
-        conversationId,
-        readTime,
+      val _ = auditConversationReadFailed(
+        "convId",
         Enrolments(
           Set(
             Enrolment("HMRC-CUS-ORG", Seq(EnrolmentIdentifier("EORINumber", "GB1234567890")), "")
@@ -185,13 +178,60 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
         "QueryMessageReadFailed",
         Map(
           messageReadTxnName,
-          "client"     -> CDCM.entryName,
-          "messageId"  -> conversationId,
-          "readTime"   -> isoDtf.print(readTime),
-          "enrolments" -> "HMRC-CUS-ORG:EORINumber=GB1234567890"
+          "messageId"   -> "convId",
+          "messageType" -> "Conversation",
+          "enrolments"  -> "HMRC-CUS-ORG:EORINumber=GB1234567890"
         )
       )
     }
+  }
+
+  "auditReadLetter" must {
+    val localDate = LocalDate.now()
+    val enrolments = Enrolments(
+      Set(
+        Enrolment("HMRC-CUS-ORG", Seq(EnrolmentIdentifier("EORINumber", "GB1234567890")), "")
+      ))
+    "send correct audit details when letter is read" in {
+      val _ = auditReadLetter(
+        ApiLetter(
+          "subject",
+          "content",
+          None,
+          SenderInformation("sender", localDate),
+          Identifier("id", "value", None),
+          None,
+          None),
+        enrolments
+      )
+
+      verify(auditConnector).sendExplicitAudit(
+        "LetterReadSuccess",
+        Map(
+          letterReadSuccessTxnName,
+          "id"          -> "value",
+          "subject"     -> "subject",
+          "readTime"    -> "",
+          "messageType" -> "Letter",
+          "enrolments"  -> "HMRC-CUS-ORG:EORINumber=GB1234567890"
+        )
+      )
+    }
+
+    "send correct audit details when there is a error reading the letter" in {
+      val _ = auditReadLetterFail("someId", enrolments)
+
+      verify(auditConnector).sendExplicitAudit(
+        "LetterReadFailed",
+        Map(
+          letterReadFailedTxnName,
+          "messageId"   -> "someId",
+          "messageType" -> "Letter",
+          "enrolments"  -> "HMRC-CUS-ORG:EORINumber=GB1234567890"
+        )
+      )
+    }
+
   }
 
   "auditCustomerReply" must {

@@ -20,14 +20,16 @@ import org.joda.time.{ DateTime, LocalDate }
 import play.api.libs.json.{ Format, Json }
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.securemessage.controllers.model.ApiFormats
-import uk.gov.hmrc.securemessage.models.core.Letter
+import uk.gov.hmrc.securemessage.models.core.{ Identifier, Letter }
 
 final case class ApiLetter(
   subject: String,
   content: String,
   firstReaderInformation: Option[FirstReaderInformation],
   senderInformation: SenderInformation,
-  readTime: Option[DateTime] = None //TODO: why is this always NONE ?
+  identifier: Identifier,
+  readTime: Option[DateTime] = None, //TODO: why is this always NONE ?
+  tags: Option[Map[String, String]] = None
 )
 
 final case class FirstReaderInformation(name: Option[String], read: DateTime)
@@ -39,7 +41,9 @@ object ApiLetter extends ApiFormats {
       letter.subject,
       letter.content,
       letter.readTime.map(FirstReaderInformation(None, _)),
-      SenderInformation("HMRC", letter.validFrom)
+      SenderInformation("HMRC", letter.validFrom),
+      identifier = letter.recipient.identifier,
+      tags = letter.tags
     )
 
   implicit val firstReaderInformationFormat: Format[FirstReaderInformation] =

@@ -642,7 +642,17 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     authEnrolments: Set[CustomerEnrolment] = Set(testEnrolment))
       extends TestCase(authEnrolments) {
     val letter = storedLetter.map(l => l.validate[Letter]).map(_.get)
-    val apiLetter = letter.map(l => ApiLetter(l.subject, l.content, None, SenderInformation("HMRC", LocalDate.now)))
+    val apiLetter =
+      letter.map(
+        l =>
+          ApiLetter(
+            l.subject,
+            l.content,
+            None,
+            SenderInformation("HMRC", LocalDate.now),
+            l.recipient.identifier,
+            None,
+            None))
     val successLetter: Either[Nothing, ApiLetter] = Right(apiLetter.get)
     when(mockSecureMessageService.getLetter(any[String], any[Set[CustomerEnrolment]])(any[ExecutionContext]))
       .thenReturn(Future.successful(successLetter))
