@@ -206,14 +206,6 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
     }
   }
 
-  "be returned for a single specific enrolment filter and no tag filter" in new TestContext(
-    conversations = allConversations
-  ) {
-    val result: immutable.Seq[Conversation] =
-      await(repository.getConversations(Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))), None))
-    result.map(_.id) must contain theSameElementsAs List("234", "123")
-  }
-
   "A conversation with the given conversation ID" should {
     val conversation = ConversationUtil.getMinimalConversation("123")
     "be returned for a participating enrolment" in new TestContext(
