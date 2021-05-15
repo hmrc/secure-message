@@ -47,15 +47,7 @@ trait ISpec extends PlaySpec with ServiceSpec with BeforeAndAfterEach with AuthH
     wsClient
       .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
       .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
-      .put(new File("./it/resources/create-conversation-full.json"))
-  }
-
-  protected def createMessage: Future[WSResponse] = {
-    val wsClient = app.injector.instanceOf[WSClient]
-    wsClient
-      .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
-      .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
-      .put(new File("./it/resources/create-conversation-full.json"))
+      .put(new File("./it/resources/cdcm/create-conversation.json"))
   }
 
   override def additionalConfig: Map[String, _] = Map("metrics.jvm" -> false)
