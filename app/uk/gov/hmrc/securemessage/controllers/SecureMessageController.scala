@@ -137,8 +137,15 @@ class SecureMessageController @Inject()(
             secureMessageService
               .getConversation(client.entryName, conversationId, authEnrolments.asCustomerEnrolments)
               .map {
-                case Right(apiConversation) => Ok(Json.toJson(apiConversation))
-                case _                      => NotFound(Json.toJson("No conversation found"))
+                case Right(cnv) =>
+                  auditConversationRead(
+                    ClientName.withNameInsensitiveOption(cnv.client),
+                    cnv.conversationId,
+                    authEnrolments)
+                  Ok(Json.toJson(cnv))
+                case _ =>
+                  auditConversationReadFailed(conversationId, authEnrolments)
+                  NotFound(Json.toJson("No conversation found"))
               }
           }
         }
@@ -201,13 +208,24 @@ class SecureMessageController @Inject()(
                   secureMessageService
                     .getConversation(id, authEnrolments.asCustomerEnrolments)
                     .map {
-                      case Right(apiConversation) => Ok(Json.toJson(apiConversation))
-                      case Left(error)            => handleErrors(id, error)
+                      case Right(cnv) =>
+                        auditConversationRead(
+                          ClientName.withNameInsensitiveOption(cnv.client),
+                          cnv.conversationId,
+                          authEnrolments)
+                        Ok(Json.toJson(cnv))
+                      case Left(error) =>
+                        auditConversationReadFailed(id, authEnrolments)
+                        handleErrors(id, error)
                     }
                 case Letter =>
                   secureMessageService.getLetter(id, authEnrolments.asCustomerEnrolments).map {
-                    case Right(apiLetter) => Ok(Json.toJson(apiLetter))
-                    case Left(error)      => handleErrors(id, error)
+                    case Right(apiLetter) =>
+                      auditReadLetter(apiLetter, authEnrolments)
+                      Ok(Json.toJson(apiLetter))
+                    case Left(error) =>
+                      auditReadLetterFail(id, authEnrolments)
+                      handleErrors(id, error)
                   }
               }
             }
