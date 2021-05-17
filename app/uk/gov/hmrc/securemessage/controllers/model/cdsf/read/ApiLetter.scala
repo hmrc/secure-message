@@ -43,6 +43,7 @@ object ApiLetter extends ApiFormats {
       letter.readTime.map(FirstReaderInformation(None, _)),
       SenderInformation("HMRC", letter.validFrom),
       identifier = letter.recipient.identifier,
+      readTime = letter.readTime,
       tags = letter.tags
     )
 
