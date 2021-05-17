@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.securemessage.repository
 
-import play.api.libs.json.Json.JsValueWrapper
+import play.api.libs.json.Json.{ JsValueWrapper }
 import play.api.libs.json._
 import reactivemongo.api.Cursor.ErrorHandler
 import reactivemongo.api.{ Cursor, DB, ReadConcern }
@@ -77,23 +77,31 @@ abstract class SecureMessageRepository[A: TypeTag, ID](
     implicit ec: ExecutionContext): Future[Count] = {
     val querySelector = messagesQuerySelector(identifiers, tags)
 
-    val totalCount = getCount(querySelector)
-    val unreadCount = getCount(Json.obj("$and" -> Json.arr(querySelector, countUnreadQuery)))
+    val totalCount: Future[Long] = getCount(querySelector)
+    val unreadCount: Future[Long] = totalCount.flatMap { total =>
+      if (total == 0) { Future.successful(0.toLong) } else {
+        getCount(Json.obj("$and" -> Json.arr(querySelector, countUnreadQuery)))
+      }
+    }
 
     for {
-      total  <- totalCount
+      total  <- getCount(querySelector)
       unread <- unreadCount
     } yield Count(total, unread)
   }
 
   private def getCount(selectorObj: JsObject)(implicit ec: ExecutionContext): Future[Long] =
-    collection.count(
-      selector = Some(selectorObj),
-      limit = None,
-      skip = 0,
-      hint = None,
-      readConcern = ReadConcern.Local
-    )
+    if (selectorObj != JsObject.empty) {
+      collection.count(
+        selector = Some(selectorObj),
+        limit = None,
+        skip = 0,
+        hint = None,
+        readConcern = ReadConcern.Local
+      )
+    } else {
+      Future(0)
+    }
 
   protected def getMessage(id: String, identifiers: Set[Identifier])(
     implicit ec: ExecutionContext): Future[Either[SecureMessageError, A]] =
