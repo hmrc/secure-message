@@ -63,7 +63,7 @@ Available locally here: http://localhost:9051/docs/swagger-ui/index.html?url=/as
 ```json
 {
     "_id" : ObjectId("6021481d59f23de1fe8389db"),
-    "client" : "cdcm",
+    "client" : "CDCM",
     "conversationId" : "D-80542-20201120",
     "status" : "open",
     "subject" : "D-80542-20201120",
