@@ -119,15 +119,6 @@
           }
         },
         "required" : [ "content" ]
-      },
-      "uk.gov.hmrc.securemessage.controllers.model.common.write.ReadTime" : {
-        "properties" : {
-          "timestamp" : {
-            "type" : "string",
-            "format" : "date-time"
-          }
-        },
-        "required" : [ "timestamp" ]
       }
     },
     "securitySchemes" : {
@@ -141,7 +132,7 @@
   "paths" : {
     "/secure-messaging/conversation/{client}/{conversationId}" : {
       "get" : {
-        "operationId" : "getConversationContent",
+        "operationId" : "getConversation",
         "tags" : [ "app" ],
         "summary" : "Gets a conversation via client ID and conversation ID",
         "security" : [ {
@@ -331,7 +322,7 @@
     },
     "/secure-messaging/conversations" : {
       "get" : {
-        "operationId" : "getMetadataForConversationsFiltered",
+        "operationId" : "getConversations",
         "tags" : [ "app" ],
         "summary" : "Gets a list of conversations via enrolmentKeys, enrolments and tags filters",
         "security" : [ {
@@ -381,9 +372,113 @@
         } ]
       }
     },
+    "/secure-messaging/messages" : {
+      "get" : {
+        "operationId" : "getMessages",
+        "tags" : [ "app" ],
+        "summary" : "Gets a list of messages via enrolmentKeys, enrolments and tags filters",
+        "security" : [ {
+          "bearerToken" : [ ]
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "list of messages"
+          },
+          "401" : {
+            "description" : "unauthorised customer when they don't have an enrolment"
+          }
+        },
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "enrolmentKey",
+          "schema" : {
+            "nullable" : true,
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "required" : false
+        }, {
+          "in" : "query",
+          "name" : "enrolment",
+          "schema" : {
+            "nullable" : true,
+            "type" : "array",
+            "items" : {
+              "type" : "customerenrolment"
+            }
+          },
+          "required" : false
+        }, {
+          "in" : "query",
+          "name" : "tag",
+          "schema" : {
+            "nullable" : true,
+            "type" : "array",
+            "items" : {
+              "type" : "filtertag"
+            }
+          },
+          "required" : false
+        } ]
+      }
+    },
+    "/secure-messaging/messages/count" : {
+      "get" : {
+        "operationId" : "getMessagesCount",
+        "tags" : [ "app" ],
+        "summary" : "Gets inbox counts by filter",
+        "security" : [ {
+          "bearerToken" : [ ]
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "count returned"
+          },
+          "401" : {
+            "description" : "unauthorised customer when they don't have an enrolment"
+          }
+        },
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "enrolmentKey",
+          "schema" : {
+            "nullable" : true,
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "required" : false
+        }, {
+          "in" : "query",
+          "name" : "enrolment",
+          "schema" : {
+            "nullable" : true,
+            "type" : "array",
+            "items" : {
+              "type" : "customerenrolment"
+            }
+          },
+          "required" : false
+        }, {
+          "in" : "query",
+          "name" : "tag",
+          "schema" : {
+            "nullable" : true,
+            "type" : "array",
+            "items" : {
+              "type" : "filtertag"
+            }
+          },
+          "required" : false
+        } ]
+      }
+    },
     "/secure-messaging/messages/{id}" : {
       "get" : {
-        "operationId" : "getContentDetail",
+        "operationId" : "getMessage",
         "tags" : [ "app" ],
         "summary" : "Gets conversation/message by id",
         "security" : [ {
@@ -409,55 +504,11 @@
           "required" : true
         } ]
       }
-    },
-    "/secure-messaging/conversation/{client}/{conversationId}/read-time" : {
-      "post" : {
-        "operationId" : "addCustomerReadTime",
-        "tags" : [ "app" ],
-        "summary" : "Adds a date and time that a participant read the conversation",
-        "security" : [ {
-          "bearerToken" : [ ]
-        } ],
-        "requestBody" : {
-          "description" : "A JSON object to create a new customer message",
-          "required" : true,
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/uk.gov.hmrc.securemessage.controllers.model.common.write.ReadTime"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "201" : {
-            "description" : "read date and time successfully added"
-          },
-          "400" : {
-            "description" : "issue with updating read time"
-          }
-        },
-        "parameters" : [ {
-          "in" : "path",
-          "name" : "client",
-          "required" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "in" : "path",
-          "name" : "conversationId",
-          "schema" : {
-            "type" : "string"
-          },
-          "required" : true
-        } ]
-      }
     }
   },
   "info" : {
     "title" : "Secure Message API",
-    "version" : "0.86.0-SNAPSHOT"
+    "version" : "0.101.0-SNAPSHOT"
   },
   "tags" : [ {
     "name" : "app"
