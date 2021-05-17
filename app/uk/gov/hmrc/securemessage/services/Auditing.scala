@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.securemessage.services
 
+import org.joda.time.{ DateTime, DateTimeZone }
 import org.joda.time.format.ISODateTimeFormat
 import uk.gov.hmrc.auth.core.Enrolments
 import uk.gov.hmrc.emailaddress.EmailAddress
@@ -153,6 +154,7 @@ trait Auditing {
   private val letterMessageType = ("messageType", "Letter")
   private val LetterReadSuccess = "LetterReadSuccess"
   private val LetterReadFailed = "LetterReadFailed"
+  private val zone: DateTimeZone = DateTimeZone.UTC
 
   def auditReadLetter(letter: ApiLetter, enrolments: Enrolments)(
     implicit hc: HeaderCarrier,
@@ -162,7 +164,7 @@ trait Auditing {
         letterReadSuccessTxnName,
         letter.identifier.name -> letter.identifier.value,
         "subject"              -> letter.subject,
-        "readTime"             -> letter.readTime.fold("")(isoDtf.print),
+        "readTime"             -> isoDtf.print(letter.readTime.getOrElse(DateTime.now.withZone(zone))),
         letterMessageType,
         "enrolments" -> prettyPrintEnrolments(enrolments)
       ),

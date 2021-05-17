@@ -18,7 +18,8 @@ package uk.gov.hmrc.securemessage.services.utils
 
 import java.util.UUID
 import cats.data.NonEmptyList
-import org.joda.time.{ DateTime, LocalDate }
+import org.joda.time.format.ISODateTimeFormat
+import org.joda.time.{ DateTime, DateTimeZone, LocalDate }
 import org.mockito.Mockito.verify
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
@@ -187,11 +188,15 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
   }
 
   "auditReadLetter" must {
+    val zone: DateTimeZone = DateTimeZone.UTC
+    val readTime = DateTime.now.withZone(zone)
+    val isoDtf = ISODateTimeFormat.basicDateTime()
     val localDate = LocalDate.now()
     val enrolments = Enrolments(
       Set(
         Enrolment("HMRC-CUS-ORG", Seq(EnrolmentIdentifier("EORINumber", "GB1234567890")), "")
       ))
+
     "send correct audit details when letter is read" in {
       val _ = auditReadLetter(
         ApiLetter(
@@ -200,7 +205,7 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
           None,
           SenderInformation("sender", localDate),
           Identifier("id", "value", None),
-          None,
+          Some(readTime),
           None),
         enrolments
       )
@@ -211,9 +216,37 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
           letterReadSuccessTxnName,
           "id"          -> "value",
           "subject"     -> "subject",
-          "readTime"    -> "",
+          "readTime"    -> isoDtf.print(readTime),
           "messageType" -> "Letter",
           "enrolments"  -> "HMRC-CUS-ORG:EORINumber=GB1234567890"
+        )
+      )
+    }
+
+    "send correct audit details with notification type when letter is read" in {
+      val _ = auditReadLetter(
+        ApiLetter(
+          "subject",
+          "content",
+          None,
+          SenderInformation("sender", localDate),
+          Identifier("id", "value", None),
+          Some(readTime),
+          Some(Map("notificationType" -> "Direct Debit"))
+        ),
+        enrolments
+      )
+
+      verify(auditConnector).sendExplicitAudit(
+        "LetterReadSuccess",
+        Map(
+          letterReadSuccessTxnName,
+          "id"               -> "value",
+          "subject"          -> "subject",
+          "readTime"         -> isoDtf.print(readTime),
+          "messageType"      -> "Letter",
+          "enrolments"       -> "HMRC-CUS-ORG:EORINumber=GB1234567890",
+          "notificationType" -> "Direct Debit"
         )
       )
     }
