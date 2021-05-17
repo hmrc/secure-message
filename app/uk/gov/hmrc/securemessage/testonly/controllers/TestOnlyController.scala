@@ -17,15 +17,21 @@
 package uk.gov.hmrc.securemessage.testonly.controllers
 
 import com.google.inject.Inject
+import play.api.libs.json.{ JsObject, JsValue, Json }
 import play.api.mvc.{ Action, AnyContent, ControllerComponents }
+import reactivemongo.api.WriteConcern
+import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.securemessage.repository.ConversationRepository
+import uk.gov.hmrc.securemessage.models.core.Letter
+import uk.gov.hmrc.securemessage.models.core.Letter._
+import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository }
 
-import scala.concurrent.{ ExecutionContext }
-
+import scala.concurrent.ExecutionContext
 @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
-class TestOnlyController @Inject()(cc: ControllerComponents, conversationRepository: ConversationRepository)(
-  implicit ec: ExecutionContext)
+class TestOnlyController @Inject()(
+  cc: ControllerComponents,
+  conversationRepository: ConversationRepository,
+  messageRepository: MessageRepository)(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
   def deleteConversation(conversationId: String, client: String): Action[AnyContent] = Action.async { _ =>
@@ -34,4 +40,16 @@ class TestOnlyController @Inject()(cc: ControllerComponents, conversationReposit
     }
   }
 
+  def insertMessage(id: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
+    val messageBody: JsObject = request.body.as[JsObject] + ("_id" -> Json.toJson(BSONObjectID.parse(id).get))
+    val letter = messageBody.validate[Letter].get
+    messageRepository.insert(letter).map(_ => Created)
+  }
+
+  def deleteMessage(id: String): Action[AnyContent] =
+    Action.async(
+      _ =>
+        messageRepository
+          .removeById(BSONObjectID.parse(id).get, WriteConcern.Default)
+          .map(_ => Ok(s"message $id deleted successfully")))
 }
