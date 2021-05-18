@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.securemessage.repository
 
-import org.joda.time.DateTime
+import org.joda.time.{ DateTime, LocalDate }
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.play.PlaySpec
@@ -38,7 +38,7 @@ class MessageRepositorySpec
   val repository: MessageRepository = new MessageRepository()
 
   override def beforeEach(): Unit =
-    repository.removeAll().map(_ => ()).futureValue
+    dropTestCollection("message")
 
   "A letter" should {
     "be returned for a participating enrolment" in new TestContext() {
@@ -117,6 +117,25 @@ class MessageRepositorySpec
 
   }
 
+  "getLetters with future validFrom" should {
+    "not return letters with a future validFrom Date" in new TestContext() {
+      val result = (for {
+        _ <- repository.insert(createLetter.copy(validFrom = LocalDate.now().plusDays(1)))
+        _ <- repository.insert(createLetter.copy(validFrom = LocalDate.now()))
+        r <- repository.getLetters(identifiers, None)
+      } yield r).futureValue
+      result.size mustBe 2
+    }
+
+    "return an empty list if no identifier value matches" in new TestContext() {
+      val result = (for {
+        _ <- repository.insert(createLetter.copy(validFrom = LocalDate.now().plusDays(1)))
+        r <- repository.getLetters(identifiers.map(i => i.copy(value = "non-existing")), None)
+      } yield r).futureValue
+      result mustBe empty
+    }
+  }
+
   "getLetters" should {
     "return the letters for matching identifier enrolment and value " in new TestContext() {
       val result: Future[List[Letter]] = repository.getLetters(identifiers, None)
@@ -177,8 +196,16 @@ class MessageRepositorySpec
     }
     "return an empty Count for non matching tags" in new TestContext() {
       val result =
-        repository.getLettersCount(identifiers, Some(List(FilterTag("notificationType", "non-existing"))))
-      result.futureValue mustBe Count(0, 0)
+        repository.getLettersCount(identifiers, Some(List(FilterTag("notificationType", "non-existing")))).futureValue
+      result mustBe Count(0, 0)
+    }
+    "return a count ignoring lettters with a future validFrom" in new TestContext() {
+      val result = (for {
+        _ <- repository.insert(createLetter.copy(validFrom = LocalDate.now().plusDays(1)))
+        _ <- repository.insert(createLetter.copy(validFrom = LocalDate.now()))
+        r <- repository.getLettersCount(identifiers, None)
+      } yield r).futureValue
+      result mustBe Count(2, 0)
     }
   }
 
@@ -186,6 +213,7 @@ class MessageRepositorySpec
     val objectID: BSONObjectID = BSONObjectID.generate()
     val letters: List[Letter] = coreLetters.map(_.add(Seq("_id" -> Json.toJson(objectID))).as[Letter])
     letters.map(letter => repository.insert(letter).futureValue)
+    def createLetter: Letter = letters.head.copy(_id = BSONObjectID.generate())
   }
 
 }
