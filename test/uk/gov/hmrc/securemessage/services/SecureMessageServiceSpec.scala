@@ -437,74 +437,63 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
       service.getMessages(enrolments, filters()).futureValue mustBe empty
     }
 
-    "addReadTime for conversation" must {
-      "add read time when no messages were read" in new AddReadTimesTestContext(mock[ConversationRepository]) {
-        val conversation = ConversationUtil.getFullConversation(
-          BSONObjectID.generate(),
-          "D-80542-20201120",
-          "HMRC-CUS-ORG",
-          "EORINumber",
-          "GB1234567890",
-          messageCreationDate = "2020-11-08T15:00:00.000",
-          readTimes = None)
-        service
-          .addReadTime(
-            conversation,
-            Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))),
-            DateTime.now())
-        verify(mockConversationRepository, times(1))
-          .addReadTime(any[String], any[String], any[Int], any[DateTime])(any[ExecutionContext])
-      }
+    "add readTime when there are new messages after last readTime" in new AddReadTimesTestContext {
+      val readTimeStamp = DateTime.parse("2020-11-09T15:00:00.000")
+      val conversation = ConversationUtil.getFullConversation(
+        BSONObjectID.generate(),
+        "D-80542-20201120",
+        "HMRC-CUS-ORG",
+        "EORINumber",
+        "GB1234567890",
+        messageCreationDate = "2021-11-08T15:00:00.000",
+        readTimes = Some(List(readTimeStamp))
+      )
+      service
+        .addReadTime(conversation, Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))), readTimeStamp)
+      verify(mockConversationRepository, times(1))
+        .addReadTime(conversation.client, conversation.id, 2, readTimeStamp)
+    }
 
-      "add readTime when there are new messages after last readTime" in new AddReadTimesTestContext(
-        mock[ConversationRepository]) {
-        val conversation = ConversationUtil.getFullConversation(
-          BSONObjectID.generate(),
-          "D-80542-20201120",
-          "HMRC-CUS-ORG",
-          "EORINumber",
-          "GB1234567890",
-          messageCreationDate = "2020-11-08T15:00:00.000",
-          readTimes = Some(List(DateTime.parse("2020-11-07T15:00:00.000")))
-        )
-        service
-          .addReadTime(
-            conversation,
-            Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))),
-            DateTime.now())
-        verify(mockConversationRepository, times(1))
-          .addReadTime(any[String], any[String], any[Int], any[DateTime])(any[ExecutionContext])
-      }
+    "add read time when no messages were read" in new AddReadTimesTestContext {
+      val readTimeStamp = DateTime.parse("2020-11-09T15:00:00.000")
+      val conversation = ConversationUtil.getFullConversation(
+        BSONObjectID.generate(),
+        "D-80542-20201120",
+        "HMRC-CUS-ORG",
+        "EORINumber",
+        "GB1234567890",
+        messageCreationDate = "2020-11-08T15:00:00.000",
+        readTimes = None)
+      service
+        .addReadTime(conversation, Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))), readTimeStamp)
+      verify(mockConversationRepository, times(1))
+        .addReadTime(conversation.client, conversation.id, 2, readTimeStamp)
+    }
 
-      "not add readTime when there are no new messages after last readtime" in new AddReadTimesTestContext(
-        mock[ConversationRepository]) {
-        val conversation = ConversationUtil.getFullConversation(
-          BSONObjectID.generate(),
-          "D-80542-20201120",
-          "HMRC-CUS-ORG",
-          "EORINumber",
-          "GB1234567890",
-          messageCreationDate = "2020-11-08T15:00:00.000",
-          readTimes = Some(List(DateTime.parse("2020-11-08T15:00:00.000")))
-        )
-        service
-          .addReadTime(
-            conversation,
-            Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))),
-            DateTime.now())
-        verify(mockConversationRepository, times(0))
-          .addReadTime(any[String], any[String], any[Int], any[DateTime])(any[ExecutionContext])
-      }
-
+    "not add readTime when there are no new messages after last readtime" in new AddReadTimesTestContext {
+      val readTimeStamp = DateTime.parse("2021-11-09T15:00:00.000")
+      val conversation = ConversationUtil.getFullConversation(
+        BSONObjectID.generate(),
+        "D-80542-20201120",
+        "HMRC-CUS-ORG",
+        "EORINumber",
+        "GB1234567890",
+        messageCreationDate = "2020-11-08T15:00:00.000",
+        readTimes = Some(List(readTimeStamp))
+      )
+      service
+        .addReadTime(conversation, Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))), readTimeStamp)
+      verify(mockConversationRepository, times(0))
+        .addReadTime(conversation.client, conversation.id, 2, readTimeStamp)
     }
 
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
-  class AddReadTimesTestContext(conversationRepository: ConversationRepository) {
+  class AddReadTimesTestContext {
     val mockEisConnector: EISConnector = mock[EISConnector]
     val mockAuditConnector: AuditConnector = mock[AuditConnector]
-    val mockConversationRepository: ConversationRepository = conversationRepository
+    val mockConversationRepository: ConversationRepository = mock[ConversationRepository]
     val mockMessageRepository: MessageRepository = mock[MessageRepository]
     val mockEmailConnector: EmailConnector = mock[EmailConnector]
     when(mockEmailConnector.send(any[EmailRequest])(any[HeaderCarrier])).thenReturn(Future.successful(Right(())))
