@@ -448,8 +448,10 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
         messageCreationDate = "2021-11-08T15:00:00.000",
         readTimes = Some(List(readTimeStamp))
       )
-      service
-        .addReadTime(conversation, Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))), readTimeStamp)
+      await(
+        service
+          .addReadTime(conversation, Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))), readTimeStamp)
+          .value)
       verify(mockConversationRepository, times(1))
         .addReadTime(conversation.client, conversation.id, 2, readTimeStamp)
     }
@@ -464,8 +466,10 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
         "GB1234567890",
         messageCreationDate = "2020-11-08T15:00:00.000",
         readTimes = None)
-      service
-        .addReadTime(conversation, Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))), readTimeStamp)
+      await(
+        service
+          .addReadTime(conversation, Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))), readTimeStamp)
+          .value)
       verify(mockConversationRepository, times(1))
         .addReadTime(conversation.client, conversation.id, 2, readTimeStamp)
     }
@@ -481,8 +485,10 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
         messageCreationDate = "2020-11-08T15:00:00.000",
         readTimes = Some(List(readTimeStamp))
       )
-      service
-        .addReadTime(conversation, Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))), readTimeStamp)
+      await(
+        service
+          .addReadTime(conversation, Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))), readTimeStamp)
+          .value)
       verify(mockConversationRepository, times(0))
         .addReadTime(conversation.client, conversation.id, 2, readTimeStamp)
     }
@@ -498,6 +504,9 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
     val mockEmailConnector: EmailConnector = mock[EmailConnector]
     when(mockEmailConnector.send(any[EmailRequest])(any[HeaderCarrier])).thenReturn(Future.successful(Right(())))
     val mockChannelPreferencesConnector: ChannelPreferencesConnector = mock[ChannelPreferencesConnector]
+    when(
+      mockConversationRepository.addReadTime(any[String], any[String], any[Int], any[DateTime])(any[ExecutionContext]))
+      .thenReturn(Future.successful(Right(())))
     val service: SecureMessageService =
       new SecureMessageService(
         mockConversationRepository,
