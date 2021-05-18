@@ -438,7 +438,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
     }
 
     "addReadTime for conversation" must {
-      "add read time when no messages were read" in new AddReadTimesTestContext {
+      "add read time when no messages were read" in new AddReadTimesTestContext(mock[ConversationRepository]) {
         val conversation = ConversationUtil.getFullConversation(
           BSONObjectID.generate(),
           "D-80542-20201120",
@@ -456,7 +456,8 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
           .addReadTime(any[String], any[String], any[Int], any[DateTime])(any[ExecutionContext])
       }
 
-      "add readTime when there are new messages after last readTime" in new AddReadTimesTestContext {
+      "add readTime when there are new messages after last readTime" in new AddReadTimesTestContext(
+        mock[ConversationRepository]) {
         val conversation = ConversationUtil.getFullConversation(
           BSONObjectID.generate(),
           "D-80542-20201120",
@@ -475,7 +476,8 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
           .addReadTime(any[String], any[String], any[Int], any[DateTime])(any[ExecutionContext])
       }
 
-      "not add readTime when there are no new messages after last readtime" in new AddReadTimesTestContext {
+      "not add readTime when there are no new messages after last readtime" in new AddReadTimesTestContext(
+        mock[ConversationRepository]) {
         val conversation = ConversationUtil.getFullConversation(
           BSONObjectID.generate(),
           "D-80542-20201120",
@@ -499,7 +501,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
-  class AddReadTimesTestContext(conversationRepository: ConversationRepository = mock[ConversationRepository]) {
+  class AddReadTimesTestContext(conversationRepository: ConversationRepository) {
     val mockEisConnector: EISConnector = mock[EISConnector]
     val mockAuditConnector: AuditConnector = mock[AuditConnector]
     val mockConversationRepository: ConversationRepository = conversationRepository
