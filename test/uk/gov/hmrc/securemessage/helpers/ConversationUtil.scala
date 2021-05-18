@@ -49,7 +49,8 @@ object ConversationUtil {
         "notificationType" -> "CDS-EXPORTS"
       )),
     alert: core.Alert = alert,
-    messageCreationDate: String = "2020-11-10T15:00:01.000"
+    messageCreationDate: String = "2020-11-10T15:00:01.000",
+    readTimes: Option[List[DateTime]] = None
   ): Conversation =
     Conversation(
       objectId,
@@ -76,7 +77,7 @@ object ConversationUtil {
           None,
           None,
           None,
-          None
+          readTimes
         )
       ),
       NonEmptyList.one(
