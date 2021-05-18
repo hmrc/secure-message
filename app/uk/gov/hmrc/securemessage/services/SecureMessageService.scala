@@ -188,13 +188,25 @@ class SecureMessageService @Inject()(
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.Any"))
-  private def addReadTime(conversation: Conversation, identifiers: Set[Identifier], readTime: DateTime)(
-    implicit ec: ExecutionContext): EitherT[Future, SecureMessageError, Unit] =
+  private[services] def addReadTime(conversation: Conversation, identifiers: Set[Identifier], readTime: DateTime)(
+    implicit ec: ExecutionContext): EitherT[Future, SecureMessageError, Unit] = {
+
+    def addTime(
+      reader: Participant,
+      conversation: Conversation,
+      readTime: DateTime): Future[Either[SecureMessageError, Unit]] =
+      reader.lastReadTime match {
+        case None => conversationRepository.addReadTime(conversation.client, conversation.id, reader.id, readTime)
+        case Some(lastReadTime) if (lastReadTime.isBefore(conversation.latestMessage.created)) =>
+          conversationRepository.addReadTime(conversation.client, conversation.id, reader.id, readTime)
+        case _ => Future.successful(Right[SecureMessageError, Unit](()))
+      }
+
     for {
       reader <- EitherT(Future(conversation.participantWith(identifiers))).leftWiden[SecureMessageError]
-      _ <- EitherT(conversationRepository.addReadTime(conversation.client, conversation.id, reader.id, readTime))
-            .leftWiden[SecureMessageError]
+      _      <- EitherT(addTime(reader, conversation, readTime))
     } yield ()
+  }
 
   private def addMissingEmails(participants: List[Participant])(
     implicit hc: HeaderCarrier,
