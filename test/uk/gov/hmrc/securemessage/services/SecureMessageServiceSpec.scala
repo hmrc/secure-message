@@ -266,7 +266,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
       result.subject mustBe "MRN: 19GB4S24GC3PPFGVR7"
     }
 
-    "return a message with ApiConversation 2" in new GetConversationByIDWithReadTimeErrorTestContext(
+    "not return a conversation on add readTime error" in new GetConversationByIDWithReadTimeErrorTestContext(
       getConversationResult = Right(
         ConversationUtil
           .getFullConversation(id, conversationId, hmrcCusOrg, eoriName, enrolmentValue))
@@ -437,8 +437,85 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
       service.getMessages(enrolments, filters()).futureValue mustBe empty
     }
 
+    "addReadTime for conversation" must {
+      "add read time when no messages were read" in new AddReadTimesTestContext {
+        val conversation = ConversationUtil.getFullConversation(
+          BSONObjectID.generate(),
+          "D-80542-20201120",
+          "HMRC-CUS-ORG",
+          "EORINumber",
+          "GB1234567890",
+          messageCreationDate = "2020-11-08T15:00:00.000",
+          readTimes = None)
+        service
+          .addReadTime(
+            conversation,
+            Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))),
+            DateTime.now())
+        verify(mockConversationRepository, times(1))
+          .addReadTime(any[String], any[String], any[Int], any[DateTime])(any[ExecutionContext])
+      }
+
+      "add readTime when there are new messages after last readTime" in new AddReadTimesTestContext {
+        val conversation = ConversationUtil.getFullConversation(
+          BSONObjectID.generate(),
+          "D-80542-20201120",
+          "HMRC-CUS-ORG",
+          "EORINumber",
+          "GB1234567890",
+          messageCreationDate = "2020-11-08T15:00:00.000",
+          readTimes = Some(List(DateTime.parse("2020-11-07T15:00:00.000")))
+        )
+        service
+          .addReadTime(
+            conversation,
+            Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))),
+            DateTime.now())
+        verify(mockConversationRepository, times(1))
+          .addReadTime(any[String], any[String], any[Int], any[DateTime])(any[ExecutionContext])
+      }
+
+      "not add readTime when there are no new messages after last readtime" in new AddReadTimesTestContext {
+        val conversation = ConversationUtil.getFullConversation(
+          BSONObjectID.generate(),
+          "D-80542-20201120",
+          "HMRC-CUS-ORG",
+          "EORINumber",
+          "GB1234567890",
+          messageCreationDate = "2020-11-08T15:00:00.000",
+          readTimes = Some(List(DateTime.parse("2020-11-08T15:00:00.000")))
+        )
+        service
+          .addReadTime(
+            conversation,
+            Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))),
+            DateTime.now())
+        verify(mockConversationRepository, times(0))
+          .addReadTime(any[String], any[String], any[Int], any[DateTime])(any[ExecutionContext])
+      }
+
+    }
+
   }
 
+  @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
+  class AddReadTimesTestContext(conversationRepository: ConversationRepository = mock[ConversationRepository]) {
+    val mockEisConnector: EISConnector = mock[EISConnector]
+    val mockAuditConnector: AuditConnector = mock[AuditConnector]
+    val mockConversationRepository: ConversationRepository = conversationRepository
+    val mockMessageRepository: MessageRepository = mock[MessageRepository]
+    val mockEmailConnector: EmailConnector = mock[EmailConnector]
+    when(mockEmailConnector.send(any[EmailRequest])(any[HeaderCarrier])).thenReturn(Future.successful(Right(())))
+    val mockChannelPreferencesConnector: ChannelPreferencesConnector = mock[ChannelPreferencesConnector]
+    val service: SecureMessageService =
+      new SecureMessageService(
+        mockConversationRepository,
+        mockMessageRepository,
+        mockEmailConnector,
+        mockChannelPreferencesConnector,
+        mockEisConnector,
+        mockAuditConnector)
+  }
   @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   class CreateMessageTestContext(
     dbInsertResult: Either[SecureMessageError, Unit] = Right(()),

@@ -208,7 +208,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     }
   }
 
-  "getConversationsFiltered" must {
+  "getConversations" must {
     "return an OK (200) with a JSON body of a list of conversations when provided with a list of valid query parameters" in new GetConversationsTestCase(
       storedConversationsMetadata = Resources.readJson("model/api/cdcm/read/conversations-metadata.json")) {
       val response: Future[Result] = controller
