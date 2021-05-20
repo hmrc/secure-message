@@ -25,8 +25,11 @@ object FilterTag {
     Json.reads[FilterTag]
   }
 
-  def parse(tagString: String): FilterTag = {
+  def parse(tagString: String): Either[String, FilterTag] = {
     val tag = tagString.split('~')
-    FilterTag(tag.head, tag(1))
+    tag.size match {
+      case 2 => Right(FilterTag(tag.head, tag(1)))
+      case _ => Left("Unable to bind a Tag")
+    }
   }
 }

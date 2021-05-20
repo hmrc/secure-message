@@ -30,8 +30,11 @@ object CustomerEnrolment {
     Json.reads[CustomerEnrolment]
   }
 
-  def parse(enrolmentString: String): CustomerEnrolment = {
+  def parse(enrolmentString: String): Either[String, CustomerEnrolment] = {
     val enrolment = enrolmentString.split('~')
-    CustomerEnrolment(enrolment.head, enrolment(1), enrolment.last)
+    enrolment.size match {
+      case 3 => Right(CustomerEnrolment(enrolment.head, enrolment(1), enrolment.last))
+      case _ => Left("Unable to bind a CustomerEnrolment")
+    }
   }
 }

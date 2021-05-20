@@ -15,15 +15,17 @@
  */
 
 package uk.gov.hmrc.securemessage.repository
+import org.joda.time.LocalDate
 import play.api.libs.json.Json._
 import play.api.libs.json.{ JsArray, JsNull, JsObject, JsString, Json }
 import reactivemongo.bson.{ BSONDateTime, BSONDocument, BSONNull, BSONObjectID }
+import play.api.libs.json.JodaWrites.{ JodaDateTimeWrites => _, _ }
 import uk.gov.hmrc.mongo.MongoConnector
 import uk.gov.hmrc.securemessage.{ SecureMessageError, StoreError }
 import uk.gov.hmrc.securemessage.models.core.{ Count, FilterTag, Identifier, Letter }
 import reactivemongo.play.json.ImplicitBSONHandlers.BSONDocumentWrites
-import javax.inject.Inject
 
+import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success }
 
@@ -33,6 +35,23 @@ class MessageRepository @Inject()(implicit connector: MongoConnector)
       connector.db,
       Letter.letterFormat
     ) {
+
+  override protected def messagesQuerySelector(
+    identifiers: Set[Identifier],
+    tags: Option[List[FilterTag]]): JsObject = {
+    val superQuery = super.messagesQuerySelector(identifiers, tags)
+    if (superQuery.fields.isEmpty) {
+      superQuery
+    } else {
+      Json.obj(
+        "$and" -> Json
+          .arr(
+            superQuery,
+            Json.obj("validFrom" -> Json.obj("$lte" -> LocalDate.now()))
+          )
+      )
+    }
+  }
 
   def getLetters(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
     implicit ec: ExecutionContext): Future[List[Letter]] =

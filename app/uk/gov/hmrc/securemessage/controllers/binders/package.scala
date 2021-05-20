@@ -28,12 +28,12 @@ package object binders {
 
       override def bind(key: String, params: Map[String, Seq[String]]): Option[Either[String, CustomerEnrolment]] =
         stringBinder.bind("enrolment", params) map {
-          case Right(customerEnrolment) => Right(CustomerEnrolment.parse(customerEnrolment))
+          case Right(customerEnrolment) => CustomerEnrolment.parse(customerEnrolment)
           case _                        => Left("Unable to bind a CustomerEnrolment")
         }
 
       override def unbind(key: String, customerEnrolment: CustomerEnrolment): String =
-        customerEnrolment.key + "~" + customerEnrolment.name + "~" + customerEnrolment.value
+        s"${customerEnrolment.key}~${customerEnrolment.name}~${customerEnrolment.value}"
     }
 
   @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.Nothing"))
@@ -43,7 +43,7 @@ package object binders {
 
       override def bind(key: String, params: Map[String, Seq[String]]): Option[Either[String, FilterTag]] =
         stringBinder.bind("tag", params) map {
-          case Right(tag) => Right(FilterTag.parse(tag))
+          case Right(tag) => FilterTag.parse(tag)
           case _          => Left("Unable to bind a Tag")
         }
 
