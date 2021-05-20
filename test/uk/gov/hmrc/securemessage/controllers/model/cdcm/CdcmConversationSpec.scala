@@ -68,8 +68,7 @@ class CdcmConversationSpec extends PlaySpec {
       CustomerEnrolment.parse("HMRC-CUS-ORGEoriNumberGB1234567") mustEqual Left("Unable to bind a CustomerEnrolment")
     }
     "parse a URL parameter for enrolment with 2 constituent parts" in {
-      CustomerEnrolment.parse("HMRC-CUS-ORG~EoriNumberGB1234567") mustEqual Right(
-        CustomerEnrolment("HMRC-CUS-ORG", "EoriNumberGB1234567", "EoriNumberGB1234567"))
+      CustomerEnrolment.parse("HMRC-CUS-ORG~EoriNumberGB1234567") mustEqual Left("Unable to bind a CustomerEnrolment")
     }
 
   }

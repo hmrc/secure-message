@@ -33,8 +33,8 @@ object CustomerEnrolment {
   def parse(enrolmentString: String): Either[String, CustomerEnrolment] = {
     val enrolment = enrolmentString.split('~')
     enrolment.size match {
-      case 1 => Left("Unable to bind a CustomerEnrolment")
-      case _ => Right(CustomerEnrolment(enrolment.head, enrolment(1), enrolment.last))
+      case 3 => Right(CustomerEnrolment(enrolment.head, enrolment(1), enrolment.last))
+      case _ => Left("Unable to bind a CustomerEnrolment")
     }
   }
 }
