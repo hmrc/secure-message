@@ -38,7 +38,7 @@ abstract class SecureMessageRepository[A: TypeTag, ID](
     extends ReactiveRepository[A, ID](collectionName, mongo, domainFormat, idFormat) {
   implicit val format: OFormat[A] = domainFormat.asInstanceOf[OFormat[A]]
 
-  private def messagesQuerySelector(identifiers: Set[Identifier], tags: Option[List[FilterTag]]): JsObject =
+  protected def messagesQuerySelector(identifiers: Set[Identifier], tags: Option[List[FilterTag]]): JsObject =
     (identifiers, tags) match {
       case (identifiers, _) if identifiers.isEmpty => //TODO: move this case to service
         JsObject.empty
