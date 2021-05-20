@@ -14,15 +14,14 @@
  * limitations under the License.
  */
 
-import org.scalatest.Sequential
+package uk.gov.hmrc.securemessage.filters
 
-class ItTestSuite
-    extends Sequential(
-      new AddMessageToConversationISpec,
-      new CreateConversationISpec,
-      new GetConversationsISpec,
-      new GetMessagesISpec,
-      new GetMessagesCountISpec,
-      new GetIndividualConversationISpec,
-      new PostCustomerReadTimeISpec
-    )
+import org.scalatestplus.play.PlaySpec
+
+class EnrolmentKeySpec extends PlaySpec {
+  "EnrolmentKey" must {
+    "have correct HMRC_CUS_ORG key" in {
+      EnrolmentKey.HMRC_CUS_ORG mustBe "HMRC-CUS-ORG"
+    }
+  }
+}
