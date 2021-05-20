@@ -329,11 +329,12 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     }
 
     "return Unauthorized (401) when no enrolment found" in new TestCase(Set.empty[CustomerEnrolment]) {
+      private val encodedId: String = encodedPath(s"${MessageType.Conversation.entryName}/${objectID.stringify}")
       private val response = controller
-        .getMessage(encodedPath(s"${MessageType.Conversation.entryName}/${objectID.stringify}"))
+        .getMessage(encodedId)
         .apply(FakeRequest("GET", "/"))
       status(response) mustBe UNAUTHORIZED
-      contentAsString(response) mustBe "\"No enrolment found\""
+      contentAsString(response) mustBe s""""Error on message with client: None, message id: $encodedId, error message: No enrolment found""""
     }
 
     "return a letter" in new GetMessageByIdTestCase(
@@ -377,11 +378,12 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     }
 
     "return Unauthorized (401) when no enrolment found for a letter" in new TestCase(Set.empty[CustomerEnrolment]) {
+      private val encodedId: String = encodedPath(s"${MessageType.Letter.entryName}/${objectID.stringify}")
       private val response = controller
-        .getMessage(encodedPath(s"${MessageType.Letter.entryName}/${objectID.stringify}"))
+        .getMessage(encodedId)
         .apply(FakeRequest("GET", "/"))
       status(response) mustBe UNAUTHORIZED
-      contentAsString(response) mustBe "\"No enrolment found\""
+      contentAsString(response) mustBe s""""Error on message with client: None, message id: $encodedId, error message: No enrolment found""""
     }
 
     "return BadRequest(Invalid message type) if messageType is invalid" in new GetMessageByIdTestCase(

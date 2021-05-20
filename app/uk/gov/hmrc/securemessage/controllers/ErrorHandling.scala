@@ -35,7 +35,7 @@ trait ErrorHandling extends Logging {
       case NoReceiverEmailError(_)                                           => Created(jsonError)
       case DuplicateConversationError(_, _)                                  => Conflict(jsonError)
       case InvalidContent(_, _) | InvalidRequest(_, _) | InvalidBsonId(_, _) => BadRequest(jsonError)
-      case ParticipantNotFound(_)                                            => Unauthorized(jsonError)
+      case ParticipantNotFound(_) | UserNotAuthorised(_)                     => Unauthorized(jsonError)
       case MessageNotFound(_)                                                => NotFound(jsonError)
       case EisForwardingError(_)                                             => BadGateway(jsonError)
       case StoreError(_, _)                                                  => InternalServerError(jsonError)
