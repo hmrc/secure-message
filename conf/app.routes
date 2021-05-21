@@ -69,7 +69,7 @@ POST        /conversation/:client/:conversationId/caseworker-message    uk.gov.h
 #   502:
 #     description: failed to forward message
 ###
-POST        /conversation/:client/:conversationId/customer-message  uk.gov.hmrc.securemessage.controllers.SecureMessageController.addCustomerMessage(client: ClientName, conversationId: String)
+POST        /messages/:encodedId/customer-message  uk.gov.hmrc.securemessage.controllers.SecureMessageController.addCustomerMessage(encodedId: String)
 
 ###
 # summary: Gets a list of conversations via enrolmentKeys, enrolments and tags filters
@@ -133,4 +133,4 @@ GET        /messages/count   uk.gov.hmrc.securemessage.controllers.SecureMessage
 #   404:
 #     description: conversation/message not found
 ###
-GET        /messages/:id   uk.gov.hmrc.securemessage.controllers.SecureMessageController.getMessage(id: String)
+GET        /messages/:encodedId   uk.gov.hmrc.securemessage.controllers.SecureMessageController.getMessage(encodedId: String)

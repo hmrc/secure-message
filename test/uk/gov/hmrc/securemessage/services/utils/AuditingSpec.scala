@@ -271,26 +271,18 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
 
     "send correct audit details when the customer reply is sent" in {
       val _ =
-        auditCustomerReply("CustomerReplyToConversationSuccess", CDCM, conversationId, CustomerMessage(messageContent))
+        auditCustomerReply("CustomerReplyToConversationSuccess", conversationId, Some(CustomerMessage(messageContent)))
       verify(auditConnector).sendExplicitAudit(
         "CustomerReplyToConversationSuccess",
-        Map(
-          customerReplyTxnName,
-          "client"    -> CDCM.entryName,
-          "messageId" -> conversationId,
-          "content"   -> messageContent))
+        Map(customerReplyTxnName, "encodedId" -> conversationId, "content" -> messageContent))
     }
 
     "send correct audit details when the customer reply is not sent" in {
       val _ =
-        auditCustomerReply("CustomerReplyToConversationFailed", CDCM, conversationId, CustomerMessage(messageContent))
+        auditCustomerReply("CustomerReplyToConversationFailed", conversationId, Some(CustomerMessage(messageContent)))
       verify(auditConnector).sendExplicitAudit(
         "CustomerReplyToConversationFailed",
-        Map(
-          customerReplyTxnName,
-          "client"    -> CDCM.entryName,
-          "messageId" -> conversationId,
-          "content"   -> messageContent))
+        Map(customerReplyTxnName, "encodedId" -> conversationId, "content" -> messageContent))
     }
   }
 

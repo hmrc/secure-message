@@ -17,10 +17,11 @@
 package uk.gov.hmrc.securemessage
 
 import org.scalatest.DoNotDiscover
-import play.api.http.{ ContentTypes, HeaderNames }
+import play.api.http.{ContentTypes, HeaderNames}
 import play.api.libs.json.Json
 import play.api.libs.ws.WSResponse
 import play.api.test.Helpers._
+import uk.gov.hmrc.securemessage.controllers.model.MessageType
 
 import java.io.File
 
@@ -163,8 +164,9 @@ class GetConversationsISpec extends ISpec {
 
   "request  /secure-messaging/conversations" should {
     "return Sender name as `You` when name is missing" in new TestClass {
+      val encodedId: String = base64Encode(MessageType.Conversation + "/" + "D-80542-20201120")
       wsClient
-        .url(resource("/secure-messaging/conversation/CDCM/D-80542-20201120/customer-message"))
+        .url(resource(s"/secure-messaging/messages/$encodedId/customer-message"))
         .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON), buildEoriToken(VALID_EORI))
         .post(Json.parse("""{
                            |

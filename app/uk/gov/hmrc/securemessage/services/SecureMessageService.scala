@@ -145,21 +145,17 @@ class SecureMessageService @Inject()(
   }.value
 
   @SuppressWarnings(Array("org.wartremover.warts.Any"))
-  def addCustomerMessageToConversation(
-    client: String,
-    conversationId: String,
-    messagesRequest: CustomerMessage,
-    enrolments: Enrolments)(
+  def addCustomerMessage(id: String, messagesRequest: CustomerMessage, enrolments: Enrolments)(
     implicit ec: ExecutionContext,
     request: Request[_]): Future[Either[SecureMessageError, Unit]] = {
-    def message(sender: Participant) =
-      ConversationMessage(sender.id, new DateTime(), messagesRequest.content)
+    def message(sender: Participant) = ConversationMessage(sender.id, new DateTime(), messagesRequest.content)
     val identifiers: Set[Identifier] = enrolments.asIdentifiers
     for {
-      conversation <- EitherT(conversationRepository.getConversation(client, conversationId, identifiers))
+      conversation <- EitherT(conversationRepository.getConversation(id, identifiers))
       sender       <- EitherT(Future(conversation.participantWith(identifiers)))
-      _            <- forwardMessage(conversationId, messagesRequest)
-      _ <- EitherT(conversationRepository.addMessageToConversation(client, conversationId, message(sender)))
+      _            <- forwardMessage(conversation.id, messagesRequest)
+      _ <- EitherT(
+            conversationRepository.addMessageToConversation(conversation.client, conversation.id, message(sender)))
             .leftWiden[SecureMessageError]
     } yield ()
   }.value

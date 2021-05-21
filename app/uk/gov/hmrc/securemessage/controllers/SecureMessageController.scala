@@ -20,10 +20,11 @@ import cats.data._
 import cats.implicits._
 import play.api.Logging
 import play.api.i18n.I18nSupport
-import play.api.libs.json.{ JsValue, Json }
+import play.api.libs.json.{ JsError, JsSuccess, JsValue, Json, Reads }
 import play.api.mvc.{ Action, AnyContent, ControllerComponents, Request }
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.securemessage._
@@ -40,6 +41,7 @@ import uk.gov.hmrc.time.DateTimeUtils
 
 import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.{ Failure, Success, Try }
 
 @SuppressWarnings(Array("org.wartremover.warts.All"))
 class SecureMessageController @Inject()(
@@ -93,23 +95,33 @@ class SecureMessageController @Inject()(
       }
   }
 
-  def addCustomerMessage(client: ClientName, conversationId: String): Action[JsValue] = Action.async(parse.json) {
-    implicit request =>
-      authorised().retrieve(Retrievals.allEnrolments) { enrolments: Enrolments =>
-        withJsonBody[CustomerMessage] { customerMessageRequest =>
-          secureMessageService
-            .addCustomerMessageToConversation(client.entryName, conversationId, customerMessageRequest, enrolments)
-            .map {
-              case Right(_) =>
-                auditCustomerReply("CustomerReplyToConversationSuccess", client, conversationId, customerMessageRequest)
-                Created(Json.toJson(s"Created customer message for client $client and conversationId $conversationId"))
-              case Left(error) =>
-                auditCustomerReply("CustomerReplyToConversationFailed", client, conversationId, customerMessageRequest)
-                handleErrors(conversationId, error, Some(client))
-            }
-        }
-      }
+  def addCustomerMessage(encodedId: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
+    val message = for {
+      messageTypeAndId <- EitherT(Future.successful(IdCoder.decodeId(encodedId))).leftWiden[SecureMessageError]
+      enrolments       <- EitherT(getEnrolments()).leftWiden[SecureMessageError]
+      message          <- EitherT(Future.successful(parseAs[CustomerMessage]())).leftWiden[SecureMessageError]
+      _ <- EitherT(secureMessageService.addCustomerMessage(messageTypeAndId._2, message, enrolments))
+            .leftWiden[SecureMessageError]
+    } yield message
+    message.value map {
+      case Right(msg) =>
+        auditCustomerReply("CustomerReplyToConversationSuccess", encodedId, Some(msg))
+        Created(Json.toJson(s"Created customer message for encodedId: $encodedId"))
+      case Left(error) =>
+        auditCustomerReply("CustomerReplyToConversationFailed", encodedId, None)
+        handleErrors(encodedId, error)
+    }
   }
+
+  private def parseAs[T]()(
+    implicit request: Request[JsValue],
+    m: Manifest[T],
+    reads: Reads[T]): Either[InvalidRequest, T] =
+    Try(request.body.validate[T]) match {
+      case Success(JsSuccess(payload, _)) => Right(payload)
+      case Success(JsError(errs))         => Left(InvalidRequest(s"Invalid ${m.runtimeClass.getSimpleName} payload: $errs"))
+      case Failure(e)                     => Left(InvalidRequest(s"Could not parse body due to ${e.getMessage}", Some(e)))
+    }
 
   def getConversations(
     enrolmentKeys: Option[List[String]],
@@ -199,10 +211,10 @@ class SecureMessageController @Inject()(
       }
     }
 
-  def getMessage(rawId: String): Action[AnyContent] = Action.async { implicit request =>
+  def getMessage(encodedId: String): Action[AnyContent] = Action.async { implicit request =>
     val message: EitherT[Future, SecureMessageError, (ApiMessage, Enrolments)] = for {
-      messageTypeAndId <- EitherT(Future.successful(IdCoder.decodeId(rawId))).leftWiden[SecureMessageError]
-      enrolments       <- EitherT(getEnrolments(request)).leftWiden[SecureMessageError]
+      messageTypeAndId <- EitherT(Future.successful(IdCoder.decodeId(encodedId))).leftWiden[SecureMessageError]
+      enrolments       <- EitherT(getEnrolments()).leftWiden[SecureMessageError]
       message          <- EitherT(retrieveMessage(messageTypeAndId._1, messageTypeAndId._2, enrolments))
     } yield (message, enrolments)
     message.value map {
@@ -210,8 +222,8 @@ class SecureMessageController @Inject()(
         auditMessageRead(msg, enrolments)
         Ok(Json.toJson(msg))
       case Left(error) =>
-        auditMessageReadFailed(rawId, error)
-        handleErrors(rawId, error)
+        auditMessageReadFailed(encodedId, error)
+        handleErrors(encodedId, error)
     }
   }
 
@@ -224,7 +236,7 @@ class SecureMessageController @Inject()(
       case Letter       => secureMessageService.getLetter(id, authEnrolments.asCustomerEnrolments)
     }
 
-  private def getEnrolments(implicit request: Request[AnyContent]): Future[Either[UserNotAuthorised, Enrolments]] =
+  private def getEnrolments()(implicit request: HeaderCarrier): Future[Either[UserNotAuthorised, Enrolments]] =
     authorised()
       .retrieve(Retrievals.allEnrolments) { authEnrolments =>
         if (authEnrolments.enrolments.isEmpty) {

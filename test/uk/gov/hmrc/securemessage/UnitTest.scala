@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.securemessage
 
+import org.apache.commons.codec.binary.Base64
 import org.joda.time.DateTime
 import uk.gov.hmrc.auth.core.{ Enrolment, EnrolmentIdentifier, Enrolments }
 import uk.gov.hmrc.securemessage.models.core.CustomerEnrolment
@@ -42,4 +43,6 @@ trait UnitTest {
             state = "",
             None))
     )
+
+  def base64Encode(path: String): String = Base64.encodeBase64String(path.getBytes("UTF-8"))
 }

@@ -18,10 +18,12 @@ package uk.gov.hmrc.securemessage
 
 import org.scalatest.DoNotDiscover
 import play.api.http.Status.CREATED
-import play.api.http.{ ContentTypes, HeaderNames }
+import play.api.http.{ContentTypes, HeaderNames}
 import play.api.libs.json.Json
 import play.api.libs.ws.WSResponse
 import play.api.test.Helpers._
+import reactivemongo.bson.BSONObjectID
+import uk.gov.hmrc.securemessage.controllers.model.MessageType
 
 import java.io.File
 
@@ -32,8 +34,8 @@ class AddMessageToConversationISpec extends ISpec {
   "A POST request to /secure-messaging/conversation/{client}/{conversationId}/customer-message" must {
     "return CREATED when the message is successfully added to the conversation" in new CustomerTestCase(VALID_EORI) {
 
-      response.status mustBe CREATED
       response.body mustBe "\"Created customer message for client CDCM and conversationId D-80542-20201120\""
+      response.status mustBe CREATED
     }
     "return NOT FOUND when the conversation ID is not recognised" in {
       val client = "CDCM"
@@ -97,7 +99,8 @@ class AddMessageToConversationISpec extends ISpec {
 
   class CustomerTestCase(eori: String) {
     val client = "CDCM"
-    val conversationId = "D-80542-20201120"
+    val conversationId: String = BSONObjectID.generate().stringify
+    val encodedId: String = base64Encode(MessageType.Conversation.entryName + "/" + conversationId)
     await(
       wsClient
         .url(resource(s"/secure-messaging/conversation/$client/$conversationId"))
@@ -105,7 +108,7 @@ class AddMessageToConversationISpec extends ISpec {
         .put(new File("./it/resources/cdcm/create-conversation-minimal.json")))
     val response: WSResponse =
       wsClient
-        .url(resource(s"/secure-messaging/conversation/$client/$conversationId/customer-message"))
+        .url(resource(s"/secure-messaging/messages/$encodedId/customer-message"))
         .withHttpHeaders(buildEoriToken(eori))
         .post(Json.obj("content" -> "PGRpdj5IZWxsbzwvZGl2Pg=="))
         .futureValue
