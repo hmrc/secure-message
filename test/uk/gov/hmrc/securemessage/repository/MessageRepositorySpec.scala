@@ -38,13 +38,13 @@ class MessageRepositorySpec
   val repository: MessageRepository = new MessageRepository()
 
   override def beforeEach(): Unit =
-    dropTestCollection("message")
+    repository.removeAll().map(_ => ()).futureValue
 
   "A letter" should {
     "be returned for a participating enrolment" in new TestContext() {
-      val result: Future[Either[SecureMessageError, Letter]] =
-        repository.getLetter(objectID.stringify, identifiers)
-      result.futureValue mustBe Right(letters.head)
+      val result =
+        await(repository.getLetter(objectID.stringify, identifiers))
+      result mustBe Right(letters.head)
     }
 
     "be returned for a participating enrolment with no name" in new TestContext() {
@@ -70,7 +70,7 @@ class MessageRepositorySpec
 
     "not be returned for a participating enrolment with different Enrolment" in new TestContext(
       coreLetters = List(Resources.readJson("model/core/letterWithOutHmrcCusOrg.json").add(timeFields))) {
-      val result: Either[SecureMessageError, Letter] = repository.getLetter(objectID.stringify, identifiers).futureValue
+      val result: Either[SecureMessageError, Letter] = await(repository.getLetter(objectID.stringify, identifiers))
 
       result.left.get.message mustBe "Letter not found for identifiers: Set(Identifier(EORINumber,GB1234567890,Some(HMRC-CUS-ORG)))"
     }
