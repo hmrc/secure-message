@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+package uk.gov.hmrc.securemessage
+
 import org.scalatest.Sequential
 
 class ItTestSuite

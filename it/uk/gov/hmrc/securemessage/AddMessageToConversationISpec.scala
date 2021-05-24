@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
+package uk.gov.hmrc.securemessage
+
 import org.scalatest.DoNotDiscover
 import play.api.http.Status.CREATED
 import play.api.http.{ ContentTypes, HeaderNames }
 import play.api.libs.json.Json
 import play.api.libs.ws.WSResponse
 import play.api.test.Helpers._
+import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata
 
 import java.io.File
 
@@ -30,25 +33,23 @@ class AddMessageToConversationISpec extends ISpec {
   "A POST request to /secure-messaging/conversation/{client}/{conversationId}/customer-message" must {
     "return CREATED when the message is successfully added to the conversation" in new CustomerTestCase(VALID_EORI) {
 
+      response.body mustBe s""""Created customer message for encodedId: $messageId""""
       response.status mustBe CREATED
-      response.body mustBe "\"Created customer message for client CDCM and conversationId D-80542-20201120\""
     }
-    "return NOT FOUND when the conversation ID is not recognised" in {
-      val client = "CDCM"
-      val conversationId = "D-80542-20201120"
-      val response =
+    "return NOT FOUND when the conversation ID is not recognised" in new CustomerTestCase(VALID_EORI) {
+      val actualRresponse =
         wsClient
-          .url(resource(s"/secure-messaging/conversation/$client/$conversationId/customer-message"))
+          .url(resource(s"/secure-messaging/messages/$nonExistingEncodedId/customer-message"))
           .withHttpHeaders(buildEoriToken(VALID_EORI))
           .post(Json.obj("content" -> "PGRpdj5IZWxsbzwvZGl2Pg=="))
           .futureValue
-      response.status mustBe NOT_FOUND
-      response.body mustBe "\"Error on message with client: Some(CDCM), message id: D-80542-20201120, error message: Conversation not found for identifier: Set(Identifier(EORINumber,GB1234567890,Some(HMRC-CUS-ORG)))\""
+      actualRresponse.status mustBe NOT_FOUND
+      actualRresponse.body mustBe s""""Error on message with client: None, message id: $nonExistingEncodedId, error message: Conversation not found for identifiers: Set(Identifier(EORINumber,GB1234567890,Some(HMRC-CUS-ORG)))""""
     }
 
     "return NOT_FOUND when the customer is not a participant" in new CustomerTestCase("GB1234567891") {
       response.status mustBe NOT_FOUND
-      response.body mustBe "\"Error on message with client: Some(CDCM), message id: D-80542-20201120, error message: Conversation not found for identifier: Set(Identifier(EORINumber,GB1234567891,Some(HMRC-CUS-ORG)))\""
+      response.body mustBe s""""Error on message with client: None, message id: $nonExistingEncodedId, error message: Conversation not found for identifiers: Set(Identifier(EORINumber,GB1234567891,Some(HMRC-CUS-ORG)))""""
     }
   }
 
@@ -95,15 +96,27 @@ class AddMessageToConversationISpec extends ISpec {
 
   class CustomerTestCase(eori: String) {
     val client = "CDCM"
-    val conversationId = "D-80542-20201120"
+    val conversationId: String = "D-80542-20201120"
+    val nonExistingEncodedId = "Y29udmVyc2F0aW9uLzYwYTcxMzFlMTUwMDAwNmE1YjYyZWVlZg=="
     await(
       wsClient
         .url(resource(s"/secure-messaging/conversation/$client/$conversationId"))
         .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
         .put(new File("./it/resources/cdcm/create-conversation-minimal.json")))
+    val messageId: String =
+      wsClient
+        .url(resource("/secure-messaging/messages"))
+        .withHttpHeaders(buildEoriToken(eori))
+        .get()
+        .futureValue
+        .json
+        .as[Seq[MessageMetadata]]
+        .headOption
+        .map(_.id)
+        .getOrElse(nonExistingEncodedId)
     val response: WSResponse =
       wsClient
-        .url(resource(s"/secure-messaging/conversation/$client/$conversationId/customer-message"))
+        .url(resource(s"/secure-messaging/messages/$messageId/customer-message"))
         .withHttpHeaders(buildEoriToken(eori))
         .post(Json.obj("content" -> "PGRpdj5IZWxsbzwvZGl2Pg=="))
         .futureValue

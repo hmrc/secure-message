@@ -25,9 +25,9 @@ import uk.gov.hmrc.securemessage._
 
 trait ErrorHandling extends Logging {
 
-  def handleErrors(conversationId: String, error: SecureMessageError, client: Option[ClientName] = None): Result = {
+  def handleErrors(messageId: String, error: SecureMessageError, client: Option[ClientName] = None): Result = {
     val errMsg =
-      s"Error on message with client: $client, message id: $conversationId, error message: ${error.message}"
+      s"Error on message with client: $client, message id: $messageId, error message: ${error.message}"
     logger.error(error.message, error.cause.orNull)
     val jsonError = Json.toJson(errMsg)
     error match {
@@ -35,7 +35,7 @@ trait ErrorHandling extends Logging {
       case NoReceiverEmailError(_)                                           => Created(jsonError)
       case DuplicateConversationError(_, _)                                  => Conflict(jsonError)
       case InvalidContent(_, _) | InvalidRequest(_, _) | InvalidBsonId(_, _) => BadRequest(jsonError)
-      case ParticipantNotFound(_)                                            => Unauthorized(jsonError)
+      case ParticipantNotFound(_) | UserNotAuthorised(_)                     => Unauthorized(jsonError)
       case MessageNotFound(_)                                                => NotFound(jsonError)
       case EisForwardingError(_)                                             => BadGateway(jsonError)
       case StoreError(_, _)                                                  => InternalServerError(jsonError)

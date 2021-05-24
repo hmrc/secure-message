@@ -19,7 +19,7 @@ package uk.gov.hmrc.securemessage.controllers.model.cdsf.read
 import org.joda.time.{ DateTime, LocalDate }
 import play.api.libs.json.{ Format, Json }
 import reactivemongo.bson.BSONObjectID
-import uk.gov.hmrc.securemessage.controllers.model.ApiFormats
+import uk.gov.hmrc.securemessage.controllers.model.{ ApiFormats, ApiMessage }
 import uk.gov.hmrc.securemessage.models.core.{ Identifier, Letter }
 
 final case class ApiLetter(
@@ -30,7 +30,7 @@ final case class ApiLetter(
   identifier: Identifier,
   readTime: Option[DateTime] = None, //TODO: why is this always NONE ?
   tags: Option[Map[String, String]] = None
-)
+) extends ApiMessage
 
 final case class FirstReaderInformation(name: Option[String], read: DateTime)
 final case class SenderInformation(name: String, sent: LocalDate)

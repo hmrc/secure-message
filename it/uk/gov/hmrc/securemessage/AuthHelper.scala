@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+package uk.gov.hmrc.securemessage
+
 import org.scalatest.concurrent.ScalaFutures
 import play.api.libs.json.{ Json, Reads }
 import play.api.libs.ws.WSClient

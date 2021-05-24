@@ -49,3 +49,5 @@ final case class InvalidRequest(override val message: String, override val cause
     extends SecureMessageError(message, cause)
 
 final case class InvalidPath(override val message: String) extends SecureMessageError(message)
+
+final case class UserNotAuthorised(override val message: String) extends SecureMessageError(message)

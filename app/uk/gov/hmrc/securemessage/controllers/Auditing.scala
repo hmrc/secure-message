@@ -14,18 +14,21 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.securemessage.services
+package uk.gov.hmrc.securemessage.controllers
 
-import org.joda.time.{ DateTime, DateTimeZone }
 import org.joda.time.format.ISODateTimeFormat
+import org.joda.time.{ DateTime, DateTimeZone }
 import uk.gov.hmrc.auth.core.Enrolments
 import uk.gov.hmrc.emailaddress.EmailAddress
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import uk.gov.hmrc.securemessage.controllers.model.ClientName
+import uk.gov.hmrc.securemessage.SecureMessageError
+import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.ApiConversation
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage
 import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.ApiLetter
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
+import uk.gov.hmrc.securemessage.controllers.model.{ ApiMessage, ClientName, MessageType }
+import uk.gov.hmrc.securemessage.controllers.utils.IdCoder
 import uk.gov.hmrc.securemessage.models.core.Conversation
 import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryMessageRequest }
 
@@ -42,7 +45,7 @@ trait Auditing {
   protected val emailSentTxnName: (String, String) = txnName         -> "Email Alert Sent"
   protected val caseworkerReplyTxnName: (String, String) = txnName   -> "Caseworker reply to query conversation"
   protected val customerReplyTxnName: (String, String) = txnName     -> "Customer reply to query conversation"
-  protected val messageReadTxnName: (String, String) = txnName       -> "Message is Read"
+  protected val conversationReadTxnName: (String, String) = txnName  -> "Message is Read"
   protected val letterReadSuccessTxnName: (String, String) = txnName -> "Message is Read"
   protected val letterReadFailedTxnName: (String, String) = txnName  -> "Message not Read"
   protected val messageForwardedTxnName: (String, String) = txnName  -> "Message forwarded to caseworker"
@@ -108,27 +111,35 @@ trait Auditing {
     auditConnector.sendExplicitAudit(txnStatus, detail)
   }
 
-  def auditCustomerReply(
-    txnStatus: String,
-    client: ClientName,
-    conversationId: String,
-    customerMessage: CustomerMessage)(implicit hc: HeaderCarrier, ec: ExecutionContext): Unit = {
-    val detail = Map(
-      customerReplyTxnName,
-      "client"    -> client.entryName,
-      "messageId" -> conversationId,
-      "content"   -> customerMessage.content)
+  def auditCustomerReply(txnStatus: String, encodedId: String, customerMessage: Option[CustomerMessage])(
+    implicit hc: HeaderCarrier,
+    ec: ExecutionContext): Unit = {
+    val detail =
+      Map(customerReplyTxnName, "encodedId" -> encodedId, "content" -> customerMessage.map(_.content).getOrElse(""))
     auditConnector.sendExplicitAudit(txnStatus, detail)
   }
+
+  /** TOOD: combine in this function [[auditConversationRead()]] && [[auditReadLetter()]]
+    * */
+  def auditMessageRead(apiMessage: ApiMessage, enrolments: Enrolments)(
+    implicit hc: HeaderCarrier,
+    ec: ExecutionContext): Unit =
+    apiMessage match {
+      case l: ApiLetter => auditReadLetter(l, enrolments)
+      case c: ApiConversation =>
+        auditConversationRead(ClientName.withNameOption(c.client), c.conversationId, enrolments)
+    }
 
   private val QueryMessageReadSuccess = "QueryMessageReadSuccess"
   private val ConversationMessageType = ("messageType", "Conversation")
 
+  /** TOOD: replace with with the common [[auditMessageRead()]]
+    * */
   def auditConversationRead(client: Option[ClientName], conversationId: String, enrolments: Enrolments)(
     implicit hc: HeaderCarrier,
     ec: ExecutionContext): Unit = {
     val detail = Map(
-      messageReadTxnName,
+      conversationReadTxnName,
       "client"    -> client.fold("")(_.entryName),
       "messageId" -> conversationId,
       ConversationMessageType,
@@ -137,25 +148,13 @@ trait Auditing {
     auditConnector.sendExplicitAudit(QueryMessageReadSuccess, detail)
   }
 
-  private val QueryMessageReadFailed = "QueryMessageReadFailed"
-
-  def auditConversationReadFailed(id: String, enrolments: Enrolments)(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Unit = {
-    val detail = Map(
-      messageReadTxnName,
-      "messageId" -> id,
-      ConversationMessageType,
-      "enrolments" -> prettyPrintEnrolments(enrolments)
-    )
-    auditConnector.sendExplicitAudit(QueryMessageReadFailed, detail)
-  }
-
   private val letterMessageType = ("messageType", "Letter")
   private val LetterReadSuccess = "LetterReadSuccess"
   private val LetterReadFailed = "LetterReadFailed"
   private val zone: DateTimeZone = DateTimeZone.UTC
 
+  /** TOOD: replace with with the common [[auditMessageRead()]]
+    * */
   def auditReadLetter(letter: ApiLetter, enrolments: Enrolments)(
     implicit hc: HeaderCarrier,
     ec: ExecutionContext): Unit = {
@@ -173,6 +172,24 @@ trait Auditing {
     auditConnector.sendExplicitAudit(LetterReadSuccess, detail)
   }
 
+  private val ConversationReadFailed = "QueryMessageReadFailed"
+
+  /** TOOD: replace with with the common [[auditMessageReadFailed()]]
+    * */
+  def auditConversationReadFailed(id: String, enrolments: Enrolments)(
+    implicit hc: HeaderCarrier,
+    ec: ExecutionContext): Unit = {
+    val detail = Map(
+      conversationReadTxnName,
+      "messageId" -> id,
+      ConversationMessageType,
+      "enrolments" -> prettyPrintEnrolments(enrolments)
+    )
+    auditConnector.sendExplicitAudit(ConversationReadFailed, detail)
+  }
+
+  /** TOOD: replace with with the common [[auditMessageReadFailed()]]
+    * */
   def auditReadLetterFail(id: String, enrolments: Enrolments)(
     implicit hc: HeaderCarrier,
     ec: ExecutionContext): Unit = {
@@ -183,6 +200,28 @@ trait Auditing {
       "enrolments" -> prettyPrintEnrolments(enrolments)
     )
     auditConnector.sendExplicitAudit(LetterReadFailed, detail)
+  }
+
+  def auditMessageReadFailed(encodedId: String, error: SecureMessageError)(
+    implicit hc: HeaderCarrier,
+    ec: ExecutionContext): Unit = {
+    val (messageType, decodedId, txName, queryMessage) = IdCoder.decodeId(encodedId) match {
+      case Right((messageType, decodedId)) =>
+        messageType match {
+          case MessageType.Conversation =>
+            (messageType.entryName, decodedId, conversationReadTxnName, ConversationReadFailed)
+          case MessageType.Letter => (messageType.entryName, decodedId, letterReadFailedTxnName, LetterReadFailed)
+        }
+      case Left(_) => ("message", encodedId, conversationReadTxnName, ConversationReadFailed)
+    }
+    val detail = Map(
+      txName,
+      "messageId"   -> decodedId,
+      "messageType" -> messageType,
+      "encodedId"   -> encodedId,
+      "error"       -> error.message
+    )
+    auditConnector.sendExplicitAudit(queryMessage, detail)
   }
 
   def auditMessageForwarded(txnStatus: String, qrw: QueryMessageRequest, eisResponseCode: Int)(

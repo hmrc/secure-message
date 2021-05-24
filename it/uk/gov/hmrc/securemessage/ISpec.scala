@@ -14,20 +14,24 @@
  * limitations under the License.
  */
 
-import java.io.File
+package uk.gov.hmrc.securemessage
+
+import org.apache.commons.codec.binary.Base64
 import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.play.PlaySpec
 import play.api.http.{ ContentTypes, HeaderNames }
 import play.api.libs.ws.{ WSClient, WSResponse }
-import play.api.test.Helpers.{ await, defaultAwaitTimeout }
+import play.api.test.Helpers._
 import uk.gov.hmrc.integration.ServiceSpec
 import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository }
 
+import java.io.File
 import scala.concurrent.{ ExecutionContext, Future }
 
 trait ISpec extends PlaySpec with ServiceSpec with BeforeAndAfterEach with AuthHelper {
 
   implicit val ec: ExecutionContext = app.injector.instanceOf[ExecutionContext]
+//  implicit val timeout: Timeout = Timeout(1, TimeUnit.MINUTES)
 
   override def externalServices: Seq[String] = Seq.empty
   override val ggAuthPort: Int = 8585
@@ -51,5 +55,7 @@ trait ISpec extends PlaySpec with ServiceSpec with BeforeAndAfterEach with AuthH
   }
 
   override def additionalConfig: Map[String, _] = Map("metrics.jvm" -> false)
+
+  def base64Encode(path: String): String = Base64.encodeBase64String(path.getBytes("UTF-8"))
 
 }

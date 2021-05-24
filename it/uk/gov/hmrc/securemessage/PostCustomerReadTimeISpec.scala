@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
-import java.io.File
+package uk.gov.hmrc.securemessage
 
 import org.scalatest.DoNotDiscover
 import play.api.http.Status.{ BAD_REQUEST, CREATED }
 import play.api.http.{ ContentTypes, HeaderNames }
+
+import java.io.File
 
 @DoNotDiscover
 @SuppressWarnings(Array("org.wartremover.warts.All"))

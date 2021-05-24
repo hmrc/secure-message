@@ -14,11 +14,15 @@
  * limitations under the License.
  */
 
+package uk.gov.hmrc.securemessage
+
 import org.scalatest.DoNotDiscover
 import play.api.http.{ ContentTypes, HeaderNames }
 import play.api.libs.json.Json
 import play.api.libs.ws.WSResponse
 import play.api.test.Helpers._
+import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata
+
 import java.io.File
 
 @DoNotDiscover
@@ -161,7 +165,7 @@ class GetConversationsISpec extends ISpec {
   "request  /secure-messaging/conversations" should {
     "return Sender name as `You` when name is missing" in new TestClass {
       wsClient
-        .url(resource("/secure-messaging/conversation/CDCM/D-80542-20201120/customer-message"))
+        .url(resource(s"/secure-messaging/messages/$messageId/customer-message"))
         .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON), buildEoriToken(VALID_EORI))
         .post(Json.parse("""{
                            |
@@ -184,11 +188,23 @@ class GetConversationsISpec extends ISpec {
   }
 
   class TestClass {
+    val nonExistingEncodedId = "Y29udmVyc2F0aW9uLzYwYTcxMzFlMTUwMDAwNmE1YjYyZWVlZg=="
     wsClient
       .url(resource("/secure-messaging/conversation/CDCM/D-80542-20201120"))
       .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
       .put(new File("./it/resources/cdcm/create-conversation.json"))
       .futureValue
       .status mustBe CREATED
+    val messageId: String =
+      wsClient
+        .url(resource("/secure-messaging/messages"))
+        .withHttpHeaders(buildEoriToken(VALID_EORI))
+        .get()
+        .futureValue
+        .json
+        .as[Seq[MessageMetadata]]
+        .headOption
+        .map(_.id)
+        .getOrElse(nonExistingEncodedId)
   }
 }
