@@ -38,7 +38,6 @@ import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, _ }
 import uk.gov.hmrc.securemessage.models._
 import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository }
 import uk.gov.hmrc.securemessage.services.utils.ContentValidator
-
 import java.util.UUID
 import scala.concurrent.{ ExecutionContext, Future }
 

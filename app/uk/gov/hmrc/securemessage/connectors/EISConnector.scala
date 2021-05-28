@@ -19,7 +19,6 @@ package uk.gov.hmrc.securemessage.connectors
 import java.time.format.DateTimeFormatter
 import java.time.{ ZoneOffset, ZonedDateTime }
 import controllers.Assets.{ ACCEPT, CONTENT_TYPE, DATE }
-
 import javax.inject.{ Inject, Singleton }
 import play.api.http.HeaderNames.AUTHORIZATION
 import play.api.http.MimeTypes
