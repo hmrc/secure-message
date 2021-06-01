@@ -20,7 +20,6 @@ import org.joda.time.DateTime
 import play.api.libs.json.JodaWrites.{ JodaDateTimeWrites => _ }
 import play.api.libs.json.Json.JsValueWrapper
 import play.api.libs.json.{ JsArray, JsBoolean, JsObject, JsString, Json }
-import reactivemongo.api.WriteConcern
 import reactivemongo.api.indexes.{ Index, IndexType }
 import reactivemongo.bson.BSONObjectID
 import reactivemongo.core.errors.DatabaseException
@@ -29,7 +28,6 @@ import uk.gov.hmrc.securemessage._
 import uk.gov.hmrc.securemessage.models.core.ConversationMessage.dateTimeFormat
 import uk.gov.hmrc.securemessage.models.core.{ Conversation, ConversationMessage, Count, FilterTag, Identifier }
 import javax.inject.{ Inject, Singleton }
-
 import scala.collection.Seq
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -118,19 +116,6 @@ class ConversationRepository @Inject()(implicit connector: MongoConnector)
         case Some(errMsg) => Left(StoreError(errMsg, None))
         case None         => Right(())
       })
-
-  def deleteConversationForTestOnly(conversationId: String, client: String)(
-    implicit ec: ExecutionContext): Future[Unit] =
-    collection
-      .findAndRemove[JsObject](
-        selector = conversationQuery(client, conversationId),
-        None,
-        None,
-        WriteConcern.Default,
-        None,
-        None,
-        Nil)
-      .map(_ => ())
 
   override protected def findByIdentifierQuery(identifier: Identifier): Seq[(String, JsValueWrapper)] =
     identifier.enrolment match {

@@ -16,14 +16,18 @@
 
 package uk.gov.hmrc.securemessage.testonly.controllers
 
+import cats.data.NonEmptyList
 import com.google.inject.Inject
+import org.joda.time.DateTime
+import play.api.Logging
 import play.api.libs.json.{ JsObject, JsValue, Json }
 import play.api.mvc.{ Action, AnyContent, ControllerComponents }
 import reactivemongo.api.WriteConcern
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.securemessage.models.core.Letter
+import uk.gov.hmrc.securemessage.models.core.Language.English
 import uk.gov.hmrc.securemessage.models.core.Letter._
+import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository }
 
 import scala.concurrent.ExecutionContext
@@ -32,11 +36,11 @@ class TestOnlyController @Inject()(
   cc: ControllerComponents,
   conversationRepository: ConversationRepository,
   messageRepository: MessageRepository)(implicit ec: ExecutionContext)
-    extends BackendController(cc) {
+    extends BackendController(cc) with Logging {
 
-  def deleteConversation(conversationId: String, client: String): Action[AnyContent] = Action.async { _ =>
-    conversationRepository.deleteConversationForTestOnly(conversationId, client).map { _ =>
-      Ok(s"$conversationId deleted successfully")
+  def deleteConversation(id: String): Action[AnyContent] = Action.async { _ =>
+    conversationRepository.removeById(BSONObjectID.parse(id).get, WriteConcern.Default).map { _ =>
+      Ok(s"$id deleted successfully")
     }
   }
 
@@ -44,6 +48,48 @@ class TestOnlyController @Inject()(
     val messageBody: JsObject = request.body.as[JsObject] + ("_id" -> Json.toJson(BSONObjectID.parse(id).get))
     val letter = messageBody.validate[Letter].get
     messageRepository.insert(letter).map(_ => Created)
+  }
+
+  def insertConversation(id: String): Action[JsValue] = Action.async(parse.json) { _ =>
+    val identifier = Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))
+    val conversation = Conversation(
+      BSONObjectID.parse(id).get,
+      "CDCM",
+      id,
+      ConversationStatus.Open,
+      None,
+      "CDS-EXPORTS Subject",
+      English,
+      List(
+        Participant(
+          1,
+          ParticipantType.System,
+          Identifier("CDCM", "D-80542-20201120", None),
+          Some("CDS Exports Team"),
+          None,
+          None,
+          None
+        ),
+        Participant(
+          2,
+          ParticipantType.Customer,
+          identifier,
+          None,
+          None,
+          None,
+          None
+        )
+      ),
+      NonEmptyList.one(
+        ConversationMessage(
+          1,
+          DateTime.now,
+          "QmxhaCBibGFoIGJsYWg="
+        )
+      ),
+      Alert("", None)
+    )
+    conversationRepository.insert(conversation).map(_ => Created)
   }
 
   def deleteMessage(id: String): Action[AnyContent] =
