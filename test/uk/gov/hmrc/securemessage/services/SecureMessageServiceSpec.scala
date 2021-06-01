@@ -35,15 +35,17 @@ import uk.gov.hmrc.emailaddress.EmailAddress
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.securemessage.connectors.{ ChannelPreferencesConnector, EISConnector, EmailConnector }
+import uk.gov.hmrc.securemessage.controllers.model.MessageType
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.ConversationMetadata
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
 import uk.gov.hmrc.securemessage.helpers.{ ConversationUtil, MessageUtil, Resources }
+import uk.gov.hmrc.securemessage.models.core.Conversation._
 import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryMessageWrapper }
 import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository }
 import uk.gov.hmrc.securemessage.{ DuplicateConversationError, EmailLookupError, NoReceiverEmailError, SecureMessageError, _ }
-import Conversation._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -210,43 +212,6 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
     }
   }
 
-  "getConversation" must {
-    val hmrcCusOrg = "HMRC-CUS-ORG"
-    val conversationId = "D-80542-20201120"
-    val eoriName = "EORIName"
-    val enrolmentValue = "GB7777777777"
-    "return a message with ApiConversation" in new GetConversationTestContext(
-      getConversationResult = Right(
-        ConversationUtil
-          .getFullConversation(BSONObjectID.generate, conversationId, hmrcCusOrg, eoriName, enrolmentValue))
-    ) {
-      private val result = await(
-        service
-          .getConversation("CDCM", conversationId, Set(CustomerEnrolment(hmrcCusOrg, eoriName, enrolmentValue))))
-      result.right.get.client mustBe "CDCM"
-      result.right.get.messages.size mustBe 1
-      result.right.get.subject mustBe "MRN: 19GB4S24GC3PPFGVR7"
-    }
-
-    "return a Left(ConversationNotFound)" in {
-      when(
-        mockConversationRepository
-          .getConversation(any[String], any[String], any[Set[Identifier]])(any[ExecutionContext]))
-        .thenReturn(Future(Left(MessageNotFound(
-          "Conversation not found for client: cdcm, conversationId: D-80542-20201120, enrolment: GB1234567890"))))
-      val result = await(
-        service
-          .getConversation(
-            "CDCM",
-            "D-80542-20201120",
-            Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777"))))
-      result mustBe
-        Left(
-          MessageNotFound(
-            s"Conversation not found for client: cdcm, conversationId: D-80542-20201120, enrolment: GB1234567890"))
-    }
-  }
-
   "getConversation by id" must {
     val hmrcCusOrg = "HMRC-CUS-ORG"
     val conversationId = "D-80542-20201120"
@@ -344,7 +309,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
     "update the database when the customer has a participating enrolment" in new AddCustomerMessageTestContext(
       getConversationResult = Right(conversations.head)) {
       when(mockEisConnector.forwardMessage(any[QueryMessageWrapper])).thenReturn(Future(Right(())))
-      await(service.addCustomerMessageToConversation("CDCM", "D-80542-20201120", customerMessage, enrolments))
+      await(service.addCustomerMessage(encodedId, customerMessage, enrolments))
       verify(mockConversationRepository, times(1))
         .addMessageToConversation(any[String], any[String], any[ConversationMessage])(any[ExecutionContext])
     }
@@ -353,16 +318,15 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
       getConversationResult = Right(cnvWithNoEmail)) {
       when(mockEnrolments.enrolments)
         .thenReturn(Set(Enrolment("HMRC-CUS-ORG", Seq(EnrolmentIdentifier("EORINumber", "GB123456789000001")), "")))
-      await(service.addCustomerMessageToConversation("CDCM", "D-80542-20201120", customerMessage, mockEnrolments)) mustBe Left(
-        ParticipantNotFound(
-          "No participant found for client: CDCM, conversationId: 123, indentifiers: Set(Identifier(EORINumber,GB123456789000001,Some(HMRC-CUS-ORG)))"))
+      await(service.addCustomerMessage(encodedId, customerMessage, mockEnrolments)) mustBe Left(ParticipantNotFound(
+        "No participant found for client: CDCM, conversationId: 123, indentifiers: Set(Identifier(EORINumber,GB123456789000001,Some(HMRC-CUS-ORG)))"))
     }
 
     "return ConversationIdNotFound if the conversation ID is not found" in new AddCustomerMessageTestContext(
       getConversationResult = Left(MessageNotFound("Conversation ID not known"))) {
       when(mockEnrolments.enrolments)
         .thenReturn(Set(Enrolment("HMRC-CUS-ORG", Seq(EnrolmentIdentifier("EORINumber", "GB123456789000001")), "")))
-      await(service.addCustomerMessageToConversation("CDCM", "D-80542-20201120", customerMessage, mockEnrolments)) mustBe Left(
+      await(service.addCustomerMessage(encodedId, customerMessage, mockEnrolments)) mustBe Left(
         MessageNotFound("Conversation ID not known"))
     }
 
@@ -371,7 +335,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
       addMessageResult = Left(EisForwardingError("There was an issue with forwarding the message to EIS"))) {
       when(mockEnrolments.enrolments)
         .thenReturn(Set(Enrolment("HMRC-CUS-ORG", Seq(EnrolmentIdentifier("EORINumber", "GB123456789000000")), "")))
-      await(service.addCustomerMessageToConversation("CDCM", "D-80542-20201120", customerMessage, mockEnrolments))
+      await(service.addCustomerMessage(encodedId, customerMessage, mockEnrolments))
       verify(mockConversationRepository, never())
         .addMessageToConversation(any[String], any[String], any[ConversationMessage])(any[ExecutionContext])
     }
@@ -492,9 +456,14 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
       verify(mockConversationRepository, times(0))
         .addReadTime(conversation.client, conversation.id, 2, readTimeStamp)
     }
-
   }
 
+  "getMessagesCount" must {
+    "return count" in new AddReadTimesTestContext {
+      val result = service.getMessagesCount(enrolments, filters()).futureValue
+      result mustBe Count(2, 1)
+    }
+  }
   @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   class AddReadTimesTestContext {
     val mockEisConnector: EISConnector = mock[EISConnector]
@@ -507,6 +476,15 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
     when(
       mockConversationRepository.addReadTime(any[String], any[String], any[Int], any[DateTime])(any[ExecutionContext]))
       .thenReturn(Future.successful(Right(())))
+    when(
+      mockConversationRepository
+        .getConversationsCount(any[Set[Identifier]](), any[Option[List[FilterTag]]]())(any[ExecutionContext]))
+      .thenReturn(Future.successful(Count(1, 1)))
+    when(
+      mockMessageRepository
+        .getLettersCount(any[Set[Identifier]](), any[Option[List[FilterTag]]]())(any[ExecutionContext]))
+      .thenReturn(Future.successful(Count(1, 0)))
+
     val service: SecureMessageService =
       new SecureMessageService(
         mockConversationRepository,
@@ -569,8 +547,8 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
     getConversationResult: Either[MessageNotFound, Conversation],
     addMessageResult: Either[SecureMessageError, Unit] = Right(()))
       extends TestHelpers {
-    when(
-      mockConversationRepository.getConversation(any[String], any[String], any[Set[Identifier]])(any[ExecutionContext]))
+    val encodedId: String = base64Encode(MessageType.Conversation + "/" + "D-80542-20201120")
+    when(mockConversationRepository.getConversation(any[String], any[Set[Identifier]])(any[ExecutionContext]))
       .thenReturn(Future(getConversationResult))
     when(
       mockConversationRepository.addMessageToConversation(any[String], any[String], any[ConversationMessage])(

@@ -14,32 +14,34 @@
  * limitations under the License.
  */
 
+package uk.gov.hmrc.securemessage
+
 import org.scalatest.DoNotDiscover
-import play.api.test.Helpers._
+import reactivemongo.bson.BSONObjectID
 
 @DoNotDiscover
 @SuppressWarnings(Array("org.wartremover.warts.All"))
 class GetIndividualConversationISpec extends ISpec {
 
   "A GET request to /secure-messaging/conversation/:client/:conversationId" should {
-
-    "return a JSON body of api conversation with a list of api messages" in {
-      createConversation map { _ =>
-        val response =
-          wsClient
-            .url(resource("/secure-messaging/conversation/CDCM/D-80542-20201120"))
-            .withHttpHeaders(buildEoriToken(VALID_EORI))
-            .get()
-            .futureValue
-        response.body must include("""{"senderInformation":{"name":"CDS Exports Team"""")
-      }
+    "return a JSON body of api conversation with a list of api messages" in new TestCase {
+      val response =
+        wsClient
+          .url(resource(s"/secure-messaging/messages/$encodedId"))
+          .withHttpHeaders(buildEoriToken(VALID_EORI))
+          .get()
+          .futureValue
+      response.status mustBe 200
+      response.body must include("""{"senderInformation":{"name":"CDS Exports Team"""")
     }
 
-    "return a JSON body of [No conversation found] when a conversationId does not match" in {
+    "return a JSON body of [No conversation found] when id doesn't exist" in {
+      val id = BSONObjectID.generate()
+      val encodedId = encodeId(id)
       createConversation map { _ =>
         val response =
           wsClient
-            .url(resource("/secure-messaging/conversation/CDCM/D-80542-77777777"))
+            .url(resource(s"/secure-messaging/messages/$encodedId"))
             .withHttpHeaders(buildEoriToken(VALID_EORI))
             .get()
             .futureValue
@@ -47,16 +49,20 @@ class GetIndividualConversationISpec extends ISpec {
       }
     }
 
-    "return a JSON body of [No enrolment found] when auth session enrolments do not match a conversation's participants identifiers" in {
+    "return a JSON body of [No enrolment found] when auth session enrolments do not match a conversation's participants identifiers" in new TestCase {
       val response =
         wsClient
-          .url(resource("/secure-messaging/conversation/CDCM/D-80542-20201120"))
+          .url(resource(s"/secure-messaging/messages/$encodedId"))
           .withHttpHeaders(buildNonEoriToken)
           .get()
           .futureValue
-      response.status mustBe UNAUTHORIZED
-      response.body mustBe "\"No enrolment found\""
+      response.status mustBe 401
     }
   }
 
+  class TestCase() {
+    val id = BSONObjectID.generate()
+    val encodedId = encodeId(id)
+    insertConversation(id)
+  }
 }

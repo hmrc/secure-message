@@ -20,7 +20,7 @@ import org.joda.time.DateTime
 import play.api.libs.json.{ Format, Json }
 import uk.gov.hmrc.securemessage.controllers.model.ApiFormats
 
-final case class ApiMessage(
+final case class ApiConversationMessage(
   senderInformation: Option[SenderInformation],
   firstReader: Option[FirstReaderInformation],
   content: String)
@@ -29,7 +29,7 @@ final case class SenderInformation(name: Option[String], sent: DateTime, self: B
 
 final case class FirstReaderInformation(name: Option[String], read: DateTime)
 
-object ApiMessage extends ApiFormats {
+object ApiConversationMessage extends ApiFormats {
 
   implicit val senderInformationFormat: Format[SenderInformation] =
     Json.format[SenderInformation]
@@ -37,7 +37,7 @@ object ApiMessage extends ApiFormats {
   implicit val firstReaderTime: Format[FirstReaderInformation] =
     Json.format[FirstReaderInformation]
 
-  implicit val messageFormat: Format[ApiMessage] =
-    Json.format[ApiMessage]
+  implicit val messageFormat: Format[ApiConversationMessage] =
+    Json.format[ApiConversationMessage]
 
 }
