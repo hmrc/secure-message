@@ -19,8 +19,10 @@ GET   /assets/*file                         controllers.Assets.versioned(path="/
 
 ->         /                                prod.Routes
 
-DELETE    /test-only/delete/conversation/:conversationId/:client    uk.gov.hmrc.securemessage.testonly.controllers.TestOnlyController.deleteConversation(conversationId, client)
-
 PUT    /test-only/create/message/:id    uk.gov.hmrc.securemessage.testonly.controllers.TestOnlyController.insertMessage(id: String)
+
+PUT    /test-only/create/conversation/:id    uk.gov.hmrc.securemessage.testonly.controllers.TestOnlyController.insertConversation(id: String)
+
+DELETE    /test-only/delete/conversation/:id    uk.gov.hmrc.securemessage.testonly.controllers.TestOnlyController.deleteConversation(id: String)
 
 DELETE    /test-only/delete/message/:id    uk.gov.hmrc.securemessage.testonly.controllers.TestOnlyController.deleteMessage(id: String)
