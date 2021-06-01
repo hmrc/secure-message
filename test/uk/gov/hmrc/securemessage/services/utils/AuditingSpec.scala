@@ -30,13 +30,13 @@ import uk.gov.hmrc.emailaddress.EmailAddress
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.audit.model.EventTypes
+import uk.gov.hmrc.securemessage.controllers.Auditing
 import uk.gov.hmrc.securemessage.controllers.model.ClientName.CDCM
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage
 import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.{ ApiLetter, SenderInformation }
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
 import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryMessageRequest, RequestCommon, RequestDetail }
-import uk.gov.hmrc.securemessage.services.Auditing
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -158,7 +158,7 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
       verify(auditConnector).sendExplicitAudit(
         "QueryMessageReadSuccess",
         Map(
-          messageReadTxnName,
+          conversationReadTxnName,
           "client"      -> CDCM.entryName,
           "messageId"   -> conversationId,
           "messageType" -> "Conversation",
@@ -178,7 +178,7 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
       verify(auditConnector).sendExplicitAudit(
         "QueryMessageReadFailed",
         Map(
-          messageReadTxnName,
+          conversationReadTxnName,
           "messageId"   -> "convId",
           "messageType" -> "Conversation",
           "enrolments"  -> "HMRC-CUS-ORG:EORINumber=GB1234567890"
@@ -271,26 +271,18 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
 
     "send correct audit details when the customer reply is sent" in {
       val _ =
-        auditCustomerReply("CustomerReplyToConversationSuccess", CDCM, conversationId, CustomerMessage(messageContent))
+        auditCustomerReply("CustomerReplyToConversationSuccess", conversationId, Some(CustomerMessage(messageContent)))
       verify(auditConnector).sendExplicitAudit(
         "CustomerReplyToConversationSuccess",
-        Map(
-          customerReplyTxnName,
-          "client"    -> CDCM.entryName,
-          "messageId" -> conversationId,
-          "content"   -> messageContent))
+        Map(customerReplyTxnName, "encodedId" -> conversationId, "content" -> messageContent))
     }
 
     "send correct audit details when the customer reply is not sent" in {
       val _ =
-        auditCustomerReply("CustomerReplyToConversationFailed", CDCM, conversationId, CustomerMessage(messageContent))
+        auditCustomerReply("CustomerReplyToConversationFailed", conversationId, Some(CustomerMessage(messageContent)))
       verify(auditConnector).sendExplicitAudit(
         "CustomerReplyToConversationFailed",
-        Map(
-          customerReplyTxnName,
-          "client"    -> CDCM.entryName,
-          "messageId" -> conversationId,
-          "content"   -> messageContent))
+        Map(customerReplyTxnName, "encodedId" -> conversationId, "content" -> messageContent))
     }
   }
 

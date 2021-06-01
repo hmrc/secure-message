@@ -1,14 +1,6 @@
 {
   "components" : {
     "schemas" : {
-      "uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage" : {
-        "properties" : {
-          "content" : {
-            "type" : "string"
-          }
-        },
-        "required" : [ "content" ]
-      },
       "uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CdcmTags" : {
         "properties" : {
           "mrn" : {
@@ -112,6 +104,14 @@
         },
         "required" : [ "sender", "recipients", "alert", "tags", "subject", "message" ]
       },
+      "uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage" : {
+        "properties" : {
+          "content" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "content" ]
+      },
       "uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage" : {
         "properties" : {
           "content" : {
@@ -131,40 +131,6 @@
   "openapi" : "3.0.3",
   "paths" : {
     "/secure-messaging/conversation/{client}/{conversationId}" : {
-      "get" : {
-        "operationId" : "getConversation",
-        "tags" : [ "app" ],
-        "summary" : "Gets a conversation via client ID and conversation ID",
-        "security" : [ {
-          "bearerToken" : [ ]
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "conversations was recieved"
-          },
-          "401" : {
-            "description" : "unauthorised customer when they don't have an enrolment"
-          },
-          "404" : {
-            "description" : "conversation not found"
-          }
-        },
-        "parameters" : [ {
-          "in" : "path",
-          "name" : "client",
-          "required" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "in" : "path",
-          "name" : "conversationId",
-          "schema" : {
-            "type" : "string"
-          },
-          "required" : true
-        } ]
-      },
       "put" : {
         "operationId" : "createConversation",
         "tags" : [ "app" ],
@@ -267,7 +233,7 @@
         } ]
       }
     },
-    "/secure-messaging/conversation/{client}/{conversationId}/customer-message" : {
+    "/secure-messaging/messages/{encodedId}/customer-message" : {
       "post" : {
         "operationId" : "addCustomerMessage",
         "tags" : [ "app" ],
@@ -305,70 +271,11 @@
         },
         "parameters" : [ {
           "in" : "path",
-          "name" : "client",
-          "required" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "in" : "path",
-          "name" : "conversationId",
+          "name" : "encodedId",
           "schema" : {
             "type" : "string"
           },
           "required" : true
-        } ]
-      }
-    },
-    "/secure-messaging/conversations" : {
-      "get" : {
-        "operationId" : "getConversations",
-        "tags" : [ "app" ],
-        "summary" : "Gets a list of conversations via enrolmentKeys, enrolments and tags filters",
-        "security" : [ {
-          "bearerToken" : [ ]
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "list of conversations was recieved"
-          },
-          "401" : {
-            "description" : "unauthorised customer when they don't have an enrolment"
-          }
-        },
-        "parameters" : [ {
-          "in" : "query",
-          "name" : "enrolmentKey",
-          "schema" : {
-            "nullable" : true,
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            }
-          },
-          "required" : false
-        }, {
-          "in" : "query",
-          "name" : "enrolment",
-          "schema" : {
-            "nullable" : true,
-            "type" : "array",
-            "items" : {
-              "type" : "customerenrolment"
-            }
-          },
-          "required" : false
-        }, {
-          "in" : "query",
-          "name" : "tag",
-          "schema" : {
-            "nullable" : true,
-            "type" : "array",
-            "items" : {
-              "type" : "filtertag"
-            }
-          },
-          "required" : false
         } ]
       }
     },
@@ -476,7 +383,7 @@
         } ]
       }
     },
-    "/secure-messaging/messages/{id}" : {
+    "/secure-messaging/messages/{encodedId}" : {
       "get" : {
         "operationId" : "getMessage",
         "tags" : [ "app" ],
@@ -497,7 +404,7 @@
         },
         "parameters" : [ {
           "in" : "path",
-          "name" : "id",
+          "name" : "encodedId",
           "schema" : {
             "type" : "string"
           },

@@ -18,7 +18,6 @@ package uk.gov.hmrc.securemessage.connectors
 
 import java.time.format.DateTimeFormatter
 import java.time.{ ZoneOffset, ZonedDateTime }
-
 import controllers.Assets.{ ACCEPT, CONTENT_TYPE, DATE }
 import javax.inject.{ Inject, Singleton }
 import play.api.http.HeaderNames.AUTHORIZATION
@@ -29,8 +28,8 @@ import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.securemessage.EisForwardingError
 import uk.gov.hmrc.securemessage.connectors.utils.CustomHeaders
+import uk.gov.hmrc.securemessage.controllers.Auditing
 import uk.gov.hmrc.securemessage.models.QueryMessageWrapper
-import uk.gov.hmrc.securemessage.services.Auditing
 
 import scala.concurrent.{ ExecutionContext, Future }
 

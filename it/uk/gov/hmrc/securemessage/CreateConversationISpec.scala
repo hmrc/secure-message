@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+package uk.gov.hmrc.securemessage
+
 import org.scalatest.DoNotDiscover
 import play.api.http.Status.{ BAD_REQUEST, CREATED }
 import play.api.http.{ ContentTypes, HeaderNames }

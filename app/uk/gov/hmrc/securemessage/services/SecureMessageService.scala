@@ -27,6 +27,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.securemessage._
 import uk.gov.hmrc.securemessage.connectors.{ ChannelPreferencesConnector, EISConnector, EmailConnector }
+import uk.gov.hmrc.securemessage.controllers.Auditing
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.{ ApiConversation, ConversationMetadata }
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage
 import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.ApiLetter
@@ -100,15 +101,6 @@ class SecureMessageService @Inject()(
       )
   }
 
-  def getConversation(client: String, conversationId: String, enrolments: Set[CustomerEnrolment])(
-    implicit ec: ExecutionContext): Future[Either[SecureMessageError, ApiConversation]] = {
-    val identifiers = enrolments.map(_.asIdentifier)
-    for {
-      conversation <- EitherT(conversationRepository.getConversation(client, conversationId, identifiers))
-      _            <- addReadTime(conversation, identifiers, DateTime.now())
-    } yield ApiConversation.fromCore(conversation, identifiers)
-  }.value
-
   def getConversation(id: String, enrolments: Set[CustomerEnrolment])(
     implicit ec: ExecutionContext): Future[Either[SecureMessageError, ApiConversation]] = {
     val identifiers = enrolments.map(_.asIdentifier)
@@ -143,21 +135,17 @@ class SecureMessageService @Inject()(
   }.value
 
   @SuppressWarnings(Array("org.wartremover.warts.Any"))
-  def addCustomerMessageToConversation(
-    client: String,
-    conversationId: String,
-    messagesRequest: CustomerMessage,
-    enrolments: Enrolments)(
+  def addCustomerMessage(id: String, messagesRequest: CustomerMessage, enrolments: Enrolments)(
     implicit ec: ExecutionContext,
     request: Request[_]): Future[Either[SecureMessageError, Unit]] = {
-    def message(sender: Participant) =
-      ConversationMessage(sender.id, new DateTime(), messagesRequest.content)
+    def message(sender: Participant) = ConversationMessage(sender.id, new DateTime(), messagesRequest.content)
     val identifiers: Set[Identifier] = enrolments.asIdentifiers
     for {
-      conversation <- EitherT(conversationRepository.getConversation(client, conversationId, identifiers))
+      conversation <- EitherT(conversationRepository.getConversation(id, identifiers))
       sender       <- EitherT(Future(conversation.participantWith(identifiers)))
-      _            <- forwardMessage(conversationId, messagesRequest)
-      _ <- EitherT(conversationRepository.addMessageToConversation(client, conversationId, message(sender)))
+      _            <- forwardMessage(conversation.id, messagesRequest)
+      _ <- EitherT(
+            conversationRepository.addMessageToConversation(conversation.client, conversation.id, message(sender)))
             .leftWiden[SecureMessageError]
     } yield ()
   }.value

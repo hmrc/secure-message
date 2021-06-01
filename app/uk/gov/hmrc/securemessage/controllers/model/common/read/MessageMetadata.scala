@@ -34,9 +34,7 @@ final case class MessageMetadata(
   issueDate: DateTime,
   senderName: Option[String],
   unreadMessages: Boolean,
-  count: Int,
-  conversationId: Option[String],
-  client: Option[String]
+  count: Int
 )
 
 object MessageMetadata extends ApiFormats with ImplicitClassesExtensions {
@@ -56,9 +54,7 @@ object MessageMetadata extends ApiFormats with ImplicitClassesExtensions {
       issueDate = conversation.issueDate,
       senderName = cm.senderName,
       unreadMessages = conversation.unreadMessagesFor(reader.asIdentifiers).nonEmpty,
-      count = cm.count,
-      conversationId = Some(cm.conversationId),
-      client = Some(cm.client)
+      count = cm.count
     )
   }
   private def map(letter: Letter): MessageMetadata = {
@@ -71,9 +67,7 @@ object MessageMetadata extends ApiFormats with ImplicitClassesExtensions {
       issueDate = letter.issueDate,
       senderName = Some(al.senderInformation.name),
       unreadMessages = letter.readTime.isEmpty,
-      count = 1,
-      None,
-      None
+      count = 1
     )
   }
 

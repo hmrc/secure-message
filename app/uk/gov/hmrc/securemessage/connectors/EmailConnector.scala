@@ -23,9 +23,9 @@ import uk.gov.hmrc.http.{ HeaderCarrier, HttpClient, HttpResponse }
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.securemessage.EmailSendingError
+import uk.gov.hmrc.securemessage.controllers.Auditing
 import uk.gov.hmrc.securemessage.models.EmailRequest
 import uk.gov.hmrc.securemessage.models.EmailRequest.emailRequestWrites
-import uk.gov.hmrc.securemessage.services.Auditing
 
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -39,8 +39,10 @@ class EmailConnector @Inject()(
 
   private val emailBaseUrl = servicesConfig.baseUrl("email")
 
-  def send(emailRequest: EmailRequest)(implicit hc: HeaderCarrier): Future[Either[EmailSendingError, Unit]] =
-    httpClient.POST[EmailRequest, HttpResponse](s"$emailBaseUrl/hmrc/email", emailRequest).map { response =>
+  def send(emailRequest: EmailRequest)(implicit hc: HeaderCarrier): Future[Either[EmailSendingError, Unit]] = {
+    val eventualResponse: Future[HttpResponse] =
+      httpClient.POST[EmailRequest, HttpResponse](s"$emailBaseUrl/hmrc/email", emailRequest)
+    eventualResponse.map { response =>
       response.status match {
         case ACCEPTED =>
           val _ = auditEmailSent("NotificationEmailSent", emailRequest, ACCEPTED)
@@ -51,5 +53,6 @@ class EmailConnector @Inject()(
           Left(EmailSendingError(errMsg))
       }
     }
+  }
 
 }

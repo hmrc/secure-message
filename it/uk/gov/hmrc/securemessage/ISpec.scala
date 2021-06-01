@@ -14,21 +14,28 @@
  * limitations under the License.
  */
 
-import java.io.File
+package uk.gov.hmrc.securemessage
+
+import cats.data.NonEmptyList
+import com.github.nscala_time.time.Imports.DateTime
+import org.apache.commons.codec.binary.Base64
 import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.play.PlaySpec
 import play.api.http.{ ContentTypes, HeaderNames }
 import play.api.libs.ws.{ WSClient, WSResponse }
-import play.api.test.Helpers.{ await, defaultAwaitTimeout }
+import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.integration.ServiceSpec
+import uk.gov.hmrc.securemessage.controllers.model.MessageType
+import uk.gov.hmrc.securemessage.models.core.{ Alert, Conversation, ConversationMessage, ConversationStatus, Identifier, Language, Participant, ParticipantType }
 import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository }
-
+import java.io.File
+import play.api.test.Helpers.{ await, defaultAwaitTimeout }
 import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.Random
 
 trait ISpec extends PlaySpec with ServiceSpec with BeforeAndAfterEach with AuthHelper {
 
   implicit val ec: ExecutionContext = app.injector.instanceOf[ExecutionContext]
-
   override def externalServices: Seq[String] = Seq.empty
   override val ggAuthPort: Int = 8585
   override val wsClient: WSClient = app.injector.instanceOf[WSClient]
@@ -42,6 +49,42 @@ trait ISpec extends PlaySpec with ServiceSpec with BeforeAndAfterEach with AuthH
     ()
   }
 
+  protected def encodeId(id: BSONObjectID) = base64Encode(s"${MessageType.Conversation.entryName}/${id.stringify}")
+
+  protected def insertConversation(id: BSONObjectID) = {
+    val conversationId = Random.nextInt(1000).toString
+    val messages = NonEmptyList(ConversationMessage(1, DateTime.now, "content"), List.empty)
+    val conversation = Conversation(
+      id,
+      "CDCM",
+      conversationId,
+      ConversationStatus.Open,
+      Some(Map(("mrn" -> "DMS7324874993"), ("notificationType" -> "CDS-EXPORTS"))),
+      "subject",
+      Language.English,
+      List(
+        Participant(
+          1,
+          ParticipantType.System,
+          Identifier("CDCM", "11111", None),
+          Some("CDS Exports Team"),
+          None,
+          None,
+          None),
+        Participant(
+          2,
+          ParticipantType.Customer,
+          Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")),
+          None,
+          None,
+          None,
+          None),
+      ),
+      messages,
+      Alert("1", None)
+    )
+    conversationRepo.insertIfUnique(conversation).futureValue
+  }
   protected def createConversation: Future[WSResponse] = {
     val wsClient = app.injector.instanceOf[WSClient]
     wsClient
@@ -51,5 +94,7 @@ trait ISpec extends PlaySpec with ServiceSpec with BeforeAndAfterEach with AuthH
   }
 
   override def additionalConfig: Map[String, _] = Map("metrics.jvm" -> false)
+
+  def base64Encode(path: String): String = Base64.encodeBase64String(path.getBytes("UTF-8"))
 
 }

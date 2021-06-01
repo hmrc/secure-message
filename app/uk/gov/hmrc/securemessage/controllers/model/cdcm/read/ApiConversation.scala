@@ -20,6 +20,7 @@ import cats.data.NonEmptyList
 import cats.implicits._
 import org.joda.time.DateTime
 import play.api.libs.json.{ Format, Json, Writes }
+import uk.gov.hmrc.securemessage.controllers.model.ApiMessage
 import uk.gov.hmrc.securemessage.models.core.{ Identifier, _ }
 import uk.gov.hmrc.securemessage.models.utils.NonEmptyListOps.nonEmptyListFormat
 
@@ -30,8 +31,8 @@ final case class ApiConversation(
   tags: Option[Map[String, String]],
   subject: String,
   language: Language,
-  messages: NonEmptyList[ApiMessage]
-)
+  messages: NonEmptyList[ApiConversationMessage]
+) extends ApiMessage
 
 object ApiConversation {
 
@@ -55,7 +56,7 @@ object ApiConversation {
   private def convertToApiMessage(
     coreConversation: Conversation,
     message: ConversationMessage,
-    identifiers: Set[Identifier]): ApiMessage = {
+    identifiers: Set[Identifier]): ApiConversationMessage = {
     val senderPossibly: Option[Participant] = findParticipantViaId(coreConversation, message.senderId)
     val readerPossibly: Option[Participant] = findParticipantViaIdentifiers(coreConversation, identifiers)
     val firstReaderPossibly = firstReaderInformation(coreConversation, message)
@@ -63,12 +64,15 @@ object ApiConversation {
 
     (senderPossibly, firstReaderPossibly, self) match {
       case (Some(sender), Some(_), true) =>
-        ApiMessage(Some(SenderInformation(sender.name, message.created, self)), None, message.content)
+        ApiConversationMessage(Some(SenderInformation(sender.name, message.created, self)), None, message.content)
       case (Some(sender), Some(_), false) =>
-        ApiMessage(Some(SenderInformation(sender.name, message.created, self)), firstReaderPossibly, message.content)
+        ApiConversationMessage(
+          Some(SenderInformation(sender.name, message.created, self)),
+          firstReaderPossibly,
+          message.content)
       case (Some(sender), _, _) =>
-        ApiMessage(Some(SenderInformation(sender.name, message.created, self)), None, message.content)
-      case (_, _, _) => ApiMessage(None, None, message.content)
+        ApiConversationMessage(Some(SenderInformation(sender.name, message.created, self)), None, message.content)
+      case (_, _, _) => ApiConversationMessage(None, None, message.content)
     }
   }
 
