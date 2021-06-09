@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.securemessage.repository
 
-//import cats.implicits._
+import cats.implicits._
 import play.api.libs.json.Json.JsValueWrapper
 import play.api.libs.json._
 import reactivemongo.api.Cursor.ErrorHandler
@@ -81,7 +81,7 @@ abstract class SecureMessageRepository[A: TypeTag, ID](
     val unreadCount: Future[Long] = totalCount.flatMap { total =>
       if (total == 0) {
         Future.successful(0.toLong)
-      } else if (collectionName == "conversation") {
+      } else if (collectionName === "conversation") {
         getConversationsUnreadCount(identifiers, tags)
       } else {
         getMessageUnreadCount(querySelector)
