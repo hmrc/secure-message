@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.securemessage.repository
 
+import cats.implicits.toFoldableOps
 import play.api.libs.json.Json.JsValueWrapper
 import play.api.libs.json._
 import reactivemongo.api.Cursor.ErrorHandler
@@ -79,7 +80,7 @@ abstract class SecureMessageRepository[A: TypeTag, ID](
     val totalCount: Future[Long] = getCount(querySelector)
     val unreadCount: Future[Long] = totalCount.flatMap { total =>
       if (total == 0) {
-        Future.successful(0.toLong)
+        Future.successful(0L)
       } else if (collectionName == "conversation") {
         getConversationsUnreadCount(identifiers, tags)
       } else {
@@ -99,7 +100,7 @@ abstract class SecureMessageRepository[A: TypeTag, ID](
   private[repository] def getConversationsUnreadCount(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
     implicit ec: ExecutionContext): Future[Long] =
     getMessages(identifiers, tags).map { conversations =>
-      conversations.foldLeft(0.toLong)((acc, y) => acc + conversationRead(y, identifiers))
+      conversations.foldMap(c => conversationRead(c, identifiers))
     }
 
   private def getMessageUnreadCount(baseQuery: JsObject)(implicit ec: ExecutionContext) =
