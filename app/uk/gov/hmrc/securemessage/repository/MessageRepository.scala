@@ -17,7 +17,7 @@
 package uk.gov.hmrc.securemessage.repository
 import org.joda.time.LocalDate
 import play.api.libs.json.Json._
-import play.api.libs.json.{ JsArray, JsNull, JsObject, JsString, Json }
+import play.api.libs.json.{ JsArray, JsObject, JsString, Json }
 import reactivemongo.bson.{ BSONDateTime, BSONDocument, BSONNull, BSONObjectID }
 import play.api.libs.json.JodaWrites.{ JodaDateTimeWrites => _, _ }
 import uk.gov.hmrc.mongo.MongoConnector
@@ -95,6 +95,4 @@ class MessageRepository @Inject()(implicit connector: MongoConnector)
         tags.foldLeft(JsArray())((acc, t) => acc ++ Json.arr(Json.obj(s"tags.${t.key}" -> JsString(t.value))))
     )
 
-  override protected def countUnreadQuery(): JsObject =
-    Json.obj("readTime" -> JsNull)
 }

@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.securemessage.repository
 
+import cats.data.NonEmptyList
 import org.joda.time.DateTime
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
@@ -24,7 +25,7 @@ import play.api.test.Helpers._
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.mongo.MongoSpecSupport
 import uk.gov.hmrc.securemessage.helpers.ConversationUtil
-import uk.gov.hmrc.securemessage.models.core.{ Conversation, ConversationMessage, Count, FilterTag, Identifier }
+import uk.gov.hmrc.securemessage.models.core.{ Conversation, ConversationMessage, Count, FilterTag, Identifier, Participant, ParticipantType }
 import uk.gov.hmrc.securemessage.{ MessageNotFound, StoreError }
 
 import scala.collection.immutable
@@ -322,6 +323,123 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
         await(repository.getConversation("12345678", Set()))
       result.left.get.message must include("Invalid BsonId")
     }
+  }
+
+  "Conversation Unread count" should {
+    "render 1 if system Message is after participant readTime" in {
+      val systemMessage = ConversationMessage(1, DateTime.now.minusDays(1), "!!!")
+      val systemParticipant =
+        Participant(1, ParticipantType.System, Identifier("CDCM", "SMF123456789", None), None, None, None, None)
+      val customerParticipant = Participant(
+        2,
+        ParticipantType.Customer,
+        Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")),
+        readTimes = Some(List(DateTime.now().minusDays(2))),
+        name = None,
+        email = None,
+        parameters = None
+      )
+      val conversation = conversation1
+        .copy(messages = NonEmptyList.one(systemMessage), participants = List(systemParticipant, customerParticipant))
+
+      val result =
+        repository.conversationRead(conversation, Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))))
+      result mustBe 1
+    }
+
+    "render 0 if system Message is before participant readTime" in {
+      val systemMessage = ConversationMessage(1, DateTime.now.minusDays(2), "!!!")
+      val systemParticipant =
+        Participant(1, ParticipantType.System, Identifier("CDCM", "SMF123456789", None), None, None, None, None)
+      val customerParticipant = Participant(
+        2,
+        ParticipantType.Customer,
+        Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")),
+        readTimes = Some(List(DateTime.now().minusDays(1))),
+        name = None,
+        email = None,
+        parameters = None
+      )
+      val conversation = conversation1
+        .copy(messages = NonEmptyList.one(systemMessage), participants = List(systemParticipant, customerParticipant))
+
+      val result =
+        repository.conversationRead(conversation, Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))))
+      result mustBe 0
+    }
+
+    "render 0 if customer Message is after participant readTime" in {
+      val customerMessage = ConversationMessage(2, DateTime.now.minusDays(1), "!!!")
+      val systemParticipant =
+        Participant(1, ParticipantType.System, Identifier("CDCM", "SMF123456789", None), None, None, None, None)
+      val customerParticipant = Participant(
+        2,
+        ParticipantType.Customer,
+        Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")),
+        readTimes = Some(List(DateTime.now().minusDays(2))),
+        name = None,
+        email = None,
+        parameters = None
+      )
+      val conversation = conversation1
+        .copy(messages = NonEmptyList.one(customerMessage), participants = List(systemParticipant, customerParticipant))
+
+      val result =
+        repository.conversationRead(conversation, Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))))
+      result mustBe 0
+    }
+
+    "render 1 if system Message is after participant readTime with multiple readTimes" in {
+      val systemMessage = ConversationMessage(1, DateTime.now.minusDays(1), "!!!")
+      val systemParticipant =
+        Participant(1, ParticipantType.System, Identifier("CDCM", "SMF123456789", None), None, None, None, None)
+      val customerParticipant = Participant(
+        2,
+        ParticipantType.Customer,
+        Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")),
+        readTimes = Some(List(DateTime.now().minusDays(2), DateTime.now().minusDays(3))),
+        name = None,
+        email = None,
+        parameters = None
+      )
+      val conversation = conversation1
+        .copy(messages = NonEmptyList.one(systemMessage), participants = List(systemParticipant, customerParticipant))
+
+      val result =
+        repository.conversationRead(conversation, Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))))
+      result mustBe 1
+    }
+
+    "count unread only for old messages" in new TextContextWithInsert(Seq(conversation1, conversation2, conversation3)) {
+      val result = await(
+        repository
+          .getConversationsUnreadCount(Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))), None))
+      result mustBe 2
+    }
+
+  }
+
+  class TextContextWithInsert(conversations: Seq[Conversation]) {
+    val systemMessage = ConversationMessage(1, DateTime.now.minusDays(1), "!!!")
+    val systemMessageOld = ConversationMessage(1, DateTime.now.minusDays(3), "!!!")
+    val systemParticipant =
+      Participant(1, ParticipantType.System, Identifier("CDCM", "SMF123456789", None), None, None, None, None)
+    val customerParticipant = Participant(
+      2,
+      ParticipantType.Customer,
+      Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")),
+      readTimes = Some(List(DateTime.now().minusDays(2))),
+      name = None,
+      email = None,
+      parameters = None
+    )
+    val conversationOne = conversations.head
+      .copy(messages = NonEmptyList.one(systemMessage), participants = List(systemParticipant, customerParticipant))
+    val conversationTwo = conversations.last
+      .copy(messages = NonEmptyList.one(systemMessage), participants = List(systemParticipant, customerParticipant))
+    val conversationThree = conversations.tail.head
+      .copy(messages = NonEmptyList.one(systemMessageOld), participants = List(systemParticipant, customerParticipant))
+    new TestContext(Seq(conversationOne, conversationTwo, conversationThree))
   }
 
   class TestContext(conversations: Seq[Conversation]) {
