@@ -19,7 +19,7 @@ package uk.gov.hmrc.securemessage.repository
 import org.joda.time.DateTime
 import play.api.libs.json.JodaWrites.{ JodaDateTimeWrites => _ }
 import play.api.libs.json.Json.JsValueWrapper
-import play.api.libs.json.{ JsArray, JsBoolean, JsObject, JsString, Json }
+import play.api.libs.json.{ JsArray, JsObject, JsString, Json }
 import reactivemongo.api.indexes.{ Index, IndexType }
 import reactivemongo.bson.BSONObjectID
 import reactivemongo.core.errors.DatabaseException
@@ -137,12 +137,4 @@ class ConversationRepository @Inject()(implicit connector: MongoConnector)
       "$or" ->
         tags.foldLeft(JsArray())((acc, t) => acc ++ Json.arr(Json.obj(s"tags.${t.key}" -> JsString(t.value))))
     )
-
-  override protected def countUnreadQuery(): JsObject =
-    Json.obj(
-      "participants" ->
-        Json.obj(
-          "$not" ->
-            Json.obj("$elemMatch" ->
-              Json.obj("readTimes" -> Json.obj("$exists" -> JsBoolean(true))))))
 }

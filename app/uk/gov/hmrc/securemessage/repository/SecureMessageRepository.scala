@@ -16,14 +16,15 @@
 
 package uk.gov.hmrc.securemessage.repository
 
-import play.api.libs.json.Json.{ JsValueWrapper }
+//import cats.implicits._
+import play.api.libs.json.Json.JsValueWrapper
 import play.api.libs.json._
 import reactivemongo.api.Cursor.ErrorHandler
 import reactivemongo.api.{ Cursor, DB, ReadConcern }
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
-import uk.gov.hmrc.securemessage.models.core.{ Count, FilterTag, Identifier }
+import uk.gov.hmrc.securemessage.models.core.{ Conversation, Count, FilterTag, Identifier }
 import uk.gov.hmrc.securemessage.{ InvalidBsonId, MessageNotFound, SecureMessageError }
 
 import scala.concurrent.{ ExecutionContext, Future }
@@ -76,11 +77,14 @@ abstract class SecureMessageRepository[A: TypeTag, ID](
   protected def getMessagesCount(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
     implicit ec: ExecutionContext): Future[Count] = {
     val querySelector = messagesQuerySelector(identifiers, tags)
-
     val totalCount: Future[Long] = getCount(querySelector)
     val unreadCount: Future[Long] = totalCount.flatMap { total =>
-      if (total == 0) { Future.successful(0.toLong) } else {
-        getCount(Json.obj("$and" -> Json.arr(querySelector, countUnreadQuery)))
+      if (total == 0) {
+        Future.successful(0.toLong)
+      } else if (collectionName == "conversation") {
+        getConversationsUnreadCount(identifiers, tags)
+      } else {
+        getMessageUnreadCount(querySelector)
       }
     }
 
@@ -89,6 +93,18 @@ abstract class SecureMessageRepository[A: TypeTag, ID](
       unread <- unreadCount
     } yield Count(total, unread)
   }
+
+  private[repository] def conversationRead(conversation: A, identifier: Set[Identifier]): Long =
+    if (conversation.asInstanceOf[Conversation].unreadMessagesFor(identifier).isEmpty) 0 else 1
+
+  private[repository] def getConversationsUnreadCount(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
+    implicit ec: ExecutionContext): Future[Long] =
+    getMessages(identifiers, tags).map { conversations =>
+      conversations.foldLeft(0.toLong)((acc, y) => acc + conversationRead(y, identifiers))
+    }
+
+  private def getMessageUnreadCount(baseQuery: JsObject)(implicit ec: ExecutionContext) =
+    getCount(Json.obj("$and" -> Json.arr(baseQuery, Json.obj("readTime" -> JsNull))))
 
   private def getCount(selectorObj: JsObject)(implicit ec: ExecutionContext): Future[Long] =
     if (selectorObj != JsObject.empty) {
@@ -137,7 +153,5 @@ abstract class SecureMessageRepository[A: TypeTag, ID](
   protected def findByIdentifierQuery(identifier: Identifier): Seq[(String, JsValueWrapper)]
 
   protected def tagQuery(tags: List[FilterTag]): JsObject
-
-  protected def countUnreadQuery(): JsObject
 
 }
