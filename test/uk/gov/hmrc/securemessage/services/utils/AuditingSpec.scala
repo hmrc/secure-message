@@ -294,7 +294,11 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
     "send correct audit details when email sent" in {
       val _ = auditEmailSent(
         EventTypes.Succeeded,
-        EmailRequest(List(EmailAddress(emailAddress)), templateId, Map("firstName" -> "Joe", "lastName" -> "Bloggs")),
+        EmailRequest(
+          List(EmailAddress(emailAddress)),
+          templateId,
+          Map("firstName" -> "Joe", "lastName" -> "Bloggs"),
+          None),
         ACCEPTED)
       verify(auditConnector).sendExplicitAudit(
         EventTypes.Succeeded,
@@ -310,7 +314,11 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
     "send correct audit details when email not sent" in {
       val _ = auditEmailSent(
         EventTypes.Failed,
-        EmailRequest(List(EmailAddress(emailAddress)), templateId, Map("firstName" -> "Joe", "lastName" -> "Bloggs")),
+        EmailRequest(
+          List(EmailAddress(emailAddress)),
+          templateId,
+          Map("firstName" -> "Joe", "lastName" -> "Bloggs"),
+          None),
         ACCEPTED)
       verify(auditConnector).sendExplicitAudit(
         EventTypes.Failed,

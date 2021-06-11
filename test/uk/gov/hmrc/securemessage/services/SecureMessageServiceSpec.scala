@@ -95,6 +95,35 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
       result.futureValue mustBe Left(InvalidContent(
         "Html contains disallowed tags, attributes or protocols within the tags: matt. For allowed elements see class org.jsoup.safety.Whitelist.relaxed()"))
     }
+
+    "send enrolmentString to email" in new TestHelpers {
+      service.createConversation(conversation).futureValue
+
+      verify(mockEmailConnector, times(1)).send(
+        EmailRequest(
+          List(EmailAddress("test@test.com")),
+          "emailTemplateId",
+          Map("param1" -> "value1", "param2" -> "value2"),
+          Some("HMRC-CUS-ORG~EORINumber~GB1234567890")))
+    }
+
+    "send enrolmentString None if enrolment is empty" in new TestHelpers {
+      val customerP = Participant(
+        2,
+        ParticipantType.Customer,
+        Identifier(identifierName, identifierValue90, None),
+        None,
+        Some(EmailAddress("test@test.com")),
+        None,
+        None)
+      service.createConversation(conversation.copy(participants = List(customerP))).futureValue
+      verify(mockEmailConnector, times(1)).send(
+        EmailRequest(
+          List(EmailAddress("test@test.com")),
+          "emailTemplateId",
+          Map("param1" -> "value1", "param2" -> "value2"),
+          None))
+    }
   }
 
   "getConversations" must {
@@ -581,10 +610,11 @@ trait TestHelpers extends MockitoSugar with UnitTest {
   implicit val messages: Messages = stubMessages()
   implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
   val objectID: BSONObjectID = BSONObjectID.generate()
-  private val identifierName = "EORINumber"
-  private val identifierValue90 = "GB1234567890"
-  private val identifierEnrolment = "HMRC-CUS-ORG"
+  protected val identifierName = "EORINumber"
+  protected val identifierValue90 = "GB1234567890"
+  protected val identifierEnrolment = "HMRC-CUS-ORG"
   val identifier: Identifier = Identifier(identifierName, identifierValue90, Some(identifierEnrolment))
+  val identifierWithNoEnrolment: Identifier = Identifier(identifierName, identifierValue90, Some(identifierEnrolment))
   val participant: Participant = Participant(1, ParticipantType.Customer, identifier, None, None, None, None)
   val mockEisConnector: EISConnector = mock[EISConnector]
   val mockAuditConnector: AuditConnector = mock[AuditConnector]
@@ -593,6 +623,10 @@ trait TestHelpers extends MockitoSugar with UnitTest {
   val mockEmailConnector: EmailConnector = mock[EmailConnector]
   when(mockEmailConnector.send(any[EmailRequest])(any[HeaderCarrier])).thenReturn(Future.successful(Right(())))
   val mockChannelPreferencesConnector: ChannelPreferencesConnector = mock[ChannelPreferencesConnector]
+  when(mockChannelPreferencesConnector.getEmailForEnrolment(any[Identifier])(any[HeaderCarrier]))
+    .thenReturn(Future.successful(Right(EmailAddress("test@test.com"))))
+  when(mockConversationRepository.insertIfUnique(any[Conversation])(any[ExecutionContext]))
+    .thenReturn(Future.successful(Right(())))
   val service: SecureMessageService =
     new SecureMessageService(
       mockConversationRepository,
@@ -624,13 +658,14 @@ trait TestHelpers extends MockitoSugar with UnitTest {
   def caseWorkerMessage(content: String): CaseworkerMessage =
     CaseworkerMessage(content)
 
-  private val conversation: Conversation = ConversationUtil
+  protected val conversation: Conversation = ConversationUtil
     .getFullConversation(
       BSONObjectID.generate,
       "D-80542-20201120",
       identifierEnrolment,
       identifierName,
-      identifierValue90)
+      identifierValue90,
+      email = Some(EmailAddress("test@test.com")))
   val conversations = List(conversation)
   val letter: Letter = MessageUtil.getMessage("subject", "content")
   val letters = List(letter)

@@ -221,14 +221,25 @@ class SecureMessageService @Inject()(
           val _ = auditRetrieveEmail(None)
           Left(CustomerEmailError(customerParticipant, elr))
     }))
-
   @SuppressWarnings(
     Array("org.wartremover.warts.Nothing", "org.wartremover.warts.Any", "org.wartremover.warts.Product"))
   private def sendAlert(receivers: CustomerParticipants, alert: core.Alert)(
     implicit hc: HeaderCarrier,
     ec: ExecutionContext): EitherT[Future, SecureMessageError, Unit] = {
+
+    val enrolmentString = receivers.success.map(_.identifier).headOption.flatMap { identifier =>
+      identifier.enrolment match {
+        case Some(key) => Some(s"$key~${identifier.name}~${identifier.value}")
+        case _         => None
+      }
+    }
+
     def emailRequest =
-      EmailRequest(receivers.success.flatMap(_.email), alert.templateId, alert.parameters.getOrElse(Map()))
+      EmailRequest(
+        receivers.success.flatMap(_.email),
+        alert.templateId,
+        alert.parameters.getOrElse(Map()),
+        enrolmentString)
     for {
       _ <- validateEmailReceivers(receivers)(errorCondition = receivers.success.isEmpty)
       _ <- EitherT(emailConnector.send(emailRequest)).leftWiden[SecureMessageError]
