@@ -48,7 +48,7 @@ class EmailConnectorSpec extends PlaySpec with ScalaFutures with MockitoSugar {
       val emailConnector = new EmailConnector(httpClient, servicesConfig, auditConnector)
 
       val result =
-        emailConnector.send(EmailRequest(List(EmailAddress("test@test.com")), "", Map.empty))(new HeaderCarrier())
+        emailConnector.send(EmailRequest(List(EmailAddress("test@test.com")), "", Map.empty, None))(new HeaderCarrier())
 
       result.futureValue.right.get mustBe (())
     }
@@ -65,7 +65,7 @@ class EmailConnectorSpec extends PlaySpec with ScalaFutures with MockitoSugar {
       val emailConnector = new EmailConnector(httpClient, servicesConfig, auditConnector)
 
       val result =
-        emailConnector.send(EmailRequest(List(EmailAddress("test@test.com")), "", Map.empty))(new HeaderCarrier())
+        emailConnector.send(EmailRequest(List(EmailAddress("test@test.com")), "", Map.empty, None))(new HeaderCarrier())
       result.futureValue.left.get.message must include("Email request failed")
     }
   }
