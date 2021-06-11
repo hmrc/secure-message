@@ -19,6 +19,7 @@ package uk.gov.hmrc.securemessage.helpers
 import cats.data.NonEmptyList
 import org.joda.time.DateTime
 import reactivemongo.bson.BSONObjectID
+import uk.gov.hmrc.emailaddress.EmailAddress
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CdcmConversation
 import uk.gov.hmrc.securemessage.controllers.model.common.write.{ Customer, Recipient }
 import uk.gov.hmrc.securemessage.models.core
@@ -50,7 +51,8 @@ object ConversationUtil {
       )),
     alert: core.Alert = alert,
     messageCreationDate: String = "2020-11-10T15:00:01.000",
-    readTimes: Option[List[DateTime]] = None
+    readTimes: Option[List[DateTime]] = None,
+    email: Option[EmailAddress] = None
   ): Conversation =
     Conversation(
       objectId,
@@ -75,7 +77,7 @@ object ConversationUtil {
           ParticipantType.Customer,
           Identifier(enrolmentName, enrolmentValue, Some(enrolmentKey)),
           None,
-          None,
+          email,
           None,
           readTimes
         )
