@@ -25,6 +25,7 @@ object AppDependencies {
     "uk.gov.hmrc"       %% "simple-reactivemongo"      % "7.31.0-play-27",
     "uk.gov.hmrc"       %% "time"                      % "3.19.0",
     "uk.gov.hmrc"       %% "emailaddress"              % "3.5.0",
+    "uk.gov.hmrc"       %% "emailaddress"              % "3.5.0",
     "org.webjars"       % "swagger-ui"                 % "3.42.0",
     "com.beachape"      %% "enumeratum-play"           % "1.5.17",
     "com.typesafe.play" %% "play-json-joda"            % "2.9.1",
@@ -37,7 +38,7 @@ object AppDependencies {
     "uk.gov.hmrc"            %% "reactivemongo-test"       % "4.22.0-play-27" % Test,
     "com.typesafe.play"      %% "play-test"                % current          % Test,
     "org.scalatestplus.play" %% "scalatestplus-play"       % "4.0.3"          % "test, it",
-    "org.mockito"            % "mockito-core"              % "3.11.1"          % "test, it",
+    "org.mockito"            % "mockito-core"              % "3.11.1"         % "test, it",
     "uk.gov.hmrc"            %% "service-integration-test" % "0.13.0-play-27" % "test, it",
     "org.pegdown"            % "pegdown"                   % "1.6.0"          % "test, it"
   )

@@ -23,7 +23,6 @@ import play.api.http.{ ContentTypes, HeaderNames }
 import java.io.File
 
 @DoNotDiscover
-@SuppressWarnings(Array("org.wartremover.warts.All"))
 class PostCustomerReadTimeISpec extends ISpec {
 
   "A POST request to /secure-messaging/conversation/{client}/{conversationId}/read-time" should {

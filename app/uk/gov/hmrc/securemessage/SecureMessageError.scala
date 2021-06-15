@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.securemessage
 
-@SuppressWarnings(Array("org.wartremover.warts.DefaultArguments", "org.wartremover.warts.Null"))
 sealed class SecureMessageError(val message: String, val cause: Option[Throwable] = None)
 
 final case class StoreError(override val message: String, override val cause: Option[Throwable])
@@ -31,7 +30,6 @@ final case class EmailSendingError(override val message: String) extends SecureM
 
 final case class EmailLookupError(override val message: String) extends SecureMessageError(message)
 
-@SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
 final case class InvalidContent(override val message: String, override val cause: Option[Throwable] = None)
     extends SecureMessageError(message, cause)
 
@@ -44,7 +42,6 @@ final case class ParticipantNotFound(override val message: String) extends Secur
 
 final case class EisForwardingError(override val message: String) extends SecureMessageError(message)
 
-@SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
 final case class InvalidRequest(override val message: String, override val cause: Option[Throwable] = None)
     extends SecureMessageError(message, cause)
 

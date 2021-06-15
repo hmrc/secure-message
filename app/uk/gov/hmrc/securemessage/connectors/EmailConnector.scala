@@ -30,7 +30,6 @@ import uk.gov.hmrc.securemessage.models.EmailRequest.emailRequestWrites
 import scala.concurrent.{ ExecutionContext, Future }
 
 @Singleton
-@SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.Nothing"))
 class EmailConnector @Inject()(
   httpClient: HttpClient,
   servicesConfig: ServicesConfig,

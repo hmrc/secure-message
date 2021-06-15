@@ -50,7 +50,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ ExecutionContext, Future }
 
 //TODO: move test data and mocks to TextContexts
-@SuppressWarnings(Array("org.wartremover.warts.All"))
 class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpers with UnitTest {
 
   "createConversation" must {
@@ -493,7 +492,6 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
       result mustBe Count(2, 1)
     }
   }
-  @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   class AddReadTimesTestContext {
     val mockEisConnector: EISConnector = mock[EISConnector]
     val mockAuditConnector: AuditConnector = mock[AuditConnector]
@@ -523,7 +521,6 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
         mockEisConnector,
         mockAuditConnector)
   }
-  @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   class CreateMessageTestContext(
     dbInsertResult: Either[SecureMessageError, Unit] = Right(()),
     getEmailResult: Either[EmailLookupError, EmailAddress] = Right(EmailAddress("joeblogs@yahoo.com"))) {
@@ -533,7 +530,6 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
       .thenReturn(Future(getEmailResult))
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   class GetConversationTestContext(getConversationResult: Either[MessageNotFound, Conversation]) {
     when(
       mockConversationRepository.getConversation(any[String], any[String], any[Set[Identifier]])(any[ExecutionContext]))
@@ -543,7 +539,6 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
       .thenReturn(Future.successful(Right(())))
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   class GetMessagesTestContext(dbConversations: List[Conversation] = conversations, dbLetters: List[Letter] = letters) {
     when(
       mockConversationRepository.getConversations(any[Set[Identifier]], any[Option[List[FilterTag]]])(
@@ -553,7 +548,6 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
       .thenReturn(Future(dbLetters))
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   class GetConversationByIDTestContext(getConversationResult: Either[MessageNotFound, Conversation]) {
     when(mockConversationRepository.getConversation(any[String], any[Set[Identifier]])(any[ExecutionContext]))
       .thenReturn(Future(getConversationResult))
@@ -562,7 +556,6 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
       .thenReturn(Future.successful(Right(())))
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   class GetConversationByIDWithReadTimeErrorTestContext(getConversationResult: Either[MessageNotFound, Conversation]) {
     when(mockConversationRepository.getConversation(any[String], any[Set[Identifier]])(any[ExecutionContext]))
       .thenReturn(Future(getConversationResult))
@@ -571,7 +564,6 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
       .thenReturn(Future.successful(Left(StoreError("Can not store read time", None))))
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   class AddCustomerMessageTestContext(
     getConversationResult: Either[MessageNotFound, Conversation],
     addMessageResult: Either[SecureMessageError, Unit] = Right(()))
@@ -585,7 +577,6 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
       .thenReturn(Future(addMessageResult))
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   class AddCaseworkerMessageTestContent(
     getConversationResult: Either[MessageNotFound, Conversation] = Right(cnvWithNoEmail),
     addMessageResult: Either[SecureMessageError, Unit] = Right(()),
@@ -602,7 +593,6 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
 }
 
 //TODO: change this with specialized TestCases, reuse values: no strings
-@SuppressWarnings(Array("org.wartremover.warts.TraversableOps", "org.wartremover.warts.NonUnitStatements"))
 trait TestHelpers extends MockitoSugar with UnitTest {
   import uk.gov.hmrc.auth.core.Enrolment
   implicit val hc: HeaderCarrier = HeaderCarrier()

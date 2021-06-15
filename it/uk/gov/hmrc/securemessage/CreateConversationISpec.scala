@@ -25,7 +25,6 @@ import play.api.test.Helpers._
 import java.io.File
 
 @DoNotDiscover
-@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class CreateConversationISpec extends ISpec {
 
   "A PUT request to /secure-messaging/conversation/{client}/{conversationId}" should {

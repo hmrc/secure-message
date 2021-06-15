@@ -21,7 +21,6 @@ import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag }
 
 package object binders {
 
-  @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.Nothing"))
   implicit def queryStringBindableCustomerEnrolment(
     implicit stringBinder: QueryStringBindable[String]): QueryStringBindable[CustomerEnrolment] =
     new QueryStringBindable[CustomerEnrolment] {
@@ -36,7 +35,6 @@ package object binders {
         s"${customerEnrolment.key}~${customerEnrolment.name}~${customerEnrolment.value}"
     }
 
-  @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.Nothing"))
   implicit def queryStringBindableTag(
     implicit stringBinder: QueryStringBindable[String]): QueryStringBindable[FilterTag] =
     new QueryStringBindable[FilterTag] {

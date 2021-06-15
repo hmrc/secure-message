@@ -26,7 +26,6 @@ import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core.Conversation._
 import uk.gov.hmrc.securemessage.models.core._
 
-@SuppressWarnings(Array("org.wartremover.warts.All"))
 class ConversationMetadataSpec extends PlaySpec {
 
   implicit val messages: Messages = stubMessages()

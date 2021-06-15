@@ -34,7 +34,6 @@ import scala.concurrent.Future
 
 //TODO: remove PlaySpec from all tests except controllers
 //TODO: reuse test data as variables, do not have same string twice anywhere
-@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.EitherProjectionPartial"))
 class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with BeforeAndAfterEach with ScalaFutures {
 
   val repository: ConversationRepository = new ConversationRepository()

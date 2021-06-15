@@ -32,12 +32,10 @@ import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success, Try }
 
 @Singleton
-@SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
 class ChannelPreferencesConnector @Inject()(config: Configuration, httpClient: HttpClient)(
   implicit ec: ExecutionContext)
     extends ServicesConfig(config) with Logging {
 
-  @SuppressWarnings(Array("org.wartremover.warts.Nothing"))
   def getEmailForEnrolment(id: Identifier)(implicit hc: HeaderCarrier): Future[Either[EmailLookupError, EmailAddress]] =
     httpClient
       .GET[HttpResponse](
@@ -54,7 +52,6 @@ class ChannelPreferencesConnector @Inject()(config: Configuration, httpClient: H
         }
       }
 
-  @SuppressWarnings(Array("org.wartremover.warts.Nothing"))
   private def parseEmail(body: String): Either[EmailLookupError, EmailAddress] =
     Try(Json.parse(body)) match {
       case Success(v) =>

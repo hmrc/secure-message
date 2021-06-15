@@ -54,11 +54,6 @@ import uk.gov.hmrc.securemessage.services.SecureMessageService
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ ExecutionContext, ExecutionException, Future }
 
-@SuppressWarnings(
-  Array(
-    "org.wartremover.warts.NonUnitStatements",
-    "org.wartremover.warts.OptionPartial",
-    "org.wartremover.warts.EitherProjectionPartial"))
 class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with MockitoSugar with OptionValues with UnitTest {
 
   implicit val mat: Materializer = NoMaterializer
@@ -418,7 +413,6 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     }
 
   }
-  @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
   class TestCase(authEnrolments: Set[CustomerEnrolment] = Set(testEnrolment)) {
     val mockRepository: ConversationRepository = mock[ConversationRepository]
     val mockAuthConnector: AuthConnector = mock[AuthConnector]
@@ -451,7 +445,6 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     body = fullConversationJson
   )
 
-  @SuppressWarnings(Array("org.wartremover.warts.OptionPartial"))
   class CreateConversationTestCase(
     requestBody: JsValue,
     serviceResponse: Future[Either[SecureMessageError, Unit]],
@@ -476,7 +469,6 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       .thenReturn(serviceResponse)
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
   class CreateCustomerMessageTestCase(serviceResponse: Future[Either[SecureMessageError, Unit]]) extends TestCase {
     val encodedId: String = base64Encode(MessageType.Conversation.entryName + "/" + "D-80542-20201120")
     val fakeRequest: FakeRequest[JsObject] = FakeRequest(
@@ -492,7 +484,6 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
 
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments", "org.wartremover.warts.EitherProjectionPartial"))
   class GetConversationsTestCase(
     storedConversationsMetadata: JsValue,
     authEnrolments: Set[CustomerEnrolment] = Set(testEnrolment),
@@ -511,7 +502,6 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       .thenReturn(Future.successful(conversationsMetadata))
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments", "org.wartremover.warts.EitherProjectionPartial"))
   class GetMessagesTestCase(
     storedConversations: List[JsValue] = List(Resources.readJson("model/core/full-db-conversation.json")),
     storedLetters: List[JsValue] = List(Resources.readJson("model/core/full-db-letter.json")),
@@ -544,7 +534,6 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest("GET", "/")
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
   class GetConversationTestCase(
     storedConversation: Option[JsValue],
     authEnrolments: Set[CustomerEnrolment] = Set(testEnrolment))
@@ -557,7 +546,6 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       .thenReturn(Future.successful(apiConversation))
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
   class GetConversationByIdTestCase(
     storedConversation: Option[JsValue],
     authEnrolments: Set[CustomerEnrolment] = Set(testEnrolment))
