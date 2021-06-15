@@ -31,8 +31,6 @@ val silencerVersion = "1.7.0"
 lazy val microservice = Project(appName, file("."))
   .enablePlugins(
     play.sbt.PlayScala,
-    SbtAutoBuildPlugin,
-    SbtGitVersioning,
     SbtDistributablesPlugin,
     SwaggerPlugin
   )
@@ -115,12 +113,6 @@ lazy val microservice = Project(appName, file("."))
   .configs(IntegrationTest)
   .settings(integrationTestSettings(): _*)
   .settings(
-    resolvers ++= Seq(
-      Resolver.jcenterRepo,
-      Resolver.bintrayRepo("hmrc", "releases"),
-      Resolver.bintrayRepo("jetbrains", "markdown"),
-      "bintray-djspiewak-maven" at "https://dl.bintray.com/djspiewak/maven"
-    ),
     inConfig(IntegrationTest)(
       scalafmtCoreSettings ++
         Seq(compileInputs in compile := Def.taskDyn {
