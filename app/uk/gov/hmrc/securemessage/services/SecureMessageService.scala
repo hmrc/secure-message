@@ -42,11 +42,6 @@ import java.util.UUID
 import scala.concurrent.{ ExecutionContext, Future }
 
 //TODO: refactor service to only accept core model classes as params
-@SuppressWarnings(
-  Array(
-    "org.wartremover.warts.ImplicitParameter",
-    "org.wartremover.warts.Product",
-    "org.wartremover.warts.Serializable"))
 class SecureMessageService @Inject()(
   conversationRepository: ConversationRepository,
   messageRepository: MessageRepository,
@@ -134,7 +129,6 @@ class SecureMessageService @Inject()(
     } yield ()
   }.value
 
-  @SuppressWarnings(Array("org.wartremover.warts.Any"))
   def addCustomerMessage(id: String, messagesRequest: CustomerMessage, enrolments: Enrolments)(
     implicit ec: ExecutionContext,
     request: Request[_]): Future[Either[SecureMessageError, Unit]] = {
@@ -150,7 +144,6 @@ class SecureMessageService @Inject()(
     } yield ()
   }.value
 
-  @SuppressWarnings(Array("org.wartremover.warts.Any"))
   private def forwardMessage(conversationId: String, messagesRequest: CustomerMessage)(
     implicit ec: ExecutionContext,
     request: Request[_]): EitherT[Future, SecureMessageError, Unit] = {
@@ -175,7 +168,6 @@ class SecureMessageService @Inject()(
     EitherT(eisConnector.forwardMessage(queryMessageWrapper)).leftWiden[SecureMessageError]
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.Any"))
   private[services] def addReadTime(conversation: Conversation, identifiers: Set[Identifier], readTime: DateTime)(
     implicit ec: ExecutionContext): EitherT[Future, SecureMessageError, Unit] = {
 
@@ -221,8 +213,7 @@ class SecureMessageService @Inject()(
           val _ = auditRetrieveEmail(None)
           Left(CustomerEmailError(customerParticipant, elr))
     }))
-  @SuppressWarnings(
-    Array("org.wartremover.warts.Nothing", "org.wartremover.warts.Any", "org.wartremover.warts.Product"))
+
   private def sendAlert(receivers: CustomerParticipants, alert: core.Alert)(
     implicit hc: HeaderCarrier,
     ec: ExecutionContext): EitherT[Future, SecureMessageError, Unit] = {

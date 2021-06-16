@@ -27,7 +27,6 @@ import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata
 import java.io.File
 
 @DoNotDiscover
-@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class AddMessageToConversationISpec extends ISpec {
 
   "A POST request to /secure-messaging/conversation/{client}/{conversationId}/customer-message" must {

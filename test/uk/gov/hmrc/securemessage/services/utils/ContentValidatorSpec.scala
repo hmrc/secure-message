@@ -29,11 +29,6 @@ import uk.gov.hmrc.securemessage.services.utils.ContentValidator.DecodedBase64
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-@SuppressWarnings(
-  Array(
-    "org.wartremover.warts.NonUnitStatements",
-    "org.wartremover.warts.EitherProjectionPartial",
-    "org.wartremover.warts.Any"))
 class ContentValidatorSpec extends PlaySpec {
 
   "validate" should {

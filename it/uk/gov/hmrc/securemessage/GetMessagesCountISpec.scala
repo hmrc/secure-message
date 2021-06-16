@@ -24,7 +24,6 @@ import reactivemongo.bson.BSONObjectID
 import java.io.File
 
 @DoNotDiscover
-@SuppressWarnings(Array("org.wartremover.warts.All"))
 class GetMessagesCountISpec extends ISpec {
 
   "A GET request to /secure-messaging/messages/count for a filtered query" should {

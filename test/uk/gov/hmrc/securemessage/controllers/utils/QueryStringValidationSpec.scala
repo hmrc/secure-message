@@ -18,7 +18,6 @@ package uk.gov.hmrc.securemessage.controllers.utils
 
 import org.scalatestplus.play.PlaySpec
 
-@SuppressWarnings(Array("org.wartremover.warts.IsInstanceOf", "org.wartremover.warts.NonUnitStatements"))
 class QueryStringValidationSpec extends PlaySpec with QueryStringValidation {
 
   "InvalidQueryParameterException class" must {

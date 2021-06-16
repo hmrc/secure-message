@@ -35,7 +35,6 @@ import scala.concurrent.{ ExecutionContext, Future }
 
 //TODO: add tests for the connector
 @Singleton
-@SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
 class EISConnector @Inject()(
   httpClient: HttpClient,
   servicesConfig: ServicesConfig,

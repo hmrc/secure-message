@@ -23,7 +23,6 @@ import play.api.test.Helpers._
 import java.io.File
 
 @DoNotDiscover
-@SuppressWarnings(Array("org.wartremover.warts.All"))
 class GetMessagesISpec extends ISpec {
 
   "A GET request to /secure-messaging/messages for a filtered query" should {
