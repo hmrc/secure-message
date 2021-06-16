@@ -31,7 +31,6 @@ import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository }
 
 import scala.concurrent.ExecutionContext
-@SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
 class TestOnlyController @Inject()(
   cc: ControllerComponents,
   conversationRepository: ConversationRepository,

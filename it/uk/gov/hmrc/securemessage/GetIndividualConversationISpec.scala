@@ -20,7 +20,6 @@ import org.scalatest.DoNotDiscover
 import reactivemongo.bson.BSONObjectID
 
 @DoNotDiscover
-@SuppressWarnings(Array("org.wartremover.warts.All"))
 class GetIndividualConversationISpec extends ISpec {
 
   "A GET request to /secure-messaging/conversation/:client/:conversationId" should {

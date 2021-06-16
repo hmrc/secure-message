@@ -32,7 +32,6 @@ import scala.collection.Seq
 import scala.concurrent.{ ExecutionContext, Future }
 
 @Singleton
-@SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.Nothing"))
 class ConversationRepository @Inject()(implicit connector: MongoConnector)
     extends SecureMessageRepository[Conversation, BSONObjectID](
       "conversation",
@@ -69,7 +68,6 @@ class ConversationRepository @Inject()(implicit connector: MongoConnector)
     implicit ec: ExecutionContext): Future[Count] =
     getMessagesCount(identifiers, tags)
 
-  @SuppressWarnings(Array("org.wartremover.warts.OptionPartial"))
   def getConversation(client: String, conversationId: String, identifiers: Set[Identifier])(
     implicit ec: ExecutionContext): Future[Either[MessageNotFound, Conversation]] =
     collection

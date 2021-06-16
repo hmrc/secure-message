@@ -23,7 +23,6 @@ import uk.gov.hmrc.time.DateTimeUtils
 
 import javax.inject.Singleton
 
-@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class SecureMessageModule extends AbstractModule {
 
   @Provides

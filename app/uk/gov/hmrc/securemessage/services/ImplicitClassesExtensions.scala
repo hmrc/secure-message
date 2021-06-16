@@ -40,7 +40,6 @@ trait ImplicitClassesExtensions {
         enrolmentIdentifier <- eoriEnrolment.getIdentifier(enrolmentName)
       } yield CustomerEnrolment(eoriEnrolment.key, enrolmentIdentifier.key, enrolmentIdentifier.value)
 
-    @SuppressWarnings(Array("org.wartremover.warts.Option2Iterable"))
     def filter(enrolmentKeys: Set[String], customerEnrolments: Set[CustomerEnrolment]): Set[CustomerEnrolment] = {
       val originalEnrolments: Set[CustomerEnrolment] = enrolments.asCustomerEnrolments
       def enrolmentKeysFiltered: Set[CustomerEnrolment] =

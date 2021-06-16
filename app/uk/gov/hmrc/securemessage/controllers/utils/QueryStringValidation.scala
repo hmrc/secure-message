@@ -25,7 +25,6 @@ final case class InvalidQueryParameterException(invalidParams: List[String])
 
 trait QueryStringValidation {
 
-  @SuppressWarnings(Array("org.wartremover.warts.Nothing"))
   protected def validateQueryParameters(
     queryString: Map[String, Seq[String]],
     allowedParamKeys: String*): Either[InvalidQueryStringException, QueryStringValidationSuccess] =

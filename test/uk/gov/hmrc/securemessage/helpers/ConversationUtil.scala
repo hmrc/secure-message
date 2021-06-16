@@ -37,7 +37,6 @@ object ConversationUtil {
           CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890")
         )) :: cnv.recipients)
   }
-  @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
   def getFullConversation(
     objectId: BSONObjectID = BSONObjectID.generate,
     id: String,

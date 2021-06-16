@@ -24,7 +24,6 @@ import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core._
 import Conversation._
 
-@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class ApiConversationSpec extends PlaySpec {
 
   "ApiConversation" must {

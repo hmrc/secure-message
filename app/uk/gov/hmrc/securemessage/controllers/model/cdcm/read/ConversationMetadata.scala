@@ -33,7 +33,6 @@ final case class ConversationMetadata(
 
 object ConversationMetadata extends ApiFormats {
 
-  @SuppressWarnings(Array("org.wartremover.warts.Overloading", "org.wartremover.warts.ImplicitParameter"))
   def coreToConversationMetadata(coreConversation: Conversation, reader: Set[Identifier])(
     implicit messages: Messages): ConversationMetadata =
     ConversationMetadata(
@@ -46,7 +45,6 @@ object ConversationMetadata extends ApiFormats {
       coreConversation.messages.size
     )
 
-  @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
   private def findLatestMessageName(coreConversation: Conversation)(implicit messages: Messages): Option[String] =
     coreConversation.latestParticipant.flatMap { participant =>
       participant.name match {

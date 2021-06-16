@@ -32,7 +32,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ Await, Future }
 
-@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class ChannelPreferencesConnectorSpec extends PlaySpec with ScalaFutures with MockitoSugar {
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
