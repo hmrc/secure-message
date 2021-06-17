@@ -37,7 +37,7 @@ trait AuthHelper extends ScalaFutures {
       | {
       |  "credId": "secure-message-001",
       |  "affinityGroup": "Organisation",
-      |  "confidenceLevel": 250,
+      |  "confidenceLevel": 200,
       |  "credentialStrength": "none",
       |  "enrolments": []
       |  }
@@ -48,7 +48,7 @@ trait AuthHelper extends ScalaFutures {
        | {
        |  "credId": "secure-message-002",
        |  "affinityGroup": "Organisation",
-       |  "confidenceLevel": 250,
+       |  "confidenceLevel": 200,
        |  "credentialStrength": "none",
        |  "enrolments": [
        |      {

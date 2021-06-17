@@ -24,7 +24,7 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json.Writes
-import uk.gov.hmrc.http.{ HeaderCarrier, HttpClient, HttpResponse }
+import uk.gov.hmrc.http.{ HttpClient, HttpResponse }
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.securemessage.models.{ QueryMessageRequest, QueryMessageWrapper, RequestCommon, RequestDetail }
@@ -42,7 +42,6 @@ class EISConnectorSpec extends PlaySpec with ScalaFutures with MockitoSugar {
       when(
         httpClient.doPut(any[String], any[String](), any[Seq[(String, String)]]())(
           any[Writes[String]](),
-          any[HeaderCarrier](),
           any[ExecutionContext]()))
         .thenReturn(Future.successful(HttpResponse(NO_CONTENT, "")))
 
@@ -55,7 +54,6 @@ class EISConnectorSpec extends PlaySpec with ScalaFutures with MockitoSugar {
       when(
         httpClient.doPut(any[String], any[String](), any[Seq[(String, String)]]())(
           any[Writes[String]](),
-          any[HeaderCarrier](),
           any[ExecutionContext]()))
         .thenReturn(Future.successful(HttpResponse(BAD_REQUEST, "")))
 
