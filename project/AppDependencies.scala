@@ -20,7 +20,7 @@ import sbt._
 object AppDependencies {
 
   val compile = Seq(
-    "uk.gov.hmrc"       %% "bootstrap-backend-play-27" % "5.4.0",
+    "uk.gov.hmrc"       %% "bootstrap-backend-play-28" % "5.7.0",
     "uk.gov.hmrc"       %% "simple-reactivemongo"      % "7.31.0-play-27",
     "uk.gov.hmrc"       %% "time"                      % "3.19.0",
     "uk.gov.hmrc"       %% "emailaddress"              % "3.5.0",
@@ -36,8 +36,8 @@ object AppDependencies {
     "uk.gov.hmrc"            %% "bootstrap-test-play-27"   % "4.0.0"          % Test,
     "uk.gov.hmrc"            %% "reactivemongo-test"       % "4.22.0-play-27" % Test,
     "com.typesafe.play"      %% "play-test"                % current          % Test,
-    "org.scalatestplus.play" %% "scalatestplus-play"       % "4.0.3"          % "test, it",
-    "org.mockito"            % "mockito-core"              % "3.11.1"         % "test, it",
+    "org.scalatestplus.play" %% "scalatestplus-play"       % "5.1.0"          % "test, it",
+    "org.mockito"            % "mockito-core"              % "3.11.2"         % "test, it",
     "uk.gov.hmrc"            %% "service-integration-test" % "0.13.0-play-27" % "test, it",
     "org.pegdown"            % "pegdown"                   % "1.6.0"          % "test, it"
   )
