@@ -17,6 +17,7 @@
 package uk.gov.hmrc.securemessage.services
 
 import akka.stream.Materializer
+import akka.stream.testkit.NoMaterializer
 import org.joda.time.DateTime
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
@@ -28,7 +29,7 @@ import play.api.i18n.Messages
 import play.api.libs.json.{ JsObject, Json }
 import play.api.mvc.AnyContentAsEmpty
 import play.api.test.Helpers._
-import play.api.test.{ FakeRequest, NoMaterializer }
+import play.api.test.{ FakeRequest }
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.auth.core.{ Enrolment, EnrolmentIdentifier, Enrolments }
 import uk.gov.hmrc.emailaddress.EmailAddress

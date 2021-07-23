@@ -17,10 +17,11 @@
 package uk.gov.hmrc.securemessage.controllers.utils
 
 import org.apache.commons.codec.binary.Base64
-import org.scalatest.{ FreeSpec, MustMatchers }
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must.Matchers
 import uk.gov.hmrc.securemessage.controllers.model.MessageType
 
-class IdCoderSpec extends FreeSpec with MustMatchers {
+class IdCoderSpec extends AnyFreeSpec with Matchers {
 
   val id = "6086dc1f4700009fed2f5745"
   "decodeId should" - {
