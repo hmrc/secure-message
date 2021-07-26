@@ -93,7 +93,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
         json.as[Conversation]
       private val result = service.createConversation(invalidBaseHtmlConversation)
       result.futureValue mustBe Left(InvalidContent(
-        "Html contains disallowed tags, attributes or protocols within the tags: matt. For allowed elements see class org.jsoup.safety.Whitelist.relaxed()"))
+        "Html contains disallowed tags, attributes or protocols within the tags: matt. For allowed elements see class org.jsoup.safety.Safelist.relaxed()"))
     }
 
     "send enrolmentString to email" in new TestHelpers {
@@ -405,7 +405,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
           "D-80542-20201120",
           caseWorkerMessage("PG1hdHQ+Q2FuIEkgaGF2ZSBteSB0YXggbW9uZXkgcGxlYXNlPzwvbWF0dD4="))) mustBe
         Left(InvalidContent(
-          "Html contains disallowed tags, attributes or protocols within the tags: matt. For allowed elements see class org.jsoup.safety.Whitelist.relaxed()"))
+          "Html contains disallowed tags, attributes or protocols within the tags: matt. For allowed elements see class org.jsoup.safety.Safelist.relaxed()"))
     }
   }
 
