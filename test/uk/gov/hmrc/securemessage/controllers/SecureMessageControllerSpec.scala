@@ -17,6 +17,7 @@
 package uk.gov.hmrc.securemessage.controllers
 
 import akka.stream.Materializer
+import akka.stream.testkit.NoMaterializer
 import org.joda.time.{ DateTime, LocalDate }
 import org.mockito.ArgumentMatchers.{ any, eq => eqTo }
 import org.mockito.Mockito.{ times, verify, when }
@@ -31,7 +32,7 @@ import play.api.i18n.Messages
 import play.api.libs.json.{ JsObject, JsValue, Json }
 import play.api.mvc.{ AnyContentAsEmpty, Request, Result }
 import play.api.test.Helpers.{ POST, PUT, contentAsJson, contentAsString, defaultAwaitTimeout, status, stubMessages }
-import play.api.test.{ FakeHeaders, FakeRequest, Helpers, NoMaterializer }
+import play.api.test.{ FakeHeaders, FakeRequest, Helpers }
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.authorise.Predicate

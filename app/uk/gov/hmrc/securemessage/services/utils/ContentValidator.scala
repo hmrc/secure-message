@@ -20,7 +20,7 @@ import cats.data.EitherT
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{ Document, Element }
 import org.jsoup.parser.Parser
-import org.jsoup.safety.Whitelist
+import org.jsoup.safety.Safelist
 import uk.gov.hmrc.securemessage.InvalidContent
 import java.nio.charset.StandardCharsets
 import java.util.Base64
@@ -74,7 +74,7 @@ object ContentValidator {
   }
 
   private[utils] def validateAllowedHtml(content: Html, dom: Document): Either[InvalidContent, Html] = {
-    val whitelist = Whitelist.relaxed()
+    val whitelist = Safelist.relaxed()
     if (!Jsoup.isValid(content, whitelist)) {
       val disallowedElements = listDisallowedHtmlElements(content, dom, whitelist).mkString(", ")
       Left(
@@ -86,7 +86,7 @@ object ContentValidator {
     }
   }
 
-  private[utils] def listDisallowedHtmlElements(content: Html, dom: Document, whitelist: Whitelist): Seq[String] =
+  private[utils] def listDisallowedHtmlElements(content: Html, dom: Document, whitelist: Safelist): Seq[String] =
     dom.getAllElements.asScala.collect {
       case e: Element if content.contains(e.tagName()) && !Jsoup.isValid(e.toString, whitelist) => e.tagName()
     }

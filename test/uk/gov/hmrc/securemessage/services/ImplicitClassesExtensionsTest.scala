@@ -16,12 +16,13 @@
 
 package uk.gov.hmrc.securemessage.services
 
-import org.scalatest.{ FreeSpec, MustMatchers }
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must.Matchers
 import uk.gov.hmrc.auth.core.{ EnrolmentIdentifier, Enrolments }
 import uk.gov.hmrc.securemessage.models.core.CustomerEnrolment
 
 class ImplicitClassesExtensionsTest
-    extends FreeSpec with MustMatchers with ImplicitClassesExtensions with EnrolmentsTestData {
+    extends AnyFreeSpec with Matchers with ImplicitClassesExtensions with EnrolmentsTestData {
 
   "EnrolmentsExtensions" - {
 

@@ -18,7 +18,8 @@ package uk.gov.hmrc.securemessage
 
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{ atLeastOnce, verify, when }
-import org.scalatest.{ FreeSpec, MustMatchers }
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.http.Status.{ BAD_REQUEST, NOT_FOUND }
 import play.api.mvc.RequestHeader
@@ -27,7 +28,7 @@ import uk.gov.hmrc.play.bootstrap.backend.http.JsonErrorHandler
 
 import scala.concurrent.Future
 
-class ErrorHandlerSpec extends FreeSpec with MockitoSugar with MustMatchers {
+class ErrorHandlerSpec extends AnyFreeSpec with MockitoSugar with Matchers {
   val jsonErrorHandler: JsonErrorHandler = mock[JsonErrorHandler]
   when(jsonErrorHandler.onClientError(any[RequestHeader], any[Int], any[String])).thenReturn(Future.successful(Ok("")))
   when(jsonErrorHandler.onServerError(any[RequestHeader], any[Throwable])).thenReturn(Future.successful(Ok("")))

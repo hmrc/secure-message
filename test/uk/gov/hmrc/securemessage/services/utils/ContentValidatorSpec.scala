@@ -20,7 +20,7 @@ import org.apache.commons.codec.binary.Base64
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.parser.Parser
-import org.jsoup.safety.Whitelist
+import org.jsoup.safety.Safelist
 import org.scalatestplus.play.PlaySpec
 import play.api.test.Helpers._
 import uk.gov.hmrc.securemessage.InvalidContent
@@ -107,20 +107,20 @@ class ContentValidatorSpec extends PlaySpec {
   "listDisallowedHtmlElements" should {
     "return empty list for allowed html" in new TestContext {
       private val html: String = allowedHtml
-      ContentValidator.listDisallowedHtmlElements(html, html.asDom, Whitelist.relaxed()) mustBe Seq[String]()
+      ContentValidator.listDisallowedHtmlElements(html, html.asDom, Safelist.relaxed()) mustBe Seq[String]()
     }
 
     "return disallowed tags" in new TestContext {
       private val html: String = disallowedTagsHtml
       private val disallowedTags: Seq[String] =
-        ContentValidator.listDisallowedHtmlElements(html, html.asDom, Whitelist.relaxed())
+        ContentValidator.listDisallowedHtmlElements(html, html.asDom, Safelist.relaxed())
       disallowedTags must contain theSameElementsAs Seq("html", "body")
     }
 
     "return tags containing disallowed attributes" in new TestContext {
       private val html: String = disallowedAttributesHtml
       private val disallowedTags: Seq[String] =
-        ContentValidator.listDisallowedHtmlElements(html, html.asDom, Whitelist.relaxed())
+        ContentValidator.listDisallowedHtmlElements(html, html.asDom, Safelist.relaxed())
       disallowedTags must contain theSameElementsAs Seq("h2", "p")
     }
   }
@@ -147,6 +147,6 @@ class ContentValidatorSpec extends PlaySpec {
   implicit class StringExtensions(string: String) {
     def asBase64: String = Base64.encodeBase64String(string.getBytes)
     def asDom: Document = Parser.parse(string, "")
-    def clean: String = Jsoup.clean(string, Whitelist.relaxed())
+    def clean: String = Jsoup.clean(string, Safelist.relaxed())
   }
 }
