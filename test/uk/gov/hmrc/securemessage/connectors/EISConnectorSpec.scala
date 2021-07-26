@@ -17,7 +17,6 @@
 package uk.gov.hmrc.securemessage.connectors
 
 import com.github.nscala_time.time.Imports.DateTime
-// import controllers.Assets.{ BAD_REQUEST, NO_CONTENT }
 import play.api.http.Status.BAD_REQUEST
 import play.api.http.Status.NO_CONTENT
 import org.mockito.ArgumentMatchers.any
