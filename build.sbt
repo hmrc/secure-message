@@ -178,6 +178,7 @@ dependencyUpdatesFilter -= moduleFilter(organization = "com.typesafe.play")
 dependencyUpdatesFilter -= moduleFilter(organization = "org.scalatestplus.play")
 dependencyUpdatesFilter -= moduleFilter(organization = "org.webjars")
 dependencyUpdatesFilter -= moduleFilter(name = "enumeratum-play")
+dependencyUpdatesFilter -= moduleFilter(name = "flexmark-all")
 
 sources in (Compile, doc) := Seq.empty
 

@@ -73,7 +73,7 @@ class AddMessageToConversationISpec extends ISpec {
     "return BAD_REQUEST when invalid message content is supplied" in new CaseworkerTestCase(
       "./it/resources/cdcm/caseworker-message-invalid-html.json") {
       response.status mustBe BAD_REQUEST
-      response.body mustBe "\"Error on message with client: Some(CDCM), message id: D-80542-20201120, error message: Html contains disallowed tags, attributes or protocols within the tags: matt. For allowed elements see class org.jsoup.safety.Whitelist.relaxed()\""
+      response.body mustBe "\"Error on message with client: Some(CDCM), message id: D-80542-20201120, error message: Html contains disallowed tags, attributes or protocols within the tags: matt. For allowed elements see class org.jsoup.safety.Safelist.relaxed()\""
     }
   }
 
