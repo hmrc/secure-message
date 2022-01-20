@@ -18,7 +18,7 @@ package uk.gov.hmrc.securemessage.models.core
 
 import play.api.libs.json.{ Json, OFormat }
 
-final case class Count(total: Long, unread: Long)
+final case class Count(total: Int, unread: Int)
 
 object Count {
   implicit val formatCount: OFormat[Count] = Json.format[Count]

@@ -17,49 +17,42 @@
 package uk.gov.hmrc.securemessage.repository
 
 import org.joda.time.DateTime
+import org.mongodb.scala.bson.ObjectId
+import org.mongodb.scala.model._
 import play.api.libs.json.JodaWrites.{ JodaDateTimeWrites => _ }
-import play.api.libs.json.Json.JsValueWrapper
-import play.api.libs.json.{ JsArray, JsObject, JsString, Json }
-import reactivemongo.api.indexes.{ Index, IndexType }
-import reactivemongo.bson.BSONObjectID
-import reactivemongo.core.errors.DatabaseException
-import uk.gov.hmrc.mongo.MongoConnector
+import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.securemessage._
-import uk.gov.hmrc.securemessage.models.core.ConversationMessage.dateTimeFormat
-import uk.gov.hmrc.securemessage.models.core.{ Conversation, ConversationMessage, Count, FilterTag, Identifier }
+import uk.gov.hmrc.securemessage.models.core.{ Filters => _, _ }
+
 import javax.inject.{ Inject, Singleton }
 import scala.collection.Seq
 import scala.concurrent.{ ExecutionContext, Future }
 
 @Singleton
-class ConversationRepository @Inject()(implicit connector: MongoConnector)
-    extends SecureMessageRepository[Conversation, BSONObjectID](
+class ConversationRepository @Inject()(mongo: MongoComponent)(implicit ec: ExecutionContext)
+    extends SecureMessageRepository[Conversation](
       "conversation",
-      connector.db,
-      Conversation.conversationFormat) {
+      mongo,
+      Conversation.conversationFormat,
+      Seq(
+        IndexModel(Indexes.ascending("client")),
+        IndexModel(Indexes.ascending("id"))
+      )) {
 
-  private val DuplicateKey = 11000
-
-  override def indexes: Seq[Index] =
-    Seq(
-      Index(
-        key = Seq("client" -> IndexType.Ascending, "id" -> IndexType.Ascending),
-        name = Some("unique-conversation"),
-        unique = true,
-        sparse = true))
+//  private val DuplicateKey = 11000
 
   def insertIfUnique(conversation: Conversation)(
     implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] =
-    insert(conversation)
-      .map(_ => Right(()))
+    collection
+      .insertOne(conversation)
+      .toFuture()
       .recoverWith {
-        case e: DatabaseException if e.code.contains(DuplicateKey) =>
-          val errMsg = "Duplicate conversation: " + e.getMessage()
-          Future.successful(Left(DuplicateConversationError(errMsg, Some(e))))
-        case e: DatabaseException =>
-          val errMsg = s"Database error trying to store conversation ${conversation.id}: " + e.getMessage()
+        case e =>
+          val errMsg = s"Database error trying to store conversation ${conversation.id}: " + e.getMessage
           Future.successful(Left(StoreError(errMsg, Some(e))))
       }
+      .map(_ => Right(()))
 
   def getConversations(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
     implicit ec: ExecutionContext): Future[List[Conversation]] = getMessages(identifiers, tags)
@@ -69,70 +62,72 @@ class ConversationRepository @Inject()(implicit connector: MongoConnector)
     getMessagesCount(identifiers, tags)
 
   def getConversation(client: String, conversationId: String, identifiers: Set[Identifier])(
-    implicit ec: ExecutionContext): Future[Either[MessageNotFound, Conversation]] =
+    implicit ec: ExecutionContext): Future[Either[MessageNotFound, Conversation]] = {
+    val query = identifierQuery(identifiers)
     collection
-      .find[JsObject, Conversation](
-        selector = Json.obj("client" -> client, "id" -> conversationId)
-          deepMerge identifierQuery(identifiers),
-        None)
-      .one[Conversation] map {
-      case Some(c) => Right(c)
-      case None =>
-        Left(MessageNotFound(s"Conversation not found for identifier: $identifiers"))
-    }
+      .find(
+        Filters.and(Filters.equal("id", conversationId), Filters.equal("client", client), query)
+      )
+      .sort(Filters.equal("_id", -1))
+      .first()
+      .toFuture()
+      .map(Option(_) match {
+        case Some(m) => Right(m)
+        case None    => Left(MessageNotFound(s"Conversation not found for identifiers: $identifiers"))
+      })
+      .recoverWith {
+        case exception =>
+          Future.successful(Left(MessageNotFound(exception.getMessage)))
+      }
+  }
 
-  def getConversation(id: String, identifiers: Set[Identifier])(
+  def getConversation(id: ObjectId, identifiers: Set[Identifier])(
     implicit ec: ExecutionContext): Future[Either[SecureMessageError, Conversation]] =
     getMessage(id, identifiers)
 
   def addMessageToConversation(client: String, conversationId: String, message: ConversationMessage)(
-    implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] =
+    implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] = {
+    val query = Filters.and(Filters.equal("client", client), Filters.equal("id", conversationId))
     collection
-      .update(ordered = false)
-      .one[JsObject, JsObject](
-        conversationQuery(client, conversationId),
-        Json.obj("$push" -> Json.obj("messages" -> message))
-      )
-      .map(_.errmsg match {
-        case Some(errMsg) =>
-          Left(StoreError(s"Message not created for $client and $conversationId. error: $errMsg", None))
-        case _ => Right(())
-      })
-
-  private def conversationQuery(client: String, conversationId: String): JsObject =
-    Json.obj("client" -> client, "id" -> conversationId)
+      .updateOne(query, Updates.addToSet("messages", message))
+      .toFuture()
+      .map(_ => Right(()))
+      .recover {
+        case e =>
+          Left(StoreError(s"Message not created for $client and $conversationId. error: ${e.getMessage}", None))
+      }
+  }
 
   def addReadTime(client: String, conversationId: String, participantId: Int, readTime: DateTime)(
-    implicit ec: ExecutionContext): Future[Either[StoreError, Unit]] =
+    implicit ec: ExecutionContext): Future[Either[StoreError, Unit]] = {
+    val query = Filters.and(Filters.equal("client", client), Filters.equal("id", conversationId))
+    println(query)
+    println(participantId)
     collection
-      .update(ordered = false)
-      .one[JsObject, JsObject](
-        Json.obj("client" -> client, "id" -> conversationId, "participants.id" -> participantId),
-        Json.obj("$push"  -> Json.obj("participants.$.readTimes" -> readTime))
+      .updateOne(
+        query,
+        Updates.combine(
+          Updates.set("participants.$.readTimes", Codecs.toBson(Conversation.readTimeJson(readTime)))
+        ),
+        UpdateOptions().upsert(true)
       )
-      .map(_.errmsg match {
-        case Some(errMsg) => Left(StoreError(errMsg, None))
-        case None         => Right(())
-      })
+      .toFuture()
+      .map(_ => Right(()))
+      .recover { case error => Left(StoreError(error.getMessage, None)) }
+  }
 
-  override protected def findByIdentifierQuery(identifier: Identifier): Seq[(String, JsValueWrapper)] =
+  override protected def findByIdentifierQuery(identifier: Identifier): Seq[(String, String)] =
     identifier.enrolment match {
       case Some(enrolment) =>
         Seq(
-          "participants.identifier.name"      -> JsString(identifier.name),
-          "participants.identifier.value"     -> JsString(identifier.value),
-          "participants.identifier.enrolment" -> JsString(enrolment)
+          "participants.identifier.name"      -> identifier.name,
+          "participants.identifier.value"     -> identifier.value,
+          "participants.identifier.enrolment" -> enrolment
         )
       case None =>
         Seq(
-          "participants.identifier.name"  -> JsString(identifier.name),
-          "participants.identifier.value" -> JsString(identifier.value)
+          "participants.identifier.name"  -> identifier.name,
+          "participants.identifier.value" -> identifier.value
         )
     }
-
-  override protected def tagQuery(tags: List[FilterTag]): JsObject =
-    Json.obj(
-      "$or" ->
-        tags.foldLeft(JsArray())((acc, t) => acc ++ Json.arr(Json.obj(s"tags.${t.key}" -> JsString(t.value))))
-    )
 }

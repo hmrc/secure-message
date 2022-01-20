@@ -18,14 +18,15 @@ package uk.gov.hmrc.securemessage.repository
 
 import cats.data.NonEmptyList
 import org.joda.time.DateTime
+import org.mongodb.scala.bson.ObjectId
+import org.mongodb.scala.model.Filters
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.play.PlaySpec
 import play.api.test.Helpers._
-import reactivemongo.bson.BSONObjectID
-import uk.gov.hmrc.mongo.MongoSpecSupport
+import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 import uk.gov.hmrc.securemessage.helpers.ConversationUtil
-import uk.gov.hmrc.securemessage.models.core.{ Conversation, ConversationMessage, Count, FilterTag, Identifier, Participant, ParticipantType }
+import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.securemessage.{ MessageNotFound, StoreError }
 
 import scala.collection.immutable
@@ -34,18 +35,19 @@ import scala.concurrent.Future
 
 //TODO: remove PlaySpec from all tests except controllers
 //TODO: reuse test data as variables, do not have same string twice anywhere
-class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with BeforeAndAfterEach with ScalaFutures {
+class ConversationRepositorySpec
+    extends PlaySpec with DefaultPlayMongoRepositorySupport[Conversation] with BeforeAndAfterEach with ScalaFutures {
 
-  val repository: ConversationRepository = new ConversationRepository()
+  override lazy val repository: ConversationRepository = new ConversationRepository(mongoComponent)
 
   val conversation1: Conversation =
-    ConversationUtil.getFullConversation(BSONObjectID.generate, "123", "HMRC-CUS-ORG", "EORINumber", "GB1234567890")
+    ConversationUtil.getFullConversation(new ObjectId(), "123", "HMRC-CUS-ORG", "EORINumber", "GB1234567890")
 
   val conversation2: Conversation =
-    ConversationUtil.getFullConversation(BSONObjectID.generate, "234", "HMRC-CUS-ORG", "EORINumber", "GB1234567890")
+    ConversationUtil.getFullConversation(new ObjectId(), "234", "HMRC-CUS-ORG", "EORINumber", "GB1234567890")
   val conversation3: Conversation =
     ConversationUtil.getFullConversation(
-      BSONObjectID.generate,
+      new ObjectId(),
       "345",
       "IR-SA",
       "UTR",
@@ -53,11 +55,11 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
       Some(Map("sourceId" -> "self-assessment")))
   val conversation4: Conversation =
     ConversationUtil
-      .getFullConversation(BSONObjectID.generate, "456", "IR-CT", "UTR", "345678901", Some(Map("caseId" -> "CT-11345")))
+      .getFullConversation(new ObjectId(), "456", "IR-CT", "UTR", "345678901", Some(Map("caseId" -> "CT-11345")))
   val allConversations = Seq(conversation1, conversation2, conversation3, conversation4)
 
   override def beforeEach(): Unit =
-    repository.removeAll().map(_ => ()).futureValue
+    repository.collection.drop().toFuture().map(_ => ()).futureValue
 
   //TODO: group test by their function name
   "A full conversation" should {
@@ -65,9 +67,9 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
       conversations = Seq()
     ) {
       val conversation: Conversation =
-        ConversationUtil.getFullConversation(BSONObjectID.generate, "123", "HMRC-CUS-ORG", "EORINumber", "GB1234567890")
-      await(repository.insert(conversation))
-      val count: Int = await(repository.count)
+        ConversationUtil.getFullConversation(new ObjectId(), "123", "HMRC-CUS-ORG", "EORINumber", "GB1234567890")
+      await(repository.collection.insertOne(conversation).toFuture())
+      val count = await(repository.collection.countDocuments().toFuture())
       count mustEqual 1
     }
   }
@@ -77,8 +79,8 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
       conversations = Seq()
     ) {
       val conversation: Conversation = ConversationUtil.getMinimalConversation(id = "123")
-      await(repository.insert(conversation))
-      val count: Int = await(repository.count)
+      await(repository.collection.insertOne(conversation).toFuture())
+      val count = await(repository.collection.countDocuments().toFuture())
       count mustEqual 1
 
     }
@@ -228,7 +230,7 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
         conversation.participants.map(id => id.identifier.copy(value = id.identifier.value + "1")).toSet
       val result: Either[MessageNotFound, Conversation] =
         await(repository.getConversation(conversation.client, conversation.id, modifierParticipantEnrolments))
-      result mustBe Left(MessageNotFound(s"Conversation not found for identifier: $modifierParticipantEnrolments"))
+      result mustBe Left(MessageNotFound(s"Conversation not found for identifiers: $modifierParticipantEnrolments"))
     }
   }
 
@@ -246,6 +248,12 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
             conversation.client,
             conversation.id,
             Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")))))
+      println(
+        await(
+          repository.collection
+            .find(Filters.and(Filters.equal("client", conversation.client), Filters.equal("id", conversation.id)))
+            .sort(Filters.equal("_id", -1))
+            .toFuture()))
       val result: Conversation = updated.right.get
       result.messages.size mustBe 3
     }
@@ -253,7 +261,7 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
 
   "Update conversation with new read time" should {
     val conversation =
-      ConversationUtil.getFullConversation(BSONObjectID.generate, "123", "HMRC-CUS-ORG", "EORINumber", "GB1234567890")
+      ConversationUtil.getFullConversation(new ObjectId(), "123", "HMRC-CUS-ORG", "EORINumber", "GB1234567890")
     "return true when a conversation has been successfully update with a new read time" in new TestContext(
       conversations = Seq(conversation)
     ) {
@@ -266,7 +274,7 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
   "getConversationsCount" should {
 
     val conversation =
-      ConversationUtil.getFullConversation(BSONObjectID.generate, "123", "HMRC-CUS-ORG", "EORINumber", "GB1234567890")
+      ConversationUtil.getFullConversation(new ObjectId(), "123", "HMRC-CUS-ORG", "EORINumber", "GB1234567890")
 
     "return 0 total messages and 0 unread" in new TestContext(
       conversations = Seq.empty
@@ -303,7 +311,7 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
       val result =
         await(
           repository
-            .getConversation(conversation._id.stringify, conversation.participants.map(_.identifier).toSet))
+            .getConversation(conversation._id, conversation.participants.map(_.identifier).toSet))
       result.right.get mustBe conversation
     }
 
@@ -313,14 +321,8 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
       private val modifierParticipantEnrolments: Set[Identifier] =
         conversation.participants.map(id => id.identifier.copy(value = id.identifier.value + "1")).toSet
       val result =
-        await(repository.getConversation(conversation._id.stringify, modifierParticipantEnrolments))
-      result mustBe Left(MessageNotFound(s"Conversation not found for identifiers: $modifierParticipantEnrolments"))
-    }
-
-    "not be returned and BsonInInvalid" in new TestContext(Seq.empty) {
-      val result =
-        await(repository.getConversation("12345678", Set()))
-      result.left.get.message must include("Invalid BsonId")
+        await(repository.getConversation(conversation._id, modifierParticipantEnrolments))
+      result mustBe Left(MessageNotFound(s"Message not found for identifiers: $modifierParticipantEnrolments"))
     }
   }
 
@@ -442,6 +444,6 @@ class ConversationRepositorySpec extends PlaySpec with MongoSpecSupport with Bef
   }
 
   class TestContext(conversations: Seq[Conversation]) {
-    await(Future.sequence(conversations.map(repository.insert)))
+    await(Future.sequence(conversations.map(repository.collection.insertOne(_).toFuture())))
   }
 }

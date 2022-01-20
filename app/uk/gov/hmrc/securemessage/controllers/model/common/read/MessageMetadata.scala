@@ -49,7 +49,7 @@ object MessageMetadata extends ApiFormats with ImplicitClassesExtensions {
     val messageType = MessageType.Conversation
     MessageMetadata(
       messageType = messageType,
-      id = IdCoder.encodeId(messageType, conversation._id.stringify),
+      id = IdCoder.encodeId(messageType, conversation._id.toString),
       subject = conversation.subject,
       issueDate = conversation.issueDate,
       senderName = cm.senderName,
@@ -62,7 +62,7 @@ object MessageMetadata extends ApiFormats with ImplicitClassesExtensions {
     val al = ApiLetter.fromCore(letter)
     new MessageMetadata(
       messageType = messageType,
-      id = IdCoder.encodeId(messageType, letter._id.stringify),
+      id = IdCoder.encodeId(messageType, letter._id.toString),
       subject = letter.subject,
       issueDate = letter.issueDate,
       senderName = Some(al.senderInformation.name),

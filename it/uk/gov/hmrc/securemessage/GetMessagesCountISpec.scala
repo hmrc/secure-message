@@ -41,7 +41,7 @@ class GetMessagesCountISpec extends ISpec {
     }
 
     "return a JSON body of count of no unread messages when no filters are provided by leveraging auth enrolments" in {
-      val id = BSONObjectID.generate()
+      val id = new ObjectId()()
       val encodedId = encodeId(id)
       insertConversation(id)
       wsClient

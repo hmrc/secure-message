@@ -18,17 +18,16 @@ package uk.gov.hmrc.securemessage.testonly.controllers
 
 import cats.data.NonEmptyList
 import com.google.inject.Inject
+import org.bson.types.ObjectId
 import org.joda.time.DateTime
 import play.api.Logging
 import play.api.libs.json.{ JsObject, JsValue, Json }
 import play.api.mvc.{ Action, AnyContent, ControllerComponents }
-import reactivemongo.api.WriteConcern
-import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.securemessage.models.core.Language.English
-import uk.gov.hmrc.securemessage.models.core.Letter._
 import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository }
+import org.mongodb.scala.model.Filters
 
 import scala.concurrent.ExecutionContext
 class TestOnlyController @Inject()(
@@ -38,21 +37,21 @@ class TestOnlyController @Inject()(
     extends BackendController(cc) with Logging {
 
   def deleteConversation(id: String): Action[AnyContent] = Action.async { _ =>
-    conversationRepository.removeById(BSONObjectID.parse(id).get, WriteConcern.Default).map { _ =>
+    conversationRepository.collection.deleteOne(Filters.equal("_id", id)).toFuture().map { _ =>
       Ok(s"$id deleted successfully")
     }
   }
 
   def insertMessage(id: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
-    val messageBody: JsObject = request.body.as[JsObject] + ("_id" -> Json.toJson(BSONObjectID.parse(id).get))
+    val messageBody: JsObject = request.body.as[JsObject] + ("_id" -> Json.toJson(id))
     val letter = messageBody.validate[Letter].get
-    messageRepository.insert(letter).map(_ => Created)
+    messageRepository.collection.insertOne(letter).toFuture().map(_ => Created)
   }
 
   def insertConversation(id: String): Action[JsValue] = Action.async(parse.json) { _ =>
     val identifier = Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))
     val conversation = Conversation(
-      BSONObjectID.parse(id).get,
+      id.asInstanceOf[ObjectId],
       "CDCM",
       id,
       ConversationStatus.Open,
@@ -88,13 +87,12 @@ class TestOnlyController @Inject()(
       ),
       Alert("", None)
     )
-    conversationRepository.insert(conversation).map(_ => Created)
+    conversationRepository.insertIfUnique(conversation).map(_ => Created)
   }
 
   def deleteMessage(id: String): Action[AnyContent] =
-    Action.async(
-      _ =>
-        messageRepository
-          .removeById(BSONObjectID.parse(id).get, WriteConcern.Default)
-          .map(_ => Ok(s"message $id deleted successfully")))
+    Action.async(_ =>
+      messageRepository.collection.deleteOne(Filters.equal("_id", id)).toFuture().map { _ =>
+        Ok(s"message $id deleted successfully")
+    })
 }

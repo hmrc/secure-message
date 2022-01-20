@@ -17,7 +17,7 @@
 package uk.gov.hmrc.securemessage.helpers
 
 import org.joda.time.{ DateTime, LocalDate }
-import reactivemongo.bson.BSONObjectID
+import org.mongodb.scala.bson.ObjectId
 import uk.gov.hmrc.securemessage.models.core._
 
 object MessageUtil {
@@ -26,7 +26,7 @@ object MessageUtil {
     content: String,
     validFrom: LocalDate = LocalDate.now(),
     readTime: DateTime = DateTime.now()): Letter = Letter(
-    BSONObjectID.generate(),
+    new ObjectId(),
     subject,
     validFrom,
     "",
@@ -34,7 +34,7 @@ object MessageUtil {
     None,
     "",
     content,
-    false,
+    statutory = false,
     Some(DateTime.now()),
     Recipient("", Identifier("", "", None), None),
     RenderUrl("", ""),

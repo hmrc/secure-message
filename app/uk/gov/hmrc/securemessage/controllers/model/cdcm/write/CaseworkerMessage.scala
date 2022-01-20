@@ -21,7 +21,7 @@ import uk.gov.hmrc.securemessage.models.core.Identifier
 
 final case class CaseworkerMessage(content: String) {
   def senderIdentifier(clientName: String, conversationId: String): Identifier =
-    Identifier(clientName.toString, conversationId, None)
+    Identifier(clientName, conversationId, None)
 }
 
 object CaseworkerMessage {

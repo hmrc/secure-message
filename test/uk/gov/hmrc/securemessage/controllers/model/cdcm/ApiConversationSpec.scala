@@ -18,16 +18,16 @@ package uk.gov.hmrc.securemessage.controllers.model.cdcm
 
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json.{ JsObject, JsValue, Json }
-import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.ApiConversation
 import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core._
 import Conversation._
+import org.mongodb.scala.bson.ObjectId
 
 class ApiConversationSpec extends PlaySpec {
 
   "ApiConversation" must {
-    val objectID = BSONObjectID.generate()
+    val objectID = new ObjectId()
     "Convert core conversation to ApiConversation details when hmrc sends first message to customer" in {
       val identifiers = Set(Identifier(name = "EORINumber", value = "GB1234567890", enrolment = Some("HMRC-CUS-ORG")))
       val conversationJson: JsValue = Resources

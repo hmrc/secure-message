@@ -16,11 +16,11 @@
 
 package uk.gov.hmrc.securemessage.controllers.model.cdcm
 
+import org.mongodb.scala.bson.ObjectId
 import org.scalatestplus.play.PlaySpec
 import play.api.i18n.Messages
 import play.api.libs.json.{ JsObject, JsValue, Json }
 import play.api.test.Helpers._
-import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.ConversationMetadata
 import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core.Conversation._
@@ -29,7 +29,7 @@ import uk.gov.hmrc.securemessage.models.core._
 class ConversationMetadataSpec extends PlaySpec {
 
   implicit val messages: Messages = stubMessages()
-  val objectID = BSONObjectID.generate()
+  val objectID = new ObjectId()
   "ConversationMetadata" must {
     "Convert core conversation to conversation metadata and then serialise into JSON" in {
       val identifier = Identifier(name = "EORINumber", value = "GB1234567890", enrolment = Some("HMRC-CUS-ORG"))

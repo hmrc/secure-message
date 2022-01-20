@@ -20,6 +20,7 @@ import cats.data._
 import cats.implicits._
 import com.google.inject.Inject
 import org.joda.time.DateTime
+import org.mongodb.scala.bson.ObjectId
 import play.api.i18n.Messages
 import play.api.mvc.Request
 import uk.gov.hmrc.auth.core.Enrolments
@@ -38,6 +39,7 @@ import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, _ }
 import uk.gov.hmrc.securemessage.models._
 import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository }
 import uk.gov.hmrc.securemessage.services.utils.ContentValidator
+
 import java.util.UUID
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -96,7 +98,7 @@ class SecureMessageService @Inject()(
       )
   }
 
-  def getConversation(id: String, enrolments: Set[CustomerEnrolment])(
+  def getConversation(id: ObjectId, enrolments: Set[CustomerEnrolment])(
     implicit ec: ExecutionContext): Future[Either[SecureMessageError, ApiConversation]] = {
     val identifiers = enrolments.map(_.asIdentifier)
     for {
@@ -105,7 +107,7 @@ class SecureMessageService @Inject()(
     } yield ApiConversation.fromCore(conversation, identifiers)
   }.value
 
-  def getLetter(id: String, enrolments: Set[CustomerEnrolment])(
+  def getLetter(id: ObjectId, enrolments: Set[CustomerEnrolment])(
     implicit ec: ExecutionContext): Future[Either[SecureMessageError, ApiLetter]] = {
     val identifiers = enrolments.map(_.asIdentifier)
     for {
@@ -129,7 +131,7 @@ class SecureMessageService @Inject()(
     } yield ()
   }.value
 
-  def addCustomerMessage(id: String, messagesRequest: CustomerMessage, enrolments: Enrolments)(
+  def addCustomerMessage(id: ObjectId, messagesRequest: CustomerMessage, enrolments: Enrolments)(
     implicit ec: ExecutionContext,
     request: Request[_]): Future[Either[SecureMessageError, Unit]] = {
     def message(sender: Participant) = ConversationMessage(sender.id, new DateTime(), messagesRequest.content)

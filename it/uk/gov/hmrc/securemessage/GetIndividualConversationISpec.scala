@@ -35,7 +35,7 @@ class GetIndividualConversationISpec extends ISpec {
     }
 
     "return a JSON body of [No conversation found] when id doesn't exist" in {
-      val id = BSONObjectID.generate()
+      val id = new ObjectId()()
       val encodedId = encodeId(id)
       createConversation map { _ =>
         val response =
@@ -60,7 +60,7 @@ class GetIndividualConversationISpec extends ISpec {
   }
 
   class TestCase() {
-    val id = BSONObjectID.generate()
+    val id = new ObjectId()()
     val encodedId = encodeId(id)
     insertConversation(id)
   }

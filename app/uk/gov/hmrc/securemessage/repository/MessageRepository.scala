@@ -15,41 +15,31 @@
  */
 
 package uk.gov.hmrc.securemessage.repository
-import org.joda.time.LocalDate
-import play.api.libs.json.Json._
-import play.api.libs.json.{ JsArray, JsObject, JsString, Json }
-import reactivemongo.bson.{ BSONDateTime, BSONDocument, BSONNull, BSONObjectID }
-import play.api.libs.json.JodaWrites.{ JodaDateTimeWrites => _, _ }
-import uk.gov.hmrc.mongo.MongoConnector
-import uk.gov.hmrc.securemessage.{ SecureMessageError, StoreError }
+import org.bson.types.ObjectId
+import org.mongodb.scala.bson.conversions.Bson
+import org.mongodb.scala.model._
+import play.api.libs.json.JodaWrites.{ JodaDateTimeWrites => _ }
+import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.securemessage.models.core.{ Count, FilterTag, Identifier, Letter }
-import reactivemongo.play.json.ImplicitBSONHandlers.BSONDocumentWrites
+import uk.gov.hmrc.securemessage.{ SecureMessageError, StoreError }
 
 import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
-import scala.util.{ Failure, Success }
 
-class MessageRepository @Inject()(implicit connector: MongoConnector)
-    extends SecureMessageRepository[Letter, BSONObjectID](
+class MessageRepository @Inject()(mongo: MongoComponent)(implicit ec: ExecutionContext)
+    extends SecureMessageRepository[Letter](
       "message",
-      connector.db,
+      mongo,
       Letter.letterFormat
     ) {
 
-  override protected def messagesQuerySelector(
-    identifiers: Set[Identifier],
-    tags: Option[List[FilterTag]]): JsObject = {
+  override protected def messagesQuerySelector(identifiers: Set[Identifier], tags: Option[List[FilterTag]]): Bson = {
     val superQuery = super.messagesQuerySelector(identifiers, tags)
-    if (superQuery.fields.isEmpty) {
+    if (superQuery == Filters.empty()) {
       superQuery
     } else {
-      Json.obj(
-        "$and" -> Json
-          .arr(
-            superQuery,
-            Json.obj("validFrom" -> Json.obj("$lte" -> LocalDate.now()))
-          )
-      )
+      Filters.and(superQuery, Filters.lte("validFrom", Codecs.toBson(Letter.localDateNow)))
     }
   }
 
@@ -61,38 +51,33 @@ class MessageRepository @Inject()(implicit connector: MongoConnector)
     implicit ec: ExecutionContext): Future[Count] =
     getMessagesCount(identifiers, tags)
 
-  def getLetter(id: String, identifiers: Set[Identifier])(
+  def getLetter(id: ObjectId, identifiers: Set[Identifier])(
     implicit ec: ExecutionContext): Future[Either[SecureMessageError, Letter]] = getMessage(id, identifiers)
 
-  def addReadTime(id: String)(implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] =
-    withCurrentTime { implicit time =>
-      BSONObjectID.parse(id) match {
-        case Success(bsonId) =>
-          collection
-            .update(ordered = false)
-            .one(
-              BSONDocument("_id"  -> bsonId, "readTime" -> BSONNull),
-              BSONDocument("$set" -> BSONDocument("readTime" -> BSONDateTime(time.getMillis)))
-            )
-            .map(_ => Right(()))
-        case Failure(error) => Future.successful(Left(StoreError(error.getMessage, None)))
+  def addReadTime(id: ObjectId)(implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] =
+    collection
+      .updateOne(
+        filter = Filters.and(Filters.equal("_id", id), Filters.exists("readTime", exists = false)),
+        update = Updates.set("readTime", Codecs.toBson(Letter.dateTimeNow))
+      )
+      .toFuture()
+      .map(_ => Right(()))
+      .recoverWith {
+        case error => Future.successful(Left(StoreError(error.getMessage, None)))
       }
-    }
 
-  override protected def findByIdentifierQuery(identifier: Identifier): Seq[(String, JsValueWrapper)] =
+  override protected def findByIdentifierQuery(identifier: Identifier): Seq[(String, String)] =
     identifier.enrolment match {
       case Some(enrolment) =>
-        Seq[(String, JsValueWrapper)](
-          "recipient.identifier.name"  -> JsString(enrolment),
-          "recipient.identifier.value" -> JsString(identifier.value)
+        Seq[(String, String)](
+          "recipient.identifier.name"  -> enrolment,
+          "recipient.identifier.value" -> identifier.value
         )
-      case None => Seq("" -> arr())
+      case None =>
+        Seq[(String, String)](
+          "recipient.identifier.name"  -> "Unknown",
+          "recipient.identifier.value" -> identifier.value
+        )
     }
-
-  override protected def tagQuery(tags: List[FilterTag]): JsObject =
-    Json.obj(
-      "$or" ->
-        tags.foldLeft(JsArray())((acc, t) => acc ++ Json.arr(Json.obj(s"tags.${t.key}" -> JsString(t.value))))
-    )
 
 }

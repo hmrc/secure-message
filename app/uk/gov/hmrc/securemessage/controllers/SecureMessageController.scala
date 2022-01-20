@@ -18,6 +18,7 @@ package uk.gov.hmrc.securemessage.controllers
 
 import cats.data._
 import cats.implicits._
+import org.mongodb.scala.bson.ObjectId
 import play.api.Logging
 import play.api.i18n.I18nSupport
 import play.api.libs.json.{ JsError, JsSuccess, JsValue, Json, Reads }
@@ -99,7 +100,7 @@ class SecureMessageController @Inject()(
       messageTypeAndId <- EitherT(Future.successful(IdCoder.decodeId(encodedId))).leftWiden[SecureMessageError]
       enrolments       <- EitherT(getEnrolments()).leftWiden[SecureMessageError]
       message          <- EitherT(Future.successful(parseAs[CustomerMessage]())).leftWiden[SecureMessageError]
-      _ <- EitherT(secureMessageService.addCustomerMessage(messageTypeAndId._2, message, enrolments))
+      _ <- EitherT(secureMessageService.addCustomerMessage(new ObjectId(messageTypeAndId._2), message, enrolments))
             .leftWiden[SecureMessageError]
     } yield message
     message.value map {
@@ -187,8 +188,8 @@ class SecureMessageController @Inject()(
     id: DecodedId,
     authEnrolments: Enrolments): Future[Either[SecureMessageError, ApiMessage]] =
     messageType match {
-      case Conversation => secureMessageService.getConversation(id, authEnrolments.asCustomerEnrolments)
-      case Letter       => secureMessageService.getLetter(id, authEnrolments.asCustomerEnrolments)
+      case Conversation => secureMessageService.getConversation(new ObjectId(id), authEnrolments.asCustomerEnrolments)
+      case Letter       => secureMessageService.getLetter(new ObjectId(id), authEnrolments.asCustomerEnrolments)
     }
 
   private def getEnrolments()(implicit request: HeaderCarrier): Future[Either[UserNotAuthorised, Enrolments]] =
