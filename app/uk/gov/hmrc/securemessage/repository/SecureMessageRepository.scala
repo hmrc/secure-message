@@ -17,7 +17,6 @@
 package uk.gov.hmrc.securemessage.repository
 
 import cats.implicits.toFoldableOps
-import play.api.Logger
 import play.api.libs.json.Json.JsValueWrapper
 import play.api.libs.json._
 import reactivemongo.api.Cursor.ErrorHandler
@@ -40,7 +39,6 @@ abstract class SecureMessageRepository[A: TypeTag, ID](
     extends ReactiveRepository[A, ID](collectionName, mongo, domainFormat, idFormat) {
   implicit val format: OFormat[A] = domainFormat.asInstanceOf[OFormat[A]]
 
-  private val logger = Logger(getClass.getName)
   protected def messagesQuerySelector(identifiers: Set[Identifier], tags: Option[List[FilterTag]]): JsObject =
     (identifiers, tags) match {
       case (identifiers, _) if identifiers.isEmpty => //TODO: move this case to service
