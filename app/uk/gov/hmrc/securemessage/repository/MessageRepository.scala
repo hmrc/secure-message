@@ -86,6 +86,11 @@ class MessageRepository @Inject()(implicit connector: MongoConnector)
           "recipient.identifier.name"  -> JsString(enrolment),
           "recipient.identifier.value" -> JsString(identifier.value)
         )
+      case Some(enrolment) if enrolment == "IR-SA" =>
+        Seq[(String, JsValueWrapper)](
+          "recipient.identifier.name"  -> JsString("sautr"),
+          "recipient.identifier.value" -> JsString(identifier.value)
+        )
       case None => Seq("" -> arr())
     }
 
