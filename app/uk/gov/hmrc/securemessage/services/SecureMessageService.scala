@@ -20,6 +20,7 @@ import cats.data._
 import cats.implicits._
 import com.google.inject.Inject
 import org.joda.time.DateTime
+import play.api.Logger
 import play.api.i18n.Messages
 import play.api.mvc.Request
 import uk.gov.hmrc.auth.core.Enrolments
@@ -38,6 +39,7 @@ import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, _ }
 import uk.gov.hmrc.securemessage.models._
 import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository }
 import uk.gov.hmrc.securemessage.services.utils.ContentValidator
+
 import java.util.UUID
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -51,6 +53,7 @@ class SecureMessageService @Inject()(
   override val auditConnector: AuditConnector)
     extends Auditing with ImplicitClassesExtensions with OrderingDefinitions {
 
+  private val logger = Logger(getClass.getName)
   def createConversation(conversation: Conversation)(
     implicit hc: HeaderCarrier,
     ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] = {
@@ -77,6 +80,7 @@ class SecureMessageService @Inject()(
     implicit ec: ExecutionContext): Future[List[Message]] = {
     val filteredEnrolments = authEnrolments.filter(filters.enrolmentKeysFilter, filters.enrolmentsFilter)
     val identifiers: Set[Identifier] = filteredEnrolments.map(_.asIdentifier)
+    logger.info(s"[getMessages] filteredEnrolments: $filteredEnrolments  identifiers: $identifiers")
     for {
       conversations <- conversationRepository.getConversations(identifiers, filters.tags)
       letters       <- messageRepository.getLetters(identifiers, filters.tags)
