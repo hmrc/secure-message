@@ -19,10 +19,10 @@ package uk.gov.hmrc.securemessage.controllers
 import cats.data._
 import cats.implicits._
 import org.mongodb.scala.bson.ObjectId
-import play.api.Logging
 import play.api.i18n.I18nSupport
-import play.api.libs.json.{ JsError, JsSuccess, JsValue, Json, Reads }
+import play.api.libs.json._
 import play.api.mvc.{ Action, AnyContent, ControllerComponents, Request }
+import play.api.{ Logger, Logging }
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.http.HeaderCarrier
@@ -53,6 +53,7 @@ class SecureMessageController @Inject()(
     extends BackendController(cc) with AuthorisedFunctions with QueryStringValidation with I18nSupport
     with ErrorHandling with Auditing with Logging with ImplicitClassesExtensions {
 
+  override val logger = Logger(getClass.getName)
   def createConversation(client: ClientName, conversationId: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
       withJsonBody[CdcmConversation] { cdcmConversation =>
@@ -134,6 +135,8 @@ class SecureMessageController @Inject()(
           case _ =>
             authorised()
               .retrieve(Retrievals.allEnrolments) { authEnrolments =>
+                logger.info(
+                  s"[getMessages] - authEnrolments: $authEnrolments enrolmentKeys: $enrolmentKeys customerEnrolments: $customerEnrolments")
                 val filters = Filters(enrolmentKeys, customerEnrolments, tags)
                 secureMessageService
                   .getMessages(authEnrolments, filters)
