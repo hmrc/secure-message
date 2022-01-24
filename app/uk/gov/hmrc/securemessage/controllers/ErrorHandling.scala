@@ -42,5 +42,4 @@ trait ErrorHandling extends Logging {
       case _                                                                 => InternalServerError(jsonError)
     }
   }
-
 }

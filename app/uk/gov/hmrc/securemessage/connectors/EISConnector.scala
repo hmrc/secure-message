@@ -16,11 +16,7 @@
 
 package uk.gov.hmrc.securemessage.connectors
 
-import java.time.format.DateTimeFormatter
-import java.time.{ ZoneOffset, ZonedDateTime }
-import play.api.http.HeaderNames.{ ACCEPT, CONTENT_TYPE, DATE }
-import javax.inject.{ Inject, Singleton }
-import play.api.http.HeaderNames.AUTHORIZATION
+import play.api.http.HeaderNames.{ ACCEPT, AUTHORIZATION, CONTENT_TYPE, DATE }
 import play.api.http.MimeTypes
 import play.api.http.Status._
 import uk.gov.hmrc.http.{ HeaderCarrier, HttpClient }
@@ -29,8 +25,12 @@ import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.securemessage.EisForwardingError
 import uk.gov.hmrc.securemessage.connectors.utils.CustomHeaders
 import uk.gov.hmrc.securemessage.controllers.Auditing
-import uk.gov.hmrc.securemessage.models.QueryMessageWrapper
+import uk.gov.hmrc.securemessage.models.{ QueryMessageRequest, QueryMessageWrapper, RequestCommon, RequestDetail }
 
+import java.time.format.DateTimeFormatter
+import java.time.{ ZoneOffset, ZonedDateTime }
+import java.util.UUID
+import javax.inject.{ Inject, Singleton }
 import scala.concurrent.{ ExecutionContext, Future }
 
 //TODO: add tests for the connector
@@ -48,10 +48,18 @@ class EISConnector @Inject()(
 
   def forwardMessage(queryMessageWrapper: QueryMessageWrapper): Future[Either[EisForwardingError, Unit]] = {
     implicit val hc: HeaderCarrier = HeaderCarrier()
+    val requestCommonCopy: RequestCommon = queryMessageWrapper.queryMessageRequest.requestCommon
+    val requestDetailsCopy: RequestDetail = queryMessageWrapper.queryMessageRequest.requestDetail
+    val randomGUID: String = UUID.randomUUID().toString
+    val queryMessageWrapperCopy: QueryMessageWrapper =
+      queryMessageWrapper.copy(
+        QueryMessageRequest(
+          requestCommonCopy,
+          RequestDetail(randomGUID, requestDetailsCopy.conversationId, requestDetailsCopy.message)))
     httpClient
       .doPut[QueryMessageWrapper](
         s"$eisBaseUrl$eisEndpoint",
-        queryMessageWrapper,
+        queryMessageWrapperCopy,
         Seq(
           (CONTENT_TYPE, MimeTypes.JSON),
           (ACCEPT, MimeTypes.JSON),
