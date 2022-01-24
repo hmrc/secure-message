@@ -157,7 +157,8 @@ class SecureMessageService @Inject()(
       .getOrElse(randomId)
       .replace("-", "")
       .substring(0, ACKNOWLEDGEMENT_REFERENCE_MAX_LENGTH - 1)
-    val requestId = request.headers.get("X-Request-ID").getOrElse(s"govuk-tax-$randomId")
+    val requestId = randomId
+//      request.headers.get("X-Request-ID").getOrElse(s"govuk-tax-$randomId")
     val queryMessageWrapper = QueryMessageWrapper(
       QueryMessageRequest(
         requestCommon = RequestCommon(
