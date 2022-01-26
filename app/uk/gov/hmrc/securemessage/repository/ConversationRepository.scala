@@ -36,9 +36,14 @@ class ConversationRepository @Inject()(mongo: MongoComponent)(implicit ec: Execu
       mongo,
       Conversation.conversationFormat,
       Seq(
-        IndexModel(Indexes.ascending("client")),
-        IndexModel(Indexes.ascending("id"))
-      )) {
+        IndexModel(
+          Indexes.ascending(Seq("client", "id"): _*),
+          IndexOptions()
+            .sparse(true)
+            .unique(false)
+            .background(true))),
+      replaceIndexes = true
+    ) {
 
 //  private val DuplicateKey = 11000
 
@@ -89,7 +94,7 @@ class ConversationRepository @Inject()(mongo: MongoComponent)(implicit ec: Execu
     implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] = {
     val query = Filters.and(Filters.equal("client", client), Filters.equal("id", conversationId))
     collection
-      .updateOne(query, Updates.addToSet("messages", message))
+      .updateOne(query, Updates.addToSet("messages", Codecs.toBson(message)))
       .toFuture()
       .map(_ => Right(()))
       .recover {
@@ -100,15 +105,14 @@ class ConversationRepository @Inject()(mongo: MongoComponent)(implicit ec: Execu
 
   def addReadTime(client: String, conversationId: String, participantId: Int, readTime: DateTime)(
     implicit ec: ExecutionContext): Future[Either[StoreError, Unit]] = {
-    val query = Filters.and(Filters.equal("client", client), Filters.equal("id", conversationId))
-    println(query)
-    println(participantId)
+    val query = Filters.and(
+      Filters.equal("client", client),
+      Filters.equal("id", conversationId),
+      Filters.equal("participants.$.id", participantId))
     collection
       .updateOne(
         query,
-        Updates.combine(
-          Updates.set("participants.$.readTimes", Codecs.toBson(Conversation.readTimeJson(readTime)))
-        ),
+        Updates.set("participants.$.readTimes", List(Codecs.toBson(Conversation.readTimeJson(readTime)))),
         UpdateOptions().upsert(true)
       )
       .toFuture()

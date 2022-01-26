@@ -19,7 +19,6 @@ package uk.gov.hmrc.securemessage.repository
 import cats.data.NonEmptyList
 import org.joda.time.DateTime
 import org.mongodb.scala.bson.ObjectId
-import org.mongodb.scala.model.Filters
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.play.PlaySpec
@@ -248,12 +247,6 @@ class ConversationRepositorySpec
             conversation.client,
             conversation.id,
             Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")))))
-      println(
-        await(
-          repository.collection
-            .find(Filters.and(Filters.equal("client", conversation.client), Filters.equal("id", conversation.id)))
-            .sort(Filters.equal("_id", -1))
-            .toFuture()))
       val result: Conversation = updated.right.get
       result.messages.size mustBe 3
     }
@@ -301,7 +294,7 @@ class ConversationRepositorySpec
       val result: Count =
         await(
           repository.getConversationsCount(Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))), None))
-      result must be(Count(total = 2, unread = 2))
+      result must be(Count(total = 2, unread = 1))
     }
   }
 
