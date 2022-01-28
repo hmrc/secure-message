@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.securemessage.controllers.utils
 
-import org.apache.commons.codec.binary.Base64
+import org.apache.commons.codec.binary.{ Base64, Hex }
 import uk.gov.hmrc.securemessage.controllers.model.MessageType
 import uk.gov.hmrc.securemessage.{ InvalidRequest, SecureMessageError }
 
@@ -34,6 +34,12 @@ object IdCoder {
         Right(MessageType.withName(messageType) -> id)
       case _ => Left(InvalidRequest(s"Invalid encoded id: $encodedId, decoded string: $decodedString"))
     }
+  }
+
+  private[controllers] def stringToHexString(decodedId: DecodedId) = {
+    val dataOffset: Int = 0
+    val dataLen: Int = 12
+    Hex.encodeHex(decodedId.getBytes(StandardCharsets.UTF_8), dataOffset, dataLen, false).mkString
   }
 
   private[controllers] def encodeId(messageType: MessageType, id: DecodedId): EncodedId = {

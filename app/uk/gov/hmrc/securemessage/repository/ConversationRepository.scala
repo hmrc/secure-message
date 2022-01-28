@@ -37,27 +37,39 @@ class ConversationRepository @Inject()(mongo: MongoComponent)(implicit ec: Execu
       Conversation.conversationFormat,
       Seq(
         IndexModel(
-          Indexes.ascending(Seq("client", "id"): _*),
+          Indexes.ascending("id"),
+          IndexOptions()
+            .sparse(true)
+            .unique(true)
+            .background(true)),
+        IndexModel(
+          Indexes.ascending("client"),
           IndexOptions()
             .sparse(true)
             .unique(false)
-            .background(true))),
+            .background(true))
+      ),
       replaceIndexes = true
     ) {
 
 //  private val DuplicateKey = 11000
 
   def insertIfUnique(conversation: Conversation)(
-    implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] =
+    implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] = {
+    println("---------" + conversation)
     collection
       .insertOne(conversation)
       .toFuture()
+      .map { e =>
+        println("--------result" + e + e.getInsertedId)
+        Right(())
+      }
       .recoverWith {
         case e =>
           val errMsg = s"Database error trying to store conversation ${conversation.id}: " + e.getMessage
           Future.successful(Left(StoreError(errMsg, Some(e))))
       }
-      .map(_ => Right(()))
+  }
 
   def getConversations(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
     implicit ec: ExecutionContext): Future[List[Conversation]] = getMessages(identifiers, tags)
@@ -88,11 +100,18 @@ class ConversationRepository @Inject()(mongo: MongoComponent)(implicit ec: Execu
 
   def getConversation(id: ObjectId, identifiers: Set[Identifier])(
     implicit ec: ExecutionContext): Future[Either[SecureMessageError, Conversation]] =
-    getMessage(id, identifiers)
+    getMessage(id, identifiers).map {
+      case Left(_) => Left(MessageNotFound(s"Conversation not found for identifiers: $identifiers"))
+      case r       => r
+    }
 
-  def addMessageToConversation(client: String, conversationId: String, message: ConversationMessage)(
-    implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] = {
-    val query = Filters.and(Filters.equal("client", client), Filters.equal("id", conversationId))
+  def addMessageToConversation(
+    objectId: ObjectId,
+    client: String,
+    conversationId: String,
+    message: ConversationMessage)(implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] = {
+    val query =
+      Filters.and(Filters.equal("_id", objectId), Filters.equal("client", client), Filters.equal("id", conversationId))
     collection
       .updateOne(query, Updates.addToSet("messages", Codecs.toBson(message)))
       .toFuture()
@@ -103,16 +122,17 @@ class ConversationRepository @Inject()(mongo: MongoComponent)(implicit ec: Execu
       }
   }
 
-  def addReadTime(client: String, conversationId: String, participantId: Int, readTime: DateTime)(
+  def addReadTime(objectId: ObjectId, client: String, conversationId: String, participantId: Int, readTime: DateTime)(
     implicit ec: ExecutionContext): Future[Either[StoreError, Unit]] = {
     val query = Filters.and(
+      Filters.equal("_id", objectId),
       Filters.equal("client", client),
       Filters.equal("id", conversationId),
-      Filters.equal("participants.$.id", participantId))
+      Filters.equal("participants.id", participantId))
     collection
       .updateOne(
         query,
-        Updates.set("participants.$.readTimes", List(Codecs.toBson(Conversation.readTimeJson(readTime)))),
+        Updates.addToSet("participants.$.readTimes", Codecs.toBson(readTime)(Participant.dateFormat)),
         UpdateOptions().upsert(true)
       )
       .toFuture()

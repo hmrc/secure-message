@@ -471,7 +471,9 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
   }
 
   class CreateCustomerMessageTestCase(serviceResponse: Future[Either[SecureMessageError, Unit]]) extends TestCase {
-    val encodedId: String = base64Encode(MessageType.Conversation.entryName + "/" + "D-80542-20201120")
+    import uk.gov.hmrc.securemessage.controllers.utils.IdCoder
+    val encodedId: String = IdCoder.encodeId(MessageType.Conversation, "D-80542-20201120")
+    println("------encodeId" + encodedId)
     val fakeRequest: FakeRequest[JsObject] = FakeRequest(
       method = POST,
       uri = routes.SecureMessageController.addCustomerMessage(encodedId).url,

@@ -18,9 +18,9 @@ package uk.gov.hmrc.securemessage.models.core
 
 import org.joda.time.{ DateTime, DateTimeZone, LocalDate, LocalTime }
 import org.mongodb.scala.bson.ObjectId
-import play.api.libs.json.JodaReads.{ jodaDateReads, jodaLocalDateReads }
-import play.api.libs.json.JodaWrites.{ jodaDateWrites, jodaLocalDateWrites }
-import play.api.libs.json.{ Format, JsValue, Json, OFormat, Reads, Writes, __ }
+import play.api.libs.json.JodaReads.jodaLocalDateReads
+import play.api.libs.json.JodaWrites.jodaLocalDateWrites
+import play.api.libs.json._
 import uk.gov.hmrc.mongo.play.json.formats.{ MongoFormats, MongoJodaFormats }
 
 final case class RecipientName(
@@ -103,12 +103,7 @@ object Letter {
 
   implicit val isoDateFormat: Format[DateTime] = MongoJodaFormats.dateTimeFormat
 
-  private val dateFormatString = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
-
   implicit val isoTime: Reads[LocalDate] = (__ \ "validFrom").read[LocalDate]
-
-  implicit val dateFormatWrites: Writes[DateTime] =
-    Format(jodaDateReads(dateFormatString), jodaDateWrites(dateFormatString))
 
   implicit val letterFormat: OFormat[Letter] = Json.format[Letter]
 

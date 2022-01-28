@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2022 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.securemessage
 
+import org.mongodb.scala.bson.ObjectId
 import org.scalatest.DoNotDiscover
-import reactivemongo.bson.BSONObjectID
 
 @DoNotDiscover
 class GetIndividualConversationISpec extends ISpec {
@@ -35,7 +35,7 @@ class GetIndividualConversationISpec extends ISpec {
     }
 
     "return a JSON body of [No conversation found] when id doesn't exist" in {
-      val id = new ObjectId()()
+      val id = new ObjectId()
       val encodedId = encodeId(id)
       createConversation map { _ =>
         val response =
@@ -60,7 +60,7 @@ class GetIndividualConversationISpec extends ISpec {
   }
 
   class TestCase() {
-    val id = new ObjectId()()
+    val id = new ObjectId()
     val encodedId = encodeId(id)
     insertConversation(id)
   }

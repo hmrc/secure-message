@@ -52,9 +52,6 @@ object ApiLetter extends ApiFormats {
   implicit val senderInformationFormat: Format[SenderInformation] =
     Json.format[SenderInformation]
 
-//  implicit val objectIdFormat: Format[ObjectId] =
-//    Json.format[ObjectId]
-
   implicit val messageFormat: Format[ApiLetter] =
     Json.format[ApiLetter]
 }

@@ -126,8 +126,9 @@ class SecureMessageService @Inject()(
       conversation <- EitherT(conversationRepository.getConversation(client, conversationId, Set(senderIdentifier)))
       sender       <- EitherT(Future(conversation.participantWith(Set(senderIdentifier))))
       participants <- addMissingEmails(conversation.participants)
-      _            <- EitherT(conversationRepository.addMessageToConversation(client, conversationId, message(sender)))
-      _            <- sendAlert(participants.customer, conversation.alert)
+      _ <- EitherT(
+            conversationRepository.addMessageToConversation(conversation._id, client, conversationId, message(sender)))
+      _ <- sendAlert(participants.customer, conversation.alert)
     } yield ()
   }.value
 
@@ -136,12 +137,14 @@ class SecureMessageService @Inject()(
     request: Request[_]): Future[Either[SecureMessageError, Unit]] = {
     def message(sender: Participant) = ConversationMessage(sender.id, new DateTime(), messagesRequest.content)
     val identifiers: Set[Identifier] = enrolments.asIdentifiers
+    println("--------addCustomerMessage-------" + id)
     for {
       conversation <- EitherT(conversationRepository.getConversation(id, identifiers))
       sender       <- EitherT(Future(conversation.participantWith(identifiers)))
       _            <- forwardMessage(conversation.id, messagesRequest)
       _ <- EitherT(
-            conversationRepository.addMessageToConversation(conversation.client, conversation.id, message(sender)))
+            conversationRepository
+              .addMessageToConversation(conversation._id, conversation.client, conversation.id, message(sender)))
             .leftWiden[SecureMessageError]
     } yield ()
   }.value
@@ -178,9 +181,12 @@ class SecureMessageService @Inject()(
       conversation: Conversation,
       readTime: DateTime): Future[Either[SecureMessageError, Unit]] =
       reader.lastReadTime match {
-        case None => conversationRepository.addReadTime(conversation.client, conversation.id, reader.id, readTime)
+        case None =>
+          conversationRepository
+            .addReadTime(conversation._id, conversation.client, conversation.id, reader.id, readTime)
         case Some(lastReadTime) if (lastReadTime.isBefore(conversation.latestMessage.created)) =>
-          conversationRepository.addReadTime(conversation.client, conversation.id, reader.id, readTime)
+          conversationRepository
+            .addReadTime(conversation._id, conversation.client, conversation.id, reader.id, readTime)
         case _ => Future.successful(Right[SecureMessageError, Unit](()))
       }
 

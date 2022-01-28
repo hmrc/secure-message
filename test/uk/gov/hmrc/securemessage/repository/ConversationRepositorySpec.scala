@@ -238,9 +238,10 @@ class ConversationRepositorySpec
     "increase the message array size" in new TestContext(
       conversations = Seq(conversation)
     ) {
-      val message: ConversationMessage = ConversationMessage(2, new DateTime(), "test")
-      await(repository.addMessageToConversation(conversation.client, conversation.id, message))
-      await(repository.addMessageToConversation(conversation.client, conversation.id, message))
+      val message1: ConversationMessage = ConversationMessage(2, new DateTime(), "test")
+      val message2: ConversationMessage = ConversationMessage(3, new DateTime(), "test")
+      await(repository.addMessageToConversation(conversation._id, conversation.client, conversation.id, message1))
+      await(repository.addMessageToConversation(conversation._id, conversation.client, conversation.id, message2))
       val updated: Either[MessageNotFound, Conversation] = await(
         repository
           .getConversation(
@@ -259,16 +260,12 @@ class ConversationRepositorySpec
       conversations = Seq(conversation)
     ) {
       val result: Either[StoreError, Unit] =
-        await(repository.addReadTime(conversation.client, conversation.id, 2, DateTime.now))
+        await(repository.addReadTime(conversation._id, conversation.client, conversation.id, 2, DateTime.now))
       result mustBe Right(())
     }
   }
 
   "getConversationsCount" should {
-
-    val conversation =
-      ConversationUtil.getFullConversation(new ObjectId(), "123", "HMRC-CUS-ORG", "EORINumber", "GB1234567890")
-
     "return 0 total messages and 0 unread" in new TestContext(
       conversations = Seq.empty
     ) {
@@ -290,7 +287,7 @@ class ConversationRepositorySpec
     "return 2 total messages and 1 unread" in new TestContext(
       conversations = allConversations
     ) {
-      await(repository.addReadTime(conversation.client, conversation.id, 234, DateTime.now))
+      await(repository.addReadTime(conversation1._id, conversation1.client, conversation1.id, 2, DateTime.now))
       val result: Count =
         await(
           repository.getConversationsCount(Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))), None))
@@ -315,7 +312,7 @@ class ConversationRepositorySpec
         conversation.participants.map(id => id.identifier.copy(value = id.identifier.value + "1")).toSet
       val result =
         await(repository.getConversation(conversation._id, modifierParticipantEnrolments))
-      result mustBe Left(MessageNotFound(s"Message not found for identifiers: $modifierParticipantEnrolments"))
+      result mustBe Left(MessageNotFound(s"Conversation not found for identifiers: $modifierParticipantEnrolments"))
     }
   }
 

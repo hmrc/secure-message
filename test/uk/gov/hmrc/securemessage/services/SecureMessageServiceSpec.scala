@@ -29,14 +29,13 @@ import org.scalatestplus.play.PlaySpec
 import play.api.i18n.Messages
 import play.api.libs.json.{ JsObject, Json }
 import play.api.mvc.AnyContentAsEmpty
-import play.api.test.Helpers._
 import play.api.test.FakeRequest
+import play.api.test.Helpers._
 import uk.gov.hmrc.auth.core.{ Enrolment, EnrolmentIdentifier, Enrolments }
 import uk.gov.hmrc.emailaddress.EmailAddress
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.securemessage.connectors.{ ChannelPreferencesConnector, EISConnector, EmailConnector }
-import uk.gov.hmrc.securemessage.controllers.model.MessageType
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.ConversationMetadata
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
@@ -330,25 +329,25 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
     "update the database when the customer has a participating enrolment" in new AddCustomerMessageTestContext(
       getConversationResult = Right(conversations.head)) {
       when(mockEisConnector.forwardMessage(any[QueryMessageWrapper])).thenReturn(Future(Right(())))
-      await(service.addCustomerMessage(new ObjectId(encodedId), customerMessage, enrolments))
+      await(service.addCustomerMessage(encodedId, customerMessage, enrolments))
       verify(mockConversationRepository, times(1))
-        .addMessageToConversation(any[String], any[String], any[ConversationMessage])(any[ExecutionContext])
+        .addMessageToConversation(any[ObjectId], any[String], any[String], any[ConversationMessage])(
+          any[ExecutionContext])
     }
 
     "return NoParticipantFound if the customer does not have a participating enrolment" in new AddCustomerMessageTestContext(
       getConversationResult = Right(cnvWithNoEmail)) {
       when(mockEnrolments.enrolments)
         .thenReturn(Set(Enrolment("HMRC-CUS-ORG", Seq(EnrolmentIdentifier("EORINumber", "GB123456789000001")), "")))
-      await(service.addCustomerMessage(new ObjectId(encodedId), customerMessage, mockEnrolments)) mustBe Left(
-        ParticipantNotFound(
-          "No participant found for client: CDCM, conversationId: 123, indentifiers: Set(Identifier(EORINumber,GB123456789000001,Some(HMRC-CUS-ORG)))"))
+      await(service.addCustomerMessage(encodedId, customerMessage, mockEnrolments)) mustBe Left(ParticipantNotFound(
+        "No participant found for client: CDCM, conversationId: 123, indentifiers: Set(Identifier(EORINumber,GB123456789000001,Some(HMRC-CUS-ORG)))"))
     }
 
     "return ConversationIdNotFound if the conversation ID is not found" in new AddCustomerMessageTestContext(
       getConversationResult = Left(MessageNotFound("Conversation ID not known"))) {
       when(mockEnrolments.enrolments)
         .thenReturn(Set(Enrolment("HMRC-CUS-ORG", Seq(EnrolmentIdentifier("EORINumber", "GB123456789000001")), "")))
-      await(service.addCustomerMessage(new ObjectId(encodedId), customerMessage, mockEnrolments)) mustBe Left(
+      await(service.addCustomerMessage(encodedId, customerMessage, mockEnrolments)) mustBe Left(
         MessageNotFound("Conversation ID not known"))
     }
 
@@ -357,9 +356,10 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
       addMessageResult = Left(EisForwardingError("There was an issue with forwarding the message to EIS"))) {
       when(mockEnrolments.enrolments)
         .thenReturn(Set(Enrolment("HMRC-CUS-ORG", Seq(EnrolmentIdentifier("EORINumber", "GB123456789000000")), "")))
-      await(service.addCustomerMessage(new ObjectId(encodedId), customerMessage, mockEnrolments))
+      await(service.addCustomerMessage(encodedId, customerMessage, mockEnrolments))
       verify(mockConversationRepository, never())
-        .addMessageToConversation(any[String], any[String], any[ConversationMessage])(any[ExecutionContext])
+        .addMessageToConversation(any[ObjectId], any[String], any[String], any[ConversationMessage])(
+          any[ExecutionContext])
     }
   }
 
@@ -439,7 +439,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
           .addReadTime(conversation, Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))), readTimeStamp)
           .value)
       verify(mockConversationRepository, times(1))
-        .addReadTime(conversation.client, conversation.id, 2, readTimeStamp)
+        .addReadTime(conversation._id, conversation.client, conversation.id, 2, readTimeStamp)
     }
 
     "add read time when no messages were read" in new AddReadTimesTestContext {
@@ -457,7 +457,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
           .addReadTime(conversation, Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))), readTimeStamp)
           .value)
       verify(mockConversationRepository, times(1))
-        .addReadTime(conversation.client, conversation.id, 2, readTimeStamp)
+        .addReadTime(conversation._id, conversation.client, conversation.id, 2, readTimeStamp)
     }
 
     "not add readTime when there are no new messages after last readtime" in new AddReadTimesTestContext {
@@ -476,7 +476,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
           .addReadTime(conversation, Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))), readTimeStamp)
           .value)
       verify(mockConversationRepository, times(0))
-        .addReadTime(conversation.client, conversation.id, 2, readTimeStamp)
+        .addReadTime(conversation._id, conversation.client, conversation.id, 2, readTimeStamp)
     }
   }
 
@@ -495,7 +495,8 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
     when(mockEmailConnector.send(any[EmailRequest])(any[HeaderCarrier])).thenReturn(Future.successful(Right(())))
     val mockChannelPreferencesConnector: ChannelPreferencesConnector = mock[ChannelPreferencesConnector]
     when(
-      mockConversationRepository.addReadTime(any[String], any[String], any[Int], any[DateTime])(any[ExecutionContext]))
+      mockConversationRepository.addReadTime(any[ObjectId], any[String], any[String], any[Int], any[DateTime])(
+        any[ExecutionContext]))
       .thenReturn(Future.successful(Right(())))
     when(
       mockConversationRepository
@@ -529,7 +530,8 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
       mockConversationRepository.getConversation(any[String], any[String], any[Set[Identifier]])(any[ExecutionContext]))
       .thenReturn(Future(getConversationResult))
     when(
-      mockConversationRepository.addReadTime(any[String], any[String], any[Int], any[DateTime])(any[ExecutionContext]))
+      mockConversationRepository.addReadTime(any[ObjectId], any[String], any[String], any[Int], any[DateTime])(
+        any[ExecutionContext]))
       .thenReturn(Future.successful(Right(())))
   }
 
@@ -546,7 +548,8 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
     when(mockConversationRepository.getConversation(any[ObjectId], any[Set[Identifier]])(any[ExecutionContext]))
       .thenReturn(Future(getConversationResult))
     when(
-      mockConversationRepository.addReadTime(any[String], any[String], any[Int], any[DateTime])(any[ExecutionContext]))
+      mockConversationRepository.addReadTime(any[ObjectId], any[String], any[String], any[Int], any[DateTime])(
+        any[ExecutionContext]))
       .thenReturn(Future.successful(Right(())))
   }
 
@@ -554,7 +557,8 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
     when(mockConversationRepository.getConversation(any[ObjectId], any[Set[Identifier]])(any[ExecutionContext]))
       .thenReturn(Future(getConversationResult))
     when(
-      mockConversationRepository.addReadTime(any[String], any[String], any[Int], any[DateTime])(any[ExecutionContext]))
+      mockConversationRepository.addReadTime(any[ObjectId], any[String], any[String], any[Int], any[DateTime])(
+        any[ExecutionContext]))
       .thenReturn(Future.successful(Left(StoreError("Can not store read time", None))))
   }
 
@@ -562,12 +566,13 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
     getConversationResult: Either[MessageNotFound, Conversation],
     addMessageResult: Either[SecureMessageError, Unit] = Right(()))
       extends TestHelpers {
-    val encodedId: String = base64Encode(MessageType.Conversation + "/" + "D-80542-20201120")
+    val encodedId = new ObjectId()
     when(mockConversationRepository.getConversation(any[ObjectId], any[Set[Identifier]])(any[ExecutionContext]))
       .thenReturn(Future(getConversationResult))
     when(
-      mockConversationRepository.addMessageToConversation(any[String], any[String], any[ConversationMessage])(
-        any[ExecutionContext]))
+      mockConversationRepository
+        .addMessageToConversation(any[ObjectId], any[String], any[String], any[ConversationMessage])(
+          any[ExecutionContext]))
       .thenReturn(Future(addMessageResult))
   }
 
@@ -579,8 +584,9 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
       mockConversationRepository.getConversation(any[String], any[String], any[Set[Identifier]])(any[ExecutionContext]))
       .thenReturn(Future(getConversationResult))
     when(
-      mockConversationRepository.addMessageToConversation(any[String], any[String], any[ConversationMessage])(
-        any[ExecutionContext]))
+      mockConversationRepository
+        .addMessageToConversation(any[ObjectId], any[String], any[String], any[ConversationMessage])(
+          any[ExecutionContext]))
       .thenReturn(Future(addMessageResult))
     when(mockEmailConnector.send(any[EmailRequest])(any[HeaderCarrier])).thenReturn(Future(sendEmailResult))
   }
