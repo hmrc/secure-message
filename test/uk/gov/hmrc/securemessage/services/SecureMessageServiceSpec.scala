@@ -329,7 +329,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
     "update the database when the customer has a participating enrolment" in new AddCustomerMessageTestContext(
       getConversationResult = Right(conversations.head)) {
       when(mockEisConnector.forwardMessage(any[QueryMessageWrapper])).thenReturn(Future(Right(())))
-      await(service.addCustomerMessage(encodedId, customerMessage, enrolments))
+      await(service.addCustomerMessage(encodedId, customerMessage, enrolments, requestId))
       verify(mockConversationRepository, times(1))
         .addMessageToConversation(any[String], any[String], any[ConversationMessage])(any[ExecutionContext])
     }
@@ -338,15 +338,16 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
       getConversationResult = Right(cnvWithNoEmail)) {
       when(mockEnrolments.enrolments)
         .thenReturn(Set(Enrolment("HMRC-CUS-ORG", Seq(EnrolmentIdentifier("EORINumber", "GB123456789000001")), "")))
-      await(service.addCustomerMessage(encodedId, customerMessage, mockEnrolments)) mustBe Left(ParticipantNotFound(
-        "No participant found for client: CDCM, conversationId: 123, indentifiers: Set(Identifier(EORINumber,GB123456789000001,Some(HMRC-CUS-ORG)))"))
+      await(service.addCustomerMessage(encodedId, customerMessage, mockEnrolments, requestId)) mustBe Left(
+        ParticipantNotFound(
+          "No participant found for client: CDCM, conversationId: 123, indentifiers: Set(Identifier(EORINumber,GB123456789000001,Some(HMRC-CUS-ORG)))"))
     }
 
     "return ConversationIdNotFound if the conversation ID is not found" in new AddCustomerMessageTestContext(
       getConversationResult = Left(MessageNotFound("Conversation ID not known"))) {
       when(mockEnrolments.enrolments)
         .thenReturn(Set(Enrolment("HMRC-CUS-ORG", Seq(EnrolmentIdentifier("EORINumber", "GB123456789000001")), "")))
-      await(service.addCustomerMessage(encodedId, customerMessage, mockEnrolments)) mustBe Left(
+      await(service.addCustomerMessage(encodedId, customerMessage, mockEnrolments, requestId)) mustBe Left(
         MessageNotFound("Conversation ID not known"))
     }
 
@@ -355,7 +356,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
       addMessageResult = Left(EisForwardingError("There was an issue with forwarding the message to EIS"))) {
       when(mockEnrolments.enrolments)
         .thenReturn(Set(Enrolment("HMRC-CUS-ORG", Seq(EnrolmentIdentifier("EORINumber", "GB123456789000000")), "")))
-      await(service.addCustomerMessage(encodedId, customerMessage, mockEnrolments))
+      await(service.addCustomerMessage(encodedId, customerMessage, mockEnrolments, requestId))
       verify(mockConversationRepository, never())
         .addMessageToConversation(any[String], any[String], any[ConversationMessage])(any[ExecutionContext])
     }
@@ -659,4 +660,6 @@ trait TestHelpers extends MockitoSugar with UnitTest {
   val cnvWithNoCustomer: Conversation = cnvWithNoEmail.copy(participants = List(cnvWithNoEmail.participants.head))
   val cnvWithMultipleCustomers: Conversation =
     ConversationUtil.getConversationRequestWithMultipleCustomers.asConversationWithCreatedDate("CDCM", "123", now)
+
+  val requestId = "567897263hjsdf7fsdf4r89343dfkjdfg=="
 }

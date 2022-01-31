@@ -131,7 +131,7 @@ class SecureMessageService @Inject()(
     } yield ()
   }.value
 
-  def addCustomerMessage(id: String, messagesRequest: CustomerMessage, enrolments: Enrolments)(
+  def addCustomerMessage(id: String, messagesRequest: CustomerMessage, enrolments: Enrolments, requestId: String)(
     implicit ec: ExecutionContext,
     request: Request[_]): Future[Either[SecureMessageError, Unit]] = {
     def message(sender: Participant) = ConversationMessage(sender.id, new DateTime(), messagesRequest.content)
@@ -139,7 +139,7 @@ class SecureMessageService @Inject()(
     for {
       conversation <- EitherT(conversationRepository.getConversation(new ObjectId(id), identifiers))
       sender       <- EitherT(Future(conversation.participantWith(identifiers)))
-      _            <- forwardMessage(conversation.id, messagesRequest)
+      _            <- forwardMessage(conversation.id, messagesRequest, requestId)
       _ <- EitherT(
             conversationRepository
               .addMessageToConversation(conversation.client, conversation.id, message(sender)))
@@ -147,7 +147,7 @@ class SecureMessageService @Inject()(
     } yield ()
   }.value
 
-  private def forwardMessage(conversationId: String, messagesRequest: CustomerMessage)(
+  private def forwardMessage(conversationId: String, messagesRequest: CustomerMessage, requestId: String)(
     implicit ec: ExecutionContext,
     request: Request[_]): EitherT[Future, SecureMessageError, Unit] = {
     val ACKNOWLEDGEMENT_REFERENCE_MAX_LENGTH = 32
@@ -157,8 +157,6 @@ class SecureMessageService @Inject()(
       .getOrElse(randomId)
       .replace("-", "")
       .substring(0, ACKNOWLEDGEMENT_REFERENCE_MAX_LENGTH - 1)
-    val requestId = randomId
-//      request.headers.get("X-Request-ID").getOrElse(s"govuk-tax-$randomId")
     val queryMessageWrapper = QueryMessageWrapper(
       QueryMessageRequest(
         requestCommon = RequestCommon(

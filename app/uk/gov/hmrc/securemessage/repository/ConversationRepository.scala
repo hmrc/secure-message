@@ -24,7 +24,12 @@ import play.api.libs.json.JodaWrites.{ JodaDateTimeWrites => _ }
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.securemessage._
+<<<<<<< HEAD
 import uk.gov.hmrc.securemessage.models.core.{ Filters => _, _ }
+=======
+import uk.gov.hmrc.securemessage.models.core.ConversationMessage.dateTimeFormat
+import uk.gov.hmrc.securemessage.models.core._
+>>>>>>> 133f5e5... DC-3918: WIP
 
 import javax.inject.{ Inject, Singleton }
 import scala.collection.Seq

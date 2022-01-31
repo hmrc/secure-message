@@ -28,6 +28,7 @@ import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+import uk.gov.hmrc.requestmapping.RequestMapper
 import uk.gov.hmrc.securemessage._
 import uk.gov.hmrc.securemessage.controllers.model.MessageType.{ Conversation, Letter }
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write._
@@ -40,6 +41,7 @@ import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag, Fil
 import uk.gov.hmrc.securemessage.services.{ ImplicitClassesExtensions, SecureMessageService }
 import uk.gov.hmrc.time.DateTimeUtils
 
+import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success, Try }
@@ -49,7 +51,8 @@ class SecureMessageController @Inject()(
   val authConnector: AuthConnector,
   override val auditConnector: AuditConnector,
   secureMessageService: SecureMessageService,
-  dataTimeUtils: DateTimeUtils)(implicit ec: ExecutionContext)
+  dataTimeUtils: DateTimeUtils,
+  requestMapper: RequestMapper)(implicit ec: ExecutionContext)
     extends BackendController(cc) with AuthorisedFunctions with QueryStringValidation with I18nSupport
     with ErrorHandling with Auditing with Logging with ImplicitClassesExtensions {
 
@@ -97,19 +100,27 @@ class SecureMessageController @Inject()(
   }
 
   def addCustomerMessage(encodedId: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
-    val message = for {
+    val randomId: DecodedId = UUID.randomUUID().toString
+    val originalRequestId: String = request.headers.get("X-Request-ID").getOrElse(s"govuk-tax-$randomId")
+    val result = for {
       messageTypeAndId <- EitherT(Future.successful(IdCoder.decodeId(encodedId))).leftWiden[SecureMessageError]
       enrolments       <- EitherT(getEnrolments()).leftWiden[SecureMessageError]
       message          <- EitherT(Future.successful(parseAs[CustomerMessage]())).leftWiden[SecureMessageError]
-      _ <- EitherT(secureMessageService.addCustomerMessage(messageTypeAndId._2, message, enrolments))
+      newRequestId     <- EitherT.liftF(requestMapper.findOrCreate(originalRequestId))
+      _ <- EitherT(secureMessageService.addCustomerMessage(messageTypeAndId._2, message, enrolments, newRequestId))
             .leftWiden[SecureMessageError]
-    } yield message
-    message.value map {
-      case Right(msg) =>
-        auditCustomerReply("CustomerReplyToConversationSuccess", encodedId, Some(msg))
+    } yield (message, newRequestId)
+    result.value.map {
+      case Right(res) =>
+        auditCustomerReply(
+          "CustomerReplyToConversationSuccess",
+          encodedId,
+          Some(res._1),
+          originalRequestId,
+          Some(res._2))
         Created(Json.toJson(s"Created customer message for encodedId: $encodedId"))
       case Left(error) =>
-        auditCustomerReply("CustomerReplyToConversationFailed", encodedId, None)
+        auditCustomerReply("CustomerReplyToConversationFailed", encodedId, None, originalRequestId, None)
         handleErrors(encodedId, error)
     }
   }

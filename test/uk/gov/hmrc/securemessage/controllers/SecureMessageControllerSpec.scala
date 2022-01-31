@@ -39,6 +39,7 @@ import uk.gov.hmrc.auth.core.authorise.Predicate
 import uk.gov.hmrc.auth.core.retrieve.Retrieval
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
+import uk.gov.hmrc.requestmapping.RequestMapper
 import uk.gov.hmrc.securemessage._
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.{ ApiConversation, ConversationMetadata }
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.{ CaseworkerMessage, CdcmConversation }
@@ -52,6 +53,7 @@ import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
 import uk.gov.hmrc.securemessage.services.SecureMessageService
 
+import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ ExecutionContext, ExecutionException, Future }
 
@@ -421,6 +423,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
 
   }
   class TestCase(authEnrolments: Set[CustomerEnrolment] = Set(testEnrolment)) {
+    val mockRequestMapper: RequestMapper = mock[RequestMapper]
     val mockRepository: ConversationRepository = mock[ConversationRepository]
     val mockAuthConnector: AuthConnector = mock[AuthConnector]
     val mockAuditConnector: AuditConnector = mock[AuditConnector]
@@ -434,7 +437,8 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
         mockAuthConnector,
         mockAuditConnector,
         mockSecureMessageService,
-        zeroTimeProvider)
+        zeroTimeProvider,
+        mockRequestMapper)
 
     val enrolments: Enrolments = authEnrolmentsFrom(authEnrolments)
 
@@ -477,8 +481,13 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
   }
 
   class CreateCustomerMessageTestCase(serviceResponse: Future[Either[SecureMessageError, Unit]]) extends TestCase {
+<<<<<<< HEAD
     import uk.gov.hmrc.securemessage.controllers.utils.IdCoder
     val encodedId: String = IdCoder.encodeId(MessageType.Conversation, "D-80542-20201120")
+=======
+    val randomUUID = UUID.randomUUID().toString
+    val encodedId: String = base64Encode(MessageType.Conversation.entryName + "/" + "D-80542-20201120")
+>>>>>>> 133f5e5... DC-3918: WIP
     val fakeRequest: FakeRequest[JsObject] = FakeRequest(
       method = POST,
       uri = routes.SecureMessageController.addCustomerMessage(encodedId).url,
@@ -487,8 +496,11 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     )
     when(
       mockSecureMessageService
-        .addCustomerMessage(any[String], any[CustomerMessage], any[Enrolments])(any[ExecutionContext], any[Request[_]]))
+        .addCustomerMessage(any[String], any[CustomerMessage], any[Enrolments], any[String])(
+          any[ExecutionContext],
+          any[Request[_]]))
       .thenReturn(serviceResponse)
+    when(mockRequestMapper.findOrCreate(any[String])(any[ExecutionContext])).thenReturn(Future.successful(randomUUID))
 
   }
 

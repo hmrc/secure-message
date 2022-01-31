@@ -111,11 +111,20 @@ trait Auditing {
     auditConnector.sendExplicitAudit(txnStatus, detail)
   }
 
-  def auditCustomerReply(txnStatus: String, encodedId: String, customerMessage: Option[CustomerMessage])(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Unit = {
+  def auditCustomerReply(
+    txnStatus: String,
+    encodedId: String,
+    customerMessage: Option[CustomerMessage],
+    originalRequestId: String,
+    newRequestId: Option[String])(implicit hc: HeaderCarrier, ec: ExecutionContext): Unit = {
     val detail =
-      Map(customerReplyTxnName, "encodedId" -> encodedId, "content" -> customerMessage.map(_.content).getOrElse(""))
+      Map(
+        customerReplyTxnName,
+        "encodedId"         -> encodedId,
+        "content"           -> customerMessage.map(_.content).getOrElse(""),
+        "originalRequestId" -> originalRequestId,
+        "newRequestId"      -> newRequestId.getOrElse("")
+      )
     auditConnector.sendExplicitAudit(txnStatus, detail)
   }
 
