@@ -23,7 +23,7 @@ class ItTestSuite
       new AddMessageToConversationISpec,
       new CreateConversationISpec,
       new GetMessagesISpec,
-      new GetMessagesCountISpec,
-      new GetIndividualConversationISpec,
-      new PostCustomerReadTimeISpec
+//      new GetMessagesCountISpec,
+//      new GetIndividualConversationISpec,
+//      new PostCustomerReadTimeISpec
     )

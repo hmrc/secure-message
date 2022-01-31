@@ -63,8 +63,10 @@ class SecureMessageController @Inject()(
           .map {
             case Right(_) =>
               auditCreateConversation("CreateQueryConversationSuccess", conversation, "Conversation Created")
+              println(s"Conversation created: $conversation")
               Created
             case Left(error: SecureMessageError) =>
+              println(s"Conversation created error: $conversation & $error")
               auditCreateConversation("CreateNewQueryConversationFailed", conversation, "Conversation Created")
               handleErrors(conversation.id, error, Some(ClientName.withName(conversation.client)))
           }
@@ -100,7 +102,7 @@ class SecureMessageController @Inject()(
       messageTypeAndId <- EitherT(Future.successful(IdCoder.decodeId(encodedId))).leftWiden[SecureMessageError]
       enrolments       <- EitherT(getEnrolments()).leftWiden[SecureMessageError]
       message          <- EitherT(Future.successful(parseAs[CustomerMessage]())).leftWiden[SecureMessageError]
-      _ <- EitherT(secureMessageService.addCustomerMessage(new ObjectId(messageTypeAndId._2), message, enrolments))
+      _ <- EitherT(secureMessageService.addCustomerMessage(messageTypeAndId._2, message, enrolments))
             .leftWiden[SecureMessageError]
     } yield message
     message.value map {

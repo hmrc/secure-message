@@ -121,15 +121,6 @@ abstract class SecureMessageRepository[A: ClassTag](
       Future(0)
     }
 
-//  private def getCount(selectorObj: Bson)(implicit ec: ExecutionContext): Future[Long] = {
-//    println(selectorObj)
-//    if (selectorObj != Filters.empty()) {
-//      collection.countDocuments(selectorObj).toFuture()
-//    } else {
-//      Future(0)
-//    }
-//  }
-
   protected def getMessage(id: ObjectId, identifiers: Set[Identifier])(
     implicit ec: ExecutionContext): Future[Either[SecureMessageError, A]] = {
     val query = identifierQuery(identifiers)

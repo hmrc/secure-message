@@ -56,12 +56,12 @@ class ConversationRepository @Inject()(mongo: MongoComponent)(implicit ec: Execu
 
   def insertIfUnique(conversation: Conversation)(
     implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] = {
-    println("---------" + conversation)
+    println(conversation)
     collection
       .insertOne(conversation)
       .toFuture()
       .map { e =>
-        println("--------result" + e + e.getInsertedId)
+        println("--------result for insert ----------------" + e + e.getInsertedId)
         Right(())
       }
       .recoverWith {
@@ -72,7 +72,10 @@ class ConversationRepository @Inject()(mongo: MongoComponent)(implicit ec: Execu
   }
 
   def getConversations(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
-    implicit ec: ExecutionContext): Future[List[Conversation]] = getMessages(identifiers, tags)
+    implicit ec: ExecutionContext): Future[List[Conversation]] = {
+    println("--------querySelector-------" + identifiers + tags)
+    getMessages(identifiers, tags)
+  }
 
   def getConversationsCount(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
     implicit ec: ExecutionContext): Future[Count] =
@@ -104,6 +107,26 @@ class ConversationRepository @Inject()(mongo: MongoComponent)(implicit ec: Execu
       case Left(_) => Left(MessageNotFound(s"Conversation not found for identifiers: $identifiers"))
       case r       => r
     }
+
+  def getConversation(conversationId: String, identifiers: Set[Identifier])(
+    implicit ec: ExecutionContext): Future[Either[MessageNotFound, Conversation]] = {
+    val query = identifierQuery(identifiers)
+    collection
+      .find(
+        Filters.and(Filters.equal("id", conversationId), query)
+      )
+      .sort(Filters.equal("_id", -1))
+      .first()
+      .toFuture()
+      .map(Option(_) match {
+        case Some(m) => Right(m)
+        case None    => Left(MessageNotFound(s"Conversation not found for identifiers: $identifiers"))
+      })
+      .recoverWith {
+        case exception =>
+          Future.successful(Left(MessageNotFound(exception.getMessage)))
+      }
+  }
 
   def addMessageToConversation(
     objectId: ObjectId,

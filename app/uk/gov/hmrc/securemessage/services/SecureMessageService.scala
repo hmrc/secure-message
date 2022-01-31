@@ -82,7 +82,11 @@ class SecureMessageService @Inject()(
     for {
       conversations <- conversationRepository.getConversations(identifiers, filters.tags)
       letters       <- messageRepository.getLetters(identifiers, filters.tags)
-    } yield (conversations ++ letters).sortBy(_.issueDate)(dateTimeDescending)
+    } yield {
+      println("-------------conversations--------" + conversations)
+      println("-------------letters--------" + letters)
+      (conversations ++ letters).sortBy(_.issueDate)(dateTimeDescending)
+    }
   }
 
   def getMessagesCount(authEnrolments: Enrolments, filters: Filters)(implicit ec: ExecutionContext): Future[Count] = {
@@ -132,14 +136,14 @@ class SecureMessageService @Inject()(
     } yield ()
   }.value
 
-  def addCustomerMessage(id: ObjectId, messagesRequest: CustomerMessage, enrolments: Enrolments)(
+  def addCustomerMessage(conversationId: String, messagesRequest: CustomerMessage, enrolments: Enrolments)(
     implicit ec: ExecutionContext,
     request: Request[_]): Future[Either[SecureMessageError, Unit]] = {
     def message(sender: Participant) = ConversationMessage(sender.id, new DateTime(), messagesRequest.content)
     val identifiers: Set[Identifier] = enrolments.asIdentifiers
-    println("--------addCustomerMessage-------" + id)
+    println("--------addCustomerMessage-------" + conversationId)
     for {
-      conversation <- EitherT(conversationRepository.getConversation(id, identifiers))
+      conversation <- EitherT(conversationRepository.getConversation(conversationId, identifiers))
       sender       <- EitherT(Future(conversation.participantWith(identifiers)))
       _            <- forwardMessage(conversation.id, messagesRequest)
       _ <- EitherT(
