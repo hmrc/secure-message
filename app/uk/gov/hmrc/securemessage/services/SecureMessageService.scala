@@ -136,14 +136,14 @@ class SecureMessageService @Inject()(
     } yield ()
   }.value
 
-  def addCustomerMessage(conversationId: String, messagesRequest: CustomerMessage, enrolments: Enrolments)(
+  def addCustomerMessage(id: String, messagesRequest: CustomerMessage, enrolments: Enrolments)(
     implicit ec: ExecutionContext,
     request: Request[_]): Future[Either[SecureMessageError, Unit]] = {
     def message(sender: Participant) = ConversationMessage(sender.id, new DateTime(), messagesRequest.content)
     val identifiers: Set[Identifier] = enrolments.asIdentifiers
-    println("--------addCustomerMessage-------" + conversationId)
+    println("--------addCustomerMessage-------" + id)
     for {
-      conversation <- EitherT(conversationRepository.getConversation(conversationId, identifiers))
+      conversation <- EitherT(conversationRepository.getConversation(new ObjectId(id), identifiers))
       sender       <- EitherT(Future(conversation.participantWith(identifiers)))
       _            <- forwardMessage(conversation.id, messagesRequest)
       _ <- EitherT(

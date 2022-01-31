@@ -36,7 +36,6 @@ import uk.gov.hmrc.emailaddress.EmailAddress
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.securemessage.connectors.{ ChannelPreferencesConnector, EISConnector, EmailConnector }
-import uk.gov.hmrc.securemessage.controllers.model.MessageType
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.ConversationMetadata
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
@@ -567,8 +566,8 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
     getConversationResult: Either[MessageNotFound, Conversation],
     addMessageResult: Either[SecureMessageError, Unit] = Right(()))
       extends TestHelpers {
-    val encodedId: String = base64Encode(MessageType.Conversation + "/" + "D-80542-20201120")
-    when(mockConversationRepository.getConversation(any[String], any[Set[Identifier]])(any[ExecutionContext]))
+    val encodedId: String = "61f802a8cb050005c58cc3c7"
+    when(mockConversationRepository.getConversation(any[ObjectId], any[Set[Identifier]])(any[ExecutionContext]))
       .thenReturn(Future(getConversationResult))
     when(
       mockConversationRepository
