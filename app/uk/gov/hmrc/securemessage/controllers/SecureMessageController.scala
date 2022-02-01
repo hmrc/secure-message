@@ -63,10 +63,8 @@ class SecureMessageController @Inject()(
           .map {
             case Right(_) =>
               auditCreateConversation("CreateQueryConversationSuccess", conversation, "Conversation Created")
-              println(s"Conversation created: $conversation")
               Created
             case Left(error: SecureMessageError) =>
-              println(s"Conversation created error: $conversation & $error")
               auditCreateConversation("CreateNewQueryConversationFailed", conversation, "Conversation Created")
               handleErrors(conversation.id, error, Some(ClientName.withName(conversation.client)))
           }

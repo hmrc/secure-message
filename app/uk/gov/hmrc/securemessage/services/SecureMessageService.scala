@@ -33,10 +33,10 @@ import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.{ ApiConversation, 
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage
 import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.ApiLetter
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
+import uk.gov.hmrc.securemessage.models._
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.Customer.eqCustomer
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.{ Customer => PCustomer }
 import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, _ }
-import uk.gov.hmrc.securemessage.models._
 import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository }
 import uk.gov.hmrc.securemessage.services.utils.ContentValidator
 
@@ -82,11 +82,7 @@ class SecureMessageService @Inject()(
     for {
       conversations <- conversationRepository.getConversations(identifiers, filters.tags)
       letters       <- messageRepository.getLetters(identifiers, filters.tags)
-    } yield {
-      println("-------------conversations--------" + conversations)
-      println("-------------letters--------" + letters)
-      (conversations ++ letters).sortBy(_.issueDate)(dateTimeDescending)
-    }
+    } yield (conversations ++ letters).sortBy(_.issueDate)(dateTimeDescending)
   }
 
   def getMessagesCount(authEnrolments: Enrolments, filters: Filters)(implicit ec: ExecutionContext): Future[Count] = {
@@ -141,7 +137,6 @@ class SecureMessageService @Inject()(
     request: Request[_]): Future[Either[SecureMessageError, Unit]] = {
     def message(sender: Participant) = ConversationMessage(sender.id, new DateTime(), messagesRequest.content)
     val identifiers: Set[Identifier] = enrolments.asIdentifiers
-    println("--------addCustomerMessage-------" + id)
     for {
       conversation <- EitherT(conversationRepository.getConversation(new ObjectId(id), identifiers))
       sender       <- EitherT(Future(conversation.participantWith(identifiers)))

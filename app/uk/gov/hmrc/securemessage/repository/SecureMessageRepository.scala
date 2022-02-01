@@ -33,8 +33,8 @@ abstract class SecureMessageRepository[A: ClassTag](
   collectionName: String,
   mongo: MongoComponent,
   domainFormat: Format[A],
-  indexes: Seq[IndexModel] = Seq.empty,
-  replaceIndexes: Boolean = false)(implicit ec: ExecutionContext)
+  indexes: Seq[IndexModel],
+  replaceIndexes: Boolean)(implicit ec: ExecutionContext)
     extends PlayMongoRepository[A](mongo, collectionName, domainFormat, indexes, replaceIndexes = replaceIndexes) {
 
   implicit val format: OFormat[A] = domainFormat.asInstanceOf[OFormat[A]]

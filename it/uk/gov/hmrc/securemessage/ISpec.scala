@@ -20,6 +20,7 @@ import cats.data.NonEmptyList
 import com.github.nscala_time.time.Imports.DateTime
 import org.apache.commons.codec.binary.Base64
 import org.bson.types.ObjectId
+import org.mongodb.scala.model.Filters
 import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.play.PlaySpec
 import play.api.http.{ ContentTypes, HeaderNames }
@@ -45,8 +46,8 @@ trait ISpec extends PlaySpec with ServiceSpec with BeforeAndAfterEach with AuthH
   protected val messageRepo: MessageRepository = app.injector.instanceOf[MessageRepository]
 
   override protected def beforeEach(): Unit = {
-    await(conversationRepo.collection.drop().toFuture())
-    await(messageRepo.collection.drop().toFuture().map(_ => ()))
+    await(conversationRepo.collection.deleteMany(Filters.empty()).toFuture())
+    await(messageRepo.collection.deleteMany(Filters.empty()).toFuture().map(_ => ()))
   }
 
   protected def encodeId(id: ObjectId) = base64Encode(s"${MessageType.Conversation.entryName}/$id")

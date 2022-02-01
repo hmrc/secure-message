@@ -19,6 +19,7 @@ package uk.gov.hmrc.securemessage.repository
 import cats.data.NonEmptyList
 import org.joda.time.DateTime
 import org.mongodb.scala.bson.ObjectId
+import org.mongodb.scala.model.Filters
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.play.PlaySpec
@@ -58,7 +59,7 @@ class ConversationRepositorySpec
   val allConversations = Seq(conversation1, conversation2, conversation3, conversation4)
 
   override def beforeEach(): Unit =
-    repository.collection.drop().toFuture().map(_ => ()).futureValue
+    await(repository.collection.deleteMany(Filters.empty()).toFuture().map(_ => ()))
 
   //TODO: group test by their function name
   "A full conversation" should {

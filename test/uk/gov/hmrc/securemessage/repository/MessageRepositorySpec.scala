@@ -18,6 +18,7 @@ package uk.gov.hmrc.securemessage.repository
 
 import org.joda.time.{ DateTime, LocalDate }
 import org.mongodb.scala.bson.ObjectId
+import org.mongodb.scala.model.Filters
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.play.PlaySpec
@@ -39,14 +40,12 @@ class MessageRepositorySpec
   override lazy val repository = new MessageRepository(mongoComponent)
 
   override def beforeEach(): Unit =
-    repository.collection.drop().toFuture().map(_ => ()).futureValue
+    await(repository.collection.deleteMany(Filters.empty()).toFuture().map(_ => ()))
 
   "A letter" should {
     "be returned for a participating enrolment" in new TestContext() {
-      val result =
+      val result: Either[SecureMessageError, Letter] =
         await(repository.getLetter(objectID, identifiers))
-//      val result1 = await(repository.collection.find(Filters.equal("_id", objectID)).toFuture())
-//      Right(result1.head) mustBe Right(letters.head)
       result mustBe Right(letters.head)
     }
 

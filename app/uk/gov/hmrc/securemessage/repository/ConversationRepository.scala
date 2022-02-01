@@ -17,6 +17,7 @@
 package uk.gov.hmrc.securemessage.repository
 
 import org.joda.time.DateTime
+import org.mongodb.scala.MongoWriteException
 import org.mongodb.scala.bson.ObjectId
 import org.mongodb.scala.model._
 import play.api.libs.json.JodaWrites.{ JodaDateTimeWrites => _ }
@@ -37,45 +38,33 @@ class ConversationRepository @Inject()(mongo: MongoComponent)(implicit ec: Execu
       Conversation.conversationFormat,
       Seq(
         IndexModel(
-          Indexes.ascending("id"),
+          Indexes.ascending("client", "id"),
           IndexOptions()
-            .sparse(true)
+            .name("unique-conversation")
             .unique(true)
-            .background(true)),
-        IndexModel(
-          Indexes.ascending("client"),
-          IndexOptions()
-            .sparse(true)
-            .unique(false)
-            .background(true))
-      ),
-      replaceIndexes = true
+            .sparse(true))),
+      replaceIndexes = false
     ) {
 
-//  private val DuplicateKey = 11000
+  private val DuplicateKey = 11000
 
   def insertIfUnique(conversation: Conversation)(
-    implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] = {
-    println(conversation)
+    implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] =
     collection
       .insertOne(conversation)
       .toFuture()
-      .map { e =>
-        println("--------result for insert ----------------" + e + e.getInsertedId)
-        Right(())
-      }
+      .map(_ => Right(()))
       .recoverWith {
+        case e: MongoWriteException if e.getError.getCode == DuplicateKey =>
+          val errMsg = "Duplicate conversation: " + e.getError.getMessage
+          Future.successful(Left(DuplicateConversationError(errMsg, Some(e))))
         case e =>
           val errMsg = s"Database error trying to store conversation ${conversation.id}: " + e.getMessage
           Future.successful(Left(StoreError(errMsg, Some(e))))
       }
-  }
 
   def getConversations(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
-    implicit ec: ExecutionContext): Future[List[Conversation]] = {
-    println("--------querySelector-------" + identifiers + tags)
-    getMessages(identifiers, tags)
-  }
+    implicit ec: ExecutionContext): Future[List[Conversation]] = getMessages(identifiers, tags)
 
   def getConversationsCount(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
     implicit ec: ExecutionContext): Future[Count] =

@@ -31,7 +31,9 @@ class MessageRepository @Inject()(mongo: MongoComponent)(implicit ec: ExecutionC
     extends SecureMessageRepository[Letter](
       "message",
       mongo,
-      Letter.letterFormat
+      Letter.letterFormat,
+      Seq.empty[IndexModel],
+      replaceIndexes = false
     ) {
 
   override protected def messagesQuerySelector(identifiers: Set[Identifier], tags: Option[List[FilterTag]]): Bson = {
