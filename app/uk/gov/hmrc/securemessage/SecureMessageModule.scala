@@ -21,11 +21,6 @@ import uk.gov.hmrc.time.DateTimeUtils
 
 class SecureMessageModule extends AbstractModule {
 
-//  @Provides
-//  @Singleton
-//  def mongoConnectorProvider(mongoComponent: MongoComponent): MongoConnector =
-//    mongoComponent.
-
   override def configure(): Unit = {
     bind(classOf[DateTimeUtils]).to(classOf[TimeProvider])
     super.configure()

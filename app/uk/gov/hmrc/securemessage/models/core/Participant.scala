@@ -36,8 +36,6 @@ final case class Participant(
 }
 
 object Participant {
-//  implicit val dateTimeFormat: Format[DateTime] = MongoJodaFormats.dateTimeFormat
-
   private val dateFormatString = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
 
   implicit val dateFormat: Format[DateTime] =

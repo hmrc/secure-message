@@ -20,6 +20,7 @@ import cats.implicits.toFoldableOps
 import org.mongodb.scala.bson.ObjectId
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.{ Filters, IndexModel }
+import play.api.Logger
 import play.api.libs.json._
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
@@ -27,7 +28,7 @@ import uk.gov.hmrc.securemessage.models.core.{ Conversation, Count, FilterTag, I
 import uk.gov.hmrc.securemessage.{ MessageNotFound, SecureMessageError }
 
 import scala.concurrent.{ ExecutionContext, Future }
-import scala.reflect.ClassTag
+import scala.reflect.{ ClassTag, classTag }
 
 abstract class SecureMessageRepository[A: ClassTag](
   collectionName: String,
@@ -38,6 +39,7 @@ abstract class SecureMessageRepository[A: ClassTag](
     extends PlayMongoRepository[A](mongo, collectionName, domainFormat, indexes, replaceIndexes = replaceIndexes) {
 
   implicit val format: OFormat[A] = domainFormat.asInstanceOf[OFormat[A]]
+  private val logger = Logger(getClass)
 
   protected def messagesQuerySelector(identifiers: Set[Identifier], tags: Option[List[FilterTag]]): Bson =
     (identifiers, tags) match {
@@ -113,7 +115,7 @@ abstract class SecureMessageRepository[A: ClassTag](
   private def getMessageUnreadCount(baseQuery: Bson)(implicit ec: ExecutionContext) =
     if (baseQuery != Filters.empty()) {
       collection
-        .find(Filters.and(baseQuery, Filters.exists("readTime", false)))
+        .find(Filters.and(baseQuery, Filters.exists("readTime", exists = false)))
         .sort(Filters.equal("_id", -1))
         .toFuture()
         .map(_.toList.size)
@@ -135,17 +137,15 @@ abstract class SecureMessageRepository[A: ClassTag](
       .toFuture()
       .map(Option(_) match {
         case Some(m) => Right(m)
-        case None    => Left(MessageNotFound(s"Message not found for identifiers: $identifiers"))
+        case None =>
+          logger.debug(identifiers.toString())
+          Left(MessageNotFound(s"${classTag[A].runtimeClass.getSimpleName} not found for identifiers: $identifiers"))
       })
       .recoverWith {
         case exception =>
           Future.successful(Left(MessageNotFound(exception.getMessage)))
       }
   }
-
-  //  protected def dbErrorHandler[B]: ErrorHandler[B] = Cursor.FailOnError[B] { (_, error) =>
-//    logger.error(s"db error: ${error.getMessage}", error)
-//  }
 
   protected def identifierQuery(identifiers: Set[Identifier]): Bson = {
     val listOfFilters = identifiers.foldLeft(List.empty[Bson])(

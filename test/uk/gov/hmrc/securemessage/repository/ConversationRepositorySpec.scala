@@ -240,8 +240,8 @@ class ConversationRepositorySpec
     ) {
       val message1: ConversationMessage = ConversationMessage(2, new DateTime(), "test")
       val message2: ConversationMessage = ConversationMessage(3, new DateTime(), "test")
-      await(repository.addMessageToConversation(conversation._id, conversation.client, conversation.id, message1))
-      await(repository.addMessageToConversation(conversation._id, conversation.client, conversation.id, message2))
+      await(repository.addMessageToConversation(conversation.client, conversation.id, message1))
+      await(repository.addMessageToConversation(conversation.client, conversation.id, message2))
       val updated: Either[MessageNotFound, Conversation] = await(
         repository
           .getConversation(
@@ -260,7 +260,7 @@ class ConversationRepositorySpec
       conversations = Seq(conversation)
     ) {
       val result: Either[StoreError, Unit] =
-        await(repository.addReadTime(conversation._id, conversation.client, conversation.id, 2, DateTime.now))
+        await(repository.addReadTime(conversation.client, conversation.id, 2, DateTime.now))
       result mustBe Right(())
     }
   }
@@ -287,7 +287,7 @@ class ConversationRepositorySpec
     "return 2 total messages and 1 unread" in new TestContext(
       conversations = allConversations
     ) {
-      await(repository.addReadTime(conversation1._id, conversation1.client, conversation1.id, 2, DateTime.now))
+      await(repository.addReadTime(conversation1.client, conversation1.id, 2, DateTime.now))
       val result: Count =
         await(
           repository.getConversationsCount(Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))), None))

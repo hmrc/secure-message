@@ -331,8 +331,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
       when(mockEisConnector.forwardMessage(any[QueryMessageWrapper])).thenReturn(Future(Right(())))
       await(service.addCustomerMessage(encodedId, customerMessage, enrolments))
       verify(mockConversationRepository, times(1))
-        .addMessageToConversation(any[ObjectId], any[String], any[String], any[ConversationMessage])(
-          any[ExecutionContext])
+        .addMessageToConversation(any[String], any[String], any[ConversationMessage])(any[ExecutionContext])
     }
 
     "return NoParticipantFound if the customer does not have a participating enrolment" in new AddCustomerMessageTestContext(
@@ -358,8 +357,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
         .thenReturn(Set(Enrolment("HMRC-CUS-ORG", Seq(EnrolmentIdentifier("EORINumber", "GB123456789000000")), "")))
       await(service.addCustomerMessage(encodedId, customerMessage, mockEnrolments))
       verify(mockConversationRepository, never())
-        .addMessageToConversation(any[ObjectId], any[String], any[String], any[ConversationMessage])(
-          any[ExecutionContext])
+        .addMessageToConversation(any[String], any[String], any[ConversationMessage])(any[ExecutionContext])
     }
   }
 
@@ -439,7 +437,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
           .addReadTime(conversation, Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))), readTimeStamp)
           .value)
       verify(mockConversationRepository, times(1))
-        .addReadTime(conversation._id, conversation.client, conversation.id, 2, readTimeStamp)
+        .addReadTime(conversation.client, conversation.id, 2, readTimeStamp)
     }
 
     "add read time when no messages were read" in new AddReadTimesTestContext {
@@ -457,7 +455,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
           .addReadTime(conversation, Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))), readTimeStamp)
           .value)
       verify(mockConversationRepository, times(1))
-        .addReadTime(conversation._id, conversation.client, conversation.id, 2, readTimeStamp)
+        .addReadTime(conversation.client, conversation.id, 2, readTimeStamp)
     }
 
     "not add readTime when there are no new messages after last readtime" in new AddReadTimesTestContext {
@@ -476,7 +474,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
           .addReadTime(conversation, Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))), readTimeStamp)
           .value)
       verify(mockConversationRepository, times(0))
-        .addReadTime(conversation._id, conversation.client, conversation.id, 2, readTimeStamp)
+        .addReadTime(conversation.client, conversation.id, 2, readTimeStamp)
     }
   }
 
@@ -495,8 +493,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
     when(mockEmailConnector.send(any[EmailRequest])(any[HeaderCarrier])).thenReturn(Future.successful(Right(())))
     val mockChannelPreferencesConnector: ChannelPreferencesConnector = mock[ChannelPreferencesConnector]
     when(
-      mockConversationRepository.addReadTime(any[ObjectId], any[String], any[String], any[Int], any[DateTime])(
-        any[ExecutionContext]))
+      mockConversationRepository.addReadTime(any[String], any[String], any[Int], any[DateTime])(any[ExecutionContext]))
       .thenReturn(Future.successful(Right(())))
     when(
       mockConversationRepository
@@ -530,8 +527,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
       mockConversationRepository.getConversation(any[String], any[String], any[Set[Identifier]])(any[ExecutionContext]))
       .thenReturn(Future(getConversationResult))
     when(
-      mockConversationRepository.addReadTime(any[ObjectId], any[String], any[String], any[Int], any[DateTime])(
-        any[ExecutionContext]))
+      mockConversationRepository.addReadTime(any[String], any[String], any[Int], any[DateTime])(any[ExecutionContext]))
       .thenReturn(Future.successful(Right(())))
   }
 
@@ -548,8 +544,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
     when(mockConversationRepository.getConversation(any[ObjectId], any[Set[Identifier]])(any[ExecutionContext]))
       .thenReturn(Future(getConversationResult))
     when(
-      mockConversationRepository.addReadTime(any[ObjectId], any[String], any[String], any[Int], any[DateTime])(
-        any[ExecutionContext]))
+      mockConversationRepository.addReadTime(any[String], any[String], any[Int], any[DateTime])(any[ExecutionContext]))
       .thenReturn(Future.successful(Right(())))
   }
 
@@ -557,8 +552,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
     when(mockConversationRepository.getConversation(any[ObjectId], any[Set[Identifier]])(any[ExecutionContext]))
       .thenReturn(Future(getConversationResult))
     when(
-      mockConversationRepository.addReadTime(any[ObjectId], any[String], any[String], any[Int], any[DateTime])(
-        any[ExecutionContext]))
+      mockConversationRepository.addReadTime(any[String], any[String], any[Int], any[DateTime])(any[ExecutionContext]))
       .thenReturn(Future.successful(Left(StoreError("Can not store read time", None))))
   }
 
@@ -571,8 +565,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
       .thenReturn(Future(getConversationResult))
     when(
       mockConversationRepository
-        .addMessageToConversation(any[ObjectId], any[String], any[String], any[ConversationMessage])(
-          any[ExecutionContext]))
+        .addMessageToConversation(any[String], any[String], any[ConversationMessage])(any[ExecutionContext]))
       .thenReturn(Future(addMessageResult))
   }
 
@@ -585,8 +578,7 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
       .thenReturn(Future(getConversationResult))
     when(
       mockConversationRepository
-        .addMessageToConversation(any[ObjectId], any[String], any[String], any[ConversationMessage])(
-          any[ExecutionContext]))
+        .addMessageToConversation(any[String], any[String], any[ConversationMessage])(any[ExecutionContext]))
       .thenReturn(Future(addMessageResult))
     when(mockEmailConnector.send(any[EmailRequest])(any[HeaderCarrier])).thenReturn(Future(sendEmailResult))
   }

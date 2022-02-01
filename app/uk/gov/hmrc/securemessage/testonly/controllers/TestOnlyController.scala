@@ -51,7 +51,7 @@ class TestOnlyController @Inject()(
   def insertConversation(id: String): Action[JsValue] = Action.async(parse.json) { _ =>
     val identifier = Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))
     val conversation = Conversation(
-      id.asInstanceOf[ObjectId],
+      new ObjectId(id),
       "CDCM",
       id,
       ConversationStatus.Open,

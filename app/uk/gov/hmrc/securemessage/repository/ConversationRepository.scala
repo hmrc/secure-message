@@ -91,19 +91,12 @@ class ConversationRepository @Inject()(mongo: MongoComponent)(implicit ec: Execu
   }
 
   def getConversation(id: ObjectId, identifiers: Set[Identifier])(
-    implicit ec: ExecutionContext): Future[Either[SecureMessageError, Conversation]] =
-    getMessage(id, identifiers).map {
-      case Left(_) => Left(MessageNotFound(s"Conversation not found for identifiers: $identifiers"))
-      case r       => r
-    }
+    implicit ec: ExecutionContext): Future[Either[SecureMessageError, Conversation]] = getMessage(id, identifiers)
 
-  def addMessageToConversation(
-    objectId: ObjectId,
-    client: String,
-    conversationId: String,
-    message: ConversationMessage)(implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] = {
+  def addMessageToConversation(client: String, conversationId: String, message: ConversationMessage)(
+    implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] = {
     val query =
-      Filters.and(Filters.equal("_id", objectId), Filters.equal("client", client), Filters.equal("id", conversationId))
+      Filters.and(Filters.equal("client", client), Filters.equal("id", conversationId))
     collection
       .updateOne(query, Updates.addToSet("messages", Codecs.toBson(message)))
       .toFuture()
@@ -114,10 +107,9 @@ class ConversationRepository @Inject()(mongo: MongoComponent)(implicit ec: Execu
       }
   }
 
-  def addReadTime(objectId: ObjectId, client: String, conversationId: String, participantId: Int, readTime: DateTime)(
+  def addReadTime(client: String, conversationId: String, participantId: Int, readTime: DateTime)(
     implicit ec: ExecutionContext): Future[Either[StoreError, Unit]] = {
     val query = Filters.and(
-      Filters.equal("_id", objectId),
       Filters.equal("client", client),
       Filters.equal("id", conversationId),
       Filters.equal("participants.id", participantId))

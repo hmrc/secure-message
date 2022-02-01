@@ -66,14 +66,14 @@ class MessageRepositorySpec
     "not be returned for a participating enrolment with no enrolment HMRC-CUS-ORG" in new TestContext() {
       val result: Either[SecureMessageError, Letter] =
         await(repository.getLetter(objectID, Set(Identifier("EORINumber", "GB1234567890", enrolment = None))))
-      result.left.get.message mustBe "Message not found for identifiers: Set(Identifier(EORINumber,GB1234567890,None))"
+      result.left.get.message mustBe "Letter not found for identifiers: Set(Identifier(EORINumber,GB1234567890,None))"
     }
 
     "not be returned for a participating enrolment with different Enrolment" in new TestContext(
       coreLetters = List(Resources.readJson("model/core/letterWithOutHmrcCusOrg.json").add(timeFields))) {
       val result: Either[SecureMessageError, Letter] = await(repository.getLetter(objectID, identifiers))
 
-      result.left.get.message mustBe "Message not found for identifiers: Set(Identifier(EORINumber,GB1234567890,Some(HMRC-CUS-ORG)))"
+      result.left.get.message mustBe "Letter not found for identifiers: Set(Identifier(EORINumber,GB1234567890,Some(HMRC-CUS-ORG)))"
     }
 
     "not be returned if the enrolment is not a recipient" in new TestContext(
@@ -82,7 +82,7 @@ class MessageRepositorySpec
       val result: Either[SecureMessageError, Letter] =
         await(repository.getLetter(objectID, Set(Identifier("EORINumber", "GB1234567891", Some("HMRC-CUS-ORG")))))
       result.left.get mustBe MessageNotFound(
-        "Message not found for identifiers: Set(Identifier(EORINumber,GB1234567891,Some(HMRC-CUS-ORG)))")
+        "Letter not found for identifiers: Set(Identifier(EORINumber,GB1234567891,Some(HMRC-CUS-ORG)))")
     }
   }
 
