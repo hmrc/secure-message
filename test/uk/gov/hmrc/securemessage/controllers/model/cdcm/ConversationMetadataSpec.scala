@@ -28,7 +28,8 @@ import uk.gov.hmrc.securemessage.models.core._
 
 class ConversationMetadataSpec extends PlaySpec {
 
-  implicit val messages: Messages = stubMessages()
+  implicit val messages: Messages = stubMessages(
+    stubMessagesApi(Map("default" -> Map("conversation.inbox.default.system.sender" -> "system"))))
   val objectID = new ObjectId()
   "ConversationMetadata" must {
     "Convert core conversation to conversation metadata and then serialise into JSON" in {
@@ -74,6 +75,25 @@ class ConversationMetadataSpec extends PlaySpec {
                                                             |    "subject": "MRN: 19GB4S24GC3PPFGVR7",
                                                             |    "unreadMessages": true
                                                             |}""".stripMargin)
+    }
+
+    "Convert core conversation to conversation metadata with the latest name based on participant type" in {
+      val identifier = Identifier(name = "EORINumber", value = "GB1234567890", enrolment = Some("HMRC-CUS-ORG"))
+      val conversationJson: JsValue = Resources
+        .readJson("model/core/conversation-minimal-without-name.json")
+        .as[JsObject] + ("_id" -> Json.toJson(objectID))
+      val coreConversation: Conversation = conversationJson.validate[Conversation].get
+      val convertedMetadata = ConversationMetadata
+        .coreToConversationMetadata(coreConversation, Set(identifier))
+      Json.toJson(convertedMetadata) mustBe Json.parse("""{
+                                                         |    "client": "cdcm",
+                                                         |    "conversationId": "D-80542-20201120",
+                                                         |    "count": 1,
+                                                         |    "issueDate": "2020-11-10T15:00:01.000+0000",
+                                                         |    "senderName": "system",
+                                                         |    "subject": "D-80542-20201120",
+                                                         |    "unreadMessages": true
+                                                         |}""".stripMargin)
     }
   }
 }

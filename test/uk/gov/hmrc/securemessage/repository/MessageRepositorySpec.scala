@@ -129,7 +129,10 @@ class MessageRepositorySpec
       val result: Future[List[Letter]] = repository.getLetters(identifiers, None)
       result.futureValue mustBe letters
     }
-
+    "return an empty list if no identifier enrolment passed" in new TestContext() {
+      val result: Future[List[Letter]] = repository.getLetters(Set.empty, None)
+      result.futureValue mustBe empty
+    }
     "return an empty list if no identifier enrolment matches" in new TestContext() {
       val result: Future[List[Letter]] =
         repository.getLetters(identifiers.map(i => i.copy(enrolment = Some("non-existing"))), None)

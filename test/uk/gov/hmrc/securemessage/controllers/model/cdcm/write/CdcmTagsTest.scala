@@ -16,19 +16,17 @@
 
 package uk.gov.hmrc.securemessage.controllers.model.cdcm.write
 
-import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 
-class CdcmTagsTest extends AnyFreeSpec with Matchers {
+class CdcmTagsTest extends AnyWordSpec with Matchers {
 
-  "CdcmTags" - {
-    "mrn should" - {
-      "not allow empty mrn" in {
-        the[IllegalArgumentException] thrownBy (CdcmTags("", CdcmNotificationType.CDSExports)) must have message "requirement failed: empty mrn not allowed"
-      }
-      "allow non empty mrn" in {
-        CdcmTags("someMrn", CdcmNotificationType.CDSExports) mustBe a[CdcmTags]
-      }
+  "CdcmTags" must {
+    "not allow empty mrn" in {
+      the[IllegalArgumentException] thrownBy (CdcmTags("", CdcmNotificationType.CDSExports)) must have message "requirement failed: empty mrn not allowed"
+    }
+    "allow non empty mrn" in {
+      CdcmTags("someMrn", CdcmNotificationType.CDSExports) mustBe a[CdcmTags]
     }
   }
 }

@@ -374,10 +374,16 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       private val response = controller.addCustomerMessage(encodedId)(fakeRequest)
       status(response) mustBe NOT_FOUND
     }
-    "return Bad Gateway (502) when the message cannot be forwarded to EIS" in new CreateCustomerMessageTestCase(
+    "return BAD_GATEWAY (502) when the message cannot be forwarded to EIS" in new CreateCustomerMessageTestCase(
       serviceResponse = Future.successful(Left(EisForwardingError("Failed to forward message to EIS")))) {
       private val response = controller.addCustomerMessage(encodedId)(fakeRequest)
       status(response) mustBe BAD_GATEWAY
+    }
+    "return BAD_REQUEST (400) when the message body is invalid" in new CreateCustomerMessageTestCase(
+      serviceResponse = Future.successful(Right(()))) {
+      private val invalidRequest = fakeRequest.withJsonBody(Json.obj("invalid-content" -> "PGRpdj5IZWxsbzwvZGl2Pg=="))
+      private val response = controller.addCustomerMessage(encodedId)(invalidRequest)
+      status(response) mustBe BAD_REQUEST
     }
   }
 

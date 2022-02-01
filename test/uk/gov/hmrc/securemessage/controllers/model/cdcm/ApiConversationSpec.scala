@@ -27,12 +27,12 @@ import org.mongodb.scala.bson.ObjectId
 class ApiConversationSpec extends PlaySpec {
 
   "ApiConversation" must {
-    val objectID = new ObjectId()
+    val objectId = new ObjectId()
     "Convert core conversation to ApiConversation details when hmrc sends first message to customer" in {
       val identifiers = Set(Identifier(name = "EORINumber", value = "GB1234567890", enrolment = Some("HMRC-CUS-ORG")))
       val conversationJson: JsValue = Resources
         .readJson("model/core/hmrc-sent-first-message-core.json")
-        .as[JsObject] + ("_id" -> Json.toJson(objectID))
+        .as[JsObject] + ("_id" -> Json.toJson(objectId))
       val coreConversation: Conversation = conversationJson.validate[Conversation].get
       val apiConversation = ApiConversation.fromCore(coreConversation, identifiers)
       apiConversation mustBe a[ApiConversation]
@@ -67,7 +67,7 @@ class ApiConversationSpec extends PlaySpec {
       val identifiers = Set(Identifier(name = "EORINumber", value = "GB1234567890", enrolment = Some("HMRC-CUS-ORG")))
       val conversationJson: JsValue = Resources
         .readJson("model/core/customer-first-read-core.json")
-        .as[JsObject] + ("_id" -> Json.toJson(objectID))
+        .as[JsObject] + ("_id" -> Json.toJson(objectId))
       val coreConversation: Conversation = conversationJson.validate[Conversation].get
       val apiConversation = ApiConversation.fromCore(coreConversation, identifiers)
       apiConversation mustBe a[ApiConversation]
@@ -95,7 +95,7 @@ class ApiConversationSpec extends PlaySpec {
       val identifiers = Set(Identifier(name = "EORINumber", value = "GB1234567890", enrolment = Some("HMRC-CUS-ORG")))
       val conversationJson: JsValue = Resources
         .readJson("model/core/customer-sent-message-core.json")
-        .as[JsObject] + ("_id" -> Json.toJson(objectID))
+        .as[JsObject] + ("_id" -> Json.toJson(objectId))
       val coreConversation: Conversation = conversationJson.validate[Conversation].get
       val apiConversation = ApiConversation.fromCore(coreConversation, identifiers)
       apiConversation mustBe a[ApiConversation]
@@ -130,7 +130,7 @@ class ApiConversationSpec extends PlaySpec {
       val identifiers = Set(Identifier(name = "EORINumber", value = "GB1234567890", enrolment = Some("HMRC-CUS-ORG")))
       val conversationJson: JsValue = Resources
         .readJson("model/core/read-by-other-user-core.json")
-        .as[JsObject] + ("_id" -> Json.toJson(objectID))
+        .as[JsObject] + ("_id" -> Json.toJson(objectId))
       val coreConversation: Conversation = conversationJson.validate[Conversation].get
       val apiConversation = ApiConversation.fromCore(coreConversation, identifiers)
       apiConversation mustBe a[ApiConversation]
@@ -179,7 +179,7 @@ class ApiConversationSpec extends PlaySpec {
       val identifiers = Set(Identifier(name = "EORINumber", value = "GB1234567890", enrolment = Some("HMRC-CUS-ORG")))
       val conversationJson: JsValue = Resources
         .readJson("model/core/conversation-full-extender.json")
-        .as[JsObject] + ("_id" -> Json.toJson(objectID))
+        .as[JsObject] + ("_id" -> Json.toJson(objectId))
       val coreConversation: Conversation = conversationJson.validate[Conversation].get
       val apiConversation = ApiConversation.fromCore(coreConversation, identifiers)
       apiConversation mustBe a[ApiConversation]

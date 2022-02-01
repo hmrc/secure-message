@@ -68,7 +68,7 @@ class ConversationRepositorySpec
     ) {
       val conversation: Conversation =
         ConversationUtil.getFullConversation(new ObjectId(), "123", "HMRC-CUS-ORG", "EORINumber", "GB1234567890")
-      await(repository.collection.insertOne(conversation).toFuture())
+      await(repository.insertIfUnique(conversation))
       val count = await(repository.collection.countDocuments().toFuture())
       count mustEqual 1
     }
@@ -79,10 +79,9 @@ class ConversationRepositorySpec
       conversations = Seq()
     ) {
       val conversation: Conversation = ConversationUtil.getMinimalConversation(id = "123")
-      await(repository.collection.insertOne(conversation).toFuture())
+      await(repository.insertIfUnique(conversation))
       val count = await(repository.collection.countDocuments().toFuture())
       count mustEqual 1
-
     }
   }
 
