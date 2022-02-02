@@ -50,8 +50,8 @@ abstract class CacheStoreRepo[A, B] @Inject()(servicesConfig: ServicesConfig)(
   setIndex()
 
   def findValue(key: A): Future[Option[BSONDocument]] = {
-    val uuidExists = BSONDocument(s"$key" -> BSONDocument("$exists" -> true))
-    cacheRepo.find(uuidExists, None).one[BSONDocument].map {
+    val valueExists = BSONDocument(s"$key" -> BSONDocument("$exists" -> true))
+    cacheRepo.find(valueExists, None).one[BSONDocument].map {
       case Some(bd) => Some(bd)
       case None     => None
     }
