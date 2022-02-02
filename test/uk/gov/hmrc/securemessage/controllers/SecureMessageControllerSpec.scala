@@ -39,7 +39,6 @@ import uk.gov.hmrc.auth.core.authorise.Predicate
 import uk.gov.hmrc.auth.core.retrieve.Retrieval
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import uk.gov.hmrc.requestmapping.RequestMapper
 import uk.gov.hmrc.securemessage._
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.{ ApiConversation, ConversationMetadata }
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.{ CaseworkerMessage, CdcmConversation }
@@ -50,7 +49,7 @@ import uk.gov.hmrc.securemessage.controllers.model.{ ClientName, MessageType }
 import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core.Letter._
 import uk.gov.hmrc.securemessage.models.core._
-import uk.gov.hmrc.securemessage.repository.ConversationRepository
+import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, CustomerMessageCacheStore }
 import uk.gov.hmrc.securemessage.services.SecureMessageService
 
 import java.util.UUID
@@ -423,7 +422,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
 
   }
   class TestCase(authEnrolments: Set[CustomerEnrolment] = Set(testEnrolment)) {
-    val mockRequestMapper: RequestMapper = mock[RequestMapper]
+    val mockRequestMapper: CustomerMessageCacheStore = mock[CustomerMessageCacheStore]
     val mockRepository: ConversationRepository = mock[ConversationRepository]
     val mockAuthConnector: AuthConnector = mock[AuthConnector]
     val mockAuditConnector: AuditConnector = mock[AuditConnector]

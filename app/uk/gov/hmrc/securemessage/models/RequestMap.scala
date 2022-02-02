@@ -14,21 +14,20 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.requestmapping
+package uk.gov.hmrc.securemessage.models
 
-import uk.gov.hmrc.requestmapping.repository.RequestMappingRepo
+import org.joda.time.DateTime
+import play.api.libs.json.JodaReads.jodaDateReads
+import play.api.libs.json.JodaWrites.jodaDateWrites
+import play.api.libs.json.{ Format, Json }
 
-import javax.inject.Inject
-import scala.concurrent.{ ExecutionContext, Future }
+case class RequestMap(xRequest: String, eisId: String, created: DateTime)
 
-class RequestMapper @Inject()(requestMappingRepo: RequestMappingRepo) {
-  def findOrCreate(xRequestId: String)(implicit ec: ExecutionContext): Future[String] =
-    for {
-      find   <- requestMappingRepo.findRequestMap(xRequestId)
-      create <- requestMappingRepo.insertRequestMap(find, xRequestId)
-    } yield
-      create match {
-        case Some(rm) => rm.eisId
-        case None     => xRequestId
-      }
+case object RequestMap {
+  private val dateFormatString = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+
+  implicit val dateFormat: Format[DateTime] =
+    Format(jodaDateReads(dateFormatString), jodaDateWrites(dateFormatString))
+
+  implicit val formats = Json.format[RequestMap]
 }

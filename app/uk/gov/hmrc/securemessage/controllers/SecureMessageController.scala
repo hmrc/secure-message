@@ -28,7 +28,6 @@ import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.requestmapping.RequestMapper
 import uk.gov.hmrc.securemessage._
 import uk.gov.hmrc.securemessage.controllers.model.MessageType.{ Conversation, Letter }
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write._
@@ -38,6 +37,7 @@ import uk.gov.hmrc.securemessage.controllers.model.{ ApiMessage, ClientName, Mes
 import uk.gov.hmrc.securemessage.controllers.utils.IdCoder.DecodedId
 import uk.gov.hmrc.securemessage.controllers.utils.{ IdCoder, QueryStringValidation }
 import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag, Filters }
+import uk.gov.hmrc.securemessage.repository.CustomerMessageCacheStore
 import uk.gov.hmrc.securemessage.services.{ ImplicitClassesExtensions, SecureMessageService }
 import uk.gov.hmrc.time.DateTimeUtils
 
@@ -52,7 +52,7 @@ class SecureMessageController @Inject()(
   override val auditConnector: AuditConnector,
   secureMessageService: SecureMessageService,
   dataTimeUtils: DateTimeUtils,
-  requestMapper: RequestMapper)(implicit ec: ExecutionContext)
+  customerMessageCacheStore: CustomerMessageCacheStore)(implicit ec: ExecutionContext)
     extends BackendController(cc) with AuthorisedFunctions with QueryStringValidation with I18nSupport
     with ErrorHandling with Auditing with Logging with ImplicitClassesExtensions {
 
@@ -106,7 +106,7 @@ class SecureMessageController @Inject()(
       messageTypeAndId <- EitherT(Future.successful(IdCoder.decodeId(encodedId))).leftWiden[SecureMessageError]
       enrolments       <- EitherT(getEnrolments()).leftWiden[SecureMessageError]
       message          <- EitherT(Future.successful(parseAs[CustomerMessage]())).leftWiden[SecureMessageError]
-      newRequestId     <- EitherT.liftF(requestMapper.findOrCreate(originalRequestId))
+      newRequestId     <- EitherT.liftF(customerMessageCacheStore.findOrCreate(originalRequestId))
       _ <- EitherT(secureMessageService.addCustomerMessage(messageTypeAndId._2, message, enrolments, newRequestId))
             .leftWiden[SecureMessageError]
     } yield (message, newRequestId)
