@@ -23,35 +23,35 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar.mock
 import org.scalatestplus.play.PlaySpec
 import play.api.test.Helpers.{ await, defaultAwaitTimeout }
-import reactivemongo.bson.BSONDocument
 import uk.gov.hmrc.mongo.MongoSpecSupport
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-import uk.gov.hmrc.requestmapping.repository.CacheStoreRepo
+import uk.gov.hmrc.requestcache.PersistentMap
+import uk.gov.hmrc.securemessage.services.CustomerMessageCacheService
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class CustomerMessageCacheStoreSpec extends PlaySpec with MongoSpecSupport with BeforeAndAfterEach with ScalaFutures {
+class CustomerMessageCacheServiceSpec extends PlaySpec with MongoSpecSupport with BeforeAndAfterEach with ScalaFutures {
 
   val mockServicesConfig: ServicesConfig = mock[ServicesConfig]
-  val mockCacheStore: CacheStoreRepo[String, UUID] = mock[CacheStoreRepo[String, UUID]]
-  val cacheStore = new CustomerMessageCacheStore(mockServicesConfig)
+  val mockPersistentMap: PersistentMap[String, String] = mock[PersistentMap[String, String]]
+  val customerMessageCacheService = new CustomerMessageCacheService(mockPersistentMap)
 
   "CustomerMessageCacheStore.findOrCreate" should {
     "successfully return a new id string to forward on to eis" in {
       val xRequestId: String = "oidg9vkxvklsdfjkwe8fd9rdklf=="
-      when(mockCacheStore.findValue(any[String])).thenReturn(Future.successful(None))
-      when(mockCacheStore.createMap(any[String], any[UUID])).thenReturn(Future.successful(true))
-      await(cacheStore.findOrCreate(xRequestId).map(res => res)) mustNot be(xRequestId)
+      val randomId = UUID.randomUUID()
+      when(mockPersistentMap.get(any[String])).thenReturn(Future.successful(""))
+      when(mockPersistentMap.insert(any[String], any[String])).thenReturn(Future.successful(true))
+      await(customerMessageCacheService.findOrCreate(xRequestId, randomId).map(res => res)) mustBe randomId.toString
     }
 
     "successfully return an already existing id if one if found in mongo" in {
       val xRequestId: String = "sdfklsdfklv94309rfk9sdfklx=="
       val eisId: String = UUID.fromString("781974aa-a482-4530-8066-c0b4de79d1c9").toString
-      when(mockCacheStore.findValue(any[String]))
-        .thenReturn(Future.successful(Some(BSONDocument(s"$xRequestId" -> s"$eisId"))))
-      await(cacheStore.findOrCreate(xRequestId)) mustBe eisId
+      when(mockPersistentMap.get(any[String])).thenReturn(Future.successful(eisId))
+      await(customerMessageCacheService.findOrCreate(xRequestId)) mustBe "sdfklsdfklv94309rfk9sdfklx=="
     }
   }
 }

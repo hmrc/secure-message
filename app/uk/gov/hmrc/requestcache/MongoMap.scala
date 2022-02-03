@@ -14,21 +14,20 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.requestmapping.repository
+package uk.gov.hmrc.requestcache
 
 import org.joda.time.DateTime
 import reactivemongo.api.collections.bson.BSONCollection
 import reactivemongo.api.indexes.{ Index, IndexType }
 import reactivemongo.api.{ DB, WriteConcern }
-import reactivemongo.bson.{ BSONDocument, _ }
+import reactivemongo.bson.{ BSONDateTime, BSONDocument }
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
 
-abstract class CacheStoreRepo[A, B] @Inject()(servicesConfig: ServicesConfig)(
-  implicit val mongo: () => DB,
-  ec: ExecutionContext) {
+class MongoMap @Inject()(servicesConfig: ServicesConfig)(implicit mongo: () => DB, ec: ExecutionContext)
+    extends PersistentMap[String, String] {
 
   private val cacheRepo = mongo().collection[BSONCollection]("cacheStore")
 
@@ -49,21 +48,19 @@ abstract class CacheStoreRepo[A, B] @Inject()(servicesConfig: ServicesConfig)(
 
   setIndex()
 
-  def findValue(key: A): Future[Option[BSONDocument]] = {
+  def get(key: String): Future[String] = {
     val valueExists = BSONDocument(s"$key" -> BSONDocument("$exists" -> true))
     cacheRepo.find(valueExists, None).one[BSONDocument].map {
-      case Some(bd) => Some(bd)
-      case None     => None
+      case Some(bd) => bd.getAs[String](s"$key").get
+      case None     => ""
     }
   }
 
-  def createMap(key: A, value: B): Future[Boolean] = {
-    val keyFormatCheck = key.toString
-    val valueFormatCheck = value.toString
+  def insert(key: String, value: String): Future[Boolean] = {
     val dateTime = DateTime.now().getMillis
     val createdAt = BSONDateTime.apply(dateTime)
     cacheRepo
       .insert(ordered = true, writeConcern = WriteConcern.Default)
-      .one(BSONDocument(keyFormatCheck -> valueFormatCheck, "createdAt" -> createdAt))
+      .one(BSONDocument(key -> value, "createdAt" -> createdAt))
   }.map(_.ok)
 }

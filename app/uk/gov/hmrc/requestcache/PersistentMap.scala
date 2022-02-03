@@ -14,19 +14,11 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.securemessage
+package uk.gov.hmrc.requestcache
 
-import com.google.inject.AbstractModule
-import uk.gov.hmrc.requestcache.{ MongoMap, PersistentMap }
-import uk.gov.hmrc.time.DateTimeUtils
+import scala.concurrent.Future
 
-class SecureMessageModule extends AbstractModule {
-
-  override def configure(): Unit = {
-    bind(classOf[DateTimeUtils]).to(classOf[TimeProvider])
-    bind(classOf[PersistentMap[String, String]]).to(classOf[MongoMap])
-    super.configure()
-  }
+trait PersistentMap[A, B] {
+  def get(key: A): Future[B]
+  def insert(key: A, value: B): Future[Boolean]
 }
-
-class TimeProvider extends DateTimeUtils

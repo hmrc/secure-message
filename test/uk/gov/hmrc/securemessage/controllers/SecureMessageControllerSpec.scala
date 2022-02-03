@@ -49,8 +49,8 @@ import uk.gov.hmrc.securemessage.controllers.model.{ ClientName, MessageType }
 import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core.Letter._
 import uk.gov.hmrc.securemessage.models.core._
-import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, CustomerMessageCacheStore }
-import uk.gov.hmrc.securemessage.services.SecureMessageService
+import uk.gov.hmrc.securemessage.repository.ConversationRepository
+import uk.gov.hmrc.securemessage.services.{ CustomerMessageCacheService, SecureMessageService }
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -422,7 +422,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
 
   }
   class TestCase(authEnrolments: Set[CustomerEnrolment] = Set(testEnrolment)) {
-    val mockRequestMapper: CustomerMessageCacheStore = mock[CustomerMessageCacheStore]
+    val mockRequestMapper: CustomerMessageCacheService = mock[CustomerMessageCacheService]
     val mockRepository: ConversationRepository = mock[ConversationRepository]
     val mockAuthConnector: AuthConnector = mock[AuthConnector]
     val mockAuditConnector: AuditConnector = mock[AuditConnector]

@@ -37,8 +37,7 @@ import uk.gov.hmrc.securemessage.controllers.model.{ ApiMessage, ClientName, Mes
 import uk.gov.hmrc.securemessage.controllers.utils.IdCoder.DecodedId
 import uk.gov.hmrc.securemessage.controllers.utils.{ IdCoder, QueryStringValidation }
 import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag, Filters }
-import uk.gov.hmrc.securemessage.repository.CustomerMessageCacheStore
-import uk.gov.hmrc.securemessage.services.{ ImplicitClassesExtensions, SecureMessageService }
+import uk.gov.hmrc.securemessage.services.{ CustomerMessageCacheService, ImplicitClassesExtensions, SecureMessageService }
 import uk.gov.hmrc.time.DateTimeUtils
 
 import java.util.UUID
@@ -52,7 +51,7 @@ class SecureMessageController @Inject()(
   override val auditConnector: AuditConnector,
   secureMessageService: SecureMessageService,
   dataTimeUtils: DateTimeUtils,
-  customerMessageCacheStore: CustomerMessageCacheStore)(implicit ec: ExecutionContext)
+  customerMessageCacheService: CustomerMessageCacheService)(implicit ec: ExecutionContext)
     extends BackendController(cc) with AuthorisedFunctions with QueryStringValidation with I18nSupport
     with ErrorHandling with Auditing with Logging with ImplicitClassesExtensions {
 
@@ -106,7 +105,7 @@ class SecureMessageController @Inject()(
       messageTypeAndId <- EitherT(Future.successful(IdCoder.decodeId(encodedId))).leftWiden[SecureMessageError]
       enrolments       <- EitherT(getEnrolments()).leftWiden[SecureMessageError]
       message          <- EitherT(Future.successful(parseAs[CustomerMessage]())).leftWiden[SecureMessageError]
-      newRequestId     <- EitherT.liftF(customerMessageCacheStore.findOrCreate(originalRequestId))
+      newRequestId     <- EitherT.liftF(customerMessageCacheService.findOrCreate(originalRequestId))
       _ <- EitherT(secureMessageService.addCustomerMessage(messageTypeAndId._2, message, enrolments, newRequestId))
             .leftWiden[SecureMessageError]
     } yield (message, newRequestId)
