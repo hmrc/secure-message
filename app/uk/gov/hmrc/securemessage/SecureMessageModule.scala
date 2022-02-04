@@ -16,19 +16,10 @@
 
 package uk.gov.hmrc.securemessage
 
-import com.google.inject.{ AbstractModule, Provides }
-import play.modules.reactivemongo.ReactiveMongoComponent
-import uk.gov.hmrc.mongo.MongoConnector
+import com.google.inject.AbstractModule
 import uk.gov.hmrc.time.DateTimeUtils
 
-import javax.inject.Singleton
-
 class SecureMessageModule extends AbstractModule {
-
-  @Provides
-  @Singleton
-  def mongoConnectorProvider(reactiveMongoComponent: ReactiveMongoComponent): MongoConnector =
-    reactiveMongoComponent.mongoConnector
 
   override def configure(): Unit = {
     bind(classOf[DateTimeUtils]).to(classOf[TimeProvider])

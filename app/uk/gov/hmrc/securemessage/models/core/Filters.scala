@@ -22,5 +22,4 @@ case class Filters(
   tags: Option[List[FilterTag]]) {
   def enrolmentKeysFilter: Set[String] = enrolmentKeys.toSet.flatten
   def enrolmentsFilter: Set[CustomerEnrolment] = customerEnrolments.toSet.flatten
-  def tagsFilter: Set[FilterTag] = tags.toSet.flatten
 }

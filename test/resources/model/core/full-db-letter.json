@@ -10,8 +10,10 @@
   "status": "succeeded",
   "content": "<h2>Test content</h2>",
   "statutory": false,
-  "lastUpdated": {
-    "$date": 1620728789318
+  "lastUpdated" : {
+    "$date": {
+      "$numberLong": "1620728789509"
+    }
   },
   "recipient": {
     "regime": "cds",
@@ -45,7 +47,9 @@
     "success": true
   },
   "readTime": {
-    "$date": 1620728789509
+    "$date": {
+      "$numberLong": "1620728789509"
+    }
   },
   "tags": {
     "notificationType": "Direct Debit"

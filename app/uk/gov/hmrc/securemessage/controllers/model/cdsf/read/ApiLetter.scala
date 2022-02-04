@@ -18,7 +18,6 @@ package uk.gov.hmrc.securemessage.controllers.model.cdsf.read
 
 import org.joda.time.{ DateTime, LocalDate }
 import play.api.libs.json.{ Format, Json }
-import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.securemessage.controllers.model.{ ApiFormats, ApiMessage }
 import uk.gov.hmrc.securemessage.models.core.{ Identifier, Letter }
 
@@ -52,9 +51,6 @@ object ApiLetter extends ApiFormats {
 
   implicit val senderInformationFormat: Format[SenderInformation] =
     Json.format[SenderInformation]
-
-  implicit val bsonObjectIdFormat: Format[BSONObjectID] =
-    Json.format[BSONObjectID]
 
   implicit val messageFormat: Format[ApiLetter] =
     Json.format[ApiLetter]

@@ -18,13 +18,13 @@ package uk.gov.hmrc.securemessage.models.core
 import cats.data.NonEmptyList
 import com.github.ghik.silencer.silent
 import org.joda.time.DateTime
+import org.mongodb.scala.bson.ObjectId
 import play.api.libs.json.{ Format, Json, OFormat }
-import reactivemongo.bson.BSONObjectID
-import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
+import uk.gov.hmrc.mongo.play.json.formats.MongoFormats
 import uk.gov.hmrc.securemessage.models.utils.NonEmptyListOps
 
 final case class Conversation(
-  _id: BSONObjectID = BSONObjectID.generate(),
+  _id: ObjectId = new ObjectId(),
   client: String,
   id: String,
   status: ConversationStatus,
@@ -58,6 +58,6 @@ final case class Conversation(
 
 }
 object Conversation extends NonEmptyListOps {
-  implicit val objectIdFormat: Format[BSONObjectID] = ReactiveMongoFormats.objectIdFormats
+  implicit val objectIdFormat: Format[ObjectId] = MongoFormats.objectIdFormat
   implicit val conversationFormat: OFormat[Conversation] = Json.format[Conversation]
 }

@@ -20,6 +20,7 @@ import cats.data._
 import cats.implicits._
 import com.google.inject.Inject
 import org.joda.time.DateTime
+import org.mongodb.scala.bson.ObjectId
 import play.api.i18n.Messages
 import play.api.mvc.Request
 import uk.gov.hmrc.auth.core.Enrolments
@@ -32,12 +33,13 @@ import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.{ ApiConversation, 
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage
 import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.ApiLetter
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
+import uk.gov.hmrc.securemessage.models._
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.Customer.eqCustomer
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.{ Customer => PCustomer }
 import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, _ }
-import uk.gov.hmrc.securemessage.models._
 import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository }
 import uk.gov.hmrc.securemessage.services.utils.ContentValidator
+
 import java.util.UUID
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -96,7 +98,7 @@ class SecureMessageService @Inject()(
       )
   }
 
-  def getConversation(id: String, enrolments: Set[CustomerEnrolment])(
+  def getConversation(id: ObjectId, enrolments: Set[CustomerEnrolment])(
     implicit ec: ExecutionContext): Future[Either[SecureMessageError, ApiConversation]] = {
     val identifiers = enrolments.map(_.asIdentifier)
     for {
@@ -105,7 +107,7 @@ class SecureMessageService @Inject()(
     } yield ApiConversation.fromCore(conversation, identifiers)
   }.value
 
-  def getLetter(id: String, enrolments: Set[CustomerEnrolment])(
+  def getLetter(id: ObjectId, enrolments: Set[CustomerEnrolment])(
     implicit ec: ExecutionContext): Future[Either[SecureMessageError, ApiLetter]] = {
     val identifiers = enrolments.map(_.asIdentifier)
     for {
@@ -135,11 +137,12 @@ class SecureMessageService @Inject()(
     def message(sender: Participant) = ConversationMessage(sender.id, new DateTime(), messagesRequest.content)
     val identifiers: Set[Identifier] = enrolments.asIdentifiers
     for {
-      conversation <- EitherT(conversationRepository.getConversation(id, identifiers))
+      conversation <- EitherT(conversationRepository.getConversation(new ObjectId(id), identifiers))
       sender       <- EitherT(Future(conversation.participantWith(identifiers)))
       _            <- forwardMessage(conversation.id, messagesRequest)
       _ <- EitherT(
-            conversationRepository.addMessageToConversation(conversation.client, conversation.id, message(sender)))
+            conversationRepository
+              .addMessageToConversation(conversation.client, conversation.id, message(sender)))
             .leftWiden[SecureMessageError]
     } yield ()
   }.value
@@ -176,9 +179,12 @@ class SecureMessageService @Inject()(
       conversation: Conversation,
       readTime: DateTime): Future[Either[SecureMessageError, Unit]] =
       reader.lastReadTime match {
-        case None => conversationRepository.addReadTime(conversation.client, conversation.id, reader.id, readTime)
+        case None =>
+          conversationRepository
+            .addReadTime(conversation.client, conversation.id, reader.id, readTime)
         case Some(lastReadTime) if (lastReadTime.isBefore(conversation.latestMessage.created)) =>
-          conversationRepository.addReadTime(conversation.client, conversation.id, reader.id, readTime)
+          conversationRepository
+            .addReadTime(conversation.client, conversation.id, reader.id, readTime)
         case _ => Future.successful(Right[SecureMessageError, Unit](()))
       }
 

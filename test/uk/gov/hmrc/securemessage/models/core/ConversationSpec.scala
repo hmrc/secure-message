@@ -18,16 +18,16 @@ package uk.gov.hmrc.securemessage.models.core
 
 import cats.data.NonEmptyList
 import org.joda.time.DateTime
+import org.mongodb.scala.bson.ObjectId
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json.{ JsObject, JsSuccess, JsValue, Json }
-import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.securemessage.helpers.{ ConversationUtil, Resources }
 import uk.gov.hmrc.securemessage.models.core.Conversation._
 
 class ConversationSpec extends PlaySpec with ConversationTestData with OrderingDefinitions {
 
   "Validating a conversation" must {
-    val objectID = BSONObjectID.generate
+    val objectID = new ObjectId()
     "be successful when optional fields are present" in {
       val conversationJson = Resources.readJson("model/core/conversation.json").as[JsObject] + ("_id" -> Json.toJson(
         objectID))
@@ -130,7 +130,7 @@ trait ConversationTestData {
     sender: Participant = system,
     messages: List[ConversationMessage] = List(messageWith())): Conversation =
     Conversation(
-      BSONObjectID.generate,
+      new ObjectId(),
       "",
       "",
       ConversationStatus.Open,
