@@ -495,7 +495,9 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
           any[ExecutionContext],
           any[Request[_]]))
       .thenReturn(serviceResponse)
-    when(mockRequestMapper.findOrCreate(any[String], any[UUID])(any[ExecutionContext]))
+    when(
+      mockRequestMapper
+        .findOrCreate(any[String], any[UUID])(any[ExecutionContext]))
       .thenReturn(Future.successful(randomUUID.toString))
 
   }
