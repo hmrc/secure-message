@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2022 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,10 @@
 
 package uk.gov.hmrc.securemessage
 
+import org.mongodb.scala.bson.ObjectId
 import org.scalatest.DoNotDiscover
 import play.api.http.{ ContentTypes, HeaderNames }
 import play.api.test.Helpers._
-import reactivemongo.bson.BSONObjectID
 
 import java.io.File
 
@@ -41,7 +41,7 @@ class GetMessagesCountISpec extends ISpec {
     }
 
     "return a JSON body of count of no unread messages when no filters are provided by leveraging auth enrolments" in {
-      val id = BSONObjectID.generate()
+      val id = new ObjectId()
       val encodedId = encodeId(id)
       insertConversation(id)
       wsClient

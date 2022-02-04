@@ -20,17 +20,17 @@ import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json.{ JsError, JsObject, JsSuccess, JsValue, Json }
-import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CdcmConversation
 import uk.gov.hmrc.securemessage.helpers.Resources
-import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment }
+import uk.gov.hmrc.securemessage.models.core.CustomerEnrolment
 import uk.gov.hmrc.securemessage.models.core.Conversation
 import Conversation._
+import org.mongodb.scala.bson.ObjectId
 
 class CdcmConversationSpec extends PlaySpec {
 
   "A full conversation API request model" should {
-    val objectID = BSONObjectID.generate()
+    val objectID = new ObjectId()
 
     "be converted correctly to a core conversation model" in {
       val formatter = ISODateTimeFormat.dateTime()

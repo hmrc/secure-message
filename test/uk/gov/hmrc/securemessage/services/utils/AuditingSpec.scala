@@ -21,10 +21,10 @@ import cats.data.NonEmptyList
 import org.joda.time.format.ISODateTimeFormat
 import org.joda.time.{ DateTime, DateTimeZone, LocalDate }
 import org.mockito.Mockito.verify
+import org.mongodb.scala.bson.ObjectId
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.http.Status.{ ACCEPTED, INTERNAL_SERVER_ERROR, NO_CONTENT }
-import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.auth.core.{ Enrolment, EnrolmentIdentifier, Enrolments }
 import uk.gov.hmrc.emailaddress.EmailAddress
 import uk.gov.hmrc.http.HeaderCarrier
@@ -53,7 +53,7 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
     val message = ConversationMessage(1, DateTime.now, messageContent)
     val alert = Alert("", None)
     val conversation = Conversation(
-      BSONObjectID.generate,
+      new ObjectId(),
       CDCM.entryName,
       "D-80542-20210327",
       ConversationStatus.Open,

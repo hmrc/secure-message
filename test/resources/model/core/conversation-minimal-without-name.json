@@ -1,0 +1,34 @@
+{
+    "client": "cdcm",
+    "id": "D-80542-20201120",
+    "status": "open",
+    "subject": "D-80542-20201120",
+    "language": "en",
+    "participants": [
+        {
+            "id": 1,
+            "participantType": "system",
+            "identifier": {
+                "name": "CDCM",
+                "value": "D-80542-20201120"
+            }
+        },
+        {
+            "id": 2,
+            "participantType": "customer",
+            "identifier": {
+                "enrolment": "HMRC-CUS-ORG",
+                "name": "EORINumber",
+                "value": "GB1234567890"
+            }
+        }
+    ],
+    "messages": [{
+        "senderId": 1,
+        "created": "2020-11-10T15:00:01.000Z",
+        "content": "QmxhaCBibGFoIGJsYWg="
+    }],
+    "alert": {
+        "templateId": "emailTemplateId"
+    }
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2022 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,17 +19,19 @@ package uk.gov.hmrc.securemessage
 import cats.data.NonEmptyList
 import com.github.nscala_time.time.Imports.DateTime
 import org.apache.commons.codec.binary.Base64
+import org.bson.types.ObjectId
+import org.mongodb.scala.model.Filters
 import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.play.PlaySpec
 import play.api.http.{ ContentTypes, HeaderNames }
 import play.api.libs.ws.{ WSClient, WSResponse }
-import reactivemongo.bson.BSONObjectID
+import play.api.test.Helpers.{ await, defaultAwaitTimeout }
 import uk.gov.hmrc.integration.ServiceSpec
 import uk.gov.hmrc.securemessage.controllers.model.MessageType
-import uk.gov.hmrc.securemessage.models.core.{ Alert, Conversation, ConversationMessage, ConversationStatus, Identifier, Language, Participant, ParticipantType }
+import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository }
+
 import java.io.File
-import play.api.test.Helpers.{ await, defaultAwaitTimeout }
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.Random
 
@@ -44,14 +46,13 @@ trait ISpec extends PlaySpec with ServiceSpec with BeforeAndAfterEach with AuthH
   protected val messageRepo: MessageRepository = app.injector.instanceOf[MessageRepository]
 
   override protected def beforeEach(): Unit = {
-    await(conversationRepo.removeAll())
-    await(messageRepo.removeAll())
-    ()
+    await(conversationRepo.collection.deleteMany(Filters.empty()).toFuture())
+    await(messageRepo.collection.deleteMany(Filters.empty()).toFuture().map(_ => ()))
   }
 
-  protected def encodeId(id: BSONObjectID) = base64Encode(s"${MessageType.Conversation.entryName}/${id.stringify}")
+  protected def encodeId(id: ObjectId) = base64Encode(s"${MessageType.Conversation.entryName}/$id")
 
-  protected def insertConversation(id: BSONObjectID) = {
+  protected def insertConversation(id: ObjectId) = {
     val conversationId = Random.nextInt(1000).toString
     val messages = NonEmptyList(ConversationMessage(1, DateTime.now, "content"), List.empty)
     val conversation = Conversation(

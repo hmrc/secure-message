@@ -18,7 +18,7 @@ package uk.gov.hmrc.securemessage.helpers
 
 import cats.data.NonEmptyList
 import org.joda.time.DateTime
-import reactivemongo.bson.BSONObjectID
+import org.mongodb.scala.bson.ObjectId
 import uk.gov.hmrc.emailaddress.EmailAddress
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CdcmConversation
 import uk.gov.hmrc.securemessage.controllers.model.common.write.{ Customer, Recipient }
@@ -38,7 +38,7 @@ object ConversationUtil {
         )) :: cnv.recipients)
   }
   def getFullConversation(
-    objectId: BSONObjectID = BSONObjectID.generate,
+    objectId: ObjectId = new ObjectId(),
     id: String,
     enrolmentKey: String,
     enrolmentName: String,
@@ -91,7 +91,7 @@ object ConversationUtil {
       alert
     )
 
-  def getMinimalConversation(id: String, objectId: BSONObjectID = BSONObjectID.generate): Conversation =
+  def getMinimalConversation(id: String, objectId: ObjectId = new ObjectId()): Conversation =
     Conversation(
       objectId,
       "cdcm",

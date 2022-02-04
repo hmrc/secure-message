@@ -20,8 +20,8 @@ import org.joda.time.DateTime
 import play.api.libs.json.JodaReads.jodaDateReads
 import play.api.libs.json.JodaWrites.jodaDateWrites
 import play.api.libs.json.{ Format, Json }
-import uk.gov.hmrc.emailaddress._
 import uk.gov.hmrc.emailaddress.PlayJsonFormats._
+import uk.gov.hmrc.emailaddress._
 
 final case class Participant(
   id: Int,

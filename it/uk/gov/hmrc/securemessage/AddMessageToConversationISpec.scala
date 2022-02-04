@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2022 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,12 +30,16 @@ import java.io.File
 class AddMessageToConversationISpec extends ISpec {
 
   "A POST request to /secure-messaging/conversation/{client}/{conversationId}/customer-message" must {
-    "return CREATED when the message is successfully added to the conversation" in new CustomerTestCase(VALID_EORI) {
+    "return CREATED when the message is successfully added to the conversation" in new CustomerTestCase(
+      VALID_EORI,
+      "D-80542-20201110") {
 
       response.body mustBe s""""Created customer message for encodedId: $messageId""""
       response.status mustBe CREATED
     }
-    "return NOT FOUND when the conversation ID is not recognised" in new CustomerTestCase(VALID_EORI) {
+    "return NOT FOUND when the conversation ID is not recognised" in new CustomerTestCase(
+      VALID_EORI,
+      "D-80542-20201121") {
       val actualRresponse =
         wsClient
           .url(resource(s"/secure-messaging/messages/$nonExistingEncodedId/customer-message"))
@@ -46,7 +50,9 @@ class AddMessageToConversationISpec extends ISpec {
       actualRresponse.body mustBe s""""Error on message with client: None, message id: $nonExistingEncodedId, error message: Conversation not found for identifiers: Set(Identifier(EORINumber,GB1234567890,Some(HMRC-CUS-ORG)))""""
     }
 
-    "return NOT_FOUND when the customer is not a participant" in new CustomerTestCase("GB1234567891") {
+    "return NOT_FOUND when the customer is not a participant" in new CustomerTestCase(
+      "GB1234567891",
+      "D-80542-20201122") {
       response.status mustBe NOT_FOUND
       response.body mustBe s""""Error on message with client: None, message id: $nonExistingEncodedId, error message: Conversation not found for identifiers: Set(Identifier(EORINumber,GB1234567891,Some(HMRC-CUS-ORG)))""""
     }
@@ -68,7 +74,7 @@ class AddMessageToConversationISpec extends ISpec {
           .post(new File("./it/resources/cdcm/caseworker-message.json"))
           .futureValue
       response.status mustBe NOT_FOUND
-      response.body mustBe "\"Error on message with client: Some(CDCM), message id: D-80542-20201120, error message: Conversation not found for identifier: Set(Identifier(CDCM,D-80542-20201120,None))\""
+      response.body mustBe "\"Error on message with client: Some(CDCM), message id: D-80542-20201120, error message: Conversation not found for identifiers: Set(Identifier(CDCM,D-80542-20201120,None))\""
     }
     "return BAD_REQUEST when invalid message content is supplied" in new CaseworkerTestCase(
       "./it/resources/cdcm/caseworker-message-invalid-html.json") {
@@ -93,9 +99,8 @@ class AddMessageToConversationISpec extends ISpec {
         .futureValue
   }
 
-  class CustomerTestCase(eori: String) {
+  class CustomerTestCase(eori: String, conversationId: String) {
     val client = "CDCM"
-    val conversationId: String = "D-80542-20201120"
     val nonExistingEncodedId = "Y29udmVyc2F0aW9uLzYwYTcxMzFlMTUwMDAwNmE1YjYyZWVlZg=="
     await(
       wsClient

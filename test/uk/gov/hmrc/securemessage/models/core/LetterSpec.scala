@@ -17,9 +17,9 @@
 package uk.gov.hmrc.securemessage.models.core
 
 import org.joda.time.DateTime
+import org.mongodb.scala.bson.ObjectId
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json.{ JsObject, Json }
-import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.{ ApiLetter, FirstReaderInformation, SenderInformation }
 import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core.Letter._
@@ -27,7 +27,7 @@ import uk.gov.hmrc.securemessage.models.core.Letter._
 class LetterSpec extends PlaySpec {
   "Letter" must {
     "be parsed from json object" in {
-      val objectID = BSONObjectID.generate
+      val objectID = new ObjectId()
       val letterJson = Resources.readJson("model/core/letter.json").as[JsObject] +
         ("_id"         -> Json.toJson(objectID)) +
         ("lastUpdated" -> Json.toJson(DateTime.now())) +
@@ -41,7 +41,7 @@ class LetterSpec extends PlaySpec {
     }
 
     "be parsed without readTime from json object" in {
-      val objectID = BSONObjectID.generate
+      val objectID = new ObjectId()
       val letterJson = Resources.readJson("model/core/letter.json").as[JsObject] +
         ("_id"         -> Json.toJson(objectID)) +
         ("lastUpdated" -> Json.toJson(DateTime.now()))
