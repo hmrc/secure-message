@@ -39,7 +39,7 @@ final case class CdcmConversation(
     extends DateTimeUtils {
 
   def asConversationWithCreatedDate(client: String, conversationId: String, created: DateTime): Conversation = {
-    val initialMessage = ConversationMessage(1, created, message)
+    val initialMessage = ConversationMessage(None, 1, created, message, None)
     val initialParticipants = getSenderParticipant(client, conversationId, sender.system) :: getRecipientParticipants(
       recipients)
     Conversation(

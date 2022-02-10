@@ -487,7 +487,9 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     )
     when(
       mockSecureMessageService
-        .addCustomerMessage(any[String], any[CustomerMessage], any[Enrolments])(any[ExecutionContext], any[Request[_]]))
+        .addCustomerMessage(any[String], any[CustomerMessage], any[Enrolments], any[String], any[String])(
+          any[ExecutionContext],
+          any[Request[_]]))
       .thenReturn(serviceResponse)
 
   }

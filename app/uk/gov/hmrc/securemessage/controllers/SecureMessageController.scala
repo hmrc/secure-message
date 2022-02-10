@@ -40,6 +40,7 @@ import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag, Fil
 import uk.gov.hmrc.securemessage.services.{ ImplicitClassesExtensions, SecureMessageService }
 import uk.gov.hmrc.time.DateTimeUtils
 
+import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success, Try }
@@ -96,19 +97,22 @@ class SecureMessageController @Inject()(
   }
 
   def addCustomerMessage(encodedId: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
+    val randomId = UUID.randomUUID().toString
+    val xRequestId = request.headers.get("X-Request-ID").getOrElse(s"govuk-tax-$randomId")
     val message = for {
       messageTypeAndId <- EitherT(Future.successful(IdCoder.decodeId(encodedId))).leftWiden[SecureMessageError]
       enrolments       <- EitherT(getEnrolments()).leftWiden[SecureMessageError]
       message          <- EitherT(Future.successful(parseAs[CustomerMessage]())).leftWiden[SecureMessageError]
-      _ <- EitherT(secureMessageService.addCustomerMessage(messageTypeAndId._2, message, enrolments))
+      _ <- EitherT(
+            secureMessageService.addCustomerMessage(messageTypeAndId._2, message, enrolments, randomId, xRequestId))
             .leftWiden[SecureMessageError]
     } yield message
     message.value map {
       case Right(msg) =>
-        auditCustomerReply("CustomerReplyToConversationSuccess", encodedId, Some(msg))
+        auditCustomerReply("CustomerReplyToConversationSuccess", encodedId, Some(msg), randomId, xRequestId)
         Created(Json.toJson(s"Created customer message for encodedId: $encodedId"))
       case Left(error) =>
-        auditCustomerReply("CustomerReplyToConversationFailed", encodedId, None)
+        auditCustomerReply("CustomerReplyToConversationFailed", encodedId, None, randomId, xRequestId)
         handleErrors(encodedId, error)
     }
   }

@@ -83,9 +83,11 @@ object ConversationUtil {
       ),
       NonEmptyList.one(
         ConversationMessage(
+          None,
           1,
           new DateTime(messageCreationDate),
-          "QmxhaCBibGFoIGJsYWg="
+          "QmxhaCBibGFoIGJsYWg=",
+          None
         )
       ),
       alert
@@ -120,9 +122,11 @@ object ConversationUtil {
       ),
       NonEmptyList.one(
         ConversationMessage(
+          None,
           1,
           new DateTime("2020-11-10T15:00:01.000"),
-          "QmxhaCBibGFoIGJsYWg="
+          "QmxhaCBibGFoIGJsYWg=",
+          None
         )
       ),
       alert.copy(parameters = None)

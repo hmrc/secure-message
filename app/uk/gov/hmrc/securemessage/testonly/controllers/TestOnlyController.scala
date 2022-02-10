@@ -80,9 +80,11 @@ class TestOnlyController @Inject()(
       ),
       NonEmptyList.one(
         ConversationMessage(
+          None,
           1,
           DateTime.now,
-          "QmxhaCBibGFoIGJsYWg="
+          "QmxhaCBibGFoIGJsYWg=",
+          None
         )
       ),
       Alert("", None)

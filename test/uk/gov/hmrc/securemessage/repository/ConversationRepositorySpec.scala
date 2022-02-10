@@ -238,8 +238,8 @@ class ConversationRepositorySpec
     "increase the message array size" in new TestContext(
       conversations = Seq(conversation)
     ) {
-      val message1: ConversationMessage = ConversationMessage(2, new DateTime(), "test")
-      val message2: ConversationMessage = ConversationMessage(3, new DateTime(), "test")
+      val message1: ConversationMessage = ConversationMessage(None, 2, new DateTime(), "test", None)
+      val message2: ConversationMessage = ConversationMessage(None, 3, new DateTime(), "test", None)
       await(repository.addMessageToConversation(conversation.client, conversation.id, message1))
       await(repository.addMessageToConversation(conversation.client, conversation.id, message2))
       val updated: Either[MessageNotFound, Conversation] = await(
@@ -318,7 +318,7 @@ class ConversationRepositorySpec
 
   "Conversation Unread count" should {
     "render 1 if system Message is after participant readTime" in {
-      val systemMessage = ConversationMessage(1, DateTime.now.minusDays(1), "!!!")
+      val systemMessage = ConversationMessage(None, 1, DateTime.now.minusDays(1), "!!!", None)
       val systemParticipant =
         Participant(1, ParticipantType.System, Identifier("CDCM", "SMF123456789", None), None, None, None, None)
       val customerParticipant = Participant(
@@ -339,7 +339,7 @@ class ConversationRepositorySpec
     }
 
     "render 0 if system Message is before participant readTime" in {
-      val systemMessage = ConversationMessage(1, DateTime.now.minusDays(2), "!!!")
+      val systemMessage = ConversationMessage(None, 1, DateTime.now.minusDays(2), "!!!", None)
       val systemParticipant =
         Participant(1, ParticipantType.System, Identifier("CDCM", "SMF123456789", None), None, None, None, None)
       val customerParticipant = Participant(
@@ -360,7 +360,7 @@ class ConversationRepositorySpec
     }
 
     "render 0 if customer Message is after participant readTime" in {
-      val customerMessage = ConversationMessage(2, DateTime.now.minusDays(1), "!!!")
+      val customerMessage = ConversationMessage(None, 2, DateTime.now.minusDays(1), "!!!", None)
       val systemParticipant =
         Participant(1, ParticipantType.System, Identifier("CDCM", "SMF123456789", None), None, None, None, None)
       val customerParticipant = Participant(
@@ -381,7 +381,7 @@ class ConversationRepositorySpec
     }
 
     "render 1 if system Message is after participant readTime with multiple readTimes" in {
-      val systemMessage = ConversationMessage(1, DateTime.now.minusDays(1), "!!!")
+      val systemMessage = ConversationMessage(None, 1, DateTime.now.minusDays(1), "!!!", None)
       val systemParticipant =
         Participant(1, ParticipantType.System, Identifier("CDCM", "SMF123456789", None), None, None, None, None)
       val customerParticipant = Participant(
@@ -411,8 +411,8 @@ class ConversationRepositorySpec
   }
 
   class TextContextWithInsert(conversations: Seq[Conversation]) {
-    val systemMessage = ConversationMessage(1, DateTime.now.minusDays(1), "!!!")
-    val systemMessageOld = ConversationMessage(1, DateTime.now.minusDays(3), "!!!")
+    val systemMessage = ConversationMessage(None, 1, DateTime.now.minusDays(1), "!!!", None)
+    val systemMessageOld = ConversationMessage(None, 1, DateTime.now.minusDays(3), "!!!", None)
     val systemParticipant =
       Participant(1, ParticipantType.System, Identifier("CDCM", "SMF123456789", None), None, None, None, None)
     val customerParticipant = Participant(
