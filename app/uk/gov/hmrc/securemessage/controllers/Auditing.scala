@@ -29,7 +29,7 @@ import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.ApiLetter
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
 import uk.gov.hmrc.securemessage.controllers.model.{ ApiMessage, ClientName, MessageType }
 import uk.gov.hmrc.securemessage.controllers.utils.IdCoder
-import uk.gov.hmrc.securemessage.models.core.Conversation
+import uk.gov.hmrc.securemessage.models.core.{ Conversation, Reference }
 import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryMessageRequest }
 
 import scala.concurrent.ExecutionContext
@@ -60,9 +60,12 @@ trait Auditing {
       v <- m.get(NotificationType)
     } yield (NotificationType, v)).toMap
 
-  def auditCreateConversation(txnStatus: String, conversation: Conversation, responseMessage: String)(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Unit = {
+  def auditCreateConversation(
+    txnStatus: String,
+    conversation: Conversation,
+    responseMessage: String,
+    id: String,
+    xRequestId: Option[Reference])(implicit hc: HeaderCarrier, ec: ExecutionContext): Unit = {
     val detail = detailWithNotificationType(
       Map(
         newConversationTxnName,
@@ -70,7 +73,9 @@ trait Auditing {
         "messageId"       -> conversation.id,
         "subject"         -> conversation.subject,
         "initialMessage"  -> conversation.messages.head.content,
-        "responseMessage" -> responseMessage
+        "responseMessage" -> responseMessage,
+        "id"              -> id,
+        "X-request-ID"    -> xRequestId.map(_.value).getOrElse("no x-request-id found")
       ),
       conversation.tags
     )
@@ -99,14 +104,20 @@ trait Auditing {
     auditConnector.sendExplicitAudit(txnStatus, details)
   }
 
-  def auditCaseworkerReply(txnStatus: String, client: ClientName, conversationId: String, cwm: CaseworkerMessage)(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Unit = {
+  def auditCaseworkerReply(
+    txnStatus: String,
+    client: ClientName,
+    conversationId: String,
+    cwm: CaseworkerMessage,
+    id: String,
+    xRequestId: Option[Reference])(implicit hc: HeaderCarrier, ec: ExecutionContext): Unit = {
     val detail = Map(
       caseworkerReplyTxnName,
-      "client"    -> client.entryName,
-      "messageId" -> conversationId,
-      "content"   -> cwm.content
+      "client"       -> client.entryName,
+      "messageId"    -> conversationId,
+      "content"      -> cwm.content,
+      "id"           -> id,
+      "X-request-ID" -> xRequestId.map(_.value).getOrElse("no x-request-id found")
     )
     auditConnector.sendExplicitAudit(txnStatus, detail)
   }
@@ -116,14 +127,15 @@ trait Auditing {
     encodedId: String,
     customerMessage: Option[CustomerMessage],
     id: String,
-    xRequestId: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Unit = {
+    xRequestId: Option[Reference])(implicit hc: HeaderCarrier, ec: ExecutionContext): Unit = {
     val detail =
       Map(
         customerReplyTxnName,
         "encodedId"    -> encodedId,
         "content"      -> customerMessage.map(_.content).getOrElse(""),
         "id"           -> id,
-        "X-request-ID" -> xRequestId)
+        "X-request-ID" -> xRequestId.map(_.value).getOrElse("no x-request-id found")
+      )
     auditConnector.sendExplicitAudit(txnStatus, detail)
   }
 

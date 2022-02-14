@@ -21,7 +21,7 @@ import cats.implicits._
 import org.mongodb.scala.bson.ObjectId
 import play.api.Logging
 import play.api.i18n.I18nSupport
-import play.api.libs.json.{ JsError, JsSuccess, JsValue, Json, Reads }
+import play.api.libs.json._
 import play.api.mvc.{ Action, AnyContent, ControllerComponents, Request }
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
@@ -36,7 +36,7 @@ import uk.gov.hmrc.securemessage.controllers.model.common.write._
 import uk.gov.hmrc.securemessage.controllers.model.{ ApiMessage, ClientName, MessageType }
 import uk.gov.hmrc.securemessage.controllers.utils.IdCoder.DecodedId
 import uk.gov.hmrc.securemessage.controllers.utils.{ IdCoder, QueryStringValidation }
-import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag, Filters }
+import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag, Filters, Reference }
 import uk.gov.hmrc.securemessage.services.{ ImplicitClassesExtensions, SecureMessageService }
 import uk.gov.hmrc.time.DateTimeUtils
 
@@ -56,17 +56,34 @@ class SecureMessageController @Inject()(
 
   def createConversation(client: ClientName, conversationId: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
+      val randomId = UUID.randomUUID().toString
+      val maybeReference = xRequestIdExists(request)
       withJsonBody[CdcmConversation] { cdcmConversation =>
         val conversation =
-          cdcmConversation.asConversationWithCreatedDate(client.entryName, conversationId, dataTimeUtils.now)
+          cdcmConversation.asConversationWithCreatedDate(
+            client.entryName,
+            conversationId,
+            dataTimeUtils.now,
+            randomId,
+            maybeReference)
         secureMessageService
           .createConversation(conversation)
           .map {
             case Right(_) =>
-              auditCreateConversation("CreateQueryConversationSuccess", conversation, "Conversation Created")
+              auditCreateConversation(
+                "CreateQueryConversationSuccess",
+                conversation,
+                "Conversation Created",
+                randomId,
+                maybeReference)
               Created
             case Left(error: SecureMessageError) =>
-              auditCreateConversation("CreateNewQueryConversationFailed", conversation, "Conversation Created")
+              auditCreateConversation(
+                "CreateNewQueryConversationFailed",
+                conversation,
+                "Conversation Created",
+                randomId,
+                maybeReference)
               handleErrors(conversation.id, error, Some(ClientName.withName(conversation.client)))
           }
       }
@@ -74,23 +91,34 @@ class SecureMessageController @Inject()(
 
   def addCaseworkerMessage(client: ClientName, conversationId: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
+      val randomId = UUID.randomUUID().toString
+      val maybeReference = xRequestIdExists(request)
       withJsonBody[CaseworkerMessage] { caseworkerMessageRequest =>
         secureMessageService
-          .addCaseWorkerMessageToConversation(client.entryName, conversationId, caseworkerMessageRequest)
+          .addCaseWorkerMessageToConversation(
+            client.entryName,
+            conversationId,
+            caseworkerMessageRequest,
+            randomId,
+            maybeReference)
           .map {
             case Right(_) =>
               val _ = auditCaseworkerReply(
                 "CaseWorkerReplyToConversationSuccess",
                 client,
                 conversationId,
-                caseworkerMessageRequest)
+                caseworkerMessageRequest,
+                randomId,
+                maybeReference)
               Created(Json.toJson(s"Created case worker message for client $client and conversationId $conversationId"))
             case Left(error) =>
               val _ = auditCaseworkerReply(
                 "CaseWorkerReplyToConversationFailed",
                 client,
                 conversationId,
-                caseworkerMessageRequest)
+                caseworkerMessageRequest,
+                randomId,
+                maybeReference)
               handleErrors(conversationId, error, Some(client))
           }
       }
@@ -98,21 +126,21 @@ class SecureMessageController @Inject()(
 
   def addCustomerMessage(encodedId: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
     val randomId = UUID.randomUUID().toString
-    val xRequestId = request.headers.get("X-Request-ID").getOrElse(s"govuk-tax-$randomId")
+    val maybeReference = xRequestIdExists(request)
     val message = for {
       messageTypeAndId <- EitherT(Future.successful(IdCoder.decodeId(encodedId))).leftWiden[SecureMessageError]
       enrolments       <- EitherT(getEnrolments()).leftWiden[SecureMessageError]
       message          <- EitherT(Future.successful(parseAs[CustomerMessage]())).leftWiden[SecureMessageError]
       _ <- EitherT(
-            secureMessageService.addCustomerMessage(messageTypeAndId._2, message, enrolments, randomId, xRequestId))
+            secureMessageService.addCustomerMessage(messageTypeAndId._2, message, enrolments, randomId, maybeReference))
             .leftWiden[SecureMessageError]
     } yield message
     message.value map {
       case Right(msg) =>
-        auditCustomerReply("CustomerReplyToConversationSuccess", encodedId, Some(msg), randomId, xRequestId)
+        auditCustomerReply("CustomerReplyToConversationSuccess", encodedId, Some(msg), randomId, maybeReference)
         Created(Json.toJson(s"Created customer message for encodedId: $encodedId"))
       case Left(error) =>
-        auditCustomerReply("CustomerReplyToConversationFailed", encodedId, None, randomId, xRequestId)
+        auditCustomerReply("CustomerReplyToConversationFailed", encodedId, None, randomId, maybeReference)
         handleErrors(encodedId, error)
     }
   }
@@ -205,5 +233,11 @@ class SecureMessageController @Inject()(
           Future.successful(Right(authEnrolments))
         }
       }
+
+  private def xRequestIdExists(request: Request[_]): Option[Reference] =
+    request.headers.get("X-Request-ID") match {
+      case Some(xRequest) => Some(Reference("X-Request-ID", xRequest))
+      case _              => None
+    }
 
 }

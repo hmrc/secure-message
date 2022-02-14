@@ -83,11 +83,11 @@ object ConversationUtil {
       ),
       NonEmptyList.one(
         ConversationMessage(
-          None,
+          Some("6e78776f-48ff-45bd-9da2-926e35519803"),
           1,
           new DateTime(messageCreationDate),
           "QmxhaCBibGFoIGJsYWg=",
-          None
+          Some(Reference(typeName = "X-Request-ID", value = "adsgr24frfvdc829r87rfsdf=="))
         )
       ),
       alert

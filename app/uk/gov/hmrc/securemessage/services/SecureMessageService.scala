@@ -116,12 +116,17 @@ class SecureMessageService @Inject()(
     } yield ApiLetter.fromCore(letter)
   }.value
 
-  def addCaseWorkerMessageToConversation(client: String, conversationId: String, messagesRequest: CaseworkerMessage)(
+  def addCaseWorkerMessageToConversation(
+    client: String,
+    conversationId: String,
+    messagesRequest: CaseworkerMessage,
+    randomId: String,
+    maybeReference: Option[Reference])(
     implicit ec: ExecutionContext,
     hc: HeaderCarrier): Future[Either[SecureMessageError, Unit]] = {
     val senderIdentifier: Identifier = messagesRequest.senderIdentifier(client, conversationId)
     def message(sender: Participant) =
-      ConversationMessage(None, sender.id, new DateTime(), messagesRequest.content, None)
+      ConversationMessage(Some(randomId), sender.id, new DateTime(), messagesRequest.content, maybeReference)
     for {
       _            <- ContentValidator.validate(messagesRequest.content)
       conversation <- EitherT(conversationRepository.getConversation(client, conversationId, Set(senderIdentifier)))
@@ -137,19 +142,22 @@ class SecureMessageService @Inject()(
     messagesRequest: CustomerMessage,
     enrolments: Enrolments,
     randomId: String,
-    requestId: String)(implicit ec: ExecutionContext, request: Request[_]): Future[Either[SecureMessageError, Unit]] = {
+    reference: Option[Reference])(
+    implicit ec: ExecutionContext,
+    request: Request[_]): Future[Either[SecureMessageError, Unit]] = {
     def message(sender: Participant) =
       ConversationMessage(
         Some(randomId),
         sender.id,
         new DateTime(),
         messagesRequest.content,
-        Some(List(References("X-Request-ID", requestId))))
+        reference
+      )
     val identifiers: Set[Identifier] = enrolments.asIdentifiers
     for {
       conversation <- EitherT(conversationRepository.getConversation(new ObjectId(id), identifiers))
       sender       <- EitherT(Future(conversation.participantWith(identifiers)))
-      _            <- forwardMessage(conversation.id, messagesRequest, requestId)
+      _            <- forwardMessage(conversation.id, messagesRequest, randomId)
       _ <- EitherT(
             conversationRepository
               .addMessageToConversation(conversation.client, conversation.id, message(sender)))

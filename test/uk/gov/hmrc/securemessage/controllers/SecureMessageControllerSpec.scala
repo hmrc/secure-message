@@ -52,6 +52,7 @@ import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
 import uk.gov.hmrc.securemessage.services.SecureMessageService
 
+import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ ExecutionContext, ExecutionException, Future }
 
@@ -465,10 +466,12 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     )
     val client: ClientName = cdcm
     val conversationId = "123"
+    val randomId: String = UUID.randomUUID().toString
+    val reference: Reference = Reference("X-request-ID", "xcvh9384uefdv89suhybhrnesf==")
     private lazy val conversation: Conversation =
       requestBody
         .as[CdcmConversation]
-        .asConversationWithCreatedDate(client.entryName, conversationId, now)
+        .asConversationWithCreatedDate(client.entryName, conversationId, now, randomId, Some(reference))
         .copy(_id = objectID)
     private lazy val expectedParticipants = conversation.participants.map(p => p.copy(email = None))
     lazy val expectedConversation: Conversation = conversation.copy(participants = expectedParticipants, _id = objectID)
@@ -487,7 +490,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     )
     when(
       mockSecureMessageService
-        .addCustomerMessage(any[String], any[CustomerMessage], any[Enrolments], any[String], any[String])(
+        .addCustomerMessage(any[String], any[CustomerMessage], any[Enrolments], any[String], any[Option[Reference]])(
           any[ExecutionContext],
           any[Request[_]]))
       .thenReturn(serviceResponse)
@@ -598,8 +601,11 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       body = requestBody
     )
     when(
-      mockSecureMessageService.addCaseWorkerMessageToConversation(any[String], any[String], any[CaseworkerMessage])(
-        any[ExecutionContext],
-        any[HeaderCarrier])).thenReturn(serviceResponse)
+      mockSecureMessageService.addCaseWorkerMessageToConversation(
+        any[String],
+        any[String],
+        any[CaseworkerMessage],
+        any[String],
+        any[Option[Reference]])(any[ExecutionContext], any[HeaderCarrier])).thenReturn(serviceResponse)
   }
 }
