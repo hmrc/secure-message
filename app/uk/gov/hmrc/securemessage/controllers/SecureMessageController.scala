@@ -223,7 +223,6 @@ class SecureMessageController @Inject()(
       case Conversation => secureMessageService.getConversation(new ObjectId(id), authEnrolments.asCustomerEnrolments)
       case Letter       => secureMessageService.getLetter(new ObjectId(id), authEnrolments.asCustomerEnrolments)
     }
-
   private def getEnrolments()(implicit request: HeaderCarrier): Future[Either[UserNotAuthorised, Enrolments]] =
     authorised()
       .retrieve(Retrievals.allEnrolments) { authEnrolments =>
@@ -234,10 +233,12 @@ class SecureMessageController @Inject()(
         }
       }
 
-  private def xRequestIdExists(request: Request[_]): Option[Reference] =
-    request.headers.get("X-Request-ID") match {
-      case Some(xRequest) => Some(Reference("X-Request-ID", xRequest))
-      case _              => None
+  private def xRequestIdExists(request: Request[_]): Option[Reference] = {
+    val xRequest = request.headers.get("X-Request-ID").getOrElse("")
+    xRequest match {
+      case "" => Some(Reference("no X-Request-ID", ""))
+      case xRequest =>
+        Some(Reference("X-Request-ID", xRequest))
     }
-
+  }
 }

@@ -65,7 +65,7 @@ trait Auditing {
     conversation: Conversation,
     responseMessage: String,
     id: String,
-    xRequestId: Option[Reference])(implicit hc: HeaderCarrier, ec: ExecutionContext): Unit = {
+    maybeReference: Option[Reference])(implicit hc: HeaderCarrier, ec: ExecutionContext): Unit = {
     val detail = detailWithNotificationType(
       Map(
         newConversationTxnName,
@@ -75,7 +75,7 @@ trait Auditing {
         "initialMessage"  -> conversation.messages.head.content,
         "responseMessage" -> responseMessage,
         "id"              -> id,
-        "X-request-ID"    -> xRequestId.map(_.value).getOrElse("no x-request-id found")
+        "X-request-ID"    -> maybeReference.map(_.value).getOrElse("no x-request-id found")
       ),
       conversation.tags
     )
@@ -110,14 +110,14 @@ trait Auditing {
     conversationId: String,
     cwm: CaseworkerMessage,
     id: String,
-    xRequestId: Option[Reference])(implicit hc: HeaderCarrier, ec: ExecutionContext): Unit = {
+    maybeReference: Option[Reference])(implicit hc: HeaderCarrier, ec: ExecutionContext): Unit = {
     val detail = Map(
       caseworkerReplyTxnName,
       "client"       -> client.entryName,
       "messageId"    -> conversationId,
       "content"      -> cwm.content,
       "id"           -> id,
-      "X-request-ID" -> xRequestId.map(_.value).getOrElse("no x-request-id found")
+      "X-request-ID" -> maybeReference.map(_.value).getOrElse("no x-request-id found")
     )
     auditConnector.sendExplicitAudit(txnStatus, detail)
   }
@@ -127,14 +127,14 @@ trait Auditing {
     encodedId: String,
     customerMessage: Option[CustomerMessage],
     id: String,
-    xRequestId: Option[Reference])(implicit hc: HeaderCarrier, ec: ExecutionContext): Unit = {
+    maybeReference: Option[Reference])(implicit hc: HeaderCarrier, ec: ExecutionContext): Unit = {
     val detail =
       Map(
         customerReplyTxnName,
         "encodedId"    -> encodedId,
         "content"      -> customerMessage.map(_.content).getOrElse(""),
         "id"           -> id,
-        "X-request-ID" -> xRequestId.map(_.value).getOrElse("no x-request-id found")
+        "X-request-ID" -> maybeReference.map(_.value).getOrElse("no x-request-id found")
       )
     auditConnector.sendExplicitAudit(txnStatus, detail)
   }
