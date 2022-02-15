@@ -75,7 +75,7 @@ trait Auditing {
         "initialMessage"  -> conversation.messages.head.content,
         "responseMessage" -> responseMessage,
         "id"              -> id,
-        "X-request-ID"    -> maybeReference.map(_.value).getOrElse("no x-request-id found")
+        "X-request-ID"    -> maybeReference.map(_.value).get
       ),
       conversation.tags
     )
@@ -117,7 +117,7 @@ trait Auditing {
       "messageId"    -> conversationId,
       "content"      -> cwm.content,
       "id"           -> id,
-      "X-request-ID" -> maybeReference.map(_.value).getOrElse("no x-request-id found")
+      "X-request-ID" -> maybeReference.map(_.value).get
     )
     auditConnector.sendExplicitAudit(txnStatus, detail)
   }
@@ -134,7 +134,7 @@ trait Auditing {
         "encodedId"    -> encodedId,
         "content"      -> customerMessage.map(_.content).getOrElse(""),
         "id"           -> id,
-        "X-request-ID" -> maybeReference.map(_.value).getOrElse("no x-request-id found")
+        "X-request-ID" -> maybeReference.map(_.value).get
       )
     auditConnector.sendExplicitAudit(txnStatus, detail)
   }
