@@ -54,7 +54,7 @@ trait ISpec extends PlaySpec with ServiceSpec with BeforeAndAfterEach with AuthH
 
   protected def insertConversation(id: ObjectId) = {
     val conversationId = Random.nextInt(1000).toString
-    val messages = NonEmptyList(ConversationMessage(1, DateTime.now, "content"), List.empty)
+    val messages = NonEmptyList(ConversationMessage(None, 1, DateTime.now, "content", None), List.empty)
     val conversation = Conversation(
       id,
       "CDCM",

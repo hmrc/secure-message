@@ -30,9 +30,14 @@
         }
     ],
     "messages": [{
+        "id": "6e78776f-48ff-45bd-9da2-926e35519803",
         "senderId": 1,
         "created": "2020-11-10T15:00:01.000Z",
-        "content": "QmxhaCBibGFoIGJsYWg="
+        "content": "QmxhaCBibGFoIGJsYWg=",
+        "reference" : {
+            "typeName": "X-Request-ID",
+            "value": "adsgr24frfvdc829r87rfsdf=="
+        }
     }],
     "alert": {
         "templateId": "emailTemplateId",

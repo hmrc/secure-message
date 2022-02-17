@@ -28,6 +28,7 @@ import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, _ }
 
 object ConversationUtil {
   val alert: core.Alert = core.Alert("emailTemplateId", Some(Map("param1" -> "value1", "param2" -> "value2")))
+  val base64Content: String = "QmxhaCBibGFoIGJsYWg="
 
   def getConversationRequestWithMultipleCustomers: CdcmConversation = {
     val cnv: CdcmConversation = Resources.readJson("model/api/cdcm/write/create-conversation.json").as[CdcmConversation]
@@ -83,9 +84,11 @@ object ConversationUtil {
       ),
       NonEmptyList.one(
         ConversationMessage(
+          Some("6e78776f-48ff-45bd-9da2-926e35519803"),
           1,
           new DateTime(messageCreationDate),
-          "QmxhaCBibGFoIGJsYWg="
+          base64Content,
+          Some(Reference(typeName = "X-Request-ID", value = "adsgr24frfvdc829r87rfsdf=="))
         )
       ),
       alert
@@ -120,9 +123,11 @@ object ConversationUtil {
       ),
       NonEmptyList.one(
         ConversationMessage(
+          None,
           1,
           new DateTime("2020-11-10T15:00:01.000"),
-          "QmxhaCBibGFoIGJsYWg="
+          base64Content,
+          None
         )
       ),
       alert.copy(parameters = None)

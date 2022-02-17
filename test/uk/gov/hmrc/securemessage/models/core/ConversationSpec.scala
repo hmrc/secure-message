@@ -111,7 +111,7 @@ trait ConversationTestData {
       Some(List(readTime)))
 
   def messageWith(sender: Participant = system, created: DateTime = dateTime): ConversationMessage =
-    ConversationMessage(sender.id, created, "")
+    ConversationMessage(None, sender.id, created, "", None)
 
   def readMessagesWith(
     count: Int,

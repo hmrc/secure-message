@@ -29,6 +29,7 @@ import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository }
 import org.mongodb.scala.model.Filters
 
+import java.util.UUID
 import scala.concurrent.ExecutionContext
 class TestOnlyController @Inject()(
   cc: ControllerComponents,
@@ -50,6 +51,7 @@ class TestOnlyController @Inject()(
 
   def insertConversation(id: String): Action[JsValue] = Action.async(parse.json) { _ =>
     val identifier = Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))
+    val randomId = UUID.randomUUID().toString
     val conversation = Conversation(
       new ObjectId(id),
       "CDCM",
@@ -80,9 +82,11 @@ class TestOnlyController @Inject()(
       ),
       NonEmptyList.one(
         ConversationMessage(
+          Some(randomId),
           1,
           DateTime.now,
-          "QmxhaCBibGFoIGJsYWg="
+          "QmxhaCBibGFoIGJsYWg=",
+          None
         )
       ),
       Alert("", None)
