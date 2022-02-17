@@ -20,8 +20,18 @@ import org.joda.time.DateTime
 import play.api.libs.json.{ Json, OFormat }
 import uk.gov.hmrc.securemessage.controllers.model.ApiFormats
 
-final case class ConversationMessage(senderId: Int, created: DateTime, content: String)
+final case class Reference(typeName: String, value: String)
+
+final case class ConversationMessage(
+  id: Option[String],
+  senderId: Int,
+  created: DateTime,
+  content: String,
+  reference: Option[Reference])
 object ConversationMessage extends ApiFormats {
+
+  implicit val referencesFormat: OFormat[Reference] =
+    Json.format[Reference]
 
   implicit val messageFormat: OFormat[ConversationMessage] =
     Json.format[ConversationMessage]

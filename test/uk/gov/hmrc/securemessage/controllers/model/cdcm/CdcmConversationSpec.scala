@@ -18,14 +18,13 @@ package uk.gov.hmrc.securemessage.controllers.model.cdcm
 
 import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
+import org.mongodb.scala.bson.ObjectId
 import org.scalatestplus.play.PlaySpec
-import play.api.libs.json.{ JsError, JsObject, JsSuccess, JsValue, Json }
+import play.api.libs.json._
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CdcmConversation
 import uk.gov.hmrc.securemessage.helpers.Resources
-import uk.gov.hmrc.securemessage.models.core.CustomerEnrolment
-import uk.gov.hmrc.securemessage.models.core.Conversation
-import Conversation._
-import org.mongodb.scala.bson.ObjectId
+import uk.gov.hmrc.securemessage.models.core.Conversation._
+import uk.gov.hmrc.securemessage.models.core.{ Conversation, CustomerEnrolment, Reference }
 
 class CdcmConversationSpec extends PlaySpec {
 
@@ -33,6 +32,9 @@ class CdcmConversationSpec extends PlaySpec {
     val objectID = new ObjectId()
 
     "be converted correctly to a core conversation model" in {
+      val xRequestId = "adsgr24frfvdc829r87rfsdf=="
+      val randomId = "6e78776f-48ff-45bd-9da2-926e35519803"
+      val reference = Reference("X-Request-ID", xRequestId)
       val formatter = ISODateTimeFormat.dateTime()
       val dateInString = "2020-11-10T15:00:01.000Z"
       val dateTime = DateTime.parse(dateInString, formatter)
@@ -43,7 +45,8 @@ class CdcmConversationSpec extends PlaySpec {
       fullConversationRequestJson.validate[CdcmConversation] match {
         case s: JsSuccess[CdcmConversation] =>
           val conversationRequest: CdcmConversation = s.getOrElse(fail("Unable to get conversation"))
-          val conversation = conversationRequest.asConversationWithCreatedDate("CDCM", "D-80542-20201120", dateTime)
+          val conversation = conversationRequest
+            .asConversationWithCreatedDate("CDCM", "D-80542-20201120", dateTime, randomId, Some(reference))
           val expectedConversationJson: JsValue = Resources
             .readJson("model/core/conversation.json")
             .as[JsObject] + ("_id" -> Json.toJson(objectID))
