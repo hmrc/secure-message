@@ -30,6 +30,7 @@ trait ErrorHandling extends Logging {
       s"Error on message with client: $client, message id: $messageId, error message: ${error.message}"
     logger.error(error.message, error.cause.orNull)
     val jsonError = Json.toJson(errMsg)
+    logger.error(errMsg)
     error match {
       case EmailSendingError(_)                                              => Created(jsonError)
       case NoReceiverEmailError(_)                                           => Created(jsonError)
