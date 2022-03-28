@@ -75,7 +75,7 @@ final case class Letter(
   subject: String,
   validFrom: LocalDate,
   hash: String,
-  alertQueue: String,
+  alertQueue: Option[String],
   alertFrom: Option[String],
   status: String,
   content: String,
