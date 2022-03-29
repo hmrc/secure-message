@@ -39,9 +39,12 @@ class ChannelPreferencesConnector @Inject()(config: Configuration, httpClient: H
   def getEmailForEnrolment(id: Identifier)(implicit hc: HeaderCarrier): Future[Either[EmailLookupError, EmailAddress]] =
     httpClient
       .GET[HttpResponse](
-        url = s"""${baseUrl("channel-preferences")}/channel-preferences/preference/email""",
-        queryParams =
-          Seq(("enrolmentKey", id.enrolment.fold("")(identity)), ("taxIdName", id.name), ("taxIdValue", id.value))
+        url =
+          s"${baseUrl("channel-preferences")}/channel-preferences/preferences/" +
+            s"enrolments/${id.enrolment.getOrElse("")}/" +
+            s"identifier-keys/${id.name}/" +
+            s"identifier-values/${id.value}/" +
+            s"channels/email"
       )
       .map { resp =>
         resp.status match {
