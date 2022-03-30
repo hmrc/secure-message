@@ -19,11 +19,18 @@ package uk.gov.hmrc.securemessage.models
 import play.api.libs.json.{ Json, OWrites }
 import uk.gov.hmrc.emailaddress._
 
+final case class Tags(messageId: Option[String], source: Option[String], enrolment: Option[String])
+
 final case class EmailRequest(
   to: List[EmailAddress],
   templateId: String,
   parameters: Map[String, String],
-  enrolment: Option[String])
+  tags: Option[Tags])
+
 object EmailRequest {
+
+  implicit val enrolmentsRequestWrite: OWrites[Tags] = Json.writes[Tags]
+
   implicit val emailRequestWrites: OWrites[EmailRequest] = Json.writes[EmailRequest]
+
 }
