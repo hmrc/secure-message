@@ -243,7 +243,7 @@ class SecureMessageService @Inject()(
 
     val enrolments = receivers.success.map(_.identifier).headOption.flatMap { identifier =>
       identifier.enrolment match {
-        case Some(key) => Some(PotentialEnrolments(s"$key~${identifier.name}~${identifier.value}"))
+        case Some(key) => Some(Tags(None, None, Some(s"$key~${identifier.name}~${identifier.value}")))
         case _         => None
       }
     }
