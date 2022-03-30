@@ -42,7 +42,7 @@ import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
 import uk.gov.hmrc.securemessage.helpers.{ ConversationUtil, MessageUtil, Resources }
 import uk.gov.hmrc.securemessage.models.core.Conversation._
 import uk.gov.hmrc.securemessage.models.core._
-import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryMessageWrapper }
+import uk.gov.hmrc.securemessage.models.{ EmailRequest, PotentialEnrolments, QueryMessageWrapper }
 import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository }
 import uk.gov.hmrc.securemessage.{ DuplicateConversationError, EmailLookupError, NoReceiverEmailError, SecureMessageError, _ }
 
@@ -103,7 +103,8 @@ class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpe
           List(EmailAddress("test@test.com")),
           "emailTemplateId",
           Map("param1" -> "value1", "param2" -> "value2"),
-          Some("HMRC-CUS-ORG~EORINumber~GB1234567890")))
+          Some(PotentialEnrolments("HMRC-CUS-ORG~EORINumber~GB1234567890"))
+        ))
     }
 
     "send enrolmentString None if enrolment is empty" in new TestHelpers {

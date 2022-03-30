@@ -241,19 +241,15 @@ class SecureMessageService @Inject()(
     implicit hc: HeaderCarrier,
     ec: ExecutionContext): EitherT[Future, SecureMessageError, Unit] = {
 
-    val enrolmentString = receivers.success.map(_.identifier).headOption.flatMap { identifier =>
+    val enrolments = receivers.success.map(_.identifier).headOption.flatMap { identifier =>
       identifier.enrolment match {
-        case Some(key) => Some(s"$key~${identifier.name}~${identifier.value}")
+        case Some(key) => Some(PotentialEnrolments(s"$key~${identifier.name}~${identifier.value}"))
         case _         => None
       }
     }
 
     def emailRequest =
-      EmailRequest(
-        receivers.success.flatMap(_.email),
-        alert.templateId,
-        alert.parameters.getOrElse(Map()),
-        enrolmentString)
+      EmailRequest(receivers.success.flatMap(_.email), alert.templateId, alert.parameters.getOrElse(Map()), enrolments)
     for {
       _ <- validateEmailReceivers(receivers)(errorCondition = receivers.success.isEmpty)
       _ <- EitherT(emailConnector.send(emailRequest)).leftWiden[SecureMessageError]
