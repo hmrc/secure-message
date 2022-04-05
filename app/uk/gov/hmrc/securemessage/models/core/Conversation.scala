@@ -21,7 +21,6 @@ import org.joda.time.DateTime
 import org.mongodb.scala.bson.ObjectId
 import play.api.libs.json.{ Format, Json, OFormat }
 import uk.gov.hmrc.mongo.play.json.formats.MongoFormats
-import uk.gov.hmrc.securemessage.ParticipantNotFound
 import uk.gov.hmrc.securemessage.models.utils.NonEmptyListOps
 
 final case class Conversation(
@@ -61,14 +60,4 @@ final case class Conversation(
 object Conversation extends NonEmptyListOps {
   implicit val objectIdFormat: Format[ObjectId] = MongoFormats.objectIdFormat
   implicit val conversationFormat: OFormat[Conversation] = Json.format[Conversation]
-
-  implicit class ConversationExtensions(conversation: Conversation) {
-    def participantWith(identifiers: Set[Identifier]): Either[ParticipantNotFound, Participant] =
-      conversation.findParticipant(identifiers) match {
-        case Some(participant) => Right(participant)
-        case None =>
-          Left(ParticipantNotFound(
-            s"No participant found for client: ${conversation.client}, conversationId: ${conversation.id}, indentifiers: $identifiers"))
-      }
-  }
 }

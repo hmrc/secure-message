@@ -19,7 +19,7 @@ An OpenAPI 3.0 schema is available for the endpoints on this service which can b
 
 ## Run the project locally
 
-Ensure you have service-manager python environment setup:
+Ensure you have service-manager setup locally with the python environment:
 
 `source ../servicemanager/bin/activate`
 
