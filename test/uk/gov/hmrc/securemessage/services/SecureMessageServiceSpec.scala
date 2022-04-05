@@ -50,7 +50,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ ExecutionContext, Future }
 
 //TODO: move test data and mocks to TextContexts
-class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestHelpers with UnitTest {
+class SecureMessageServiceSpec extends PlaySpec with ScalaFutures with TestHelpers with UnitTest {
 
   "createConversation" must {
 
@@ -514,8 +514,8 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
         .getLettersCount(any[Set[Identifier]](), any[Option[List[FilterTag]]]())(any[ExecutionContext]))
       .thenReturn(Future.successful(Count(1, 0)))
 
-    val service: SecureMessageServiceImpl =
-      new SecureMessageServiceImpl(
+    val service: SecureMessageService =
+      new SecureMessageService(
         mockConversationRepository,
         mockMessageRepository,
         mockEmailConnector,
@@ -619,8 +619,8 @@ trait TestHelpers extends MockitoSugar with UnitTest {
     .thenReturn(Future.successful(Right(EmailAddress("test@test.com"))))
   when(mockConversationRepository.insertIfUnique(any[Conversation])(any[ExecutionContext]))
     .thenReturn(Future.successful(Right(())))
-  val service: SecureMessageServiceImpl =
-    new SecureMessageServiceImpl(
+  val service: SecureMessageService =
+    new SecureMessageService(
       mockConversationRepository,
       mockMessageRepository,
       mockEmailConnector,

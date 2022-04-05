@@ -50,7 +50,7 @@ import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core.Letter._
 import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
-import uk.gov.hmrc.securemessage.services.SecureMessageServiceImpl
+import uk.gov.hmrc.securemessage.services.SecureMessageService
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -425,7 +425,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     val mockRepository: ConversationRepository = mock[ConversationRepository]
     val mockAuthConnector: AuthConnector = mock[AuthConnector]
     val mockAuditConnector: AuditConnector = mock[AuditConnector]
-    val mockSecureMessageService: SecureMessageServiceImpl = mock[SecureMessageServiceImpl]
+    val mockSecureMessageService: SecureMessageService = mock[SecureMessageService]
     when(mockRepository.insertIfUnique(any[Conversation])(any[ExecutionContext]))
       .thenReturn(Future.successful(Right(())))
 

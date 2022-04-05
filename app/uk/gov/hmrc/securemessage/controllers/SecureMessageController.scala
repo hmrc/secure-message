@@ -22,7 +22,7 @@ import org.mongodb.scala.bson.ObjectId
 import play.api.Logging
 import play.api.i18n.I18nSupport
 import play.api.libs.json._
-import play.api.mvc.{ Action, AnyContent, ControllerComponents, Request, Result }
+import play.api.mvc.{ Action, AnyContent, ControllerComponents, Request }
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.http.HeaderCarrier
@@ -34,10 +34,10 @@ import uk.gov.hmrc.securemessage.controllers.model.cdcm.write._
 import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata
 import uk.gov.hmrc.securemessage.controllers.model.common.write._
 import uk.gov.hmrc.securemessage.controllers.model.{ ApiMessage, ClientName, MessageType }
-import uk.gov.hmrc.securemessage.controllers.utils.IdCoder.{ DecodedId, EncodedId }
+import uk.gov.hmrc.securemessage.controllers.utils.IdCoder.DecodedId
 import uk.gov.hmrc.securemessage.controllers.utils.{ IdCoder, QueryStringValidation }
 import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag, Filters, Reference }
-import uk.gov.hmrc.securemessage.services.{ ImplicitClassesExtensions, SecureMessageServiceImpl }
+import uk.gov.hmrc.securemessage.services.{ ImplicitClassesExtensions, SecureMessageService }
 import uk.gov.hmrc.time.DateTimeUtils
 
 import java.util.UUID
@@ -49,7 +49,7 @@ class SecureMessageController @Inject()(
   cc: ControllerComponents,
   val authConnector: AuthConnector,
   override val auditConnector: AuditConnector,
-  secureMessageService: SecureMessageServiceImpl,
+  secureMessageService: SecureMessageService,
   dataTimeUtils: DateTimeUtils)(implicit ec: ExecutionContext)
     extends BackendController(cc) with AuthorisedFunctions with QueryStringValidation with I18nSupport
     with ErrorHandling with Auditing with Logging with ImplicitClassesExtensions {
@@ -128,39 +128,21 @@ class SecureMessageController @Inject()(
     val randomId = UUID.randomUUID().toString
     val maybeReference = xRequestIdExists(request)
     val message = for {
-      messageTypeAndId <- EitherT(Future.successful(IdCoder.decodeId(encodedId)))
-      enrolments       <- EitherT(getEnrolments())
-      message          <- EitherT(Future.successful(parseAs[CustomerMessage]()))
+      messageTypeAndId <- EitherT(Future.successful(IdCoder.decodeId(encodedId))).leftWiden[SecureMessageError]
+      enrolments       <- EitherT(getEnrolments()).leftWiden[SecureMessageError]
+      message          <- EitherT(Future.successful(parseAs[CustomerMessage]())).leftWiden[SecureMessageError]
       _ <- EitherT(
             secureMessageService.addCustomerMessage(messageTypeAndId._2, message, enrolments, randomId, maybeReference))
+            .leftWiden[SecureMessageError]
     } yield message
-
     message.value map {
-      case Right(customerMessage) =>
-        customerReplyToConversationSuccess(customerMessage, encodedId, randomId, maybeReference)
-      case Left(secureMessageError) =>
-        customerReplyToConversationFailed(secureMessageError, encodedId, randomId, maybeReference)
+      case Right(msg) =>
+        auditCustomerReply("CustomerReplyToConversationSuccess", encodedId, Some(msg), randomId, maybeReference)
+        Created(Json.toJson(s"Created customer message for encodedId: $encodedId"))
+      case Left(error) =>
+        auditCustomerReply("CustomerReplyToConversationFailed", encodedId, None, randomId, maybeReference)
+        handleErrors(encodedId, error)
     }
-  }
-
-  private def customerReplyToConversationSuccess(
-    customerMessage: CustomerMessage,
-    encodedId: EncodedId,
-    randomId: String,
-    maybeReference: Option[Reference]
-  )(implicit headerCarrier: HeaderCarrier): Result = {
-    auditCustomerReply("CustomerReplyToConversationSuccess", encodedId, Some(customerMessage), randomId, maybeReference)
-    Created(Json.toJson(s"Created customer message for encodedId: $encodedId"))
-  }
-
-  private def customerReplyToConversationFailed(
-    secureMessageError: SecureMessageError,
-    encodedId: EncodedId,
-    randomId: String,
-    maybeReference: Option[Reference]
-  )(implicit headerCarrier: HeaderCarrier): Result = {
-    auditCustomerReply("CustomerReplyToConversationFailed", encodedId, None, randomId, maybeReference)
-    handleErrors(encodedId, secureMessageError)
   }
 
   private def parseAs[T]()(
@@ -219,8 +201,8 @@ class SecureMessageController @Inject()(
 
   def getMessage(encodedId: String): Action[AnyContent] = Action.async { implicit request =>
     val message: EitherT[Future, SecureMessageError, (ApiMessage, Enrolments)] = for {
-      messageTypeAndId <- EitherT(Future.successful(IdCoder.decodeId(encodedId)))
-      enrolments       <- EitherT(getEnrolments())
+      messageTypeAndId <- EitherT(Future.successful(IdCoder.decodeId(encodedId))).leftWiden[SecureMessageError]
+      enrolments       <- EitherT(getEnrolments()).leftWiden[SecureMessageError]
       message          <- EitherT(retrieveMessage(messageTypeAndId._1, messageTypeAndId._2, enrolments))
     } yield (message, enrolments)
     message.value map {
@@ -241,7 +223,6 @@ class SecureMessageController @Inject()(
       case Conversation => secureMessageService.getConversation(new ObjectId(id), authEnrolments.asCustomerEnrolments)
       case Letter       => secureMessageService.getLetter(new ObjectId(id), authEnrolments.asCustomerEnrolments)
     }
-
   private def getEnrolments()(implicit request: HeaderCarrier): Future[Either[UserNotAuthorised, Enrolments]] =
     authorised()
       .retrieve(Retrievals.allEnrolments) { authEnrolments =>
