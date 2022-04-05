@@ -17,14 +17,12 @@
 package uk.gov.hmrc.securemessage
 
 import com.google.inject.AbstractModule
-import uk.gov.hmrc.securemessage.services.{ SecureMessageService, SecureMessageServiceImpl }
 import uk.gov.hmrc.time.DateTimeUtils
 
 class SecureMessageModule extends AbstractModule {
 
   override def configure(): Unit = {
     bind(classOf[DateTimeUtils]).to(classOf[TimeProvider])
-    bind(classOf[SecureMessageService]).to(classOf[SecureMessageServiceImpl]).asEagerSingleton()
     super.configure()
   }
 }
