@@ -17,8 +17,7 @@
 package uk.gov.hmrc.securemessage.services
 
 import uk.gov.hmrc.auth.core.Enrolments
-import uk.gov.hmrc.securemessage.ParticipantNotFound
-import uk.gov.hmrc.securemessage.models.core.{ Conversation, CustomerEnrolment, Identifier, Participant }
+import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, Identifier }
 
 trait ImplicitClassesExtensions {
   implicit class EnrolmentsExtensions(enrolments: Enrolments) {
@@ -42,10 +41,13 @@ trait ImplicitClassesExtensions {
 
     def filter(enrolmentKeys: Set[String], customerEnrolments: Set[CustomerEnrolment]): Set[CustomerEnrolment] = {
       val originalEnrolments: Set[CustomerEnrolment] = enrolments.asCustomerEnrolments
+
       def enrolmentKeysFiltered: Set[CustomerEnrolment] =
         originalEnrolments.filter(oe => enrolmentKeys.exists(ek => ek.equalsIgnoreCase(oe.key)))
+
       def customerEnrolmentsFiltered: Set[CustomerEnrolment] =
         originalEnrolments.filter(or => customerEnrolments.exists(ce => ce.upper == or.upper))
+
       (enrolmentKeys.isEmpty, customerEnrolments.isEmpty) match {
         case (true, true)   => originalEnrolments
         case (false, true)  => enrolmentKeysFiltered
@@ -53,15 +55,5 @@ trait ImplicitClassesExtensions {
         case (false, false) => enrolmentKeysFiltered ++ customerEnrolmentsFiltered
       }
     }
-  }
-
-  implicit class ConversationExtensions(conversation: Conversation) {
-    def participantWith(identifiers: Set[Identifier]): Either[ParticipantNotFound, Participant] =
-      conversation.findParticipant(identifiers) match {
-        case Some(participant) => Right(participant)
-        case None =>
-          Left(ParticipantNotFound(
-            s"No participant found for client: ${conversation.client}, conversationId: ${conversation.id}, indentifiers: $identifiers"))
-      }
   }
 }
