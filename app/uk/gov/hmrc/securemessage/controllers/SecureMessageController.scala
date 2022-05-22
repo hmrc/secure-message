@@ -79,7 +79,7 @@ class SecureMessageController @Inject()(
               Created
             case Left(error: SecureMessageError) =>
               auditCreateConversation(
-                "CreateNewQueryConversationFailed",
+                "EmailAddressLookUpFailed",
                 conversation,
                 "Conversation Created",
                 randomId,
