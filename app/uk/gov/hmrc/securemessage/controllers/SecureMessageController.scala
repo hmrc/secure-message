@@ -66,16 +66,10 @@ class SecureMessageController @Inject()(
             dataTimeUtils.now,
             randomId,
             maybeReference)
-        secureMessageService
+        val res = secureMessageService
           .createConversation(conversation)
           .map {
             case Right(_) =>
-              auditCreateConversation(
-                "CreateQueryConversationSuccess",
-                conversation,
-                "Conversation Created",
-                randomId,
-                maybeReference)
               Created
             case Left(error: SecureMessageError) =>
               auditCreateConversation(
@@ -86,6 +80,13 @@ class SecureMessageController @Inject()(
                 maybeReference)
               handleErrors(conversation.id, error, Some(ClientName.withName(conversation.client)))
           }
+        auditCreateConversation(
+          "CreateQueryConversationSuccess",
+          conversation,
+          "Conversation Created",
+          randomId,
+          maybeReference)
+        res
       }
   }
 

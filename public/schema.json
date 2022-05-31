@@ -415,7 +415,7 @@
   },
   "info" : {
     "title" : "Secure Message API",
-    "version" : "0.107.0-SNAPSHOT"
+    "version" : "0.127.0-SNAPSHOT"
   },
   "tags" : [ {
     "name" : "app"
