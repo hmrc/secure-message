@@ -17,7 +17,6 @@
 import java.net.URL
 
 import com.lucidchart.sbt.scalafmt.ScalafmtCorePlugin.autoImport._
-import sbt.Resolver
 import uk.gov.hmrc.DefaultBuildSettings.integrationTestSettings
 import uk.gov.hmrc.SbtBobbyPlugin.BobbyKeys.bobbyRulesURL
 import uk.gov.hmrc.ServiceManagerPlugin.Keys.itDependenciesList
@@ -185,5 +184,5 @@ Compile / doc / sources := Seq.empty
 
 scalaModuleInfo ~= (_.map(_.withOverrideScalaVersion(true)))
 //TODO make bellow work and rename resources/service/ContentValidation/*html.txt to html
-resourceDirectory in Test := baseDirectory.value / "test" / "resources"
-excludeFilter in (Test, resources) := HiddenFileFilter || "*.html"
+Test / resourceDirectory := baseDirectory.value / "test" / "resources"
+Test / resources / excludeFilter := HiddenFileFilter || "*.html"
