@@ -29,7 +29,7 @@ object AppDependencies {
     "com.beachape"      %% "enumeratum-play"           % "1.5.17",
     "com.typesafe.play" %% "play-json-joda"            % "2.9.1",
     "org.typelevel"     %% "cats-core"                 % "2.8.0",
-    "org.jsoup"         % "jsoup"                      % "1.15.1"
+    "org.jsoup"         % "jsoup"                      % "1.15.2"
   )
 
   val test = Seq(
