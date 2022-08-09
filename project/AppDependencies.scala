@@ -42,4 +42,8 @@ object AppDependencies {
     "uk.gov.hmrc"            %% "service-integration-test" % "1.1.0-play-28" % "test, it",
     "org.pegdown"            % "pegdown"                   % "1.6.0"         % "test, it"
   )
+
+  val overrides = Seq(
+    "commons-codec" % "commons-codec" % "1.15"
+  )
 }
