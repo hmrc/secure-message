@@ -37,6 +37,7 @@ lazy val microservice = Project(appName, file("."))
     majorVersion := 0,
     scalaVersion := "2.12.12",
     libraryDependencies ++= AppDependencies.compile ++ AppDependencies.test,
+    dependencyOverrides ++= AppDependencies.overrides,
     routesImport ++= Seq(
       "uk.gov.hmrc.securemessage.controllers.binders._",
 //      "uk.gov.hmrc.securemessage.controllers.SecureMessageController",

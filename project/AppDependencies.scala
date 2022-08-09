@@ -28,8 +28,7 @@ object AppDependencies {
     "com.beachape"      %% "enumeratum-play"           % "1.5.17",
     "com.typesafe.play" %% "play-json-joda"            % "2.9.1",
     "org.typelevel"     %% "cats-core"                 % "2.8.0",
-    "org.jsoup"         % "jsoup"                      % "1.15.2",
-    "commons-codec"     % "commons-codec"              % "1.15"
+    "org.jsoup"         % "jsoup"                      % "1.15.2"
   )
 
   val test = Seq(
@@ -42,5 +41,9 @@ object AppDependencies {
     "com.vladsch.flexmark"   % "flexmark-all"              % "0.36.8"        % "test, it",
     "uk.gov.hmrc"            %% "service-integration-test" % "1.1.0-play-28" % "test, it",
     "org.pegdown"            % "pegdown"                   % "1.6.0"         % "test, it"
+  )
+
+  val overrides = Seq(
+    "commons-codec" % "commons-codec" % "1.15"
   )
 }
