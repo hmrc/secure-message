@@ -22,6 +22,7 @@ object AppDependencies {
   val compile = Seq(
     "uk.gov.hmrc"       %% "bootstrap-backend-play-28" % "6.4.0",
     "uk.gov.hmrc.mongo" %% "hmrc-mongo-play-28"        % "0.69.0",
+    "commons-codec"     % "commons-codec"              % "1.15",
     "uk.gov.hmrc"       %% "time"                      % "3.19.0",
     "uk.gov.hmrc"       %% "emailaddress"              % "3.5.0",
     "org.webjars"       % "swagger-ui"                 % "3.50.0",
@@ -41,9 +42,5 @@ object AppDependencies {
     "com.vladsch.flexmark"   % "flexmark-all"              % "0.36.8"        % "test, it",
     "uk.gov.hmrc"            %% "service-integration-test" % "1.1.0-play-28" % "test, it",
     "org.pegdown"            % "pegdown"                   % "1.6.0"         % "test, it"
-  )
-
-  val overrides = Seq(
-    "commons-codec" % "commons-codec" % "1.15"
   )
 }
