@@ -21,7 +21,7 @@ object AppDependencies {
 
   val compile = Seq(
     "uk.gov.hmrc"       %% "bootstrap-backend-play-28" % "6.4.0",
-    "uk.gov.hmrc.mongo" %% "hmrc-mongo-play-28"        % "0.69.0",
+    "uk.gov.hmrc.mongo" %% "hmrc-mongo-play-28"        % "0.70.0",
     "uk.gov.hmrc"       %% "time"                      % "3.19.0",
     "uk.gov.hmrc"       %% "emailaddress"              % "3.5.0",
     "org.webjars"       % "swagger-ui"                 % "3.50.0",
@@ -33,7 +33,7 @@ object AppDependencies {
 
   val test = Seq(
     "uk.gov.hmrc"            %% "bootstrap-test-play-28"   % "6.4.0"         % Test,
-    "uk.gov.hmrc.mongo"      %% "hmrc-mongo-test-play-28"  % "0.69.0"        % Test,
+    "uk.gov.hmrc.mongo"      %% "hmrc-mongo-test-play-28"  % "0.70.0"        % Test,
     "com.typesafe.play"      %% "play-test"                % current         % Test,
     "org.scalatestplus.play" %% "scalatestplus-play"       % "5.1.0"         % "test, it",
     "org.scalatestplus"      %% "mockito-3-4"              % "3.2.10.0"      % "test, it",
