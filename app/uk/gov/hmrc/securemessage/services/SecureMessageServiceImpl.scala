@@ -24,6 +24,8 @@ import org.mongodb.scala.bson.ObjectId
 import play.api.i18n.Messages
 import play.api.mvc.Request
 import uk.gov.hmrc.auth.core.Enrolments
+import uk.gov.hmrc.common.message.model.Message
+import uk.gov.hmrc.domain.TaxIds.TaxIdWithName
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.securemessage._
@@ -34,10 +36,11 @@ import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage
 import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.ApiLetter
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
 import uk.gov.hmrc.securemessage.models._
+import uk.gov.hmrc.securemessage.models.core.{ Message => SecureMessage }
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.Customer.eqCustomer
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.{ Customer => PCustomer }
 import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, _ }
-import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository }
+import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, LetterRepository, MessageRepository }
 import uk.gov.hmrc.securemessage.services.utils.ContentValidator
 
 import java.util.UUID
@@ -48,6 +51,7 @@ import scala.concurrent.{ ExecutionContext, Future }
 @Singleton
 class SecureMessageServiceImpl @Inject()(
   conversationRepository: ConversationRepository,
+  letterRepository: LetterRepository,
   messageRepository: MessageRepository,
   emailConnector: EmailConnector,
   channelPrefConnector: ChannelPreferencesConnector,
@@ -78,21 +82,27 @@ class SecureMessageServiceImpl @Inject()(
   }
 
   def getMessages(authEnrolments: Enrolments, filters: Filters)(
-    implicit ec: ExecutionContext): Future[List[Message]] = {
+    implicit ec: ExecutionContext): Future[List[SecureMessage]] = {
     val filteredEnrolments = authEnrolments.filter(filters.enrolmentKeysFilter, filters.enrolmentsFilter)
     val identifiers: Set[Identifier] = filteredEnrolments.map(_.asIdentifier)
     for {
       conversations <- conversationRepository.getConversations(identifiers, filters.tags)
-      letters       <- messageRepository.getLetters(identifiers, filters.tags)
+      letters       <- letterRepository.getLetters(identifiers, filters.tags)
     } yield (conversations ++ letters).sortBy(_.issueDate)(dateTimeDescending)
   }
+
+  def getMessagesList(authTaxIds: Set[TaxIdWithName])(
+    implicit ec: ExecutionContext,
+    hc: HeaderCarrier,
+    messageFilter: MessageFilter): Future[List[Message]] =
+    messageRepository.findBy(authTaxIds)
 
   def getMessagesCount(authEnrolments: Enrolments, filters: Filters)(implicit ec: ExecutionContext): Future[Count] = {
     val filteredEnrolments = authEnrolments.filter(filters.enrolmentKeysFilter, filters.enrolmentsFilter)
     val identifiers: Set[Identifier] = filteredEnrolments.map(_.asIdentifier)
     for {
       conversationsCount <- conversationRepository.getConversationsCount(identifiers, filters.tags)
-      lettersCount       <- messageRepository.getLettersCount(identifiers, filters.tags)
+      lettersCount       <- letterRepository.getLettersCount(identifiers, filters.tags)
     } yield
       Count(
         total = conversationsCount.total + lettersCount.total,
@@ -113,8 +123,8 @@ class SecureMessageServiceImpl @Inject()(
     implicit ec: ExecutionContext): Future[Either[SecureMessageError, ApiLetter]] = {
     val identifiers = enrolments.map(_.asIdentifier)
     for {
-      letter <- EitherT(messageRepository.getLetter(id, identifiers))
-      _      <- EitherT(messageRepository.addReadTime(id))
+      letter <- EitherT(letterRepository.getLetter(id, identifiers))
+      _      <- EitherT(letterRepository.addReadTime(id))
     } yield ApiLetter.fromCore(letter)
   }.value
 

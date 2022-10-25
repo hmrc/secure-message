@@ -26,7 +26,7 @@ import play.api.mvc.{ Action, AnyContent, ControllerComponents }
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.securemessage.models.core.Language.English
 import uk.gov.hmrc.securemessage.models.core._
-import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository }
+import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, LetterRepository }
 import org.mongodb.scala.model.Filters
 
 import java.util.UUID
@@ -34,7 +34,7 @@ import scala.concurrent.ExecutionContext
 class TestOnlyController @Inject()(
   cc: ControllerComponents,
   conversationRepository: ConversationRepository,
-  messageRepository: MessageRepository)(implicit ec: ExecutionContext)
+  messageRepository: LetterRepository)(implicit ec: ExecutionContext)
     extends BackendController(cc) with Logging {
 
   def deleteConversation(id: String): Action[AnyContent] = Action.async { _ =>

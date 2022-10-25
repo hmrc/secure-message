@@ -29,7 +29,7 @@ import play.api.test.Helpers.{ await, defaultAwaitTimeout }
 import uk.gov.hmrc.integration.ServiceSpec
 import uk.gov.hmrc.securemessage.controllers.model.MessageType
 import uk.gov.hmrc.securemessage.models.core._
-import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository }
+import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, LetterRepository }
 
 import java.io.File
 import scala.concurrent.{ ExecutionContext, Future }
@@ -43,7 +43,7 @@ trait ISpec extends PlaySpec with ServiceSpec with BeforeAndAfterEach with AuthH
   override val wsClient: WSClient = app.injector.instanceOf[WSClient]
 
   protected val conversationRepo: ConversationRepository = app.injector.instanceOf[ConversationRepository]
-  protected val messageRepo: MessageRepository = app.injector.instanceOf[MessageRepository]
+  protected val messageRepo: LetterRepository = app.injector.instanceOf[LetterRepository]
 
   override protected def beforeEach(): Unit = {
     await(conversationRepo.collection.deleteMany(Filters.empty()).toFuture())

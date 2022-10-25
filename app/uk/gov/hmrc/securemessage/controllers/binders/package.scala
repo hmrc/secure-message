@@ -16,8 +16,10 @@
 
 package uk.gov.hmrc.securemessage.controllers
 
+import play.api.libs.json.JsString
 import play.api.mvc.QueryStringBindable
-import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag }
+import uk.gov.hmrc.common.message.model.Regime
+import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag, MessageFilter }
 
 package object binders {
 
@@ -47,5 +49,29 @@ package object binders {
 
       override def unbind(key: String, tag: FilterTag): String =
         tag.key + "~" + tag.value
+    }
+
+  implicit def messageFilterBinder(
+    implicit seqBinder: QueryStringBindable[Seq[String]],
+    boolBinder: QueryStringBindable[Boolean]): QueryStringBindable[MessageFilter] =
+    new QueryStringBindable[MessageFilter] {
+      override def bind(key: String, params: Map[String, Seq[String]]): Option[Either[String, MessageFilter]] =
+        for {
+          taxIdentifiers <- seqBinder.bind("taxIdentifiers", params).orElse(Some(Right(List[String]())))
+          regimes        <- seqBinder.bind("regimes", params).orElse(Some(Right(List[String]())))
+          countOnly      <- boolBinder.bind("countOnly", params).orElse(Some(Right(false)))
+
+        } yield {
+          (taxIdentifiers, regimes, countOnly) match {
+            case (Right(taxIdentifiers), Right(regimes), Right(countOnly)) =>
+              Right(MessageFilter(taxIdentifiers, regimes.map(JsString(_).as[Regime.Value]), countOnly))
+            case _ => Left("Unable to bind an MessageFilter")
+          }
+        }
+
+      override def unbind(key: String, messageFilter: MessageFilter): String =
+        seqBinder.unbind("taxIdentifiers", messageFilter.taxIdentifiers) + "&" + seqBinder.unbind(
+          "regime",
+          messageFilter.regimes.map(_.toString)) + "&" + boolBinder.unbind("countOnly", messageFilter.countOnly)
     }
 }

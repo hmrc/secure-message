@@ -20,6 +20,8 @@ import org.mongodb.scala.bson.ObjectId
 import play.api.i18n.Messages
 import play.api.mvc.Request
 import uk.gov.hmrc.auth.core.Enrolments
+import uk.gov.hmrc.common.message.model.Message
+import uk.gov.hmrc.domain.TaxIds.TaxIdWithName
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.securemessage.SecureMessageError
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.{ ApiConversation, ConversationMetadata }
@@ -27,6 +29,7 @@ import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage
 import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.ApiLetter
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
 import uk.gov.hmrc.securemessage.models.core._
+import uk.gov.hmrc.securemessage.models.core.{ Message => SecureMessage }
 
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -40,7 +43,13 @@ trait SecureMessageService {
     implicit ec: ExecutionContext,
     messages: Messages): Future[List[ConversationMetadata]]
 
-  def getMessages(authEnrolments: Enrolments, filters: Filters)(implicit ec: ExecutionContext): Future[List[Message]]
+  def getMessages(authEnrolments: Enrolments, filters: Filters)(
+    implicit ec: ExecutionContext): Future[List[SecureMessage]]
+
+  def getMessagesList(authTaxIds: Set[TaxIdWithName])(
+    implicit ec: ExecutionContext,
+    hc: HeaderCarrier,
+    messageFilter: MessageFilter): Future[List[Message]]
 
   def getMessagesCount(authEnrolments: Enrolments, filters: Filters)(implicit ec: ExecutionContext): Future[Count]
 

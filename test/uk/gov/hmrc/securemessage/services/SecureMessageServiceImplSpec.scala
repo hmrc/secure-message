@@ -43,7 +43,7 @@ import uk.gov.hmrc.securemessage.helpers.{ ConversationUtil, MessageUtil, Resour
 import uk.gov.hmrc.securemessage.models.core.Conversation._
 import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryMessageWrapper, Tags }
-import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository }
+import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, LetterRepository }
 import uk.gov.hmrc.securemessage.{ DuplicateConversationError, EmailLookupError, NoReceiverEmailError, SecureMessageError, _ }
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -498,7 +498,7 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
     val mockEisConnector: EISConnector = mock[EISConnector]
     val mockAuditConnector: AuditConnector = mock[AuditConnector]
     val mockConversationRepository: ConversationRepository = mock[ConversationRepository]
-    val mockMessageRepository: MessageRepository = mock[MessageRepository]
+    val mockMessageRepository: LetterRepository = mock[LetterRepository]
     val mockEmailConnector: EmailConnector = mock[EmailConnector]
     when(mockEmailConnector.send(any[EmailRequest])(any[HeaderCarrier])).thenReturn(Future.successful(Right(())))
     val mockChannelPreferencesConnector: ChannelPreferencesConnector = mock[ChannelPreferencesConnector]
@@ -611,7 +611,7 @@ trait TestHelpers extends MockitoSugar with UnitTest {
   val mockEisConnector: EISConnector = mock[EISConnector]
   val mockAuditConnector: AuditConnector = mock[AuditConnector]
   val mockConversationRepository: ConversationRepository = mock[ConversationRepository]
-  val mockMessageRepository: MessageRepository = mock[MessageRepository]
+  val mockMessageRepository: LetterRepository = mock[LetterRepository]
   val mockEmailConnector: EmailConnector = mock[EmailConnector]
   when(mockEmailConnector.send(any[EmailRequest])(any[HeaderCarrier])).thenReturn(Future.successful(Right(())))
   val mockChannelPreferencesConnector: ChannelPreferencesConnector = mock[ChannelPreferencesConnector]
