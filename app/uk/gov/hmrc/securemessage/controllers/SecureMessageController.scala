@@ -179,7 +179,7 @@ class SecureMessageController @Inject()(
     enrolmentKey: Option[List[String]],
     enrolment: Option[List[CustomerEnrolment]],
     tag: Option[List[FilterTag]],
-    messageFilter: Option[MessageFilter]): Action[AnyContent] =
+    messageFilter: Option[MessageFilter] = None): Action[AnyContent] =
     Action.async { implicit request =>
       {
         val requestWrapper =

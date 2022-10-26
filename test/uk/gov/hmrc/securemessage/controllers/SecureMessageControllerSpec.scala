@@ -46,6 +46,8 @@ import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.{ ApiLetter, Sender
 import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
 import uk.gov.hmrc.securemessage.controllers.model.{ ClientName, MessageType }
+import uk.gov.hmrc.securemessage.controllers.utils.QueryStringValidationSuccess
+import uk.gov.hmrc.securemessage.handlers.{ CDSMessageRetriever, MessageBroker }
 import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core.Letter._
 import uk.gov.hmrc.securemessage.models.core._
@@ -390,7 +392,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
 
   "getMessages" must {
     "return metadata for both conversations and letters" in new GetMessagesTestCase() {
-      val response: Future[Result] = controller.getMessages(None, Some(List(testEnrolment)), None)(fakeRequest)
+      val response: Future[Result] = controller.getMessages(None, Some(List(testEnrolment)), None, None)(fakeRequest)
       status(response) mustBe OK
       contentAsJson(response).as[List[MessageMetadata]] mustBe messagesMetadata
     }
@@ -400,7 +402,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       contentAsJson(response).as[List[MessageMetadata]] mustBe conversationsMetadata
     }
     "return metadata for letters when no conversations" in new GetMessagesTestCase(storedConversations = List()) {
-      val response: Future[Result] = controller.getMessages(None, Some(List(testEnrolment)), None)(fakeRequest)
+      val response: Future[Result] = controller.getMessages(None, Some(List(testEnrolment)), None, None)(fakeRequest)
       status(response) mustBe OK
       contentAsJson(response).as[List[MessageMetadata]] mustBe lettersMetadata
     }
@@ -424,18 +426,22 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
   class TestCase(authEnrolments: Set[CustomerEnrolment] = Set(testEnrolment)) {
     val mockRepository: ConversationRepository = mock[ConversationRepository]
     val mockAuthConnector: AuthConnector = mock[AuthConnector]
+    val mockMessageBroker: MessageBroker = mock[MessageBroker]
     val mockAuditConnector: AuditConnector = mock[AuditConnector]
     val mockSecureMessageService: SecureMessageServiceImpl = mock[SecureMessageServiceImpl]
     when(mockRepository.insertIfUnique(any[Conversation])(any[ExecutionContext]))
       .thenReturn(Future.successful(Right(())))
-
+    when(mockMessageBroker.messageRetriever(any[QueryStringValidationSuccess]))
+      .thenReturn(new CDSMessageRetriever(mockAuthConnector, mockSecureMessageService))
     val controller =
       new SecureMessageController(
         Helpers.stubControllerComponents(),
         mockAuthConnector,
         mockAuditConnector,
         mockSecureMessageService,
-        zeroTimeProvider)
+        mockMessageBroker,
+        zeroTimeProvider,
+      )
 
     val enrolments: Enrolments = authEnrolmentsFrom(authEnrolments)
 
