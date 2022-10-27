@@ -19,6 +19,7 @@ import org.bson.types.ObjectId
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model._
 import play.api.libs.json.JodaWrites.{ JodaDateTimeWrites => _ }
+import play.api.libs.json.OFormat
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.securemessage.models.core.{ Count, FilterTag, Identifier, Letter }
@@ -35,6 +36,8 @@ class LetterRepository @Inject()(mongo: MongoComponent)(implicit ec: ExecutionCo
       Seq.empty[IndexModel],
       replaceIndexes = false
     ) {
+
+  implicit val format: OFormat[Letter] = domainFormat.asInstanceOf[OFormat[Letter]]
 
   override protected def messagesQuerySelector(identifiers: Set[Identifier], tags: Option[List[FilterTag]]): Bson = {
     val superQuery = super.messagesQuerySelector(identifiers, tags)

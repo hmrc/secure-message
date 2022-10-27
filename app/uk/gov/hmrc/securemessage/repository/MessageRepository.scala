@@ -21,7 +21,7 @@ import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model._
 import play.api.libs.json.JodaWrites.{ JodaDateTimeWrites => _ }
 import play.api.libs.json.{ JsObject, Json }
-import uk.gov.hmrc.common.message.model.{ Message, MessageMongoFormats }
+import uk.gov.hmrc.common.message.model.Message
 import uk.gov.hmrc.domain.TaxIds.TaxIdWithName
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.Codecs
@@ -35,7 +35,7 @@ class MessageRepository @Inject()(mongo: MongoComponent)(implicit ec: ExecutionC
     extends SecureMessageRepository[Message](
       "message",
       mongo,
-      MessageMongoFormats.messageMongoFormat,
+      Message.messageFormat,
       Seq.empty[IndexModel],
       replaceIndexes = false
     ) with MessageSelector {

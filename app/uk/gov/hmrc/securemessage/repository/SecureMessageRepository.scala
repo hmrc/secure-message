@@ -38,7 +38,6 @@ abstract class SecureMessageRepository[A: ClassTag](
   replaceIndexes: Boolean)(implicit ec: ExecutionContext)
     extends PlayMongoRepository[A](mongo, collectionName, domainFormat, indexes, replaceIndexes = replaceIndexes) {
 
-  implicit val format: OFormat[A] = domainFormat.asInstanceOf[OFormat[A]]
   private val logger = Logger(getClass)
 
   protected def messagesQuerySelector(identifiers: Set[Identifier], tags: Option[List[FilterTag]]): Bson =
