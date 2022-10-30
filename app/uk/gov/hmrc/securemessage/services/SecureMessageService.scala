@@ -20,7 +20,6 @@ import org.mongodb.scala.bson.ObjectId
 import play.api.i18n.Messages
 import play.api.mvc.Request
 import uk.gov.hmrc.auth.core.Enrolments
-import uk.gov.hmrc.common.message.model.Message
 import uk.gov.hmrc.domain.TaxIds.TaxIdWithName
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.securemessage.SecureMessageError
@@ -49,7 +48,7 @@ trait SecureMessageService {
   def getMessagesList(authTaxIds: Set[TaxIdWithName])(
     implicit ec: ExecutionContext,
     hc: HeaderCarrier,
-    messageFilter: MessageFilter): Future[List[Message]]
+    messageFilter: MessageFilter): Future[List[Letter]]
 
   def getMessagesCount(authEnrolments: Enrolments, filters: Filters)(implicit ec: ExecutionContext): Future[Count]
 

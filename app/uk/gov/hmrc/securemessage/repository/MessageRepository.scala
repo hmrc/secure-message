@@ -21,7 +21,6 @@ import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model._
 import play.api.libs.json.JodaWrites.{ JodaDateTimeWrites => _ }
 import play.api.libs.json.{ JsObject, Json }
-import uk.gov.hmrc.common.message.model.Message
 import uk.gov.hmrc.domain.TaxIds.TaxIdWithName
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.Codecs
@@ -32,10 +31,10 @@ import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
 
 class MessageRepository @Inject()(mongo: MongoComponent)(implicit ec: ExecutionContext)
-    extends SecureMessageRepository[Message](
+    extends SecureMessageRepository[Letter](
       "message",
       mongo,
-      Message.messageFormat,
+      Letter.letterFormat,
       Seq.empty[IndexModel],
       replaceIndexes = false
     ) with MessageSelector {
@@ -50,7 +49,7 @@ class MessageRepository @Inject()(mongo: MongoComponent)(implicit ec: ExecutionC
   }
 
   def getLetters(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
-    implicit ec: ExecutionContext): Future[List[Message]] =
+    implicit ec: ExecutionContext): Future[List[Letter]] =
     getMessages(identifiers, tags)
 
   def getLettersCount(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
@@ -58,7 +57,7 @@ class MessageRepository @Inject()(mongo: MongoComponent)(implicit ec: ExecutionC
     getMessagesCount(identifiers, tags)
 
   def getLetter(id: ObjectId, identifiers: Set[Identifier])(
-    implicit ec: ExecutionContext): Future[Either[SecureMessageError, Message]] = getMessage(id, identifiers)
+    implicit ec: ExecutionContext): Future[Either[SecureMessageError, Letter]] = getMessage(id, identifiers)
 
   def addReadTime(id: ObjectId)(implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] =
     collection
@@ -89,18 +88,22 @@ class MessageRepository @Inject()(mongo: MongoComponent)(implicit ec: ExecutionC
   def findBy(authTaxIds: Set[TaxIdWithName])(
     implicit messageFilter: MessageFilter,
     ec: ExecutionContext
-  ): Future[List[Message]] = {
+  ): Future[List[Letter]] = {
 
     def readyForViewingQuery: Bson =
       Filters
         .and(Filters.lte("validFrom", Codecs.toBson(Letter.localDateNow)), Filters.notEqual("verificationBrake", true))
 
     val querySelector = Filters.and(taxIdRegimeSelector(authTaxIds), readyForViewingQuery)
-    collection
-      .find(querySelector)
-      .sort(Filters.equal("_id", -1))
-      .toFuture()
-      .map(_.toList)
+    if (querySelector != Filters.empty()) {
+      collection
+        .find(querySelector)
+        .sort(Filters.equal("_id", -1))
+        .toFuture()
+        .map(_.toList)
+    } else {
+      Future(List())
+    }
   }
 }
 

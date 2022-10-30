@@ -587,7 +587,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
         l =>
           ApiLetter(
             l.subject,
-            l.content,
+            l.content.getOrElse(""),
             None,
             SenderInformation("HMRC", LocalDate.now),
             l.recipient.identifier,

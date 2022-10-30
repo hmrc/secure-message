@@ -24,7 +24,6 @@ import org.mongodb.scala.bson.ObjectId
 import play.api.i18n.Messages
 import play.api.mvc.Request
 import uk.gov.hmrc.auth.core.Enrolments
-import uk.gov.hmrc.common.message.model.Message
 import uk.gov.hmrc.domain.TaxIds.TaxIdWithName
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
@@ -36,7 +35,6 @@ import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage
 import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.ApiLetter
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
 import uk.gov.hmrc.securemessage.models._
-import uk.gov.hmrc.securemessage.models.core.{ Message => SecureMessage }
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.Customer.eqCustomer
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.{ Customer => PCustomer }
 import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, _ }
@@ -82,7 +80,7 @@ class SecureMessageServiceImpl @Inject()(
   }
 
   def getMessages(authEnrolments: Enrolments, filters: Filters)(
-    implicit ec: ExecutionContext): Future[List[SecureMessage]] = {
+    implicit ec: ExecutionContext): Future[List[Message]] = {
     val filteredEnrolments = authEnrolments.filter(filters.enrolmentKeysFilter, filters.enrolmentsFilter)
     val identifiers: Set[Identifier] = filteredEnrolments.map(_.asIdentifier)
     for {
@@ -94,7 +92,7 @@ class SecureMessageServiceImpl @Inject()(
   def getMessagesList(authTaxIds: Set[TaxIdWithName])(
     implicit ec: ExecutionContext,
     hc: HeaderCarrier,
-    messageFilter: MessageFilter): Future[List[Message]] =
+    messageFilter: MessageFilter): Future[List[Letter]] =
     messageRepository.findBy(authTaxIds)
 
   def getMessagesCount(authEnrolments: Enrolments, filters: Filters)(implicit ec: ExecutionContext): Future[Count] = {

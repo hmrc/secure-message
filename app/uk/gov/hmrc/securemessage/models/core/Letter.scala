@@ -21,6 +21,7 @@ import org.mongodb.scala.bson.ObjectId
 import play.api.libs.json.JodaReads.jodaLocalDateReads
 import play.api.libs.json.JodaWrites.jodaLocalDateWrites
 import play.api.libs.json._
+import uk.gov.hmrc.common.message.model.{ Adviser, Rescindment }
 import uk.gov.hmrc.mongo.play.json.formats.{ MongoFormats, MongoJodaFormats }
 
 final case class RecipientName(
@@ -75,10 +76,10 @@ final case class Letter(
   subject: String,
   validFrom: LocalDate,
   hash: String,
-  alertQueue: String,
+  alertQueue: Option[String],
   alertFrom: Option[String],
   status: String,
-  content: String,
+  content: Option[String] = None,
   statutory: Boolean,
   lastUpdated: Option[DateTime],
   recipient: Recipient,
@@ -87,7 +88,9 @@ final case class Letter(
   alertDetails: AlertDetails,
   alerts: Option[EmailAlert] = None,
   readTime: Option[DateTime],
-  tags: Option[Map[String, String]] = None
+  tags: Option[Map[String, String]] = None,
+  rescindment: Option[Rescindment] = None,
+  body: Option[Details] = None
 ) extends Message {
   override def issueDate: DateTime = validFrom.toDateTime(LocalTime.MIDNIGHT, DateTimeZone.UTC)
 }
@@ -110,4 +113,51 @@ object Letter {
   def dateTimeNow: JsValue = Json.toJson(DateTime.now())
 
   def localDateNow: JsValue = Json.toJson(LocalDate.now())
+}
+
+case class Details(
+  form: Option[String],
+  `type`: Option[String],
+  suppressedAt: Option[String],
+  detailsId: Option[String],
+  paperSent: Option[Boolean] = None,
+  batchId: Option[String] = None,
+  issueDate: Option[LocalDate] = Some(LocalDate.now),
+  replyTo: Option[String] = None,
+  threadId: Option[String] = None,
+  enquiryType: Option[String] = None,
+  adviser: Option[Adviser] = None,
+  waitTime: Option[String] = None,
+  topic: Option[String] = None,
+  envelopId: Option[String] = None,
+  properties: Option[JsValue] = None
+) {
+
+  val paramsMap = Map(
+    "formId"       -> form,
+    "type"         -> `type`,
+    "suppressedAt" -> suppressedAt,
+    "detailsId"    -> detailsId,
+    "paperSent"    -> paperSent,
+    "batchId"      -> batchId,
+    "issueDate"    -> issueDate,
+    "replyTo"      -> replyTo,
+    "threadId"     -> threadId.map(_.toString),
+    "enquiryType"  -> enquiryType,
+    "adviser"      -> adviser.map(_.pidId),
+    "topic"        -> topic,
+    "envelopId"    -> envelopId,
+    "properties"   -> properties
+  )
+
+  val toMap = paramsMap.collect { case (key, Some(value)) => key -> value.toString }
+}
+object Details {
+  private val localDateFormatString = "yyyy-MM-dd"
+
+  implicit val localDateFormat: Format[LocalDate] =
+    Format(jodaLocalDateReads(localDateFormatString), jodaLocalDateWrites(localDateFormatString))
+
+//  implicit val isoTime: Reads[LocalDate] = (__ \ "issueDate").read[LocalDate]
+  implicit val format: OFormat[Details] = Json.format[Details]
 }
