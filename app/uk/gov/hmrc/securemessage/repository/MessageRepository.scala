@@ -95,6 +95,7 @@ class MessageRepository @Inject()(mongo: MongoComponent)(implicit ec: ExecutionC
         .and(Filters.lte("validFrom", Codecs.toBson(Letter.localDateNow)), Filters.notEqual("verificationBrake", true))
 
     val querySelector = Filters.and(taxIdRegimeSelector(authTaxIds), readyForViewingQuery)
+    logger.warn(s"Query - $querySelector")
     if (querySelector != Filters.empty()) {
       collection
         .find(querySelector)
