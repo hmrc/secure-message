@@ -184,9 +184,14 @@ class SecureMessageController @Inject()(
       {
         val requestWrapper =
           MessageRequestWrapper(enrolmentKey, enrolment, tag, messageFilter.getOrElse(new MessageFilter()))
+        logger.warn(s"Request Wrapper = $requestWrapper")
         validateQueryParameters(request.queryString) match {
-          case Left(e)      => Future.successful(BadRequest(Json.toJson(e.getMessage)))
-          case Right(value) => messageBroker.messageRetriever(value).fetch(requestWrapper).map(Ok(_))
+          case Left(e) =>
+            logger.warn(s"Invalid Request ${request.queryString}")
+            Future.successful(BadRequest(Json.toJson(e.getMessage)))
+          case Right(value) =>
+            logger.warn(s"Valid Request $value - Params: ${request.queryString}")
+            messageBroker.messageRetriever(value).fetch(requestWrapper).map(Ok(_))
         }
       }
     }
