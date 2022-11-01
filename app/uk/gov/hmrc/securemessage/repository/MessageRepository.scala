@@ -99,9 +99,18 @@ class MessageRepository @Inject()(mongo: MongoComponent)(implicit ec: ExecutionC
     if (querySelector != Filters.empty()) {
       collection
         .find(querySelector)
-        .sort(Filters.equal("_id", -1))
+        // .sort(Filters.equal("_id", -1))
         .toFuture()
         .map(_.toList)
+        .recoverWith {
+          case e: Exception =>
+            logger.error("Error processing the query", e)
+            Future.successful(List())
+          case anyOtherError =>
+            logger.warn(s"Error processing the query  $anyOtherError")
+            Future.successful(List())
+
+        }
     } else {
       Future(List())
     }
