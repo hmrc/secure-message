@@ -122,7 +122,7 @@ trait MessageSelector {
     Filters
       .and(Filters.lte("validFrom", Codecs.toBson(Letter.localDateNow)), Filters.notEqual("verificationBrake", true))
 
-  def rescindedExcludedQuery: Bson = Filters.exists("rescindment")
+  def rescindedExcludedQuery: Bson = Filters.exists("rescindment", false)
 
   def taxIdRegimeSelector(
     authTaxIds: Set[TaxIdWithName]
