@@ -33,11 +33,11 @@ import uk.gov.hmrc.securemessage.{ MessageNotFound, SecureMessageError }
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class LetterRepositorySpec
+class MessageRepositorySpec
     extends PlaySpec with DefaultPlayMongoRepositorySupport[Letter] with BeforeAndAfterEach with ScalaFutures
     with StaticTestData {
 
-  override lazy val repository = new LetterRepository(mongoComponent)
+  override lazy val repository = new MessageRepository(mongoComponent)
 
   override def beforeEach(): Unit =
     await(repository.collection.deleteMany(Filters.empty()).toFuture().map(_ => ()))

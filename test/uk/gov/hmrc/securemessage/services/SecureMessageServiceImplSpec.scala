@@ -43,7 +43,7 @@ import uk.gov.hmrc.securemessage.helpers.{ ConversationUtil, MessageUtil, Resour
 import uk.gov.hmrc.securemessage.models.core.Conversation._
 import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryMessageWrapper, Tags }
-import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, LetterRepository, MessageRepository }
+import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository }
 import uk.gov.hmrc.securemessage.{ DuplicateConversationError, EmailLookupError, NoReceiverEmailError, SecureMessageError, _ }
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -289,9 +289,9 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
 
   "getMessage by id" must {
     "return a message with ApiLetter" in {
-      when(mockLetterRepository.getLetter(any[ObjectId], any[Set[Identifier]])(any[ExecutionContext]))
+      when(mockMessageRepository.getLetter(any[ObjectId], any[Set[Identifier]])(any[ExecutionContext]))
         .thenReturn(Future(Right(letter)))
-      when(mockLetterRepository.addReadTime(any[ObjectId])(any[ExecutionContext]))
+      when(mockMessageRepository.addReadTime(any[ObjectId])(any[ExecutionContext]))
         .thenReturn(Future(Right(())))
       val result = await(
         service
@@ -301,9 +301,9 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
     }
 
     "return a Left(LetterNotFound)" in {
-      when(mockLetterRepository.getLetter(any[ObjectId], any[Set[Identifier]])(any[ExecutionContext]))
+      when(mockMessageRepository.getLetter(any[ObjectId], any[Set[Identifier]])(any[ExecutionContext]))
         .thenReturn(Future(Left(MessageNotFound("Letter not found"))))
-      when(mockLetterRepository.addReadTime(any[ObjectId])(any[ExecutionContext]))
+      when(mockMessageRepository.addReadTime(any[ObjectId])(any[ExecutionContext]))
         .thenReturn(Future(Right(())))
       val result = await(
         service
@@ -313,9 +313,9 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
     }
 
     "return a left if update readTime fails" in {
-      when(mockLetterRepository.getLetter(any[ObjectId], any[Set[Identifier]])(any[ExecutionContext]))
+      when(mockMessageRepository.getLetter(any[ObjectId], any[Set[Identifier]])(any[ExecutionContext]))
         .thenReturn(Future(Right(MessageUtil.getMessage("subject", "content"))))
-      when(mockLetterRepository.addReadTime(any[ObjectId])(any[ExecutionContext]))
+      when(mockMessageRepository.addReadTime(any[ObjectId])(any[ExecutionContext]))
         .thenReturn(Future(Left(StoreError("cant store readTime", None))))
       val result = await(
         service
@@ -498,7 +498,6 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
     val mockEisConnector: EISConnector = mock[EISConnector]
     val mockAuditConnector: AuditConnector = mock[AuditConnector]
     val mockConversationRepository: ConversationRepository = mock[ConversationRepository]
-    val mockLetterRepository: LetterRepository = mock[LetterRepository]
     val mockMessageRepository: MessageRepository = mock[MessageRepository]
     val mockEmailConnector: EmailConnector = mock[EmailConnector]
     when(mockEmailConnector.send(any[EmailRequest])(any[HeaderCarrier])).thenReturn(Future.successful(Right(())))
@@ -511,14 +510,13 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
         .getConversationsCount(any[Set[Identifier]](), any[Option[List[FilterTag]]]())(any[ExecutionContext]))
       .thenReturn(Future.successful(Count(1, 1)))
     when(
-      mockLetterRepository
+      mockMessageRepository
         .getLettersCount(any[Set[Identifier]](), any[Option[List[FilterTag]]]())(any[ExecutionContext]))
       .thenReturn(Future.successful(Count(1, 0)))
 
     val service: SecureMessageServiceImpl =
       new SecureMessageServiceImpl(
         mockConversationRepository,
-        mockLetterRepository,
         mockMessageRepository,
         mockEmailConnector,
         mockChannelPreferencesConnector,
@@ -549,7 +547,7 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
       mockConversationRepository.getConversations(any[Set[Identifier]], any[Option[List[FilterTag]]])(
         any[ExecutionContext]))
       .thenReturn(Future(dbConversations))
-    when(mockLetterRepository.getLetters(any[Set[Identifier]], any[Option[List[FilterTag]]])(any[ExecutionContext]))
+    when(mockMessageRepository.getLetters(any[Set[Identifier]], any[Option[List[FilterTag]]])(any[ExecutionContext]))
       .thenReturn(Future(dbLetters))
   }
 
@@ -614,7 +612,6 @@ trait TestHelpers extends MockitoSugar with UnitTest {
   val mockEisConnector: EISConnector = mock[EISConnector]
   val mockAuditConnector: AuditConnector = mock[AuditConnector]
   val mockConversationRepository: ConversationRepository = mock[ConversationRepository]
-  val mockLetterRepository: LetterRepository = mock[LetterRepository]
   val mockMessageRepository: MessageRepository = mock[MessageRepository]
   val mockEmailConnector: EmailConnector = mock[EmailConnector]
   when(mockEmailConnector.send(any[EmailRequest])(any[HeaderCarrier])).thenReturn(Future.successful(Right(())))
@@ -626,7 +623,6 @@ trait TestHelpers extends MockitoSugar with UnitTest {
   val service: SecureMessageServiceImpl =
     new SecureMessageServiceImpl(
       mockConversationRepository,
-      mockLetterRepository,
       mockMessageRepository,
       mockEmailConnector,
       mockChannelPreferencesConnector,

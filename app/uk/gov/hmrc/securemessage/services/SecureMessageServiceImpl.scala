@@ -38,7 +38,7 @@ import uk.gov.hmrc.securemessage.models._
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.Customer.eqCustomer
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.{ Customer => PCustomer }
 import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, _ }
-import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, LetterRepository, MessageRepository }
+import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository }
 import uk.gov.hmrc.securemessage.services.utils.ContentValidator
 
 import java.util.UUID
@@ -49,7 +49,6 @@ import scala.concurrent.{ ExecutionContext, Future }
 @Singleton
 class SecureMessageServiceImpl @Inject()(
   conversationRepository: ConversationRepository,
-  letterRepository: LetterRepository,
   messageRepository: MessageRepository,
   emailConnector: EmailConnector,
   channelPrefConnector: ChannelPreferencesConnector,
@@ -85,7 +84,7 @@ class SecureMessageServiceImpl @Inject()(
     val identifiers: Set[Identifier] = filteredEnrolments.map(_.asIdentifier)
     for {
       conversations <- conversationRepository.getConversations(identifiers, filters.tags)
-      letters       <- letterRepository.getLetters(identifiers, filters.tags)
+      letters       <- messageRepository.getLetters(identifiers, filters.tags)
     } yield (conversations ++ letters).sortBy(_.issueDate)(dateTimeDescending)
   }
 
@@ -100,7 +99,7 @@ class SecureMessageServiceImpl @Inject()(
     val identifiers: Set[Identifier] = filteredEnrolments.map(_.asIdentifier)
     for {
       conversationsCount <- conversationRepository.getConversationsCount(identifiers, filters.tags)
-      lettersCount       <- letterRepository.getLettersCount(identifiers, filters.tags)
+      lettersCount       <- messageRepository.getLettersCount(identifiers, filters.tags)
     } yield
       Count(
         total = conversationsCount.total + lettersCount.total,
@@ -121,8 +120,8 @@ class SecureMessageServiceImpl @Inject()(
     implicit ec: ExecutionContext): Future[Either[SecureMessageError, ApiLetter]] = {
     val identifiers = enrolments.map(_.asIdentifier)
     for {
-      letter <- EitherT(letterRepository.getLetter(id, identifiers))
-      _      <- EitherT(letterRepository.addReadTime(id))
+      letter <- EitherT(messageRepository.getLetter(id, identifiers))
+      _      <- EitherT(messageRepository.addReadTime(id))
     } yield ApiLetter.fromCore(letter)
   }.value
 
