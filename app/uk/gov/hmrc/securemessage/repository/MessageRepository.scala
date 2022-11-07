@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.securemessage.repository
 
-import org.bson.BsonType
 import org.bson.types.ObjectId
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model._
@@ -123,7 +122,9 @@ class MessageRepository @Inject()(mongo: MongoComponent)(implicit ec: ExecutionC
       .fold(Future.successful(MessagesCount(0, 0)))(query =>
         for {
           unreadCount <- collection
-                          .countDocuments(Filters.and(query, Filters.equal("readTime", BsonType.NULL)))
+                        // scalastyle:off null
+                          .countDocuments(Filters.and(query, Filters.equal("readTime", null)))
+                          // scalastyle:on null
                           .toFuture()
           totalCount <- collection.countDocuments(query).toFuture()
         } yield MessagesCount(totalCount.toInt, unreadCount.toInt))
