@@ -24,6 +24,7 @@ import org.mongodb.scala.bson.ObjectId
 import play.api.i18n.Messages
 import play.api.mvc.Request
 import uk.gov.hmrc.auth.core.Enrolments
+import uk.gov.hmrc.common.message.model.MessagesCount
 import uk.gov.hmrc.domain.TaxIds.TaxIdWithName
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
@@ -93,6 +94,10 @@ class SecureMessageServiceImpl @Inject()(
     hc: HeaderCarrier,
     messageFilter: MessageFilter): Future[List[Letter]] =
     messageRepository.findBy(authTaxIds)
+
+  def getMessagesCount(
+    authTaxIds: Set[TaxIdWithName])(implicit hc: HeaderCarrier, messageFilter: MessageFilter): Future[MessagesCount] =
+    messageRepository.countBy(authTaxIds)
 
   def getMessagesCount(authEnrolments: Enrolments, filters: Filters)(implicit ec: ExecutionContext): Future[Count] = {
     val filteredEnrolments = authEnrolments.filter(filters.enrolmentKeysFilter, filters.enrolmentsFilter)

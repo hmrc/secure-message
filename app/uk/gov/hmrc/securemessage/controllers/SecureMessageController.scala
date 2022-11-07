@@ -36,7 +36,7 @@ import uk.gov.hmrc.securemessage.controllers.model.{ ApiMessage, ClientName, Mes
 import uk.gov.hmrc.securemessage.controllers.utils.IdCoder.{ DecodedId, EncodedId }
 import uk.gov.hmrc.securemessage.controllers.utils.{ IdCoder, QueryStringValidation }
 import uk.gov.hmrc.securemessage.handlers.MessageBroker
-import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag, Filters, MessageFilter, MessageRequestWrapper, Reference }
+import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag, MessageFilter, MessageRequestWrapper, Reference }
 import uk.gov.hmrc.securemessage.services.{ ImplicitClassesExtensions, SecureMessageServiceImpl }
 import uk.gov.hmrc.time.DateTimeUtils
 
@@ -199,20 +199,18 @@ class SecureMessageController @Inject()(
   def getMessagesCount(
     enrolmentKeys: Option[List[String]],
     customerEnrolments: Option[List[CustomerEnrolment]],
-    tags: Option[List[FilterTag]]): Action[AnyContent] =
+    tags: Option[List[FilterTag]],
+    messageFilter: Option[MessageFilter] = None): Action[AnyContent] =
     Action.async { implicit request =>
+      val requestWrapper =
+        MessageRequestWrapper(enrolmentKeys, customerEnrolments, tags, messageFilter.getOrElse(new MessageFilter()))
       validateQueryParameters(request.queryString) match {
-        case Left(e) => Future.successful(BadRequest(Json.toJson(e.getMessage)))
-        case _ =>
-          authorised()
-            .retrieve(Retrievals.allEnrolments) { authEnrolments =>
-              val filters = Filters(enrolmentKeys, customerEnrolments, tags)
-              secureMessageService
-                .getMessagesCount(authEnrolments, filters)
-                .map { count =>
-                  Ok(Json.toJson(count))
-                }
-            }
+        case Left(e) =>
+          logger.warn(s"Invalid Request ${request.queryString}")
+          Future.successful(BadRequest(Json.toJson(e.getMessage)))
+        case Right(value) =>
+          logger.warn(s"Valid Request $value - Params: ${request.queryString}")
+          messageBroker.messageRetriever(value).messageCount(requestWrapper).map(Ok(_))
       }
     }
 

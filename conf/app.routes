@@ -93,7 +93,7 @@ GET         /messages  uk.gov.hmrc.securemessage.controllers.SecureMessageContro
 #   401:
 #     description: unauthorised customer when they don't have an enrolment
 ###
-GET        /messages/count   uk.gov.hmrc.securemessage.controllers.SecureMessageController.getMessagesCount(enrolmentKey: Option[List[String]], enrolment: Option[List[CustomerEnrolment]], tag: Option[List[FilterTag]])
+GET        /messages/count   uk.gov.hmrc.securemessage.controllers.SecureMessageController.getMessagesCount(enrolmentKey: Option[List[String]], enrolment: Option[List[CustomerEnrolment]], tag: Option[List[FilterTag]], messageFilter: Option[uk.gov.hmrc.securemessage.models.core.MessageFilter])
 
 ###
 # summary: Gets conversation/message by id

@@ -16,12 +16,13 @@
 
 package uk.gov.hmrc.securemessage.repository
 
+import org.bson.BsonType
 import org.bson.types.ObjectId
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model._
 import play.api.libs.json.JodaWrites.{ JodaDateTimeWrites => _ }
 import play.api.libs.json.{ JsObject, Json, OFormat }
-import uk.gov.hmrc.common.message.model.Regime
+import uk.gov.hmrc.common.message.model.{ MessagesCount, Regime }
 import uk.gov.hmrc.domain.TaxIds.TaxIdWithName
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.Codecs
@@ -113,6 +114,20 @@ class MessageRepository @Inject()(mongo: MongoComponent)(implicit ec: ExecutionC
           logger.warn(s"Error processing the query  $anyOtherError")
           Future.successful(List())
       }
+
+  def countBy(authTaxIds: Set[TaxIdWithName])(
+    implicit messageFilter: MessageFilter
+  ): Future[MessagesCount] =
+    taxIdRegimeSelector(authTaxIds)
+      .map(Filters.and(_, readyForViewingQuery, rescindedExcludedQuery))
+      .fold(Future.successful(MessagesCount(0, 0)))(query =>
+        for {
+          unreadCount <- collection
+                          .countDocuments(Filters.and(query, Filters.equal("readTime", BsonType.NULL)))
+                          .toFuture()
+          totalCount <- collection.countDocuments(query).toFuture()
+        } yield MessagesCount(totalCount.toInt, unreadCount.toInt))
+
 }
 
 trait MessageSelector {
@@ -124,7 +139,7 @@ trait MessageSelector {
     Filters
       .and(Filters.lte("validFrom", Codecs.toBson(Letter.localDateNow)), Filters.notEqual("verificationBrake", true))
 
-  def rescindedExcludedQuery: Bson = Filters.exists("rescindment", false)
+  def rescindedExcludedQuery: Bson = Filters.exists("rescindment", exists = false)
 
   def taxIdRegimeSelector(
     authTaxIds: Set[TaxIdWithName]

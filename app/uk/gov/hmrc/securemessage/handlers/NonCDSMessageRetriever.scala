@@ -48,4 +48,23 @@ class NonCDSMessageRetriever @Inject()(
                }
     } yield Json.toJson(result)
   }
+
+  def messageCount(
+    requestWrapper: MessageRequestWrapper)(implicit hc: HeaderCarrier, messages: Messages): Future[JsValue] = {
+    implicit val mf: MessageFilter =
+      requestWrapper.messageFilter.copy(taxIdentifiers = requestWrapper.messageFilter.taxIdentifiers.flatMap { taxId =>
+        taxId match {
+          case "HMRC-MTD-VAT" => List(taxId, "vrn")
+          case _              => List(taxId)
+        }
+      })
+
+    for {
+      authTaxIds <- authIdentifiersConnector.currentEffectiveTaxIdentifiers
+      _          <- Future(logger.warn(s"MessagesController: authTaxIds $authTaxIds"))
+      result <- secureMessageService.getMessagesCount(authTaxIds).map { items =>
+                 MessagesResponse.fromMessagesCount(items).toConversations
+               }
+    } yield Json.toJson(result)
+  }
 }

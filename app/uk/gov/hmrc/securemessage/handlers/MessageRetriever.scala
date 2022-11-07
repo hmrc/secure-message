@@ -26,4 +26,6 @@ import scala.concurrent.Future
 
 trait MessageRetriever extends Logging {
   def fetch(requestWrapper: MessageRequestWrapper)(implicit hc: HeaderCarrier, messages: Messages): Future[JsValue]
+  def messageCount(
+    requestWrapper: MessageRequestWrapper)(implicit hc: HeaderCarrier, messages: Messages): Future[JsValue]
 }

@@ -44,4 +44,17 @@ class CDSMessageRetriever @Inject()(val authConnector: AuthConnector, secureMess
             Json.toJson(messageMetadataList)
           }
       }
+
+  def messageCount(
+    requestWrapper: MessageRequestWrapper)(implicit hc: HeaderCarrier, messages: Messages): Future[JsValue] =
+    authorised()
+      .retrieve(Retrievals.allEnrolments) { authEnrolments =>
+        val filters = Filters(requestWrapper.enrolmentKeys, requestWrapper.customerEnrolments, requestWrapper.tags)
+        secureMessageService
+          .getMessagesCount(authEnrolments, filters)
+          .map { count =>
+            Json.toJson(count)
+          }
+      }
+
 }
