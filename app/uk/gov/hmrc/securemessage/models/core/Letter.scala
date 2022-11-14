@@ -88,6 +88,7 @@ final case class Letter(
   alertDetails: AlertDetails,
   alerts: Option[EmailAlert] = None,
   readTime: Option[DateTime],
+  replyTo: Option[String] = None,
   tags: Option[Map[String, String]] = None,
   rescindment: Option[Rescindment] = None,
   body: Option[Details] = None

@@ -52,7 +52,7 @@ object MessageListItem extends RestFormats {
       message.validFrom,
       message.body.flatMap(_.issueDate),
       message.readTime,
-      message.body.flatMap(_.replyTo),
+      message.replyTo,
       sentInError = message.rescindment.isDefined,
       message.body.flatMap(_.`type`)
     )
@@ -72,7 +72,7 @@ final case class MessagesResponse(items: Option[Seq[MessageListItem]], count: Me
           case x :: xs if !x.replyTo.isDefined => addCounterAux(xs, result)
           case x :: xs =>
             val (beforeChild, afterChild) = result.span(_.id != x.id)
-            val (beforeParent, afterParent) = afterChild.span(_.id.toString != x.replyTo.get)
+            val (beforeParent, afterParent) = afterChild.span(_.id != x.replyTo.get)
             val parentCount = afterParent.headOption.map(_.counter.getOrElse(1)).getOrElse(0)
             addCounterAux(
               xs,
@@ -80,8 +80,8 @@ final case class MessagesResponse(items: Option[Seq[MessageListItem]], count: Me
                 ++ afterParent.drop(1)
             )
         }
-      val input = xs.sortWith(_.id.toString < _.id.toString)
-      val result = xs.sortWith(_.id.toString > _.id.toString)
+      val input = xs.sortWith(_.id < _.id)
+      val result = xs.sortWith(_.id > _.id)
       addCounterAux(input, result)
     }
 
