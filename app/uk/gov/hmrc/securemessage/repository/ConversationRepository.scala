@@ -21,7 +21,6 @@ import org.mongodb.scala.MongoWriteException
 import org.mongodb.scala.bson.ObjectId
 import org.mongodb.scala.model._
 import play.api.libs.json.JodaWrites.{ JodaDateTimeWrites => _ }
-import play.api.libs.json.OFormat
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.securemessage._
@@ -48,8 +47,6 @@ class ConversationRepository @Inject()(mongo: MongoComponent)(implicit ec: Execu
     ) {
 
   private val DuplicateKey = 11000
-
-  implicit val format: OFormat[Conversation] = domainFormat.asInstanceOf[OFormat[Conversation]]
 
   def insertIfUnique(conversation: Conversation)(
     implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] =
