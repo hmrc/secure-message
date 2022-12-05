@@ -16,63 +16,30 @@
 
 package uk.gov.hmrc.securemessage.controllers.model
 
-import org.bson.types.ObjectId
-import org.joda.time.{ DateTime, LocalDate }
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import uk.gov.hmrc.common.message.model.MessagesCount
 import uk.gov.hmrc.http.controllers.RestFormats
-import uk.gov.hmrc.mongo.play.json.formats.MongoFormats
-import uk.gov.hmrc.securemessage.models.core.{ Letter, RecipientName }
+import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata
+import uk.gov.hmrc.securemessage.models.core.Letter
 
 import scala.annotation.tailrec
 
-final case class MessageListItem(
-  id: String,
-  subject: String,
-  taxpayerName: Option[RecipientName],
-  validFrom: LocalDate,
-  issueDate: Option[LocalDate],
-  readTime: Option[DateTime],
-  replyTo: Option[String] = None,
-  sentInError: Boolean,
-  messageType: Option[String] = None,
-  counter: Option[Int] = None
-)
-
-object MessageListItem extends RestFormats {
-  implicit val objectIdFormat: Format[ObjectId] = MongoFormats.objectIdFormat
-  implicit val messageListItemWrites: Writes[MessageListItem] = Json.writes[MessageListItem]
-
-  def from(message: Letter): MessageListItem =
-    MessageListItem(
-      message._id.toString,
-      message.subject,
-      message.alertDetails.recipientName,
-      message.validFrom,
-      message.body.flatMap(_.issueDate),
-      message.readTime,
-      message.replyTo,
-      sentInError = message.rescindment.isDefined,
-      message.body.flatMap(_.`type`)
-    )
-}
-
-final case class MessagesResponse(items: Option[Seq[MessageListItem]], count: MessagesCount) {
+final case class MessagesResponse(items: Option[Seq[MessageMetadata]], count: MessagesCount) {
 
   def toConversations: MessagesResponse = {
 
     // algorithms supports only one child per parent
     // and assumes that child's id is greater than parent's one.
-    def addCounter(xs: List[MessageListItem]): List[MessageListItem] = {
+    def addCounter(xs: List[MessageMetadata]): List[MessageMetadata] = {
       @tailrec
-      def addCounterAux(input: List[MessageListItem], result: List[MessageListItem]): List[MessageListItem] =
+      def addCounterAux(input: List[MessageMetadata], result: List[MessageMetadata]): List[MessageMetadata] =
         input match {
           case Nil                             => result
           case x :: xs if !x.replyTo.isDefined => addCounterAux(xs, result)
           case x :: xs =>
             val (beforeChild, afterChild) = result.span(_.id != x.id)
-            val (beforeParent, afterParent) = afterChild.span(_.id != x.replyTo.get)
+            val (beforeParent, afterParent) = afterChild.span(_.id.toString != x.replyTo.get)
             val parentCount = afterParent.headOption.map(_.counter.getOrElse(1)).getOrElse(0)
             addCounterAux(
               xs,
@@ -80,6 +47,7 @@ final case class MessagesResponse(items: Option[Seq[MessageListItem]], count: Me
                 ++ afterParent.drop(1)
             )
         }
+
       val input = xs.sortWith(_.id < _.id)
       val result = xs.sortWith(_.id > _.id)
       addCounterAux(input, result)
@@ -88,11 +56,11 @@ final case class MessagesResponse(items: Option[Seq[MessageListItem]], count: Me
     items match {
       case Some(msgs) =>
         val (standalones, conversations) = msgs
-          .groupBy(m => m.replyTo.getOrElse(m.id.toString))
+          .groupBy(m => m.replyTo.getOrElse(m.id))
           .values
           .partition(m => m.size == 1 && !m.head.replyTo.isDefined)
         val msgsWithCounter = (standalones.flatten.toList ++ addCounter(conversations.flatten.toList))
-          .sortWith(_.id.toString > _.id.toString)
+          .sortWith(_.id > _.id)
         MessagesResponse(Some(msgsWithCounter), MessagesCount(msgsWithCounter.size, count.unread))
       case _ => this
     }
@@ -103,14 +71,14 @@ object MessagesResponse extends RestFormats {
 
   implicit val messagesResponseWrites: Writes[MessagesResponse] = (
     (__ \ "count").write[MessagesCount] and
-      (__ \ "items").writeNullable[Seq[MessageListItem]]
+      (__ \ "items").writeNullable[Seq[MessageMetadata]]
   )(m => (m.count, m.items))
 
   def fromMessagesCount(count: MessagesCount): MessagesResponse = MessagesResponse(None, count)
 
   def fromMessages(items: Seq[Letter]): MessagesResponse =
     MessagesResponse(
-      Some(items.sortWith(_._id.toString > _._id.toString).map(MessageListItem.from)),
+      Some(items.sortWith(_._id.toString > _._id.toString).map(MessageMetadata(_))),
       MessagesCount(
         items.size,
         items.count(message => message.readTime.isEmpty)

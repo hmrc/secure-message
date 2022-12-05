@@ -1,9 +1,12 @@
 {
+  "_id": {
+    "$oid": "609a5bd50100006c1800272d"
+  },
   "recipient" : {
     "regime" : "cds",
     "identifier" : {
-      "name" : "HMRC-CUS-ORG",
-      "value" : "GB1234567890"
+      "name" : "nino",
+      "value" : "SJ123456A"
     },
     "email" : "test@test.com"
   },
@@ -33,5 +36,10 @@
   },
   "tags": {
     "notificationType": "Direct Debit"
+  },
+  "lastUpdated" : {
+    "$date": {
+      "$numberLong": "1620728789509"
+    }
   }
 }

@@ -19,10 +19,7 @@ package uk.gov.hmrc.securemessage.models.core
 import play.api.libs.json.{ Json, Reads }
 import uk.gov.hmrc.common.message.model.Regime
 
-case class MessageFilter(
-  taxIdentifiers: Seq[String] = List(),
-  regimes: Seq[Regime.Value] = List(),
-  countOnly: Boolean = false)
+case class MessageFilter(taxIdentifiers: Seq[String] = List(), regimes: Seq[Regime.Value] = List())
 
 object MessageFilter {
   implicit val messageFilterReads: Reads[MessageFilter] = Json.reads[MessageFilter]
