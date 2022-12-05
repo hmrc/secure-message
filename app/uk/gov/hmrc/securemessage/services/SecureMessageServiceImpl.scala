@@ -99,14 +99,15 @@ class SecureMessageServiceImpl @Inject()(
     authTaxIds: Set[TaxIdWithName])(implicit hc: HeaderCarrier, messageFilter: MessageFilter): Future[MessagesCount] =
     messageRepository.countBy(authTaxIds)
 
-  def getMessagesCount(authEnrolments: Enrolments, filters: Filters)(implicit ec: ExecutionContext): Future[Count] = {
+  def getMessagesCount(authEnrolments: Enrolments, filters: Filters)(
+    implicit ec: ExecutionContext): Future[MessagesCount] = {
     val filteredEnrolments = authEnrolments.filter(filters.enrolmentKeysFilter, filters.enrolmentsFilter)
     val identifiers: Set[Identifier] = filteredEnrolments.map(_.asIdentifier)
     for {
       conversationsCount <- conversationRepository.getConversationsCount(identifiers, filters.tags)
       lettersCount       <- messageRepository.getLettersCount(identifiers, filters.tags)
     } yield
-      Count(
+      MessagesCount(
         total = conversationsCount.total + lettersCount.total,
         unread = conversationsCount.unread + lettersCount.unread
       )

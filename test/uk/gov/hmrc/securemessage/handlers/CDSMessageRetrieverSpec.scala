@@ -28,6 +28,7 @@ import play.api.test.Helpers.stubMessages
 import uk.gov.hmrc.auth.core.authorise.Predicate
 import uk.gov.hmrc.auth.core.retrieve.Retrieval
 import uk.gov.hmrc.auth.core.{ AuthConnector, Enrolments }
+import uk.gov.hmrc.common.message.model.MessagesCount
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.securemessage.UnitTest
 import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata
@@ -88,7 +89,7 @@ class CDSMessageRetrieverSpec extends PlaySpec with MockitoSugar with UnitTest {
       mockSecureMessageService.getMessagesCount(
         eqTo(authEnrolmentsFrom(authEnrolments)),
         eqTo(Filters(None, Some(customerEnrolments.toList), None)))(any[ExecutionContext]))
-      .thenReturn(Future.successful(Count(1, 1)))
+      .thenReturn(Future.successful(MessagesCount(1, 1)))
 
     val enrolments: Enrolments = authEnrolmentsFrom(authEnrolments)
 

@@ -30,13 +30,14 @@ import play.api.http.ContentTypes._
 import play.api.http.HeaderNames._
 import play.api.http.Status._
 import play.api.i18n.Messages
-import play.api.libs.json.{ JsObject, JsValue, Json }
+import play.api.libs.json.{ JsObject, JsValue, Json, OFormat }
 import play.api.mvc.{ AnyContentAsEmpty, Request, Result }
 import play.api.test.Helpers.{ POST, PUT, contentAsJson, contentAsString, defaultAwaitTimeout, status, stubMessages }
 import play.api.test.{ FakeHeaders, FakeRequest, Helpers }
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.authorise.Predicate
 import uk.gov.hmrc.auth.core.retrieve.Retrieval
+import uk.gov.hmrc.common.message.model.MessagesCount
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.securemessage._
@@ -417,9 +418,10 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
 
   "getMessagesCount" must {
     "return count" in new GetMessagesTestCase() {
+      implicit val messageCountFormat: OFormat[MessagesCount] = Json.format[MessagesCount]
       val response: Future[Result] = controller.getMessagesCount(None, Some(List(testEnrolment)), None)(fakeRequest)
       status(response) mustBe OK
-      contentAsJson(response).as[Count] mustBe Count(1, 1)
+      contentAsJson(response).as[MessagesCount] mustBe MessagesCount(1, 1)
     }
 
   }
@@ -548,7 +550,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       mockSecureMessageService.getMessagesCount(
         eqTo(authEnrolmentsFrom(authEnrolments)),
         eqTo(Filters(filterEnrolmentKeys, Some(customerEnrolments.toList), filterTags)))(any[ExecutionContext]))
-      .thenReturn(Future.successful(Count(1, 1)))
+      .thenReturn(Future.successful(MessagesCount(1, 1)))
 
     val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest("GET", "/")
   }

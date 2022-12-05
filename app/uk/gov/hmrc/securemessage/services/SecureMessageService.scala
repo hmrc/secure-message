@@ -51,7 +51,8 @@ trait SecureMessageService {
     hc: HeaderCarrier,
     messageFilter: MessageFilter): Future[List[Letter]]
 
-  def getMessagesCount(authEnrolments: Enrolments, filters: Filters)(implicit ec: ExecutionContext): Future[Count]
+  def getMessagesCount(authEnrolments: Enrolments, filters: Filters)(
+    implicit ec: ExecutionContext): Future[MessagesCount]
 
   def getMessagesCount(
     authTaxIds: Set[TaxIdWithName])(implicit hc: HeaderCarrier, messageFilter: MessageFilter): Future[MessagesCount]
