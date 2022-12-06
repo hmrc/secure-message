@@ -137,7 +137,7 @@ lazy val microservice = Project(appName, file("."))
   .settings(silencerSettings)
   .settings(ScoverageSettings())
 
-lazy val compileScalastyle = taskKey[Unit]("compileScalastyle")
+lazy val compileScalastyle = taskKey[Unit]("compileScalastyle1")
 compileScalastyle := (Compile / scalastyle).toTask("").value
 (Compile / compile) := ((Compile / compile) dependsOn compileScalastyle).value
 

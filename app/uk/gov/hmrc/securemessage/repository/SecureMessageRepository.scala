@@ -39,7 +39,7 @@ abstract class SecureMessageRepository[A: ClassTag](
     extends PlayMongoRepository[A](mongo, collectionName, domainFormat, indexes, replaceIndexes = replaceIndexes) {
 
   implicit val format: OFormat[A] = domainFormat.asInstanceOf[OFormat[A]]
-  private val logger = Logger(getClass)
+  val logger = Logger(getClass)
 
   protected def messagesQuerySelector(identifiers: Set[Identifier], tags: Option[List[FilterTag]]): Bson =
     (identifiers, tags) match {

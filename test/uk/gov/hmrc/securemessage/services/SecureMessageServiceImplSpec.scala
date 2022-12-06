@@ -32,6 +32,7 @@ import play.api.mvc.AnyContentAsEmpty
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.auth.core.{ Enrolment, EnrolmentIdentifier, Enrolments }
+import uk.gov.hmrc.common.message.model.MessagesCount
 import uk.gov.hmrc.emailaddress.EmailAddress
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
@@ -491,7 +492,7 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
   "getMessagesCount" must {
     "return count" in new AddReadTimesTestContext {
       val result = service.getMessagesCount(enrolments, filters()).futureValue
-      result mustBe Count(2, 1)
+      result mustBe MessagesCount(2, 1)
     }
   }
   class AddReadTimesTestContext {
@@ -521,7 +522,8 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
         mockEmailConnector,
         mockChannelPreferencesConnector,
         mockEisConnector,
-        mockAuditConnector)
+        mockAuditConnector
+      )
   }
   class CreateMessageTestContext(
     dbInsertResult: Either[SecureMessageError, Unit] = Right(()),
@@ -626,7 +628,8 @@ trait TestHelpers extends MockitoSugar with UnitTest {
       mockEmailConnector,
       mockChannelPreferencesConnector,
       mockEisConnector,
-      mockAuditConnector)
+      mockAuditConnector
+    )
   val mockEnrolments: Enrolments = mock[Enrolments]
   val enrolments: Enrolments = Enrolments(Set(
     Enrolment(identifierEnrolment, Vector(EnrolmentIdentifier(identifierName, identifierValue90)), "Activated", None)))

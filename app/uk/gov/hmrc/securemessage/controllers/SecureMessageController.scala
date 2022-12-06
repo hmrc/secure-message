@@ -31,12 +31,12 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.securemessage._
 import uk.gov.hmrc.securemessage.controllers.model.MessageType.{ Conversation, Letter }
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write._
-import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata
 import uk.gov.hmrc.securemessage.controllers.model.common.write._
 import uk.gov.hmrc.securemessage.controllers.model.{ ApiMessage, ClientName, MessageType }
 import uk.gov.hmrc.securemessage.controllers.utils.IdCoder.{ DecodedId, EncodedId }
 import uk.gov.hmrc.securemessage.controllers.utils.{ IdCoder, QueryStringValidation }
-import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag, Filters, Reference }
+import uk.gov.hmrc.securemessage.handlers.MessageBroker
+import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag, MessageFilter, MessageRequestWrapper, Reference }
 import uk.gov.hmrc.securemessage.services.{ ImplicitClassesExtensions, SecureMessageServiceImpl }
 import uk.gov.hmrc.time.DateTimeUtils
 
@@ -50,6 +50,7 @@ class SecureMessageController @Inject()(
   val authConnector: AuthConnector,
   override val auditConnector: AuditConnector,
   secureMessageService: SecureMessageServiceImpl,
+  messageBroker: MessageBroker,
   dataTimeUtils: DateTimeUtils)(implicit ec: ExecutionContext)
     extends BackendController(cc) with AuthorisedFunctions with QueryStringValidation with I18nSupport
     with ErrorHandling with Auditing with Logging with ImplicitClassesExtensions {
@@ -175,25 +176,22 @@ class SecureMessageController @Inject()(
     }
 
   def getMessages(
-    enrolmentKeys: Option[List[String]],
-    customerEnrolments: Option[List[CustomerEnrolment]],
-    tags: Option[List[FilterTag]]): Action[AnyContent] =
+    enrolmentKey: Option[List[String]],
+    enrolment: Option[List[CustomerEnrolment]],
+    tag: Option[List[FilterTag]],
+    messageFilter: Option[MessageFilter] = None): Action[AnyContent] =
     Action.async { implicit request =>
       {
-        validateQueryParameters(request.queryString, "enrolment", "enrolmentKey", "tag") match {
-          case Left(e) => Future.successful(BadRequest(Json.toJson(e.getMessage)))
-          case _ =>
-            authorised()
-              .retrieve(Retrievals.allEnrolments) { authEnrolments =>
-                val filters = Filters(enrolmentKeys, customerEnrolments, tags)
-                secureMessageService
-                  .getMessages(authEnrolments, filters)
-                  .map { messagesList =>
-                    val messageMetadataList: List[MessageMetadata] =
-                      messagesList.map(m => MessageMetadata(m, authEnrolments))
-                    Ok(Json.toJson(messageMetadataList))
-                  }
-              }
+        val requestWrapper =
+          MessageRequestWrapper(enrolmentKey, enrolment, tag, messageFilter.getOrElse(new MessageFilter()))
+        logger.warn(s"Request Wrapper = $requestWrapper")
+        validateQueryParameters(request.queryString) match {
+          case Left(e) =>
+            logger.warn(s"Invalid Request ${request.queryString}")
+            Future.successful(BadRequest(Json.toJson(e.getMessage)))
+          case Right(value) =>
+            logger.warn(s"Valid Request $value - Params: ${request.queryString}")
+            messageBroker.messageRetriever(value).fetch(requestWrapper).map(Ok(_))
         }
       }
     }
@@ -201,20 +199,18 @@ class SecureMessageController @Inject()(
   def getMessagesCount(
     enrolmentKeys: Option[List[String]],
     customerEnrolments: Option[List[CustomerEnrolment]],
-    tags: Option[List[FilterTag]]): Action[AnyContent] =
+    tags: Option[List[FilterTag]],
+    messageFilter: Option[MessageFilter] = None): Action[AnyContent] =
     Action.async { implicit request =>
-      validateQueryParameters(request.queryString, "enrolment", "enrolmentKey", "tag") match {
-        case Left(e) => Future.successful(BadRequest(Json.toJson(e.getMessage)))
-        case _ =>
-          authorised()
-            .retrieve(Retrievals.allEnrolments) { authEnrolments =>
-              val filters = Filters(enrolmentKeys, customerEnrolments, tags)
-              secureMessageService
-                .getMessagesCount(authEnrolments, filters)
-                .map { count =>
-                  Ok(Json.toJson(count))
-                }
-            }
+      val requestWrapper =
+        MessageRequestWrapper(enrolmentKeys, customerEnrolments, tags, messageFilter.getOrElse(new MessageFilter()))
+      validateQueryParameters(request.queryString) match {
+        case Left(e) =>
+          logger.warn(s"Invalid Request ${request.queryString}")
+          Future.successful(BadRequest(Json.toJson(e.getMessage)))
+        case Right(value) =>
+          logger.warn(s"Valid Request $value - Params: ${request.queryString}")
+          messageBroker.messageRetriever(value).messageCount(requestWrapper).map(Ok(_))
       }
     }
 

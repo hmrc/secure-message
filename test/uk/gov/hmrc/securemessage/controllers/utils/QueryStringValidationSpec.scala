@@ -28,22 +28,28 @@ class QueryStringValidationSpec extends PlaySpec with QueryStringValidation {
 
   "validateQueryParameters method" must {
 
-    val queryString: Map[String, Seq[String]] = Map(
-      "c" -> Seq("3"),
-      "b" -> Seq("2"),
-      "d" -> Seq("4"),
-      "e" -> Seq("5"),
-      "a" -> Seq("1")
-    )
-
     "return a valid result when no other parameters are present in the query string" in {
-      val result = validateQueryParameters(queryString, "e", "d", "a", "c", "b")
-      result mustBe Right(ValidQueryParameters)
+      val queryString: Map[String, Seq[String]] = Map(
+        "enrolment" -> Seq("3"),
+        "enrolment" -> Seq("2"),
+        "enrolment" -> Seq("4"),
+        "enrolment" -> Seq("5"),
+        "enrolment" -> Seq("1")
+      )
+      val result = validateQueryParameters(queryString)
+      result mustBe Right(ValidCDSQueryParameters)
     }
 
     "return an invalid result when unknown parameters are present in the query string" in {
-      val result = validateQueryParameters(queryString, "b", "a").left.getOrElse(new Exception())
-      result.getMessage mustBe "Invalid query parameter(s) found: [c, d, e]"
+      val queryString: Map[String, Seq[String]] = Map(
+        "c" -> Seq("3"),
+        "b" -> Seq("2"),
+        "d" -> Seq("4"),
+        "e" -> Seq("5"),
+        "a" -> Seq("1")
+      )
+      val result = validateQueryParameters(queryString).left.getOrElse(new Exception())
+      result.getMessage mustBe "Invalid query parameter(s) found: [e, a, b, c, d]"
       result.isInstanceOf[InvalidQueryParameterException] mustBe true
     }
   }

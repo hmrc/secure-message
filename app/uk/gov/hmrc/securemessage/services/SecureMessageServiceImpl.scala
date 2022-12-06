@@ -24,6 +24,8 @@ import org.mongodb.scala.bson.ObjectId
 import play.api.i18n.Messages
 import play.api.mvc.Request
 import uk.gov.hmrc.auth.core.Enrolments
+import uk.gov.hmrc.common.message.model.MessagesCount
+import uk.gov.hmrc.domain.TaxIds.TaxIdWithName
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.securemessage._
@@ -87,14 +89,25 @@ class SecureMessageServiceImpl @Inject()(
     } yield (conversations ++ letters).sortBy(_.issueDate)(dateTimeDescending)
   }
 
-  def getMessagesCount(authEnrolments: Enrolments, filters: Filters)(implicit ec: ExecutionContext): Future[Count] = {
+  def getMessagesList(authTaxIds: Set[TaxIdWithName])(
+    implicit ec: ExecutionContext,
+    hc: HeaderCarrier,
+    messageFilter: MessageFilter): Future[List[Letter]] =
+    messageRepository.findBy(authTaxIds)
+
+  def getMessagesCount(
+    authTaxIds: Set[TaxIdWithName])(implicit hc: HeaderCarrier, messageFilter: MessageFilter): Future[MessagesCount] =
+    messageRepository.countBy(authTaxIds)
+
+  def getMessagesCount(authEnrolments: Enrolments, filters: Filters)(
+    implicit ec: ExecutionContext): Future[MessagesCount] = {
     val filteredEnrolments = authEnrolments.filter(filters.enrolmentKeysFilter, filters.enrolmentsFilter)
     val identifiers: Set[Identifier] = filteredEnrolments.map(_.asIdentifier)
     for {
       conversationsCount <- conversationRepository.getConversationsCount(identifiers, filters.tags)
       lettersCount       <- messageRepository.getLettersCount(identifiers, filters.tags)
     } yield
-      Count(
+      MessagesCount(
         total = conversationsCount.total + lettersCount.total,
         unread = conversationsCount.unread + lettersCount.unread
       )

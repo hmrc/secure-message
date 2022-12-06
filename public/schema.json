@@ -328,6 +328,14 @@
             }
           },
           "required" : false
+        }, {
+          "in" : "query",
+          "name" : "messageFilter",
+          "schema" : {
+            "nullable" : true,
+            "type" : "uk.gov.hmrc.securemessage.models.core.messagefilter"
+          },
+          "required" : false
         } ]
       }
     },
@@ -415,7 +423,7 @@
   },
   "info" : {
     "title" : "Secure Message API",
-    "version" : "0.127.0-SNAPSHOT"
+    "version" : "0.132.0-SNAPSHOT"
   },
   "tags" : [ {
     "name" : "app"

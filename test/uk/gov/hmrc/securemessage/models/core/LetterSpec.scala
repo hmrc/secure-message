@@ -35,7 +35,7 @@ class LetterSpec extends PlaySpec {
       val letter = letterJson.validate[Letter].get
       val apiLetter = ApiLetter.fromCore(letter)
       apiLetter.subject mustBe (letter.subject)
-      apiLetter.content mustBe (letter.content)
+      apiLetter.content mustBe (letter.content.getOrElse(""))
       apiLetter.senderInformation mustBe SenderInformation("HMRC", letter.validFrom)
       apiLetter.firstReaderInformation.get mustBe (FirstReaderInformation(None, letter.readTime.get))
     }
@@ -48,7 +48,7 @@ class LetterSpec extends PlaySpec {
       val letter = letterJson.validate[Letter].get
       val apiLetter = ApiLetter.fromCore(letter)
       apiLetter.subject mustBe (letter.subject)
-      apiLetter.content mustBe (letter.content)
+      apiLetter.content mustBe (letter.content.getOrElse(""))
       apiLetter.senderInformation mustBe SenderInformation("HMRC", letter.validFrom)
       apiLetter.firstReaderInformation mustBe None
     }
