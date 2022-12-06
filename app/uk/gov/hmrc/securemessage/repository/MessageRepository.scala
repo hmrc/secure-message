@@ -15,16 +15,22 @@
  */
 
 package uk.gov.hmrc.securemessage.repository
+
 import org.bson.types.ObjectId
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model._
 import play.api.libs.json.JodaWrites.{ JodaDateTimeWrites => _ }
+import play.api.libs.json.{ JsObject, Json }
+import uk.gov.hmrc.common.message.model.{ MessagesCount, Regime }
+import uk.gov.hmrc.domain.TaxIds.TaxIdWithName
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.Codecs
-import uk.gov.hmrc.securemessage.models.core.{ Count, FilterTag, Identifier, Letter }
+import uk.gov.hmrc.securemessage.models.core.{ Count, FilterTag, Identifier, Letter, MessageFilter }
 import uk.gov.hmrc.securemessage.{ SecureMessageError, StoreError }
 
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
+import scala.concurrent.duration.Duration
 import scala.concurrent.{ ExecutionContext, Future }
 
 class MessageRepository @Inject()(mongo: MongoComponent)(implicit ec: ExecutionContext)
@@ -34,7 +40,7 @@ class MessageRepository @Inject()(mongo: MongoComponent)(implicit ec: ExecutionC
       Letter.letterFormat,
       Seq.empty[IndexModel],
       replaceIndexes = false
-    ) {
+    ) with MessageSelector {
 
   override protected def messagesQuerySelector(identifiers: Set[Identifier], tags: Option[List[FilterTag]]): Bson = {
     val superQuery = super.messagesQuerySelector(identifiers, tags)
@@ -82,4 +88,97 @@ class MessageRepository @Inject()(mongo: MongoComponent)(implicit ec: ExecutionC
         )
     }
 
+  def findBy(authTaxIds: Set[TaxIdWithName])(
+    implicit messageFilter: MessageFilter,
+    ec: ExecutionContext
+  ): Future[List[Letter]] =
+    taxIdRegimeSelector(authTaxIds)
+      .map(Filters.and(_, readyForViewingQuery, rescindedExcludedQuery))
+      .fold(Future.successful(List[Letter]())) { query =>
+        logger.warn(s"Query - $query")
+        collection
+          .find(query)
+          .maxTime(Duration(1, TimeUnit.MINUTES))
+          .sort(Filters.equal("_id", -1))
+          .toFuture()
+          .map(_.toList)
+      }
+      .recoverWith {
+        case e: Exception =>
+          logger.error("Error processing the query", e)
+          Future.successful(List())
+        case anyOtherError =>
+          logger.warn(s"Error processing the query  $anyOtherError")
+          Future.successful(List())
+      }
+
+  def countBy(authTaxIds: Set[TaxIdWithName])(
+    implicit messageFilter: MessageFilter
+  ): Future[MessagesCount] =
+    taxIdRegimeSelector(authTaxIds)
+      .map(Filters.and(_, readyForViewingQuery, rescindedExcludedQuery))
+      .fold(Future.successful(MessagesCount(0, 0)))(query =>
+        for {
+          unreadCount <- collection
+                        // scalastyle:off null
+                          .countDocuments(Filters.and(query, Filters.equal("readTime", null)))
+                          // scalastyle:on null
+                          .toFuture()
+          totalCount <- collection.countDocuments(query).toFuture()
+        } yield MessagesCount(totalCount.toInt, unreadCount.toInt))
+
+}
+
+trait MessageSelector {
+
+  def selectByTaxId(taxId: TaxIdWithName): JsObject =
+    Json.obj("recipient.identifier.value" -> taxId.value, "recipient.identifier.name" -> taxId.name)
+
+  def readyForViewingQuery: Bson =
+    Filters
+      .and(Filters.lte("validFrom", Codecs.toBson(Letter.localDateNow)), Filters.notEqual("verificationBrake", true))
+
+  def rescindedExcludedQuery: Bson = Filters.exists("rescindment", exists = false)
+
+  def taxIdRegimeSelector(
+    authTaxIds: Set[TaxIdWithName]
+  )(implicit messageFilter: MessageFilter): Option[Bson] = {
+
+    val regimesJsonArr: Option[Seq[Bson]] = Option(messageFilter.regimes)
+      .filter(_.nonEmpty)
+      .map(_.map((regime: Regime.Value) => Filters.equal("recipient.regime", Codecs.toBson(regime)))
+        .foldLeft(Seq.empty[Bson])((acc, e) => acc.+:(e)))
+
+    val taxIdNames: Seq[String] =
+      if (messageFilter.taxIdentifiers.isEmpty && messageFilter.regimes.isEmpty) {
+        authTaxIds.map(_.name).toSeq
+      } else {
+        messageFilter.taxIdentifiers
+      }
+
+    authTaxIds
+      .flatMap(authTaxId =>
+        if (taxIdNames.contains(authTaxId.name)) {
+          Seq(
+            Filters.and(
+              Filters.equal("recipient.identifier.name", authTaxId.name),
+              Filters.equal("recipient.identifier.value", authTaxId.value)))
+        } else {
+          regimesJsonArr.fold(Seq[Bson]())(
+            ar =>
+              Seq[Bson](
+                Filters.and(
+                  Filters.equal("recipient.identifier.value", authTaxId.value),
+                  Filters.equal("recipient.identifier.name", authTaxId.name),
+                  Filters.or(ar: _*)
+                ))
+          )
+      })
+      .foldLeft[Option[List[Bson]]](None) {
+        case (None, e)    => Some(List(e))
+        case (Some(a), e) => Some(a.+:(e))
+      }
+      .map(x => Filters.or(x: _*))
+
+  }
 }

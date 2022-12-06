@@ -38,7 +38,7 @@ object ApiLetter extends ApiFormats {
   def fromCore(letter: Letter): ApiLetter =
     ApiLetter(
       letter.subject,
-      letter.content,
+      letter.content.getOrElse(""),
       letter.readTime.map(FirstReaderInformation(None, _)),
       SenderInformation("HMRC", letter.validFrom),
       identifier = letter.recipient.identifier,

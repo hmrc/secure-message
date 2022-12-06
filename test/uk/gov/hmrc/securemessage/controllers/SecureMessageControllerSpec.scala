@@ -30,13 +30,14 @@ import play.api.http.ContentTypes._
 import play.api.http.HeaderNames._
 import play.api.http.Status._
 import play.api.i18n.Messages
-import play.api.libs.json.{ JsObject, JsValue, Json }
+import play.api.libs.json.{ JsObject, JsValue, Json, OFormat }
 import play.api.mvc.{ AnyContentAsEmpty, Request, Result }
 import play.api.test.Helpers.{ POST, PUT, contentAsJson, contentAsString, defaultAwaitTimeout, status, stubMessages }
 import play.api.test.{ FakeHeaders, FakeRequest, Helpers }
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.authorise.Predicate
 import uk.gov.hmrc.auth.core.retrieve.Retrieval
+import uk.gov.hmrc.common.message.model.MessagesCount
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.securemessage._
@@ -46,6 +47,8 @@ import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.{ ApiLetter, Sender
 import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
 import uk.gov.hmrc.securemessage.controllers.model.{ ClientName, MessageType }
+import uk.gov.hmrc.securemessage.controllers.utils.QueryStringValidationSuccess
+import uk.gov.hmrc.securemessage.handlers.{ CDSMessageRetriever, MessageBroker }
 import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core.Letter._
 import uk.gov.hmrc.securemessage.models.core._
@@ -390,7 +393,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
 
   "getMessages" must {
     "return metadata for both conversations and letters" in new GetMessagesTestCase() {
-      val response: Future[Result] = controller.getMessages(None, Some(List(testEnrolment)), None)(fakeRequest)
+      val response: Future[Result] = controller.getMessages(None, Some(List(testEnrolment)), None, None)(fakeRequest)
       status(response) mustBe OK
       contentAsJson(response).as[List[MessageMetadata]] mustBe messagesMetadata
     }
@@ -400,7 +403,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       contentAsJson(response).as[List[MessageMetadata]] mustBe conversationsMetadata
     }
     "return metadata for letters when no conversations" in new GetMessagesTestCase(storedConversations = List()) {
-      val response: Future[Result] = controller.getMessages(None, Some(List(testEnrolment)), None)(fakeRequest)
+      val response: Future[Result] = controller.getMessages(None, Some(List(testEnrolment)), None, None)(fakeRequest)
       status(response) mustBe OK
       contentAsJson(response).as[List[MessageMetadata]] mustBe lettersMetadata
     }
@@ -415,27 +418,32 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
 
   "getMessagesCount" must {
     "return count" in new GetMessagesTestCase() {
+      implicit val messageCountFormat: OFormat[MessagesCount] = Json.format[MessagesCount]
       val response: Future[Result] = controller.getMessagesCount(None, Some(List(testEnrolment)), None)(fakeRequest)
       status(response) mustBe OK
-      contentAsJson(response).as[Count] mustBe Count(1, 1)
+      contentAsJson(response).as[MessagesCount] mustBe MessagesCount(1, 1)
     }
 
   }
   class TestCase(authEnrolments: Set[CustomerEnrolment] = Set(testEnrolment)) {
     val mockRepository: ConversationRepository = mock[ConversationRepository]
     val mockAuthConnector: AuthConnector = mock[AuthConnector]
+    val mockMessageBroker: MessageBroker = mock[MessageBroker]
     val mockAuditConnector: AuditConnector = mock[AuditConnector]
     val mockSecureMessageService: SecureMessageServiceImpl = mock[SecureMessageServiceImpl]
     when(mockRepository.insertIfUnique(any[Conversation])(any[ExecutionContext]))
       .thenReturn(Future.successful(Right(())))
-
+    when(mockMessageBroker.messageRetriever(any[QueryStringValidationSuccess]))
+      .thenReturn(new CDSMessageRetriever(mockAuthConnector, mockSecureMessageService))
     val controller =
       new SecureMessageController(
         Helpers.stubControllerComponents(),
         mockAuthConnector,
         mockAuditConnector,
         mockSecureMessageService,
-        zeroTimeProvider)
+        mockMessageBroker,
+        zeroTimeProvider,
+      )
 
     val enrolments: Enrolments = authEnrolmentsFrom(authEnrolments)
 
@@ -542,7 +550,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       mockSecureMessageService.getMessagesCount(
         eqTo(authEnrolmentsFrom(authEnrolments)),
         eqTo(Filters(filterEnrolmentKeys, Some(customerEnrolments.toList), filterTags)))(any[ExecutionContext]))
-      .thenReturn(Future.successful(Count(1, 1)))
+      .thenReturn(Future.successful(MessagesCount(1, 1)))
 
     val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest("GET", "/")
   }
@@ -581,7 +589,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
         l =>
           ApiLetter(
             l.subject,
-            l.content,
+            l.content.getOrElse(""),
             None,
             SenderInformation("HMRC", LocalDate.now),
             l.recipient.identifier,

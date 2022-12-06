@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.securemessage.controllers.model.common.read
 
-import org.joda.time.DateTime
+import org.joda.time.{ DateTime, LocalDate }
 import play.api.i18n.Messages
 import play.api.libs.json.{ Json, OFormat }
 import uk.gov.hmrc.auth.core.Enrolments
@@ -24,20 +24,30 @@ import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.ConversationMetadat
 import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.ApiLetter
 import uk.gov.hmrc.securemessage.controllers.model.{ ApiFormats, MessageType }
 import uk.gov.hmrc.securemessage.controllers.utils.IdCoder
-import uk.gov.hmrc.securemessage.models.core.{ Conversation, Letter, Message }
+import uk.gov.hmrc.securemessage.models.core.{ Conversation, Letter, Message, RecipientName }
 import uk.gov.hmrc.securemessage.services.ImplicitClassesExtensions
 
 final case class MessageMetadata(
-  messageType: MessageType,
+  messageType: MessageType = MessageType.Letter,
   id: String,
   subject: String,
   issueDate: DateTime,
-  senderName: Option[String],
-  unreadMessages: Boolean,
-  count: Int
+  senderName: Option[String] = None,
+  unreadMessages: Boolean = false,
+  count: Int = 1,
+  taxpayerName: Option[RecipientName] = None,
+  validFrom: Option[LocalDate] = None,
+  readTime: Option[DateTime] = None,
+  replyTo: Option[String] = None,
+  sentInError: Option[Boolean] = None,
+  messageDesc: Option[String] = None,
+  counter: Option[Int] = None
 )
 
 object MessageMetadata extends ApiFormats with ImplicitClassesExtensions {
+
+  def apply(message: Message): MessageMetadata = mapForMessage(message.asInstanceOf[Letter])
+
   def apply(message: Message, reader: Enrolments)(implicit messages: Messages): MessageMetadata =
     message match {
       case c: Conversation => map(c, reader)
@@ -68,6 +78,26 @@ object MessageMetadata extends ApiFormats with ImplicitClassesExtensions {
       senderName = Some(al.senderInformation.name),
       unreadMessages = letter.readTime.isEmpty,
       count = 1
+    )
+  }
+
+  private def mapForMessage(letter: Letter): MessageMetadata = {
+    val messageType = MessageType.Letter
+    val al = ApiLetter.fromCore(letter)
+    new MessageMetadata(
+      messageType = messageType,
+      id = letter._id.toString,
+      subject = letter.subject,
+      issueDate = letter.issueDate,
+      senderName = Some(al.senderInformation.name),
+      unreadMessages = letter.readTime.isEmpty,
+      count = 1,
+      taxpayerName = letter.alertDetails.recipientName,
+      validFrom = Some(letter.validFrom),
+      readTime = letter.readTime,
+      replyTo = letter.body.flatMap(_.replyTo),
+      sentInError = Some(letter.rescindment.isDefined),
+      messageDesc = letter.body.flatMap(_.`type`)
     )
   }
 

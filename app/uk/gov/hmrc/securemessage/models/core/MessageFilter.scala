@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.securemessage.controllers.model.common.read
+package uk.gov.hmrc.securemessage.models.core
 
-import play.api.libs.json.{ Json, OFormat }
+import play.api.libs.json.{ Json, Reads }
+import uk.gov.hmrc.common.message.model.Regime
 
-final case class Count(total: Long, unread: Long)
+case class MessageFilter(taxIdentifiers: Seq[String] = List(), regimes: Seq[Regime.Value] = List())
 
-object Count {
-  implicit val countFormat: OFormat[Count] = Json.format[Count]
+object MessageFilter {
+  implicit val messageFilterReads: Reads[MessageFilter] = Json.reads[MessageFilter]
 }

@@ -17,19 +17,28 @@
 package uk.gov.hmrc.securemessage.controllers.utils
 
 trait QueryStringValidationSuccess
-case object ValidQueryParameters extends QueryStringValidationSuccess
+case object ValidCDSQueryParameters extends QueryStringValidationSuccess
+case object ValidNonCDSQueryParameters extends QueryStringValidationSuccess
 
 class InvalidQueryStringException(message: String) extends Exception(message) {}
 final case class InvalidQueryParameterException(invalidParams: List[String])
-    extends InvalidQueryStringException(s"Invalid query parameter(s) found: [${invalidParams.sorted.mkString(", ")}]") {}
+    extends InvalidQueryStringException(
+      s"Invalid query parameter(s) found: [${invalidParams.sorted.toSet.mkString(", ")}]") {}
 
 trait QueryStringValidation {
 
+  val validCdsQueryParams = List("enrolment", "enrolmentKey", "tag")
+  val validNonCdsQueryParams = List("taxIdentifiers", "regimes")
+
   protected def validateQueryParameters(
-    queryString: Map[String, Seq[String]],
-    allowedParamKeys: String*): Either[InvalidQueryStringException, QueryStringValidationSuccess] =
-    (queryString.keys.toList diff allowedParamKeys) match {
-      case List()                      => Right(ValidQueryParameters)
-      case invalidParams: List[String] => Left(InvalidQueryParameterException(invalidParams))
+    queryString: Map[String, Seq[String]]): Either[InvalidQueryStringException, QueryStringValidationSuccess] = {
+    val cdsParams = queryString.keys.toList diff validCdsQueryParams
+    val nonCdsParams = queryString.keys.toList diff validNonCdsQueryParams
+    (cdsParams, nonCdsParams) match {
+      case (List(), _) => Right(ValidCDSQueryParameters)
+      case (_, List()) => Right(ValidNonCDSQueryParameters)
+      case (invalidParams1: List[String], invalidParams2: List[String]) =>
+        Left(InvalidQueryParameterException(invalidParams1 ++ invalidParams2))
     }
+  }
 }

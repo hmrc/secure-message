@@ -17,7 +17,9 @@
 package uk.gov.hmrc.securemessage.controllers.binders
 
 import org.scalatestplus.play._
-import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag }
+import play.api.mvc.QueryStringBindable
+import uk.gov.hmrc.common.message.model.Regime
+import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag, MessageFilter }
 
 class PackageTest extends PlaySpec {
   "queryStringBindableCustomerEnrolment" must {
@@ -60,4 +62,34 @@ class PackageTest extends PlaySpec {
     }
 
   }
+
+  "messageFilterBinder" must {
+
+    val testBinder = implicitly[QueryStringBindable[MessageFilter]]
+
+    "bind map with all paremeters present" in {
+      testBinder.bind(
+        "key",
+        Map("taxIdentifiers" -> Seq("foo", "bar"), "regimes" -> Seq("fhdds"), "countOnly" -> Seq("true"))) must be(
+        Some(Right(MessageFilter(List("foo", "bar"), List(Regime.fhdds)))))
+    }
+    "bind  with missing countOnly" in {
+      testBinder.bind("key", Map("taxIdentifiers" -> Seq("foo", "bar"), "regimes" -> Seq("fhdds"))) must be(
+        Some(Right(MessageFilter(List("foo", "bar"), List(Regime.fhdds)))))
+    }
+    "bind  with missing taxIdentifiers " in {
+      testBinder.bind("key", Map("regimes" -> Seq("fhdds"), "countOnly" -> Seq("true"))) must be(
+        Some(Right(MessageFilter(List(), List(Regime.fhdds)))))
+    }
+    "bind  with missing regimes" in {
+      testBinder.bind("key", Map("taxIdentifiers" -> List("foo", "bar"), "countOnly" -> Seq("true"))) must be(
+        Some(Right(MessageFilter(List("foo", "bar"), List()))))
+    }
+
+    "bind with wrong regime" in {
+      testBinder.bind("key", Map("regime" -> List("wrong-regime"))) must be(Some(Right(MessageFilter(List(), List()))))
+    }
+
+  }
+
 }
