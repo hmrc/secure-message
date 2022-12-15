@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2022 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,8 @@
  * limitations under the License.
  */
 
-import java.net.URL
-
 import com.lucidchart.sbt.scalafmt.ScalafmtCorePlugin.autoImport._
 import uk.gov.hmrc.DefaultBuildSettings.integrationTestSettings
-import uk.gov.hmrc.SbtBobbyPlugin.BobbyKeys.bobbyRulesURL
 import uk.gov.hmrc.ServiceManagerPlugin.Keys.itDependenciesList
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin.publishingSettings
 import uk.gov.hmrc.{ ExternalService, ServiceManagerPlugin }
@@ -156,7 +153,6 @@ swaggerFileName := "schema.json"
 swaggerPrettyJson := true
 swaggerRoutesFile := "prod.routes"
 swaggerV3 := true
-bobbyRulesURL := Some(new URL("https://webstore.tax.service.gov.uk/bobby-config/deprecated-dependencies.json"))
 scalafmtOnCompile := true
 PlayKeys.playDefaultPort := 9051
 
