@@ -26,8 +26,9 @@ import play.api.mvc.{ Action, AnyContent, ControllerComponents }
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.securemessage.models.core.Language.English
 import uk.gov.hmrc.securemessage.models.core._
+import uk.gov.hmrc.securemessage.models.core.Letter.objectIdFormat
 import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository }
-import org.mongodb.scala.model.Filters
+import org.mongodb.scala.model.Filters.equal
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext
@@ -38,13 +39,13 @@ class TestOnlyController @Inject()(
     extends BackendController(cc) with Logging {
 
   def deleteConversation(id: String): Action[AnyContent] = Action.async { _ =>
-    conversationRepository.collection.deleteOne(Filters.equal("_id", id)).toFuture().map { _ =>
+    conversationRepository.collection.deleteOne(equal("_id", new ObjectId(id))).toFuture().map { _ =>
       Ok(s"$id deleted successfully")
     }
   }
 
   def insertMessage(id: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
-    val messageBody: JsObject = request.body.as[JsObject] + ("_id" -> Json.toJson(id))
+    val messageBody: JsObject = request.body.as[JsObject] + ("_id" -> Json.toJson(new ObjectId(id)))
     val letter = messageBody.validate[Letter].get
     messageRepository.collection.insertOne(letter).toFuture().map(_ => Created)
   }
@@ -96,7 +97,7 @@ class TestOnlyController @Inject()(
 
   def deleteMessage(id: String): Action[AnyContent] =
     Action.async(_ =>
-      messageRepository.collection.deleteOne(Filters.equal("_id", id)).toFuture().map { _ =>
+      messageRepository.collection.deleteOne(equal("_id", new ObjectId(id))).toFuture().map { _ =>
         Ok(s"message $id deleted successfully")
     })
 }
