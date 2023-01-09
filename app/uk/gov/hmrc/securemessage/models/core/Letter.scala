@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import org.mongodb.scala.bson.ObjectId
 import play.api.libs.json.JodaReads.jodaLocalDateReads
 import play.api.libs.json.JodaWrites.jodaLocalDateWrites
 import play.api.libs.json._
+import play.api.libs.functional.syntax._
 import uk.gov.hmrc.common.message.model.{ Adviser, Rescindment }
 import uk.gov.hmrc.mongo.play.json.formats.{ MongoFormats, MongoJodaFormats }
 
@@ -109,7 +110,42 @@ object Letter {
 
   implicit val isoTime: Reads[LocalDate] = (__ \ "validFrom").read[LocalDate]
 
-  implicit val letterFormat: OFormat[Letter] = Json.format[Letter]
+  val legacyDefaultAlertDetails = Reads.pure(AlertDetails("newMessageAlert", None))
+  val legacyStatutoryForms = Seq("SA309A", "SA309C", "SA326D", "SA328D", "SA370", "SA371")
+  def legacyMessageStatutoryFromForm: Reads[Boolean] = (__ \ "body" \ "form").formatNullable[String].map {
+    case Some(form) => legacyStatutoryForms.contains(form) || form.startsWith("SA316")
+    case None       => false
+  }
+  def legacyRenderUrl: Reads[RenderUrl] =
+    for {
+      messageId <- (__ \ "_id").read[ObjectId]
+      taxEntity <- (__ \ "recipient").read[Recipient]
+    } yield RenderUrl("sa-message-renderer", s"/messages/sa/${taxEntity.identifier.value}/${messageId.toString}")
+
+  implicit val letterReads: Reads[Letter] = ((__ \ "_id").read[ObjectId] ~
+    (__ \ "subject").read[String] ~
+    (__ \ "validFrom").read[LocalDate] ~
+    (__ \ "hash").read[String] ~
+    (__ \ "alertQueue").readNullable[String] ~
+    (__ \ "alertFrom").readNullable[String] ~
+    (__ \ "status").read[String] ~
+    (__ \ "content").readNullable[String] ~
+    (__ \ "statutory").read[Boolean].orElse(legacyMessageStatutoryFromForm) ~
+    (__ \ "lastUpdated").readNullable[DateTime] ~
+    (__ \ "recipient").read[Recipient] ~
+    (__ \ "renderUrl").read[RenderUrl].orElse(legacyRenderUrl) ~
+    (__ \ "externalRef").readNullable[ExternalReference] ~
+    (__ \ "alertDetails").read[AlertDetails].orElse(legacyDefaultAlertDetails) ~
+    (__ \ "alerts").readNullable[EmailAlert] ~
+    (__ \ "readTime").readNullable[DateTime] ~
+    (__ \ "replyTo").readNullable[String] ~
+    (__ \ "tags").readNullable[Map[String, String]] ~
+    (__ \ "rescindment").readNullable[Rescindment] ~
+    (__ \ "body").readNullable[Details])(Letter.apply _)
+
+  implicit val letterWrites: OWrites[Letter] = Json.writes[Letter]
+
+  implicit val letterFormat: OFormat[Letter] = OFormat(letterReads, letterWrites)
 
   def dateTimeNow: JsValue = Json.toJson(DateTime.now())
 
@@ -143,7 +179,7 @@ case class Details(
     "batchId"      -> batchId,
     "issueDate"    -> issueDate,
     "replyTo"      -> replyTo,
-    "threadId"     -> threadId.map(_.toString),
+    "threadId"     -> threadId.getOrElse(""),
     "enquiryType"  -> enquiryType,
     "adviser"      -> adviser.map(_.pidId),
     "topic"        -> topic,
