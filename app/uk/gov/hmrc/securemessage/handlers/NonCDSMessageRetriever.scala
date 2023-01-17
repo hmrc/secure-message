@@ -16,16 +16,21 @@
 
 package uk.gov.hmrc.securemessage.handlers
 
+import org.bson.types.ObjectId
+import org.joda.time.LocalDate
+import org.joda.time.format.DateTimeFormat
 import play.api.i18n.Messages
 import play.api.libs.json.{ JsValue, Json }
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.securemessage.{ MessageNotFound, SecureMessageError, UserNotAuthorised }
 import uk.gov.hmrc.securemessage.connectors.AuthIdentifiersConnector
-import uk.gov.hmrc.securemessage.controllers.model.MessagesResponse
-import uk.gov.hmrc.securemessage.models.core.{ MessageFilter, MessageRequestWrapper }
+import uk.gov.hmrc.securemessage.controllers.model.{ ApiMessage, MessageResourceResponse, MessagesResponse }
+import uk.gov.hmrc.securemessage.models.core.{ Identifier, Letter, MessageFilter, MessageRequestWrapper }
 import uk.gov.hmrc.securemessage.services.SecureMessageServiceImpl
 
 import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
+import scala.xml.XML
 
 class NonCDSMessageRetriever @Inject()(
   val authIdentifiersConnector: AuthIdentifiersConnector,
@@ -67,4 +72,101 @@ class NonCDSMessageRetriever @Inject()(
                }
     } yield Json.toJson(result)
   }
+
+  def getMessage(readRequest: MessageReadRequest)(
+    implicit hc: HeaderCarrier,
+    messages: Messages): Future[Either[SecureMessageError, ApiMessage]] =
+    for {
+      taxIds <- authIdentifiersConnector.currentEffectiveTaxIdentifiers.map(l =>
+                 l.map(s => Identifier(s.name, s.value, None)))
+      letter     <- secureMessageService.getLetter(new ObjectId(readRequest.messageId))
+      strideUser <- authIdentifiersConnector.isStrideUser
+      updatedMsg <- updateMessageContent(letter)
+      result <- updatedMsg match {
+                 case Some(m) if taxIds.contains(m.recipient.identifier) || strideUser =>
+                   Future.successful(Right(MessageResourceResponse.from(m)))
+                 case Some(_) =>
+                   Future.successful(Left(UserNotAuthorised("Unauthorised for the requested identifiers")))
+                 case None =>
+                   Future.successful(Left(MessageNotFound(s"Message not found for ${readRequest.messageId}")))
+               }
+    } yield result
+
+  // updates the message content with the content from all the messages in the chain (if there is one)
+  def updateMessageContent(
+    letter: Option[Letter])(implicit ec: ExecutionContext, messages: Messages): Future[Option[Letter]] =
+    letter match {
+      case Some(m) =>
+        getContentChainString(letter, m._id).flatMap { content =>
+          Future(Some(m.copy(content = Some(content))))
+        }
+      case None => Future(None)
+    }
+
+  def getContentChainString(letter: Option[Letter], id: ObjectId)(
+    implicit
+    ec: ExecutionContext,
+    messages: Messages): Future[String] =
+    letter match {
+      case Some(msg) =>
+        msg.body.flatMap(_.replyTo) match {
+          case Some(_) => getMessagesContentChain(id).flatMap(list => Future(list.reverse.mkString("<hr/>")))
+          case None    => Future.successful(formatMessageContent(msg))
+        }
+      case None => Future.successful("")
+    }
+
+  def getMessagesContentChain(id: ObjectId)(implicit ec: ExecutionContext, messages: Messages): Future[List[String]] = {
+
+    def getMessagesContentChain(id: ObjectId, contentList: List[String]): Future[List[String]] =
+      secureMessageService.getLetter(id).flatMap {
+        case None => Future.successful(contentList)
+        case Some(letter) =>
+          letter.body.flatMap(_.replyTo) match {
+            case None => Future.successful(formatMessageContent(letter) :: contentList)
+            case Some(replyTo) =>
+              getMessagesContentChain(
+                new ObjectId(replyTo),
+                formatMessageContent(letter) :: contentList
+              )
+          }
+      }
+    getMessagesContentChain(id, List())
+  }
+
+  def formatMessageContent(letter: Letter)(implicit messages: Messages): String =
+    formatSubject(letter.subject, letter.body.flatMap(_.form.map(_.toUpperCase)).fold(false)(_.endsWith("_CY"))) ++ addIssueDate(
+      letter) ++ letter.content.getOrElse("")
+
+  private def formatSubject(messageSubject: String, isWelshSubject: Boolean): String =
+    if (isWelshSubject) {
+      <h1 lang="cy" class="govuk-heading-xl">{XML.loadString("<root>" + messageSubject + "</root>").child}</h1>.mkString
+    } else {
+      <h1 lang="en" class="govuk-heading-xl">{XML.loadString("<root>" + messageSubject + "</root>").child}</h1>.mkString
+    }
+
+  def addIssueDate(letter: Letter)(implicit messages: Messages): String = {
+    val issueDate = localizedExtractMessageDate(letter)
+    <p class='message_time faded-text--small govuk-hint'>{s"${messages("date.text.advisor", issueDate)}"}</p><br/>.mkString
+  }
+
+  def localizedExtractMessageDate(letter: Letter)(implicit messages: Messages): String =
+    letter.body.flatMap(_.issueDate) match {
+      case Some(issueDate) => localizedFormatter(issueDate)
+      case None            => localizedFormatter(letter.validFrom)
+    }
+
+  private val dateFormatter = DateTimeFormat.forPattern("dd MMMM yyyy")
+  def formatter(date: LocalDate): String = date.toString(dateFormatter)
+
+  private def localizedFormatter(date: LocalDate)(implicit messages: Messages): String = {
+    val formatter =
+      if (messages.lang.language == "cy") {
+        DateTimeFormat.forPattern(s"d '${messages(s"month.${date.getMonthOfYear}")}' yyyy")
+      } else {
+        dateFormatter
+      }
+    date.toString(formatter)
+  }
+
 }

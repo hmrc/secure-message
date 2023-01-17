@@ -226,7 +226,7 @@ trait Auditing {
     implicit hc: HeaderCarrier,
     ec: ExecutionContext): Unit = {
     val (messageType, decodedId, txName, queryMessage) = IdCoder.decodeId(encodedId) match {
-      case Right((messageType, decodedId)) =>
+      case Right((messageType, decodedId, _)) =>
         messageType match {
           case MessageType.Conversation =>
             (messageType.entryName, decodedId, conversationReadTxnName, ConversationReadFailed)
