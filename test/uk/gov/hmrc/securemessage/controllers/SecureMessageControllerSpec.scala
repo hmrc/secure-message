@@ -319,15 +319,15 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       contentAsString(response) must include("Invalid encoded id")
     }
 
-//    "return BadRequest if decoding cant find id" in new GetMessageByIdTestCase(
-//      storedLetter = Some(Resources.readJson("model/core/letter.json").as[JsObject] + ("_id" -> Json.toJson(objectID))
-//        + ("lastUpdated"                                                                     -> Json.toJson(DateTime.now())))) {
-//      val response: Future[Result] = controller
-//        .getMessage(base64Encode(s"${MessageType.Letter.entryName}"))
-//        .apply(FakeRequest("GET", "/"))
-//      status(response) mustBe BAD_REQUEST
-//      contentAsString(response) must include("Invalid encoded id")
-//    }
+    "return BadRequest if decoding cant find id" in new GetMessageByIdTestCase(
+      storedLetter = Some(Resources.readJson("model/core/letter.json").as[JsObject] + ("_id" -> Json.toJson(objectID))
+        + ("lastUpdated"                                                                     -> Json.toJson(DateTime.now())))) {
+      val response: Future[Result] = controller
+        .getMessage(base64Encode("test/63909766af00005fff7e2cb1/test"))
+        .apply(FakeRequest("GET", "/"))
+      status(response) mustBe BAD_REQUEST
+      contentAsString(response) must include("Invalid encoded id")
+    }
   }
 
   "createCaseworkerMessage" must {
