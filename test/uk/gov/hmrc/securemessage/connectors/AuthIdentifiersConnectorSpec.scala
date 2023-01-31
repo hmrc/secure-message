@@ -22,7 +22,7 @@ import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.http.{ HeaderNames, Status }
-import uk.gov.hmrc.common.message.model.TaxEntity.{ HmceVatdecOrg, HmrcCusOrg, HmrcPodsOrg, HmrcPptOrg }
+import uk.gov.hmrc.common.message.model.TaxEntity.{ HmceVatdecOrg, HmrcCusOrg, HmrcPodsOrg, HmrcPodsPpOrg, HmrcPptOrg }
 import uk.gov.hmrc.domain._
 import uk.gov.hmrc.http.{ Authorization, HeaderCarrier, UpstreamErrorResponse }
 import uk.gov.hmrc.securemessage.services.utils.WithWireMock
@@ -652,43 +652,6 @@ class AuthIdentifiersConnectorSpec
       )
 
       authConnector.isStrideUser.futureValue mustBe false
-    }
-
-    "strideUserId return Future when the call to authorise succeeds" in new TestCase {
-
-      val responseBody = """
-                           |{
-                           |  "credentials": {
-                           |    "providerId": "providerId",
-                           |    "providerType": "providerType"
-                           |  }
-                           |}
-                         """.stripMargin
-
-      givenThat(
-        post(urlEqualTo("/auth/authorise"))
-          .withHeader(HeaderNames.AUTHORIZATION, equalTo(authToken))
-          .willReturn(
-            aResponse()
-              .withStatus(Status.OK)
-              .withBody(responseBody)
-          )
-      )
-
-      authConnector.strideUserId.futureValue must contain("providerId")
-    }
-
-    "strideUserId return Future when the call to authorise fails" in new TestCase {
-      givenThat(
-        post(urlEqualTo("/auth/authorise"))
-          .withHeader(HeaderNames.AUTHORIZATION, equalTo(authToken))
-          .willReturn(
-            aResponse()
-              .withStatus(Status.UNAUTHORIZED)
-          )
-      )
-
-      authConnector.strideUserId.futureValue mustBe None
     }
   }
   trait TestCase {
