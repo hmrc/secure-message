@@ -39,7 +39,7 @@ final case class MessagesResponse(items: Option[Seq[MessageMetadata]], count: Me
           case x :: xs if x.replyTo.isEmpty => addCounterAux(xs, result)
           case x :: xs =>
             val (beforeChild, afterChild) = result.span(_.id != x.id)
-            val (beforeParent, afterParent) = afterChild.span(_.id.toString != x.replyTo.get)
+            val (beforeParent, afterParent) = afterChild.span(_.id != x.replyTo.get)
             val parentCount = afterParent.headOption.map(_.counter.getOrElse(1)).getOrElse(0)
             addCounterAux(
               xs,
