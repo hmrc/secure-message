@@ -19,6 +19,7 @@ package uk.gov.hmrc.securemessage.controllers.model
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import uk.gov.hmrc.common.message.model.MessagesCount
+import uk.gov.hmrc.http.controllers.RestFormats
 import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata
 import uk.gov.hmrc.securemessage.models.core.Letter
 
@@ -66,7 +67,7 @@ final case class MessagesResponse(items: Option[Seq[MessageMetadata]], count: Me
   }
 }
 
-object MessagesResponse extends ApiFormats {
+object MessagesResponse extends RestFormats {
 
   implicit val messagesResponseWrites: Writes[MessagesResponse] = (
     (__ \ "count").write[MessagesCount] and

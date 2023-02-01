@@ -20,12 +20,13 @@ import org.mongodb.scala.bson.ObjectId
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json.Json
 import uk.gov.hmrc.common.message.model.MessagesCount
+import uk.gov.hmrc.http.controllers.RestFormats
 import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata
 import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core.Letter
 
 //ToDo Add more tests for items in MessagesResponse
-class MessagesResponseSpec extends PlaySpec with ApiFormats {
+class MessagesResponseSpec extends PlaySpec with RestFormats {
 
   "MessagesResponse" must {
     val objectId = new ObjectId
