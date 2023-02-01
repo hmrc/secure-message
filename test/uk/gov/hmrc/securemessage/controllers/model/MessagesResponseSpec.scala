@@ -33,15 +33,8 @@ class MessagesResponseSpec extends PlaySpec with ApiFormats {
     val letter2 = letter1.copy(_id = objectId)
     val letters: Seq[Letter] = List(letter1, letter2)
     val messagesCount = MessagesCount(123, 23)
-    val letterMetadata: MessageMetadata = Json.parse("""{
-                                                       |"messageType": "letter",
-                                                       |"id": "bGV0dGVyLzYwOWE1YmQ1MDEwMDAwNmMxODAwMjcyZA==",
-                                                       |"subject": "Test have subjects11",
-                                                       |"issueDate": "2021-04-26T11:00:00.000+0100",
-                                                       |"senderName": "HMRC",
-                                                       |"unreadMessages": false,
-                                                       |"count": 1
-                                                       |}""".stripMargin).as[MessageMetadata]
+    val letterMetadata: MessageMetadata =
+      Resources.readJson("model/core/full-db-letter-metadata.json").as[MessageMetadata]
 
     "be rendered correctly if only count is provided" in {
       Json.toJson(MessagesResponse(None, messagesCount)) mustBe Json.parse(

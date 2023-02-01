@@ -16,16 +16,40 @@
 
 package uk.gov.hmrc.securemessage.controllers.model
 
+import org.joda.time.format.{ DateTimeFormat, ISODateTimeFormat }
 import org.joda.time.{ DateTime, LocalDate }
-import play.api.libs.json.Format
-import play.api.libs.json.JodaReads.{ jodaDateReads, jodaLocalDateReads }
-import play.api.libs.json.JodaWrites.{ jodaDateWrites, jodaLocalDateWrites }
+import play.api.libs.json.{ Format, JsError, JsNumber, JsPath, JsResult, JsString, JsSuccess, JsValue, JsonValidationError, Reads, Writes }
+import play.api.libs.json.JodaReads.jodaLocalDateReads
+import play.api.libs.json.JodaWrites.jodaLocalDateWrites
 
 trait ApiFormats {
   private val dateTimeFormatString = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
 
-  implicit val dateTimeFormat: Format[DateTime] =
+  implicit val dateTimeFormat: Format[DateTime] = {
+    def jodaDateReads(pattern: String, corrector: String => String = identity): Reads[DateTime] = new Reads[DateTime] {
+      val df = if (pattern == "") ISODateTimeFormat.dateOptionalTimeParser else DateTimeFormat.forPattern(pattern)
+
+      def reads(json: JsValue): JsResult[DateTime] = json match {
+        case JsNumber(d) => JsSuccess(new DateTime(d.toLong))
+        case JsString(s) =>
+          parseDate(corrector(s)) match {
+            case Some(d) => JsSuccess(d)
+            case _       => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.jodadate.format", pattern))))
+          }
+        case _ => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.date"))))
+      }
+
+      private def parseDate(input: String): Option[DateTime] =
+        scala.util.control.Exception.nonFatalCatch[DateTime].opt(DateTime.parse(input, df.withZoneUTC()))
+    }
+
+    def jodaDateWrites(pattern: String): Writes[DateTime] = new Writes[DateTime] {
+      val df = org.joda.time.format.DateTimeFormat.forPattern(pattern)
+      def writes(d: DateTime): JsValue = JsString(d.toString(df.withZoneUTC()))
+    }
+
     Format(jodaDateReads(dateTimeFormatString), jodaDateWrites(dateTimeFormatString))
+  }
 
   private val dateFormatString = "yyyy-MM-dd"
 
