@@ -49,11 +49,27 @@ class MessagesResponseSpec extends PlaySpec {
 
     "be rendered correctly if items & count is provided" in {
 
-      val lettersMetadata: List[MessageMetadata] = {
-        List(Resources.readJson("model/core/full-db-letter-metadata.json").as[MessageMetadata])
-      }
+      val lettersMetadata: MessageMetadata = Json
+        .parse(
+          """
+            |{
+            |"messageType": "letter",
+            |"id": "bGV0dGVyLzYwOWE1YmQ1MDEwMDAwNmMxODAwMjcyZA==",
+            |"subject": "Test have subjects11",
+            |"issueDate": "2021-04-26T01:00:00.000+0100",
+            |"senderName": "HMRC",
+            |"unreadMessages": false,
+            |"count": 1
+            |}
+            |""".stripMargin
+        )
+        .as[MessageMetadata]
 
-      Json.toJson(MessagesResponse(Some(lettersMetadata), messagesCount)) mustBe Json.parse(
+//        List[MessageMetadata] = {
+//        List(Resources.readJson("model/core/full-db-letter-metadata.json").as[MessageMetadata])
+//      }
+
+      Json.toJson(MessagesResponse(Some(Seq(lettersMetadata)), messagesCount)) mustBe Json.parse(
         """
           |{
           |   "count": {
