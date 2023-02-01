@@ -33,6 +33,9 @@ class MessagesResponseSpec extends PlaySpec {
     val letter2 = letter1.copy(_id = objectId)
     val letters: Seq[Letter] = List(letter1, letter2)
     val messagesCount = MessagesCount(123, 23)
+    val lettersMetadata: List[MessageMetadata] = {
+      List(Resources.readJson("model/core/full-db-letter-metadata.json").as[MessageMetadata])
+    }
 
     "be rendered correctly if only count is provided" in {
       Json.toJson(MessagesResponse(None, messagesCount)) mustBe Json.parse(
@@ -48,28 +51,7 @@ class MessagesResponseSpec extends PlaySpec {
     }
 
     "be rendered correctly if items & count is provided" in {
-
-      val lettersMetadata: MessageMetadata = Json
-        .parse(
-          """
-            |{
-            |"messageType": "letter",
-            |"id": "bGV0dGVyLzYwOWE1YmQ1MDEwMDAwNmMxODAwMjcyZA==",
-            |"subject": "Test have subjects11",
-            |"issueDate": "2021-04-26T01:00:00.000+0100",
-            |"senderName": "HMRC",
-            |"unreadMessages": false,
-            |"count": 1
-            |}
-            |""".stripMargin
-        )
-        .as[MessageMetadata]
-
-//        List[MessageMetadata] = {
-//        List(Resources.readJson("model/core/full-db-letter-metadata.json").as[MessageMetadata])
-//      }
-
-      Json.toJson(MessagesResponse(Some(Seq(lettersMetadata)), messagesCount)) mustBe Json.parse(
+      Json.toJson(MessagesResponse(Some(lettersMetadata), messagesCount)) mustBe Json.parse(
         """
           |{
           |   "count": {
@@ -81,7 +63,7 @@ class MessagesResponseSpec extends PlaySpec {
           |      "messageType": "letter",
           |      "id": "bGV0dGVyLzYwOWE1YmQ1MDEwMDAwNmMxODAwMjcyZA==",
           |      "subject": "Test have subjects11",
-          |      "issueDate": "2021-04-26T01:00:00.000+0100",
+          |      "issueDate": "2021-04-26T00:00:00.000+0000",
           |      "senderName": "HMRC",
           |      "unreadMessages": false,
           |      "count": 1
