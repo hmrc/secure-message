@@ -50,7 +50,10 @@ class MessagesResponseSpec extends PlaySpec with ApiFormats {
     }
 
     "be rendered correctly if items & count is provided" in {
-      Json.toJson(MessagesResponse(Some(lettersMetadata), messagesCount)) mustBe Json.parse(
+      println(s"*************** - $lettersMetadata")
+      val actualResp = Json.toJson(MessagesResponse(Some(lettersMetadata), messagesCount))
+      println(s"*******resp******** - $actualResp")
+      val expectedResp = Json.parse(
         """
           |{
           |   "count": {
@@ -71,6 +74,8 @@ class MessagesResponseSpec extends PlaySpec with ApiFormats {
           |}
         """.stripMargin
       )
+      println(s"*******expectedResp******** - $expectedResp")
+      actualResp mustBe expectedResp
     }
 
     "creates message response from letters" in {
