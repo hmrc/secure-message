@@ -22,7 +22,7 @@ import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.http.{ HeaderNames, Status }
-import uk.gov.hmrc.common.message.model.TaxEntity.{ HmceVatdecOrg, HmrcCusOrg }
+import uk.gov.hmrc.common.message.model.TaxEntity.{ HmceVatdecOrg, HmrcCusOrg, HmrcPodsOrg, HmrcPodsPpOrg, HmrcPptOrg }
 import uk.gov.hmrc.domain._
 import uk.gov.hmrc.http.{ Authorization, HeaderCarrier, UpstreamErrorResponse }
 import uk.gov.hmrc.securemessage.services.utils.WithWireMock
@@ -434,6 +434,224 @@ class AuthIdentifiersConnectorSpec
       )
 
       authConnector.currentEffectiveTaxIdentifiers.futureValue must be(Set.empty)
+    }
+
+    "get tax ids for HMRC-OBTDS-ORG enrolment " in new TestCase {
+
+      val responseBody = """
+                           |{
+                           |  "allEnrolments": [
+                           |    {
+                           |      "key": "HMRC-OBTDS-ORG",
+                           |      "identifiers": [
+                           |        {
+                           |           "key":"HMRC-OBTDS-ORG",
+                           |           "value":"XZFH00000100024"
+                           |        }
+                           |      ],
+                           |      "state": "Activated",
+                           |      "confidenceLevel": 200
+                           |    }
+                           |  ]
+                           |}
+                         """.stripMargin
+
+      givenThat(
+        post(urlEqualTo("/auth/authorise"))
+          .withHeader(HeaderNames.AUTHORIZATION, equalTo(authToken))
+          .willReturn(
+            aResponse()
+              .withStatus(Status.OK)
+              .withBody(responseBody)
+          )
+      )
+
+      authConnector.currentEffectiveTaxIdentifiers.futureValue must be(
+        Set(HmrcObtdsOrg("XZFH00000100024"))
+      )
+    }
+
+    "return a set of CtUtr and nino" in new TestCase {
+
+      val responseBody = """
+                           |{
+                           |  "allEnrolments": [
+                           |    {
+                           |      "key": "IR-CT",
+                           |      "identifiers": [
+                           |        {
+                           |          "key": "UTR",
+                           |          "value": "1872796160"
+                           |        }
+                           |      ],
+                           |      "state": "Activated"
+                           |    }
+                           |  ]
+                           |}
+                         """.stripMargin
+
+      givenThat(
+        post(urlEqualTo("/auth/authorise"))
+          .withHeader(HeaderNames.AUTHORIZATION, equalTo(authToken))
+          .willReturn(
+            aResponse()
+              .withStatus(Status.OK)
+              .withBody(responseBody)
+          )
+      )
+
+      authConnector.currentEffectiveTaxIdentifiers.futureValue must be(Set(CtUtr("1872796160")))
+    }
+
+    "get all val tax ids for only HMRC-PPT-ORG enrolment " in new TestCase {
+
+      val responseBody = """
+                           |{
+                           |  "allEnrolments": [
+                           |    {
+                           |      "key": "HMRC-PPT-ORG",
+                           |      "identifiers": [
+                           |        {
+                           |          "key": "EtmpRegistrationNumber",
+                           |          "value": "example Etmp Registration Number"
+                           |        }
+                           |      ],
+                           |      "state": "Activated",
+                           |      "confidenceLevel": 200
+                           |    }
+                           |  ]
+                           |}
+                         """.stripMargin
+
+      givenThat(
+        post(urlEqualTo("/auth/authorise"))
+          .withHeader(HeaderNames.AUTHORIZATION, equalTo(authToken))
+          .willReturn(
+            aResponse()
+              .withStatus(Status.OK)
+              .withBody(responseBody)
+          )
+      )
+
+      authConnector.currentEffectiveTaxIdentifiers.futureValue must be(
+        Set(HmrcPptOrg("example Etmp Registration Number"))
+      )
+    }
+
+    "get all val tax ids for only HMRC-PODS-ORG enrolment " in new TestCase {
+
+      val responseBody = """
+                           |{
+                           |  "allEnrolments": [
+                           |    {
+                           |      "key": "HMRC-PODS-ORG",
+                           |      "identifiers": [
+                           |        {
+                           |          "key": "HMRC-PODS-ORG",
+                           |          "value": "example HMRC-PODS-ORG"
+                           |        }
+                           |      ],
+                           |      "state": "Activated",
+                           |      "confidenceLevel": 200
+                           |    }
+                           |  ]
+                           |}
+                         """.stripMargin
+
+      givenThat(
+        post(urlEqualTo("/auth/authorise"))
+          .withHeader(HeaderNames.AUTHORIZATION, equalTo(authToken))
+          .willReturn(
+            aResponse()
+              .withStatus(Status.OK)
+              .withBody(responseBody)
+          )
+      )
+
+      authConnector.currentEffectiveTaxIdentifiers.futureValue must be(
+        Set(HmrcPodsOrg("example HMRC-PODS-ORG"))
+      )
+    }
+
+    "get all val tax ids for only HMRC-PODSPP-ORG enrolment " in new TestCase {
+
+      val responseBody = """
+                           |{
+                           |  "allEnrolments": [
+                           |    {
+                           |      "key": "HMRC-PODSPP-ORG",
+                           |      "identifiers": [
+                           |        {
+                           |          "key": "HMRC-PODSPP-ORG",
+                           |          "value": "example HMRC-PODSPP-ORG"
+                           |        }
+                           |      ],
+                           |      "state": "Activated",
+                           |      "confidenceLevel": 200
+                           |    }
+                           |  ]
+                           |}
+                         """.stripMargin
+
+      givenThat(
+        post(urlEqualTo("/auth/authorise"))
+          .withHeader(HeaderNames.AUTHORIZATION, equalTo(authToken))
+          .willReturn(
+            aResponse()
+              .withStatus(Status.OK)
+              .withBody(responseBody)
+          )
+      )
+
+      authConnector.currentEffectiveTaxIdentifiers.futureValue must be(
+        Set(HmrcPodsPpOrg("example HMRC-PODSPP-ORG"))
+      )
+    }
+
+    "isStrideUser return Future when the call to authorise succeed" in new TestCase {
+      val responseBody = """
+                           |{
+                           |  "allEnrolments": [
+                           |    {
+                           |      "key": "HMRC-MTD-IT",
+                           |      "identifiers": [
+                           |        {
+                           |          "key": "MTDITID",
+                           |          "value": "X99999999999"
+                           |        }
+                           |      ],
+                           |      "state": "Activated",
+                           |      "confidenceLevel": 200
+                           |    }
+                           |  ]
+                           |}
+                         """.stripMargin
+
+      givenThat(
+        post(urlEqualTo("/auth/authorise"))
+          .withHeader(HeaderNames.AUTHORIZATION, equalTo(authToken))
+          .willReturn(
+            aResponse()
+              .withStatus(Status.OK)
+              .withBody(responseBody)
+          )
+      )
+
+      authConnector.isStrideUser.futureValue mustBe true
+    }
+
+    "isStrideUser return Future when the call to authorise fails" in new TestCase {
+
+      givenThat(
+        post(urlEqualTo("/auth/authorise"))
+          .withHeader(HeaderNames.AUTHORIZATION, equalTo(authToken))
+          .willReturn(
+            aResponse()
+              .withStatus(Status.UNAUTHORIZED)
+          )
+      )
+
+      authConnector.isStrideUser.futureValue mustBe false
     }
   }
   trait TestCase {

@@ -35,8 +35,8 @@ final case class MessagesResponse(items: Option[Seq[MessageMetadata]], count: Me
       @tailrec
       def addCounterAux(input: List[MessageMetadata], result: List[MessageMetadata]): List[MessageMetadata] =
         input match {
-          case Nil                             => result
-          case x :: xs if !x.replyTo.isDefined => addCounterAux(xs, result)
+          case Nil                          => result
+          case x :: xs if x.replyTo.isEmpty => addCounterAux(xs, result)
           case x :: xs =>
             val (beforeChild, afterChild) = result.span(_.id != x.id)
             val (beforeParent, afterParent) = afterChild.span(_.id.toString != x.replyTo.get)
@@ -58,7 +58,7 @@ final case class MessagesResponse(items: Option[Seq[MessageMetadata]], count: Me
         val (standalones, conversations) = msgs
           .groupBy(m => m.replyTo.getOrElse(m.id))
           .values
-          .partition(m => m.size == 1 && !m.head.replyTo.isDefined)
+          .partition(m => m.size == 1 && m.head.replyTo.isEmpty)
         val msgsWithCounter = (standalones.flatten.toList ++ addCounter(conversations.flatten.toList))
           .sortWith(_.id > _.id)
         MessagesResponse(Some(msgsWithCounter), MessagesCount(msgsWithCounter.size, count.unread))
@@ -84,12 +84,4 @@ object MessagesResponse extends RestFormats {
         items.count(message => message.readTime.isEmpty)
       )
     )
-}
-
-final case class ErrorResponse(reason: String)
-
-object ErrorResponse {
-  implicit val format: Format[ErrorResponse] = Json.format[ErrorResponse]
-  implicit val reads: Reads[ErrorResponse] = Json.reads[ErrorResponse]
-  implicit val writes: Writes[ErrorResponse] = Json.writes[ErrorResponse]
 }
