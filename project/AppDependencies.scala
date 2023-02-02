@@ -25,7 +25,7 @@ object AppDependencies {
     "uk.gov.hmrc"       %% "time"                      % "3.19.0",
     "org.webjars"       % "swagger-ui"                 % "3.50.0",
     "com.beachape"      %% "enumeratum-play"           % "1.5.17",
-    "com.typesafe.play" %% "play-json-joda"            % "2.9.1",
+    "com.typesafe.play" %% "play-json-joda"            % "2.9.4",
     "org.typelevel"     %% "cats-core"                 % "2.9.0",
     "org.jsoup"         % "jsoup"                      % "1.15.3",
     "uk.gov.hmrc"       %% "dc-message-library"        % "0.18.8-play-28"

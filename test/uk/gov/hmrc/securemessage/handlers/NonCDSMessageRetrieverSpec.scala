@@ -20,10 +20,11 @@ import akka.stream.Materializer
 import akka.stream.testkit.NoMaterializer
 import org.mockito.ArgumentMatchers.{ any, eq => eqTo }
 import org.mockito.Mockito.when
+import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.i18n.Messages
-import play.api.libs.json.JsValue
+import play.api.libs.json.{ JsValue, Json }
 import play.api.test.Helpers.stubMessages
 import uk.gov.hmrc.common.message.model.MessagesCount
 import uk.gov.hmrc.domain.Nino
@@ -39,22 +40,30 @@ import uk.gov.hmrc.securemessage.services.SecureMessageServiceImpl
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ ExecutionContext, Future }
 
-class NonCDSMessageRetrieverSpec extends PlaySpec with MockitoSugar with UnitTest {
+class NonCDSMessageRetrieverSpec extends PlaySpec with MockitoSugar with UnitTest with ScalaFutures {
   implicit val mat: Materializer = NoMaterializer
   implicit val hc: HeaderCarrier = HeaderCarrier()
   implicit val stubMsgs: Messages = stubMessages()
 
   "fetch messages" must {
     "return metadata for both conversations and letters" in new TestCase {
-      val result = retriever.fetch(MessageRequestWrapper(None, None, None, MessageFilter(List("nino"))))(hc, stubMsgs)
+      val result: Future[JsValue] =
+        retriever.fetch(MessageRequestWrapper(None, None, None, MessageFilter(List("nino"))))(hc, stubMsgs)
       result.map(_.as[List[MessageMetadata]] mustBe letters)
     }
   }
   "getMessagesCount" must {
     "return count" in new TestCase() {
-      val result =
+      val result: Future[JsValue] =
         retriever.messageCount(MessageRequestWrapper(None, None, None, MessageFilter(List("nino"))))(hc, stubMsgs)
       result.map(_.as[List[Count]] mustBe Count(1, 1))
+    }
+  }
+
+  "updateMessageContent" must {
+    "update the message content" in new TestCase {
+      val result: Future[Option[Letter]] = retriever.updateMessageContent(Some(storedLetter))
+      result.futureValue mustBe Some(expectedLetterJson.as[Letter])
     }
   }
 
@@ -66,8 +75,56 @@ class NonCDSMessageRetrieverSpec extends PlaySpec with MockitoSugar with UnitTes
 
     val authTaxIds: Set[TaxIdWithName] = Set(Nino("SJ123456A"))
 
-    val storedLetters: List[JsValue] = List(Resources.readJson("model/core/letter_for_message.json"))
-    val letters: List[Letter] = storedLetters.map(_.as[Letter])
+    val storedLetter: Letter = Resources.readJson("model/core/letter_for_message.json").as[Letter]
+    val letters: List[Letter] = List(storedLetter)
+
+    val expectedLetterJson: JsValue = Json.parse(
+      """
+        |{
+        |  "_id": {
+        |    "$oid": "609a5bd50100006c1800272d"
+        |  },
+        |  "subject": "Test have subjects11",
+        |  "validFrom": "2021-04-26",
+        |  "hash": "LfK755SXhY2rlc9kL50ohJZ2dvRzZGjU74kjcdJMAcY=",
+        |  "alertQueue": "DEFAULT",
+        |  "alertFrom": "2021-04-26",
+        |  "status": "succeeded",
+        |  "content": "<h1 lang=\"en\" class=\"govuk-heading-xl\">Test have subjects11</h1><p class=\"message_time faded-text--small govuk-hint\">date.text.advisor</p><br/><h2>Test content</h2>",
+        |  "statutory": false,
+        |  "lastUpdated": {
+        |    "$date": {
+        |      "$numberLong": "1620728789509"
+        |    }
+        |  },
+        |  "recipient": {
+        |    "regime": "cds",
+        |    "identifier": {
+        |      "name": "nino",
+        |      "value": "SJ123456A"
+        |    },
+        |    "email": "test@test.com"
+        |  },
+        |  "renderUrl": {
+        |    "service": "message",
+        |    "url": "/messages/6086dc1f4700009fed2f5745/content"
+        |  },
+        |  "externalRef": {
+        |    "id": "1234567891234567892",
+        |    "source": "mdtp"
+        |  },
+        |  "alertDetails": {
+        |    "templateId": "cds_ddi_setup_dcs_alert"
+        |  },
+        |  "alerts": {
+        |    "emailAddress": "test@test.com",
+        |    "success": true
+        |  },
+        |  "tags": {
+        |    "notificationType": "Direct Debit"
+        |  }
+        |}
+        |""".stripMargin)
 
     val messageFilter: MessageFilter = MessageFilter(List("nino"))
 

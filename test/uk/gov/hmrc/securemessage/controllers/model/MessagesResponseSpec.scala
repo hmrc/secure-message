@@ -24,7 +24,6 @@ import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata
 import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core.Letter
 
-//ToDo Add more tests for items in MessagesResponse
 class MessagesResponseSpec extends PlaySpec {
 
   "MessagesResponse" must {
@@ -50,6 +49,7 @@ class MessagesResponseSpec extends PlaySpec {
       )
     }
 
+    //ToDo verify this again, it fails locally passed in jenkins
     "be rendered correctly if items & count is provided" in {
       Json.toJson(MessagesResponse(Some(lettersMetadata), messagesCount)) mustBe Json.parse(
         """
