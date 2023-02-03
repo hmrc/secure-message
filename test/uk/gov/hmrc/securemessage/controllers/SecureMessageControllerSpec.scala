@@ -48,7 +48,7 @@ import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
 import uk.gov.hmrc.securemessage.controllers.model.{ ClientName, MessageType }
 import uk.gov.hmrc.securemessage.controllers.utils.QueryStringValidationSuccess
-import uk.gov.hmrc.securemessage.handlers.{ CDSMessageRetriever, MessageBroker }
+import uk.gov.hmrc.securemessage.handlers.{ CDSMessageRetriever, MessageBroker, RetrieverType }
 import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core.Letter._
 import uk.gov.hmrc.securemessage.models.core._
@@ -323,7 +323,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       storedLetter = Some(Resources.readJson("model/core/letter.json").as[JsObject] + ("_id" -> Json.toJson(objectID))
         + ("lastUpdated"                                                                     -> Json.toJson(DateTime.now())))) {
       val response: Future[Result] = controller
-        .getMessage(base64Encode(s"${MessageType.Letter.entryName}"))
+        .getMessage(base64Encode("test/63909766af00005fff7e2cb1/test"))
         .apply(FakeRequest("GET", "/"))
       status(response) mustBe BAD_REQUEST
       contentAsString(response) must include("Invalid encoded id")
@@ -434,6 +434,8 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     when(mockRepository.insertIfUnique(any[Conversation])(any[ExecutionContext]))
       .thenReturn(Future.successful(Right(())))
     when(mockMessageBroker.messageRetriever(any[QueryStringValidationSuccess]))
+      .thenReturn(new CDSMessageRetriever(mockAuthConnector, mockSecureMessageService))
+    when(mockMessageBroker.messageRetriever(any[RetrieverType]))
       .thenReturn(new CDSMessageRetriever(mockAuthConnector, mockSecureMessageService))
     val controller =
       new SecureMessageController(

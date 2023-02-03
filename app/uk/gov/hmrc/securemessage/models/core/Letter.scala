@@ -22,7 +22,7 @@ import play.api.libs.json.JodaReads.jodaLocalDateReads
 import play.api.libs.json.JodaWrites.jodaLocalDateWrites
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
-import uk.gov.hmrc.common.message.model.{ Adviser, Rescindment }
+import uk.gov.hmrc.common.message.model.{ Adviser, MessageContentParameters, Rescindment }
 import uk.gov.hmrc.mongo.play.json.formats.{ MongoFormats, MongoJodaFormats }
 
 final case class RecipientName(
@@ -92,7 +92,8 @@ final case class Letter(
   replyTo: Option[String] = None,
   tags: Option[Map[String, String]] = None,
   rescindment: Option[Rescindment] = None,
-  body: Option[Details] = None
+  body: Option[Details] = None,
+  contentParameters: Option[MessageContentParameters] = None
 ) extends Message {
   override def issueDate: DateTime = validFrom.toDateTime(LocalTime.MIDNIGHT, DateTimeZone.UTC)
 }
@@ -141,7 +142,8 @@ object Letter {
     (__ \ "replyTo").readNullable[String] ~
     (__ \ "tags").readNullable[Map[String, String]] ~
     (__ \ "rescindment").readNullable[Rescindment] ~
-    (__ \ "body").readNullable[Details])(Letter.apply _)
+    (__ \ "body").readNullable[Details] ~
+    (__ \ "contentParameters").readNullable[MessageContentParameters])(Letter.apply _)
 
   implicit val letterWrites: OWrites[Letter] = Json.writes[Letter]
 

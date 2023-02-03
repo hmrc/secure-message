@@ -131,6 +131,12 @@ class SecureMessageServiceImpl @Inject()(
     } yield ApiLetter.fromCore(letter)
   }.value
 
+  def getLetter(id: ObjectId)(implicit ec: ExecutionContext): Future[Option[Letter]] =
+    messageRepository.getLetter(id, Set.empty[Identifier]) map {
+      case Right(letter) => Some(letter)
+      case _             => None
+    }
+
   def addCaseWorkerMessageToConversation(
     client: String,
     conversationId: String,

@@ -20,6 +20,7 @@ import org.apache.commons.codec.binary.Base64
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 import uk.gov.hmrc.securemessage.controllers.model.MessageType
+import uk.gov.hmrc.securemessage.handlers.{ CDS, NonCDS }
 
 class IdCoderSpec extends AnyFreeSpec with Matchers {
 
@@ -29,22 +30,33 @@ class IdCoderSpec extends AnyFreeSpec with Matchers {
       val nakedPath = "letter/" + id
       val path = encodedPath(nakedPath)
 
-      IdCoder.decodeId(path).right.get mustBe MessageType.Letter -> id
+      IdCoder.decodeId(path) mustBe Right((MessageType.Letter, id, CDS))
     }
     "return messageType conversation and id" in {
       val nakedPath = "conversation/" + id
       val path = encodedPath(nakedPath)
-      IdCoder.decodeId(path).right.get mustBe MessageType.Conversation -> id
+      IdCoder.decodeId(path) mustBe Right((MessageType.Conversation, id, CDS))
     }
     "return only messageType and Id" in {
       val nakedPath = "conversation/" + id + "/test"
       val path = encodedPath(nakedPath)
-      IdCoder.decodeId(path).right.get mustBe MessageType.Conversation -> id
+      IdCoder.decodeId(path) mustBe Right((MessageType.Conversation, id, CDS))
     }
-    "return InvalidPath if path is not valid" in {
+
+    "return the whole path as 'id' for non-CDS quries" in {
       val nakedPath = "123456"
       val path = encodedPath(nakedPath)
-      IdCoder.decodeId(path).left.get.message mustBe "Invalid encoded id: MTIzNDU2, decoded string: 123456"
+      IdCoder.decodeId(path) mustBe Right((MessageType.Letter, nakedPath, NonCDS))
+    }
+
+    "return InvalidPath if path is not valid" in {
+      val nakedPath = "abc/def/12345"
+      val path = encodedPath(nakedPath)
+      IdCoder
+        .decodeId(path)
+        .left
+        .get
+        .message mustBe "Invalid encoded id: YWJjL2RlZi8xMjM0NQ==, decoded string: abc/def/12345"
     }
 
   }
