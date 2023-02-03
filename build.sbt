@@ -30,6 +30,7 @@ lazy val microservice = Project(appName, file("."))
     SbtDistributablesPlugin,
     SwaggerPlugin
   )
+  .disablePlugins(JUnitXmlReportPlugin)
   .settings(
     majorVersion := 0,
     scalaVersion := "2.12.12",
