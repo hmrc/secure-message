@@ -16,13 +16,29 @@
 
 package uk.gov.hmrc.securemessage.handlers
 
-import uk.gov.hmrc.securemessage.controllers.utils.{ QueryStringValidationSuccess, ValidCDSQueryParameters => CDS, ValidNonCDSQueryParameters => Other }
+import uk.gov.hmrc.auth.core.Enrolments
+import uk.gov.hmrc.securemessage.controllers.model.MessageType
+import uk.gov.hmrc.securemessage.controllers.utils.IdCoder.DecodedId
+import uk.gov.hmrc.securemessage.controllers.utils.{ QueryStringValidationSuccess, ValidCDSQueryParameters }
+
 import javax.inject.{ Inject, Singleton }
 
 @Singleton
 class MessageBroker @Inject()(cdsMessageRetriever: CDSMessageRetriever, other: NonCDSMessageRetriever) {
-  def messageRetriever(queryResult: QueryStringValidationSuccess): MessageRetriever = queryResult match {
-    case CDS   => cdsMessageRetriever
-    case Other => other
+  def messageRetriever(queryResult: QueryStringValidationSuccess): MessageRetriever =
+    messageRetriever(queryResult match {
+      case ValidCDSQueryParameters => CDS
+      case _                       => NonCDS
+    })
+
+  def messageRetriever(retrieverType: RetrieverType): MessageRetriever = retrieverType match {
+    case CDS    => cdsMessageRetriever
+    case NonCDS => other
   }
 }
+
+trait RetrieverType
+object CDS extends RetrieverType
+object NonCDS extends RetrieverType
+
+case class MessageReadRequest(messageType: MessageType, authEnrolments: Enrolments, messageId: DecodedId)

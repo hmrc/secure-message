@@ -18,6 +18,8 @@ package uk.gov.hmrc.securemessage.controllers.utils
 
 import org.apache.commons.codec.binary.Base64
 import uk.gov.hmrc.securemessage.controllers.model.MessageType
+import uk.gov.hmrc.securemessage.controllers.model.MessageType.Letter
+import uk.gov.hmrc.securemessage.handlers.{ CDS, NonCDS, RetrieverType }
 import uk.gov.hmrc.securemessage.{ InvalidRequest, SecureMessageError }
 
 import java.nio.charset.StandardCharsets
@@ -26,12 +28,15 @@ object IdCoder {
   type EncodedId = String
   type DecodedId = String
 
-  private[controllers] def decodeId(encodedId: EncodedId): Either[SecureMessageError, (MessageType, DecodedId)] = {
+  private[controllers] def decodeId(
+    encodedId: EncodedId): Either[SecureMessageError, (MessageType, DecodedId, RetrieverType)] = {
     val decodedString = new String(Base64.decodeBase64(encodedId.getBytes(StandardCharsets.UTF_8)))
     def isMessageType(messageType: EncodedId) = MessageType.withNameOption(messageType).isDefined
     decodedString.split("/").toList match {
       case messageType :: id :: _ if (isMessageType(messageType) && id.trim.nonEmpty) =>
-        Right(MessageType.withName(messageType) -> id)
+        Right((MessageType.withName(messageType), id, CDS))
+      case l: List[String] if l.size == 1 =>
+        Right((MessageType.withName(Letter.entryName), l.head, NonCDS))
       case _ => Left(InvalidRequest(s"Invalid encoded id: $encodedId, decoded string: $decodedString"))
     }
   }

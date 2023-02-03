@@ -20,6 +20,8 @@ import play.api.Logging
 import play.api.i18n.Messages
 import play.api.libs.json.JsValue
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.securemessage.SecureMessageError
+import uk.gov.hmrc.securemessage.controllers.model.ApiMessage
 import uk.gov.hmrc.securemessage.models.core.MessageRequestWrapper
 
 import scala.concurrent.Future
@@ -28,4 +30,7 @@ trait MessageRetriever extends Logging {
   def fetch(requestWrapper: MessageRequestWrapper)(implicit hc: HeaderCarrier, messages: Messages): Future[JsValue]
   def messageCount(
     requestWrapper: MessageRequestWrapper)(implicit hc: HeaderCarrier, messages: Messages): Future[JsValue]
+  def getMessage(readRequest: MessageReadRequest)(
+    implicit hc: HeaderCarrier,
+    messages: Messages): Future[Either[SecureMessageError, ApiMessage]]
 }

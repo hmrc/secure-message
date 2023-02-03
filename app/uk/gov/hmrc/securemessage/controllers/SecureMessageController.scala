@@ -18,7 +18,6 @@ package uk.gov.hmrc.securemessage.controllers
 
 import cats.data._
 import cats.implicits._
-import org.mongodb.scala.bson.ObjectId
 import play.api.Logging
 import play.api.i18n.I18nSupport
 import play.api.libs.json._
@@ -29,13 +28,12 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.securemessage._
-import uk.gov.hmrc.securemessage.controllers.model.MessageType.{ Conversation, Letter }
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write._
 import uk.gov.hmrc.securemessage.controllers.model.common.write._
-import uk.gov.hmrc.securemessage.controllers.model.{ ApiMessage, ClientName, MessageType }
-import uk.gov.hmrc.securemessage.controllers.utils.IdCoder.{ DecodedId, EncodedId }
+import uk.gov.hmrc.securemessage.controllers.model.{ ApiMessage, ClientName }
+import uk.gov.hmrc.securemessage.controllers.utils.IdCoder.EncodedId
 import uk.gov.hmrc.securemessage.controllers.utils.{ IdCoder, QueryStringValidation }
-import uk.gov.hmrc.securemessage.handlers.MessageBroker
+import uk.gov.hmrc.securemessage.handlers.{ MessageBroker, MessageReadRequest }
 import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag, MessageFilter, MessageRequestWrapper, Reference }
 import uk.gov.hmrc.securemessage.services.{ ImplicitClassesExtensions, SecureMessageServiceImpl }
 import uk.gov.hmrc.time.DateTimeUtils
@@ -216,9 +214,12 @@ class SecureMessageController @Inject()(
 
   def getMessage(encodedId: String): Action[AnyContent] = Action.async { implicit request =>
     val message: EitherT[Future, SecureMessageError, (ApiMessage, Enrolments)] = for {
-      messageTypeAndId <- EitherT(Future.successful(IdCoder.decodeId(encodedId)))
-      enrolments       <- EitherT(getEnrolments())
-      message          <- EitherT(retrieveMessage(messageTypeAndId._1, messageTypeAndId._2, enrolments))
+      messageRequestTuple <- EitherT(Future.successful(IdCoder.decodeId(encodedId)))
+      enrolments          <- EitherT(getEnrolments())
+      message <- EitherT(
+                  messageBroker
+                    .messageRetriever(messageRequestTuple._3)
+                    .getMessage(MessageReadRequest(messageRequestTuple._1, enrolments, messageRequestTuple._2)))
     } yield (message, enrolments)
     message.value map {
       case Right((msg, enrolments)) =>
@@ -229,15 +230,6 @@ class SecureMessageController @Inject()(
         handleErrors(encodedId, error)
     }
   }
-
-  private def retrieveMessage(
-    messageType: MessageType,
-    id: DecodedId,
-    authEnrolments: Enrolments): Future[Either[SecureMessageError, ApiMessage]] =
-    messageType match {
-      case Conversation => secureMessageService.getConversation(new ObjectId(id), authEnrolments.asCustomerEnrolments)
-      case Letter       => secureMessageService.getLetter(new ObjectId(id), authEnrolments.asCustomerEnrolments)
-    }
 
   private def getEnrolments()(implicit request: HeaderCarrier): Future[Either[UserNotAuthorised, Enrolments]] =
     authorised()

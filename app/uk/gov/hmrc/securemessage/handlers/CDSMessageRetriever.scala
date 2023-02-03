@@ -16,12 +16,17 @@
 
 package uk.gov.hmrc.securemessage.handlers
 
+import org.mongodb.scala.bson.ObjectId
 import play.api.i18n.Messages
 import play.api.libs.json.{ JsValue, Json }
 import uk.gov.hmrc.auth.core.{ AuthConnector, AuthorisedFunctions }
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.securemessage.SecureMessageError
+import uk.gov.hmrc.securemessage.controllers.model.MessageType.{ Conversation, Letter }
+import uk.gov.hmrc.securemessage.controllers.model.ApiMessage
 import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata
+import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata.EnrolmentsExtensions
 import uk.gov.hmrc.securemessage.models.core.{ Filters, MessageRequestWrapper }
 import uk.gov.hmrc.securemessage.services.SecureMessageServiceImpl
 
@@ -57,4 +62,15 @@ class CDSMessageRetriever @Inject()(val authConnector: AuthConnector, secureMess
           }
       }
 
+  def getMessage(readRequest: MessageReadRequest)(
+    implicit hc: HeaderCarrier,
+    messages: Messages): Future[Either[SecureMessageError, ApiMessage]] =
+    readRequest.messageType match {
+      case Conversation =>
+        secureMessageService
+          .getConversation(new ObjectId(readRequest.messageId), readRequest.authEnrolments.asCustomerEnrolments)
+      case Letter =>
+        secureMessageService
+          .getLetter(new ObjectId(readRequest.messageId), readRequest.authEnrolments.asCustomerEnrolments)
+    }
 }

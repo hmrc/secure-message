@@ -27,7 +27,7 @@ import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.ApiConversation
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage
 import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.ApiLetter
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
-import uk.gov.hmrc.securemessage.controllers.model.{ ApiMessage, ClientName, MessageType }
+import uk.gov.hmrc.securemessage.controllers.model.{ ApiMessage, ClientName, MessageResourceResponse, MessageType }
 import uk.gov.hmrc.securemessage.controllers.utils.IdCoder
 import uk.gov.hmrc.securemessage.models.core.{ Conversation, Reference }
 import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryMessageRequest }
@@ -148,6 +148,7 @@ trait Auditing {
       case l: ApiLetter => auditReadLetter(l, enrolments)
       case c: ApiConversation =>
         auditConversationRead(ClientName.withNameOption(c.client), c.conversationId, enrolments)
+      case mr: MessageResourceResponse => auditMessageResourceResponse(mr, enrolments)
     }
 
   private val QueryMessageReadSuccess = "QueryMessageReadSuccess"
@@ -192,6 +193,22 @@ trait Auditing {
     auditConnector.sendExplicitAudit(LetterReadSuccess, detail)
   }
 
+  def auditMessageResourceResponse(mr: MessageResourceResponse, enrolments: Enrolments)(
+    implicit hc: HeaderCarrier,
+    ec: ExecutionContext): Unit = {
+    val detail = detailWithNotificationType(
+      Map(
+        letterReadSuccessTxnName,
+        "subject"  -> mr.subject,
+        "readTime" -> isoDtf.print(mr.readTime.getOrElse(DateTime.now.withZone(zone))),
+        letterMessageType,
+        "enrolments" -> prettyPrintEnrolments(enrolments)
+      ),
+      None
+    )
+    auditConnector.sendExplicitAudit(LetterReadSuccess, detail)
+  }
+
   private val ConversationReadFailed = "QueryMessageReadFailed"
 
   /** TOOD: replace with with the common [[auditMessageReadFailed()]]
@@ -226,7 +243,7 @@ trait Auditing {
     implicit hc: HeaderCarrier,
     ec: ExecutionContext): Unit = {
     val (messageType, decodedId, txName, queryMessage) = IdCoder.decodeId(encodedId) match {
-      case Right((messageType, decodedId)) =>
+      case Right((messageType, decodedId, _)) =>
         messageType match {
           case MessageType.Conversation =>
             (messageType.entryName, decodedId, conversationReadTxnName, ConversationReadFailed)

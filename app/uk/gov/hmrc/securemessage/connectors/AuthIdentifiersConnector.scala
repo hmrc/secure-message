@@ -17,6 +17,7 @@
 package uk.gov.hmrc.securemessage.connectors
 
 import uk.gov.hmrc.auth.core
+import uk.gov.hmrc.auth.core.AuthProvider.PrivilegedApplication
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.auth.core.{ Nino => _, _ }
 import uk.gov.hmrc.common.message.model.TaxEntity.{ Epaye, HmceVatdecOrg, HmrcCusOrg, HmrcPodsOrg, HmrcPodsPpOrg, HmrcPptOrg }
@@ -85,5 +86,10 @@ class AuthIdentifiersConnector @Inject()(
           case _                 => Set(taxId)
         }
       })
+    }
+
+  def isStrideUser(implicit hc: HeaderCarrier): Future[Boolean] =
+    authorised(AuthProviders(PrivilegedApplication)) { Future.successful(true) }.recoverWith {
+      case _: AuthorisationException => Future.successful(false)
     }
 }

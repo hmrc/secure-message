@@ -25,8 +25,9 @@ trait ApiMessage {}
 object ApiMessage {
   implicit val apiMessageFormat: Writes[ApiMessage] = new Writes[ApiMessage] {
     override def writes(o: ApiMessage): JsValue = o match {
-      case c: ApiConversation => ApiConversation.conversationFormat.writes(c)
-      case l: ApiLetter       => ApiLetter.messageFormat.writes(l)
+      case c: ApiConversation         => ApiConversation.conversationFormat.writes(c)
+      case l: ApiLetter               => ApiLetter.messageFormat.writes(l)
+      case m: MessageResourceResponse => MessageResourceResponse.messageResourceResponseWrites.writes(m)
     }
   }
 }
