@@ -178,7 +178,7 @@ class SecureMessageController @Inject()(
     enrolment: Option[List[CustomerEnrolment]],
     tag: Option[List[FilterTag]],
     messageFilter: Option[MessageFilter] = None,
-    lan: Option[String]): Action[AnyContent] =
+    lan: Option[String] = Some("en")): Action[AnyContent] =
     Action.async { implicit request =>
       {
         logger.warn(s"getMessages for the language $lan")
@@ -214,24 +214,25 @@ class SecureMessageController @Inject()(
       }
     }
 
-  def getMessage(encodedId: String, lan: Option[String]): Action[AnyContent] = Action.async { implicit request =>
-    logger.warn(s"getMessages for the language $lan")
-    val message: EitherT[Future, SecureMessageError, (ApiMessage, Enrolments)] = for {
-      messageRequestTuple <- EitherT(Future.successful(IdCoder.decodeId(encodedId)))
-      enrolments          <- EitherT(getEnrolments())
-      message <- EitherT(
-                  messageBroker
-                    .messageRetriever(messageRequestTuple._3)
-                    .getMessage(MessageReadRequest(messageRequestTuple._1, enrolments, messageRequestTuple._2)))
-    } yield (message, enrolments)
-    message.value map {
-      case Right((msg, enrolments)) =>
-        auditMessageRead(msg, enrolments)
-        Ok(Json.toJson(msg))
-      case Left(error) =>
-        auditMessageReadFailed(encodedId, error)
-        handleErrors(encodedId, error)
-    }
+  def getMessage(encodedId: String, lan: Option[String] = Some("en")): Action[AnyContent] = Action.async {
+    implicit request =>
+      logger.warn(s"getMessages for the language $lan")
+      val message: EitherT[Future, SecureMessageError, (ApiMessage, Enrolments)] = for {
+        messageRequestTuple <- EitherT(Future.successful(IdCoder.decodeId(encodedId)))
+        enrolments          <- EitherT(getEnrolments())
+        message <- EitherT(
+                    messageBroker
+                      .messageRetriever(messageRequestTuple._3)
+                      .getMessage(MessageReadRequest(messageRequestTuple._1, enrolments, messageRequestTuple._2)))
+      } yield (message, enrolments)
+      message.value map {
+        case Right((msg, enrolments)) =>
+          auditMessageRead(msg, enrolments)
+          Ok(Json.toJson(msg))
+        case Left(error) =>
+          auditMessageReadFailed(encodedId, error)
+          handleErrors(encodedId, error)
+      }
   }
 
   private def getEnrolments()(implicit request: HeaderCarrier): Future[Either[UserNotAuthorised, Enrolments]] =
