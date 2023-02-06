@@ -177,9 +177,11 @@ class SecureMessageController @Inject()(
     enrolmentKey: Option[List[String]],
     enrolment: Option[List[CustomerEnrolment]],
     tag: Option[List[FilterTag]],
-    messageFilter: Option[MessageFilter] = None): Action[AnyContent] =
+    messageFilter: Option[MessageFilter] = None,
+    lan: Option[String]): Action[AnyContent] =
     Action.async { implicit request =>
       {
+        logger.warn(s"getMessages for the language $lan")
         val requestWrapper =
           MessageRequestWrapper(enrolmentKey, enrolment, tag, messageFilter.getOrElse(new MessageFilter()))
         logger.warn(s"Request Wrapper = $requestWrapper")
@@ -212,7 +214,8 @@ class SecureMessageController @Inject()(
       }
     }
 
-  def getMessage(encodedId: String): Action[AnyContent] = Action.async { implicit request =>
+  def getMessage(encodedId: String, lan: Option[String]): Action[AnyContent] = Action.async { implicit request =>
+    logger.warn(s"getMessages for the language $lan")
     val message: EitherT[Future, SecureMessageError, (ApiMessage, Enrolments)] = for {
       messageRequestTuple <- EitherT(Future.successful(IdCoder.decodeId(encodedId)))
       enrolments          <- EitherT(getEnrolments())
