@@ -179,7 +179,7 @@ class SecureMessageController @Inject()(
     enrolment: Option[List[CustomerEnrolment]],
     tag: Option[List[FilterTag]],
     messageFilter: Option[MessageFilter] = None,
-    language: Language = English): Action[AnyContent] =
+    language: Option[Language] = Some(English)): Action[AnyContent] =
     Action.async { implicit request =>
       {
         logger.warn(s"getMessages for the language $language")
@@ -215,7 +215,7 @@ class SecureMessageController @Inject()(
       }
     }
 
-  def getMessage(encodedId: String, language: Language = English): Action[AnyContent] = Action.async {
+  def getMessage(encodedId: String, language: Option[Language] = Some(English)): Action[AnyContent] = Action.async {
     implicit request =>
       logger.warn(s"getMessage for the language $language")
       val message: EitherT[Future, SecureMessageError, (ApiMessage, Enrolments)] = for {
