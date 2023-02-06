@@ -34,7 +34,8 @@ import uk.gov.hmrc.securemessage.controllers.model.{ ApiMessage, ClientName }
 import uk.gov.hmrc.securemessage.controllers.utils.IdCoder.EncodedId
 import uk.gov.hmrc.securemessage.controllers.utils.{ IdCoder, QueryStringValidation }
 import uk.gov.hmrc.securemessage.handlers.{ MessageBroker, MessageReadRequest }
-import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag, MessageFilter, MessageRequestWrapper, Reference }
+import uk.gov.hmrc.securemessage.models.core.Language.English
+import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag, Language, MessageFilter, MessageRequestWrapper, Reference }
 import uk.gov.hmrc.securemessage.services.{ ImplicitClassesExtensions, SecureMessageServiceImpl }
 import uk.gov.hmrc.time.DateTimeUtils
 
@@ -178,10 +179,10 @@ class SecureMessageController @Inject()(
     enrolment: Option[List[CustomerEnrolment]],
     tag: Option[List[FilterTag]],
     messageFilter: Option[MessageFilter] = None,
-    lan: Option[String] = Some("en")): Action[AnyContent] =
+    language: Language = English): Action[AnyContent] =
     Action.async { implicit request =>
       {
-        logger.warn(s"getMessages for the language $lan")
+        logger.warn(s"getMessages for the language $language")
         val requestWrapper =
           MessageRequestWrapper(enrolmentKey, enrolment, tag, messageFilter.getOrElse(new MessageFilter()))
         logger.warn(s"Request Wrapper = $requestWrapper")
@@ -214,9 +215,9 @@ class SecureMessageController @Inject()(
       }
     }
 
-  def getMessage(encodedId: String, lan: Option[String] = Some("en")): Action[AnyContent] = Action.async {
+  def getMessage(encodedId: String, language: Language = English): Action[AnyContent] = Action.async {
     implicit request =>
-      logger.warn(s"getMessages for the language $lan")
+      logger.warn(s"getMessage for the language $language")
       val message: EitherT[Future, SecureMessageError, (ApiMessage, Enrolments)] = for {
         messageRequestTuple <- EitherT(Future.successful(IdCoder.decodeId(encodedId)))
         enrolments          <- EitherT(getEnrolments())
