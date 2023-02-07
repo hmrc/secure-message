@@ -16,13 +16,11 @@
 
 package uk.gov.hmrc.securemessage
 
-import org.scalatest.DoNotDiscover
 import play.api.http.{ ContentTypes, HeaderNames }
 import play.api.test.Helpers._
 
 import java.io.File
 
-@DoNotDiscover
 class GetMessagesISpec extends ISpec {
 
   "A GET request to /secure-messaging/messages for a filtered query" should {
@@ -31,6 +29,23 @@ class GetMessagesISpec extends ISpec {
       val response =
         wsClient
           .url(resource("/secure-messaging/messages"))
+          .withHttpHeaders(buildEoriToken(VALID_EORI))
+          .get()
+          .futureValue
+
+      response.status mustBe (200)
+      response.body must include("""senderName":"CDS Exports Team""")
+      response.body must include(""""count":1""")
+      response.body must include(""""subject":"D-80542-20201120"""")
+    }
+  }
+
+  "A GET request to /secure-messaging/messages for a filtered query with language flag" should {
+
+    "return a JSON body of conversation metadata when no filters are provided by leveraging auth enrolments" in new TestClass {
+      val response =
+        wsClient
+          .url(resource("/secure-messaging/messages?lang=cy"))
           .withHttpHeaders(buildEoriToken(VALID_EORI))
           .get()
           .futureValue
