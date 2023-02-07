@@ -19,7 +19,8 @@ package uk.gov.hmrc.securemessage.controllers
 import play.api.libs.json.JsString
 import play.api.mvc.QueryStringBindable
 import uk.gov.hmrc.common.message.model.Regime
-import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag, MessageFilter }
+import uk.gov.hmrc.securemessage.models.core.Language.English
+import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag, Language, MessageFilter }
 
 package object binders {
 
@@ -35,6 +36,19 @@ package object binders {
 
       override def unbind(key: String, customerEnrolment: CustomerEnrolment): String =
         s"${customerEnrolment.key}~${customerEnrolment.name}~${customerEnrolment.value}"
+    }
+
+  implicit def queryStringBindableLanguage(
+    implicit stringBinder: QueryStringBindable[String]): QueryStringBindable[Language] =
+    new QueryStringBindable[Language] {
+
+      override def bind(key: String, params: Map[String, Seq[String]]): Option[Either[String, Language]] =
+        stringBinder.bind("lang", params) map {
+          case Right(language) => Right(Language.namesToValuesMap.getOrElse(language, English))
+          case _               => Right(English)
+        }
+
+      override def unbind(key: String, language: Language): String = language.entryName
     }
 
   implicit def queryStringBindableTag(
