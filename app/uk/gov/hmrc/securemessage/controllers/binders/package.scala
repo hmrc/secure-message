@@ -43,7 +43,7 @@ package object binders {
     new QueryStringBindable[Language] {
 
       override def bind(key: String, params: Map[String, Seq[String]]): Option[Either[String, Language]] =
-        stringBinder.bind("language", params) map {
+        stringBinder.bind("lan", params) map {
           case Right(language) => Right(Language.namesToValuesMap.getOrElse(language, English))
           case _               => Right(English)
         }
