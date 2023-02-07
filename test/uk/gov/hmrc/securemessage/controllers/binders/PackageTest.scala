@@ -96,15 +96,15 @@ class PackageTest extends PlaySpec {
     val testBinder = implicitly[QueryStringBindable[Language]]
 
     "bind with english(en) language" in {
-      testBinder.bind("key", Map("lan" -> Seq("en"))) must be(Some(Right(Language.English)))
+      testBinder.bind("key", Map("lang" -> Seq("en"))) must be(Some(Right(Language.English)))
     }
 
     "bind with welsh(cy) language" in {
-      testBinder.bind("key", Map("lan" -> Seq("cy"))) must be(Some(Right(Language.Welsh)))
+      testBinder.bind("key", Map("lang" -> Seq("cy"))) must be(Some(Right(Language.Welsh)))
     }
 
     "bind with unsupporting any other language to english(en)" in {
-      testBinder.bind("key", Map("lan" -> Seq("fr"))) must be(Some(Right(Language.English)))
+      testBinder.bind("key", Map("lang" -> Seq("fr"))) must be(Some(Right(Language.English)))
     }
   }
 }
