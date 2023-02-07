@@ -34,7 +34,8 @@ import uk.gov.hmrc.securemessage.controllers.model.{ ApiMessage, ClientName }
 import uk.gov.hmrc.securemessage.controllers.utils.IdCoder.EncodedId
 import uk.gov.hmrc.securemessage.controllers.utils.{ IdCoder, QueryStringValidation }
 import uk.gov.hmrc.securemessage.handlers.{ MessageBroker, MessageReadRequest }
-import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag, MessageFilter, MessageRequestWrapper, Reference }
+import uk.gov.hmrc.securemessage.models.core.Language.English
+import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag, Language, MessageFilter, MessageRequestWrapper, Reference }
 import uk.gov.hmrc.securemessage.services.{ ImplicitClassesExtensions, SecureMessageServiceImpl }
 import uk.gov.hmrc.time.DateTimeUtils
 
@@ -177,9 +178,11 @@ class SecureMessageController @Inject()(
     enrolmentKey: Option[List[String]],
     enrolment: Option[List[CustomerEnrolment]],
     tag: Option[List[FilterTag]],
-    messageFilter: Option[MessageFilter] = None): Action[AnyContent] =
+    messageFilter: Option[MessageFilter] = None,
+    language: Option[Language] = Some(English)): Action[AnyContent] =
     Action.async { implicit request =>
       {
+        logger.warn(s"getMessages for the language $language")
         val requestWrapper =
           MessageRequestWrapper(enrolmentKey, enrolment, tag, messageFilter.getOrElse(new MessageFilter()))
         logger.warn(s"Request Wrapper = $requestWrapper")
@@ -212,23 +215,25 @@ class SecureMessageController @Inject()(
       }
     }
 
-  def getMessage(encodedId: String): Action[AnyContent] = Action.async { implicit request =>
-    val message: EitherT[Future, SecureMessageError, (ApiMessage, Enrolments)] = for {
-      messageRequestTuple <- EitherT(Future.successful(IdCoder.decodeId(encodedId)))
-      enrolments          <- EitherT(getEnrolments())
-      message <- EitherT(
-                  messageBroker
-                    .messageRetriever(messageRequestTuple._3)
-                    .getMessage(MessageReadRequest(messageRequestTuple._1, enrolments, messageRequestTuple._2)))
-    } yield (message, enrolments)
-    message.value map {
-      case Right((msg, enrolments)) =>
-        auditMessageRead(msg, enrolments)
-        Ok(Json.toJson(msg))
-      case Left(error) =>
-        auditMessageReadFailed(encodedId, error)
-        handleErrors(encodedId, error)
-    }
+  def getMessage(encodedId: String, language: Option[Language] = Some(English)): Action[AnyContent] = Action.async {
+    implicit request =>
+      logger.warn(s"getMessage for the language $language")
+      val message: EitherT[Future, SecureMessageError, (ApiMessage, Enrolments)] = for {
+        messageRequestTuple <- EitherT(Future.successful(IdCoder.decodeId(encodedId)))
+        enrolments          <- EitherT(getEnrolments())
+        message <- EitherT(
+                    messageBroker
+                      .messageRetriever(messageRequestTuple._3)
+                      .getMessage(MessageReadRequest(messageRequestTuple._1, enrolments, messageRequestTuple._2)))
+      } yield (message, enrolments)
+      message.value map {
+        case Right((msg, enrolments)) =>
+          auditMessageRead(msg, enrolments)
+          Ok(Json.toJson(msg))
+        case Left(error) =>
+          auditMessageReadFailed(encodedId, error)
+          handleErrors(encodedId, error)
+      }
   }
 
   private def getEnrolments()(implicit request: HeaderCarrier): Future[Either[UserNotAuthorised, Enrolments]] =

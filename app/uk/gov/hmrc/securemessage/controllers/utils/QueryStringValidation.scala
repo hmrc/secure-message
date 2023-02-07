@@ -27,8 +27,8 @@ final case class InvalidQueryParameterException(invalidParams: List[String])
 
 trait QueryStringValidation {
 
-  val validCdsQueryParams = List("enrolment", "enrolmentKey", "tag")
-  val validNonCdsQueryParams = List("taxIdentifiers", "regimes")
+  val validCdsQueryParams = List("enrolment", "enrolmentKey", "tag", "lang")
+  val validNonCdsQueryParams = List("taxIdentifiers", "regimes", "lang")
 
   protected def validateQueryParameters(
     queryString: Map[String, Seq[String]]): Either[InvalidQueryStringException, QueryStringValidationSuccess] = {

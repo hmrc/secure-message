@@ -19,7 +19,7 @@ package uk.gov.hmrc.securemessage.controllers.binders
 import org.scalatestplus.play._
 import play.api.mvc.QueryStringBindable
 import uk.gov.hmrc.common.message.model.Regime
-import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag, MessageFilter }
+import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag, Language, MessageFilter }
 
 class PackageTest extends PlaySpec {
   "queryStringBindableCustomerEnrolment" must {
@@ -92,4 +92,19 @@ class PackageTest extends PlaySpec {
 
   }
 
+  "languageFilterBinder" must {
+    val testBinder = implicitly[QueryStringBindable[Language]]
+
+    "bind with english(en) language" in {
+      testBinder.bind("key", Map("lang" -> Seq("en"))) must be(Some(Right(Language.English)))
+    }
+
+    "bind with welsh(cy) language" in {
+      testBinder.bind("key", Map("lang" -> Seq("cy"))) must be(Some(Right(Language.Welsh)))
+    }
+
+    "bind with unsupporting any other language to english(en)" in {
+      testBinder.bind("key", Map("lang" -> Seq("fr"))) must be(Some(Right(Language.English)))
+    }
+  }
 }
