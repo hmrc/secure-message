@@ -36,7 +36,7 @@ import uk.gov.hmrc.securemessage.controllers.utils.{ IdCoder, MessageSchemaValid
 import uk.gov.hmrc.securemessage.handlers.{ MessageBroker, MessageReadRequest }
 import uk.gov.hmrc.securemessage.models.core.Language.English
 import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag, Language, MessageFilter, MessageRequestWrapper, Reference }
-import uk.gov.hmrc.securemessage.services.{ ImplicitClassesExtensions, SecureMessageServiceImpl }
+import uk.gov.hmrc.securemessage.services.{ ImplicitClassesExtensions, SecureMessageServiceImpl, SecureMessageV4ServiceImpl }
 import uk.gov.hmrc.time.DateTimeUtils
 
 import java.util.UUID
@@ -49,6 +49,7 @@ class SecureMessageController @Inject()(
   val authConnector: AuthConnector,
   override val auditConnector: AuditConnector,
   secureMessageService: SecureMessageServiceImpl,
+  secureMessageV4Service: SecureMessageV4ServiceImpl,
   messageBroker: MessageBroker,
   dataTimeUtils: DateTimeUtils)(implicit ec: ExecutionContext)
     extends BackendController(cc) with AuthorisedFunctions with QueryStringValidation with I18nSupport
@@ -255,19 +256,19 @@ class SecureMessageController @Inject()(
     }
   }
 
-  def createMessage(): Action[AnyContent] = Action { implicit request =>
-    request.body.asJson.fold[Result] {
+  def createMessage(): Action[AnyContent] = Action.async { implicit request =>
+    request.body.asJson.fold[Future[Result]] {
       val errMsg = "Payload is not JSON"
       logger.warn(s"$errMsg. Request Body: ${request.body}")
-      BadRequest(Json.obj("error" -> errMsg))
+      Future.successful(BadRequest(Json.obj("error" -> errMsg)))
     } { json =>
       isValidJson(json) match {
         case Right(error) =>
           logger.warn(s"Could not validate or parse the request: $error")
-          BadRequest(Json.obj("error" -> error))
+          Future.successful(BadRequest(Json.obj("error" -> error)))
         case _ =>
           logger.warn("Message for v4 has processed successfully")
-          Created(Json.obj("id" -> UUID.randomUUID().toString))
+          secureMessageV4Service.createMessage(json)
       }
     }
   }

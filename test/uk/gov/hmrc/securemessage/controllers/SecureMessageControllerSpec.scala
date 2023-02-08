@@ -31,6 +31,7 @@ import play.api.http.HeaderNames._
 import play.api.http.Status._
 import play.api.i18n.Messages
 import play.api.libs.json.{ JsObject, JsValue, Json, OFormat }
+import play.api.mvc.Results.Created
 import play.api.mvc.{ AnyContentAsEmpty, Request, Result }
 import play.api.test.Helpers.{ POST, PUT, contentAsJson, contentAsString, defaultAwaitTimeout, status, stubMessages }
 import play.api.test.{ FakeHeaders, FakeRequest, Helpers }
@@ -53,7 +54,7 @@ import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core.Letter._
 import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
-import uk.gov.hmrc.securemessage.services.SecureMessageServiceImpl
+import uk.gov.hmrc.securemessage.services.{ SecureMessageServiceImpl, SecureMessageV4ServiceImpl }
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -427,12 +428,12 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
 
   "createMessage" must {
     "return CREATED for the valid message" in
-      new CreateMessageTestCase(requestBody = Resources.readJson("model/core/v4/valid_message.json")) {
+      new CreateMessageV4TestCase(requestBody = Resources.readJson("model/core/v4/valid_message.json")) {
         val response = controller.createMessage()(fakeRequest)
         status(response) mustBe CREATED
       }
     "return BAD_REQUEST for the message with missing mandatory fields" in
-      new CreateMessageTestCase(requestBody = Resources.readJson("model/core/v4/missing_mandatory_fields.json")) {
+      new CreateMessageV4TestCase(requestBody = Resources.readJson("model/core/v4/missing_mandatory_fields.json")) {
         val response = controller.createMessage()(fakeRequest)
         status(response) mustBe BAD_REQUEST
       }
@@ -449,6 +450,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     val mockMessageBroker: MessageBroker = mock[MessageBroker]
     val mockAuditConnector: AuditConnector = mock[AuditConnector]
     val mockSecureMessageService: SecureMessageServiceImpl = mock[SecureMessageServiceImpl]
+    val mockSecureMessageV4Service: SecureMessageV4ServiceImpl = mock[SecureMessageV4ServiceImpl]
     when(mockRepository.insertIfUnique(any[Conversation])(any[ExecutionContext]))
       .thenReturn(Future.successful(Right(())))
     when(mockMessageBroker.messageRetriever(any[QueryStringValidationSuccess]))
@@ -461,6 +463,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
         mockAuthConnector,
         mockAuditConnector,
         mockSecureMessageService,
+        mockSecureMessageV4Service,
         mockMessageBroker,
         zeroTimeProvider,
       )
@@ -637,7 +640,9 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
         any[Option[Reference]])(any[ExecutionContext], any[HeaderCarrier])).thenReturn(serviceResponse)
   }
 
-  class CreateMessageTestCase(requestBody: JsValue) extends TestCase {
+  class CreateMessageV4TestCase(requestBody: JsValue) extends TestCase {
     val fakeRequest = FakeRequest(POST, routes.SecureMessageController.createMessage().url).withJsonBody(requestBody)
+    when(mockSecureMessageV4Service.createMessage(any[JsValue])(any[HeaderCarrier], any[ExecutionContext]))
+      .thenReturn(Future.successful(Created("")))
   }
 }
