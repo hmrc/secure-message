@@ -436,6 +436,11 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
         val response = controller.createMessage()(fakeRequest)
         status(response) mustBe BAD_REQUEST
       }
+    "return BAD_REQUEST for the message with invalid json" in new TestCase {
+      val response = controller.createMessage()(
+        FakeRequest(POST, routes.SecureMessageController.createMessage().url).withBody("Test,Non-Json"))
+      status(response) mustBe BAD_REQUEST
+    }
   }
 
   class TestCase(authEnrolments: Set[CustomerEnrolment] = Set(testEnrolment)) {
