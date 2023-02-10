@@ -32,7 +32,7 @@ import uk.gov.hmrc.securemessage.controllers.model.cdcm.write._
 import uk.gov.hmrc.securemessage.controllers.model.common.write._
 import uk.gov.hmrc.securemessage.controllers.model.{ ApiMessage, ClientName }
 import uk.gov.hmrc.securemessage.controllers.utils.IdCoder.EncodedId
-import uk.gov.hmrc.securemessage.controllers.utils.{ IdCoder, QueryStringValidation }
+import uk.gov.hmrc.securemessage.controllers.utils.{ IdCoder, MessageSchemaValidator, QueryStringValidation }
 import uk.gov.hmrc.securemessage.handlers.{ MessageBroker, MessageReadRequest }
 import uk.gov.hmrc.securemessage.models.core.Language.English
 import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag, Language, MessageFilter, MessageRequestWrapper, Reference }
@@ -52,7 +52,7 @@ class SecureMessageController @Inject()(
   messageBroker: MessageBroker,
   dataTimeUtils: DateTimeUtils)(implicit ec: ExecutionContext)
     extends BackendController(cc) with AuthorisedFunctions with QueryStringValidation with I18nSupport
-    with ErrorHandling with Auditing with Logging with ImplicitClassesExtensions {
+    with ErrorHandling with Auditing with Logging with ImplicitClassesExtensions with MessageSchemaValidator {
 
   def createConversation(client: ClientName, conversationId: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
@@ -252,6 +252,23 @@ class SecureMessageController @Inject()(
       case "" => Some(Reference("no X-Request-ID", ""))
       case xRequest =>
         Some(Reference("X-Request-ID", xRequest))
+    }
+  }
+
+  def createMessage(): Action[AnyContent] = Action { implicit request =>
+    request.body.asJson.fold[Result] {
+      val errMsg = "Payload is not JSON"
+      logger.warn(s"$errMsg. Request Body: ${request.body}")
+      BadRequest(errMsg)
+    } { json =>
+      isValidJson(json) match {
+        case JsSuccess(_, _) =>
+          logger.warn("Message for v4 has processed successfully")
+          Created(Json.obj("id" -> UUID.randomUUID().toString))
+        case JsError(errors) =>
+          logger.warn(s"Could not validate or parse the request: $errors")
+          BadRequest(Json.toJson(errors.map(e => e._2.head.message)))
+      }
     }
   }
 }

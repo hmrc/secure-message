@@ -423,8 +423,21 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       status(response) mustBe OK
       contentAsJson(response).as[MessagesCount] mustBe MessagesCount(1, 1)
     }
-
   }
+
+  "createMessage" must {
+    "return CREATED for the valid message" in
+      new CreateMessageTestCase(requestBody = Resources.readJson("model/core/v4/valid_message.json")) {
+        val response = controller.createMessage()(fakeRequest)
+        status(response) mustBe CREATED
+      }
+    "return BAD_REQUEST for the message with missing mandatory fields" in
+      new CreateMessageTestCase(requestBody = Resources.readJson("model/core/v4/missing_mandatory_fields.json")) {
+        val response = controller.createMessage()(fakeRequest)
+        status(response) mustBe BAD_REQUEST
+      }
+  }
+
   class TestCase(authEnrolments: Set[CustomerEnrolment] = Set(testEnrolment)) {
     val mockRepository: ConversationRepository = mock[ConversationRepository]
     val mockAuthConnector: AuthConnector = mock[AuthConnector]
@@ -617,5 +630,9 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
         any[CaseworkerMessage],
         any[String],
         any[Option[Reference]])(any[ExecutionContext], any[HeaderCarrier])).thenReturn(serviceResponse)
+  }
+
+  class CreateMessageTestCase(requestBody: JsValue) extends TestCase {
+    val fakeRequest = FakeRequest(POST, routes.SecureMessageController.createMessage().url).withJsonBody(requestBody)
   }
 }
