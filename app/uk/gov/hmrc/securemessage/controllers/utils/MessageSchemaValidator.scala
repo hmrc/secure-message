@@ -26,7 +26,7 @@ import scala.io.Source
 trait MessageSchemaValidator {
 
   val schemaToValidate =
-    Json.fromJson[SchemaType](Json.parse(Source.fromFile("resources/message.v4.schema.json").mkString)).get
+    Json.fromJson[SchemaType](Json.parse(Source.fromFile("conf/message.v4.schema.json").mkString)).get
 
   def isValidJson(json: JsValue): JsResult[JsValue] = SchemaValidator(Some(Version7)).validate(schemaToValidate, json)
 
