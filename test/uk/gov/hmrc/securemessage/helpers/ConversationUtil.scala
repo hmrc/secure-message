@@ -19,7 +19,7 @@ package uk.gov.hmrc.securemessage.helpers
 import cats.data.NonEmptyList
 import org.joda.time.DateTime
 import org.mongodb.scala.bson.ObjectId
-import uk.gov.hmrc.emailaddress.EmailAddress
+import uk.gov.hmrc.common.message.emailaddress.EmailAddress
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CdcmConversation
 import uk.gov.hmrc.securemessage.controllers.model.common.write.{ Customer, Recipient }
 import uk.gov.hmrc.securemessage.models.core

@@ -17,7 +17,7 @@
 package uk.gov.hmrc.securemessage.models
 
 import play.api.libs.json.{ Json, OWrites }
-import uk.gov.hmrc.emailaddress._
+import uk.gov.hmrc.common.message.emailaddress._
 
 final case class Tags(messageId: Option[String], source: Option[String], enrolment: Option[String])
 
