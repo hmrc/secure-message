@@ -267,7 +267,7 @@ class SecureMessageController @Inject()(
           Created(Json.obj("id" -> UUID.randomUUID().toString))
         case JsError(errors) =>
           logger.warn(s"Could not validate or parse the request: $errors")
-          BadRequest(Json.toJson(errors.map(e => e._2.head.message)))
+          BadRequest(Json.toJson(errors.mkString))
       }
     }
   }
