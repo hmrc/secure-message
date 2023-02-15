@@ -16,14 +16,15 @@
 
 package uk.gov.hmrc.securemessage.controllers.utils
 
-import com.eclipsesource.schema.drafts.Version7
-import com.eclipsesource.schema.drafts.Version7._
-import com.eclipsesource.schema.{ SchemaType, SchemaValidator }
-import play.api.libs.json.{ JsResult, JsValue, Json }
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.networknt.schema.{ JsonSchema, JsonSchemaFactory, SpecVersion, ValidationMessage }
+import play.api.libs.json.JsValue
+
+import scala.collection.JavaConverters._
 
 trait MessageSchemaValidator {
 
-  lazy val messageSchema =
+  lazy val messageSchema: String =
     """
       |{
       |  "$schema": "http://json-schema.org/draft-04/schema#",
@@ -236,8 +237,15 @@ trait MessageSchemaValidator {
       |}
       |""".stripMargin
 
-  val schemaToValidate = Json.fromJson[SchemaType](Json.parse(messageSchema)).get
+  lazy val jsonSchema: JsonSchema = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V4).getSchema(messageSchema)
 
-  def isValidJson(json: JsValue): JsResult[JsValue] = SchemaValidator(Some(Version7)).validate(schemaToValidate, json)
+  def isValidJson(json: JsValue): Either[Boolean, String] = {
+    val parsedJson = new ObjectMapper().readTree(json.toString())
+    val errors = jsonSchema.validate(parsedJson).asScala.toSeq
+    if (errors.isEmpty) Left(true) else Right(toStringFormat(errors))
+  }
+
+  private def toStringFormat(errors: Seq[ValidationMessage]): String =
+    s"Missing mandatory fields: {${errors.map(e => e.getMessage.replaceAll(": is missing but it is required", "")).mkString(", ")}}"
 
 }

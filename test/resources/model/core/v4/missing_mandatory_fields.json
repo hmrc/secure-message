@@ -1,6 +1,6 @@
 {
-  "externalRef1": {
-    "id": "abcd1234",
+  "externalRef": {
+    "id_missing": "abcd1234",
     "source": "mdtp"
   },
   "recipient": {
@@ -38,10 +38,10 @@
     }
     ]
   },
-  "content_missing": [
+  "content": [
     {
-      "lang": "en",
-      "subject": "Reminder to file a Self Assessment return",
+      "lang_missing": "en",
+      "subject_missing": "Reminder to file a Self Assessment return",
       "body": "Message content - 4254101384174917141"
     },
     {

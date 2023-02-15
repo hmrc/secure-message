@@ -259,15 +259,15 @@ class SecureMessageController @Inject()(
     request.body.asJson.fold[Result] {
       val errMsg = "Payload is not JSON"
       logger.warn(s"$errMsg. Request Body: ${request.body}")
-      BadRequest(errMsg)
+      BadRequest(Json.obj("error" -> errMsg))
     } { json =>
       isValidJson(json) match {
-        case JsSuccess(_, _) =>
+        case Right(error) =>
+          logger.warn(s"Could not validate or parse the request: $error")
+          BadRequest(Json.obj("error" -> error))
+        case _ =>
           logger.warn("Message for v4 has processed successfully")
           Created(Json.obj("id" -> UUID.randomUUID().toString))
-        case JsError(errors) =>
-          logger.warn(s"Could not validate or parse the request: $errors")
-          BadRequest(Json.toJson(errors.mkString))
       }
     }
   }

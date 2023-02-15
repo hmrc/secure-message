@@ -18,7 +18,7 @@ package uk.gov.hmrc.securemessage.controllers.utils
 
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.play.PlaySpec
-import play.api.libs.json.{ JsObject, JsSuccess }
+import play.api.libs.json.JsObject
 import uk.gov.hmrc.securemessage.helpers.Resources
 
 class MessageSchemaValidatorSpec extends PlaySpec with ScalaFutures with MessageSchemaValidator {
@@ -27,18 +27,13 @@ class MessageSchemaValidatorSpec extends PlaySpec with ScalaFutures with Message
 
     "return success for the valid json " in {
       val messageJson = Resources.readJson("model/core/v4/valid_message.json").as[JsObject]
-      isValidJson(messageJson) mustBe JsSuccess(messageJson)
+      isValidJson(messageJson) mustBe Left(true)
     }
 
     "return error for the missing fields " in {
       val messageJson = Resources.readJson("model/core/v4/missing_mandatory_fields.json").as[JsObject]
-      val result = isValidJson(messageJson)
-      result.isError mustBe true
-      val errorList = result.asEither.left.get.map(e => e._2.head.message)
-      errorList mustBe List(
-        "Property content missing.",
-        "Property messageType missing.",
-        "Property externalRef missing.")
+      isValidJson(messageJson) mustBe Right(
+        "Missing mandatory fields: {$.externalRef.id, $.messageType, $.content[0].lang, $.content[0].subject}")
     }
   }
 }
