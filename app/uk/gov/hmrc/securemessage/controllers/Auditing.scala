@@ -19,7 +19,7 @@ package uk.gov.hmrc.securemessage.controllers
 import org.joda.time.format.ISODateTimeFormat
 import org.joda.time.{ DateTime, DateTimeZone }
 import uk.gov.hmrc.auth.core.Enrolments
-import uk.gov.hmrc.emailaddress.EmailAddress
+import uk.gov.hmrc.common.message.emailaddress.EmailAddress
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.securemessage.SecureMessageError
