@@ -28,7 +28,7 @@ object AppDependencies {
     "com.typesafe.play" %% "play-json-joda"            % "2.9.4",
     "org.typelevel"     %% "cats-core"                 % "2.9.0",
     "org.jsoup"         % "jsoup"                      % "1.15.3",
-    "uk.gov.hmrc"       %% "dc-message-library"        % "0.18.8-play-28"
+    "uk.gov.hmrc"       %% "dc-message-library"        % "0.23.0-play-28"
   )
 
   val test = Seq(
