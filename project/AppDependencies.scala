@@ -29,7 +29,7 @@ object AppDependencies {
     "org.typelevel"     %% "cats-core"                 % "2.9.0",
     "com.networknt"     % "json-schema-validator"      % "1.0.77" exclude("com.fasterxml.jackson.core","jackson-databind"),
     "org.jsoup"         % "jsoup"                      % "1.15.3",
-    "uk.gov.hmrc"       %% "dc-message-library"        % "0.18.8-play-28"
+    "uk.gov.hmrc"       %% "dc-message-library"        % "0.23.0-play-28"
   )
 
   val test = Seq(

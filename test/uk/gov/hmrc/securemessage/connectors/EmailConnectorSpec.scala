@@ -18,7 +18,7 @@ package uk.gov.hmrc.securemessage.connectors
 
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
-import uk.gov.hmrc.emailaddress.EmailAddress
+import uk.gov.hmrc.common.message.emailaddress.EmailAddress
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import org.scalatest.concurrent.ScalaFutures

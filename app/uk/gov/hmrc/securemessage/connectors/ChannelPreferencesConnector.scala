@@ -19,8 +19,8 @@ package uk.gov.hmrc.securemessage.connectors
 import play.api.{ Configuration, Logging }
 import play.api.http.Status.OK
 import play.api.libs.json.{ JsSuccess, Json }
-import uk.gov.hmrc.emailaddress.EmailAddress
-import uk.gov.hmrc.emailaddress.PlayJsonFormats.emailAddressReads
+import uk.gov.hmrc.common.message.emailaddress.EmailAddress
+import uk.gov.hmrc.securemessage.formatter.PlayJsonFormats.emailAddressReads
 import uk.gov.hmrc.http.{ HeaderCarrier, HttpClient, HttpResponse }
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
