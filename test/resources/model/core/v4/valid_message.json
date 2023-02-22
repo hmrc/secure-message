@@ -1,0 +1,56 @@
+{
+  "externalRef": {
+    "id": "abcd1234",
+    "source": "mdtp"
+  },
+  "recipient": {
+    "regime": "SDIL",
+    "taxIdentifier": {
+      "name": "HMRC-OBTDS-ORG",
+      "value": "XZSD00000100024"
+    },
+    "name": {
+      "line1": "Line1",
+      "line2": "Line2",
+      "line3": "Line3"
+    },
+    "email": "test@test.com"
+  },
+  "tags": {
+    "notificationType": "Direct Debit"
+  },
+  "alertDetails": {
+    "data": {
+      "key1": "value 1",
+      "key2": "value2"
+    }
+  },
+  "details": {
+    "formId": "SA300",
+    "issueDate": "2017-02-13",
+    "batchId": "1234567",
+    "sourceData": "<base64 encoded source data>",
+    "properties": [{
+      "property": {
+        "name": "printedVariant",
+        "value": "false"
+      }
+    }
+    ]
+  },
+  "content": [
+    {
+      "lang": "en",
+      "subject": "Reminder to file a Self Assessment return",
+      "body": "Message content - 4254101384174917141"
+    },
+    {
+      "lang": "cy",
+      "subject": "Nodyn atgoffa i ffeilio ffurflen Hunanasesiad",
+      "body": "Cynnwys - 4254101384174917141"
+    }
+  ],
+  "messageType": "sdAlertMessage",
+  "validFrom": "2020-05-04",
+  "alertQueue": "DEFAULT"
+}
