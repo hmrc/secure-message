@@ -108,3 +108,18 @@ GET        /messages/count   uk.gov.hmrc.securemessage.controllers.SecureMessage
 #     description: conversation/message not found
 ###
 GET        /messages/:encodedId   uk.gov.hmrc.securemessage.controllers.SecureMessageController.getMessage(encodedId: String, language: Option[uk.gov.hmrc.securemessage.models.core.Language])
+###
+# summary: Create a new version4 message
+# requestBody:
+#   description: A JSON object to create a new message
+#   required: true
+#   content:
+#    application/json:
+# responses:
+#   201:
+#     description: message created successfully
+#   400:
+#     description: bad request such as an invalid payload
+###
+POST        /v4/message    uk.gov.hmrc.securemessage.controllers.SecureMessageController.createMessage()
+

@@ -27,6 +27,7 @@ object AppDependencies {
     "com.beachape"      %% "enumeratum-play"           % "1.5.17",
     "com.typesafe.play" %% "play-json-joda"            % "2.9.4",
     "org.typelevel"     %% "cats-core"                 % "2.9.0",
+    "com.networknt"     % "json-schema-validator"      % "1.0.77" exclude("com.fasterxml.jackson.core","jackson-databind"),
     "org.jsoup"         % "jsoup"                      % "1.15.3",
     "uk.gov.hmrc"       %% "dc-message-library"        % "0.23.0-play-28"
   )
