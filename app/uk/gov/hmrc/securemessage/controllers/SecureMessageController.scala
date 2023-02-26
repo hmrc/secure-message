@@ -36,7 +36,8 @@ import uk.gov.hmrc.securemessage.controllers.utils.{ IdCoder, MessageSchemaValid
 import uk.gov.hmrc.securemessage.handlers.{ MessageBroker, MessageReadRequest }
 import uk.gov.hmrc.securemessage.models.core.Language.English
 import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag, Language, MessageFilter, MessageRequestWrapper, Reference }
-import uk.gov.hmrc.securemessage.services.{ ImplicitClassesExtensions, SecureMessageServiceImpl, SecureMessageV4ServiceImpl }
+import uk.gov.hmrc.securemessage.models.v4.SecureMessage
+import uk.gov.hmrc.securemessage.services.{ ImplicitClassesExtensions, SecureMessageServiceImpl }
 import uk.gov.hmrc.time.DateTimeUtils
 
 import java.util.UUID
@@ -49,7 +50,6 @@ class SecureMessageController @Inject()(
   val authConnector: AuthConnector,
   override val auditConnector: AuditConnector,
   secureMessageService: SecureMessageServiceImpl,
-  secureMessageV4Service: SecureMessageV4ServiceImpl,
   messageBroker: MessageBroker,
   dataTimeUtils: DateTimeUtils)(implicit ec: ExecutionContext)
     extends BackendController(cc) with AuthorisedFunctions with QueryStringValidation with I18nSupport
@@ -268,7 +268,10 @@ class SecureMessageController @Inject()(
           Future.successful(BadRequest(Json.obj("error" -> error)))
         case _ =>
           logger.warn("Message for v4 has processed successfully")
-          secureMessageV4Service.createMessage(json)
+          secureMessageService.createSecureMessage(json.as[SecureMessage]).recover {
+            case e: Throwable =>
+              InternalServerError(Json.obj("reason" -> s"Unable to create the message: ${e.getMessage}"))
+          }
       }
     }
   }

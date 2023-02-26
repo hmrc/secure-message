@@ -336,6 +336,15 @@
             "type" : "uk.gov.hmrc.securemessage.models.core.messagefilter"
           },
           "required" : false
+        }, {
+          "in" : "query",
+          "name" : "language",
+          "schema" : {
+            "nullable" : true,
+            "type" : "string",
+            "enum" : [ "en", "cy" ]
+          },
+          "required" : false
         } ]
       }
     },
@@ -388,6 +397,14 @@
             }
           },
           "required" : false
+        }, {
+          "in" : "query",
+          "name" : "messageFilter",
+          "schema" : {
+            "nullable" : true,
+            "type" : "uk.gov.hmrc.securemessage.models.core.messagefilter"
+          },
+          "required" : false
         } ]
       }
     },
@@ -417,13 +434,44 @@
             "type" : "string"
           },
           "required" : true
+        }, {
+          "in" : "query",
+          "name" : "language",
+          "schema" : {
+            "nullable" : true,
+            "type" : "string",
+            "enum" : [ "en", "cy" ]
+          },
+          "required" : false
         } ]
+      }
+    },
+    "/secure-messaging/v4/message" : {
+      "post" : {
+        "operationId" : "createMessage",
+        "tags" : [ "app" ],
+        "summary" : "Create a new version4 message",
+        "requestBody" : {
+          "description" : "A JSON object to create a new message",
+          "required" : true,
+          "content" : {
+            "application/json" : null
+          }
+        },
+        "responses" : {
+          "201" : {
+            "description" : "message created successfully"
+          },
+          "400" : {
+            "description" : "bad request such as an invalid payload"
+          }
+        }
       }
     }
   },
   "info" : {
     "title" : "Secure Message API",
-    "version" : "0.132.0-SNAPSHOT"
+    "version" : "0.144.0-SNAPSHOT"
   },
   "tags" : [ {
     "name" : "app"

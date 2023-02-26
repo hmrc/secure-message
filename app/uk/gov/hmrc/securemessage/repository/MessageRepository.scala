@@ -34,7 +34,7 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{ ExecutionContext, Future }
 
 class MessageRepository @Inject()(mongo: MongoComponent)(implicit ec: ExecutionContext)
-    extends SecureMessageRepository[Letter](
+    extends AbstractMessageRepository[Letter](
       "message",
       mongo,
       Letter.letterFormat,

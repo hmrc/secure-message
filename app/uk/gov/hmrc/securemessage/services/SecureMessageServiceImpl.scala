@@ -22,7 +22,9 @@ import com.google.inject.Inject
 import org.joda.time.DateTime
 import org.mongodb.scala.bson.ObjectId
 import play.api.i18n.Messages
-import play.api.mvc.Request
+import play.api.libs.json.Json
+import play.api.mvc.{ Request, Result }
+import play.api.mvc.Results.{ Conflict, Created, InternalServerError }
 import uk.gov.hmrc.auth.core.Enrolments
 import uk.gov.hmrc.common.message.model.MessagesCount
 import uk.gov.hmrc.domain.TaxIds.TaxIdWithName
@@ -39,7 +41,8 @@ import uk.gov.hmrc.securemessage.models._
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.Customer.eqCustomer
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.{ Customer => PCustomer }
 import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, _ }
-import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository }
+import uk.gov.hmrc.securemessage.models.v4.SecureMessage
+import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository, SecureMessageRepository }
 import uk.gov.hmrc.securemessage.services.utils.ContentValidator
 
 import java.util.UUID
@@ -51,6 +54,7 @@ import scala.concurrent.{ ExecutionContext, Future }
 class SecureMessageServiceImpl @Inject()(
   conversationRepository: ConversationRepository,
   messageRepository: MessageRepository,
+  secureMessageRepository: SecureMessageRepository,
   emailConnector: EmailConnector,
   channelPrefConnector: ChannelPreferencesConnector,
   eisConnector: EISConnector,
@@ -67,6 +71,15 @@ class SecureMessageServiceImpl @Inject()(
       _            <- sendAlert(participants.customer, conversation.alert)
     } yield ()
   }.value
+
+  def createSecureMessage(
+    secureMessage: SecureMessage)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Result] =
+    secureMessageRepository.save(secureMessage) map {
+      case true  => Created(Json.obj("id"      -> secureMessage.id.toString))
+      case false => Conflict(Json.obj("reason" -> "Duplicate Message"))
+    } recover {
+      case e => InternalServerError(Json.obj("reason" -> s"Unable to create message $e"))
+    }
 
   def getConversations(authEnrolments: Enrolments, filters: Filters)(
     implicit ec: ExecutionContext,

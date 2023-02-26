@@ -23,19 +23,19 @@ import org.scalatestplus.play.PlaySpec
 import play.api.test.Helpers.{ await, defaultAwaitTimeout }
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 import uk.gov.hmrc.securemessage.helpers.Resources
-import uk.gov.hmrc.securemessage.models.core.MessageV4
+import uk.gov.hmrc.securemessage.models.v4.SecureMessage
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class MessageV4RepositorySpec
-    extends PlaySpec with DefaultPlayMongoRepositorySupport[MessageV4] with BeforeAndAfterEach with ScalaFutures {
+class SecureMessageRepositorySpec
+    extends PlaySpec with DefaultPlayMongoRepositorySupport[SecureMessage] with BeforeAndAfterEach with ScalaFutures {
 
-  override lazy val repository = new MessageV4Repository(mongoComponent)
+  override lazy val repository = new SecureMessageRepository(mongoComponent)
 
   override def afterEach(): Unit =
     await(repository.collection.deleteMany(Filters.empty()).toFuture().map(_ => ()))
 
-  val message: MessageV4 = Resources.readJson("model/core/v4/valid_message.json").as[MessageV4]
+  val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
 
   "Message V4" should {
     "be saved if unique" in {
