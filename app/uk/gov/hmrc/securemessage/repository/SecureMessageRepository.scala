@@ -19,9 +19,8 @@ package uk.gov.hmrc.securemessage.repository
 import com.mongodb.client.model.Indexes.ascending
 import org.mongodb.scala.MongoException
 import org.mongodb.scala.model._
-import play.api.Logging
 import uk.gov.hmrc.mongo.MongoComponent
-import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
+import uk.gov.hmrc.securemessage.models.core.Identifier
 import uk.gov.hmrc.securemessage.models.v4.{ SecureMessage, SecureMessageMongoFormat }
 
 import javax.inject.{ Inject, Singleton }
@@ -29,17 +28,18 @@ import scala.concurrent.{ ExecutionContext, Future }
 
 @Singleton
 class SecureMessageRepository @Inject()(mongo: MongoComponent)(implicit ec: ExecutionContext)
-    extends PlayMongoRepository[SecureMessage](
-      mongo,
+    extends AbstractMessageRepository[SecureMessage](
       "secure-message",
+      mongo,
       SecureMessageMongoFormat.mongoMessageFormat,
       Seq(
         IndexModel(
           ascending("hash"),
           IndexOptions().name("unique-messageHash").unique(true)
         )
-      )
-    ) with Logging {
+      ),
+      replaceIndexes = false
+    ) {
 
   private final val DuplicateKey = 11000
 
@@ -49,4 +49,6 @@ class SecureMessageRepository @Inject()(mongo: MongoComponent)(implicit ec: Exec
         logger.warn(s"Ignoring duplicate message found on insertion to MessageV4 collection: $message.")
         Future.successful(false)
     }
+
+  protected def findByIdentifierQuery(identifier: Identifier): Seq[(String, String)] = Seq()
 }

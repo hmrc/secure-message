@@ -75,7 +75,7 @@ class SecureMessageServiceImpl @Inject()(
   def createSecureMessage(
     secureMessage: SecureMessage)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Result] =
     secureMessageRepository.save(secureMessage) map {
-      case true  => Created(Json.obj("id"      -> secureMessage.id.toString))
+      case true  => Created(Json.obj("id"      -> secureMessage._id.toString))
       case false => Conflict(Json.obj("reason" -> "Duplicate Message"))
     } recover {
       case e => InternalServerError(Json.obj("reason" -> s"Unable to create message $e"))

@@ -28,7 +28,7 @@ import uk.gov.hmrc.securemessage.models.core.Language
 
 import java.security.MessageDigest
 
-case class SecureMessage(id: ObjectId = new ObjectId,
+case class SecureMessage(_id: ObjectId = new ObjectId,
                           externalRef: ExternalRef,
                           recipient: model.Recipient,
                           tags: Option[Map[String, String]] = None,
@@ -78,7 +78,7 @@ object SecureMessage extends ApiFormats with AlertEmailTemplateMapper {
         }
 
         SecureMessage(
-          id = new ObjectId(),
+          _id = new ObjectId(),
           externalRef,
           recipient,
           tags,
