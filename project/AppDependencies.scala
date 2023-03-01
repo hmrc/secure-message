@@ -15,11 +15,13 @@
  */
 
 import play.core.PlayVersion.current
+import play.sbt.PlayImport._
 import sbt._
 
 object AppDependencies {
 
   val compile = Seq(
+    cacheApi,
     "uk.gov.hmrc"       %% "bootstrap-backend-play-28" % "6.4.0",
     "uk.gov.hmrc.mongo" %% "hmrc-mongo-play-28"        % "0.74.0",
     "uk.gov.hmrc"       %% "time"                      % "3.19.0",
@@ -33,6 +35,7 @@ object AppDependencies {
   )
 
   val test = Seq(
+    cacheApi,
     "uk.gov.hmrc"            %% "bootstrap-test-play-28"   % "6.4.0"         % Test,
     "uk.gov.hmrc.mongo"      %% "hmrc-mongo-test-play-28"  % "0.74.0"        % Test,
     "com.typesafe.play"      %% "play-test"                % current         % Test,

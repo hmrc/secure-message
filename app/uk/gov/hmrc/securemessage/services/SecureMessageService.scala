@@ -18,7 +18,7 @@ package uk.gov.hmrc.securemessage.services
 
 import org.mongodb.scala.bson.ObjectId
 import play.api.i18n.Messages
-import play.api.mvc.{ Request, Result }
+import play.api.mvc.{ AnyContent, Request, Result }
 import uk.gov.hmrc.auth.core.Enrolments
 import uk.gov.hmrc.common.message.model.MessagesCount
 import uk.gov.hmrc.domain.TaxIds.TaxIdWithName
@@ -40,8 +40,10 @@ trait SecureMessageService {
     implicit hc: HeaderCarrier,
     ec: ExecutionContext): Future[Either[SecureMessageError, Unit]]
 
-  def createSecureMessage(
-    secureMessage: SecureMessage)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Result]
+  def createSecureMessage(secureMessage: SecureMessage)(
+    implicit request: Request[AnyContent],
+    hc: HeaderCarrier,
+    ec: ExecutionContext): Future[Result]
 
   def getConversations(authEnrolments: Enrolments, filters: Filters)(
     implicit ec: ExecutionContext,

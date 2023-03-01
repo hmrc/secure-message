@@ -63,7 +63,7 @@ class MessagesResponseSpec extends PlaySpec {
           |      "messageType": "letter",
           |      "id": "bGV0dGVyLzYwOWE1YmQ1MDEwMDAwNmMxODAwMjcyZA==",
           |      "subject": "Test have subjects11",
-          |      "issueDate": "2021-04-26T00:00:00.000+0000",
+          |      "issueDate": "2021-04-26T01:00:00.000+0100",
           |      "senderName": "HMRC",
           |      "unreadMessages": false,
           |      "count": 1

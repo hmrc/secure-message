@@ -32,7 +32,7 @@ import play.api.http.Status._
 import play.api.i18n.Messages
 import play.api.libs.json.{ JsObject, JsValue, Json, OFormat }
 import play.api.mvc.Results.Created
-import play.api.mvc.{ AnyContentAsEmpty, Request, Result }
+import play.api.mvc.{ AnyContent, AnyContentAsEmpty, Request, Result }
 import play.api.test.Helpers.{ POST, PUT, contentAsJson, contentAsString, defaultAwaitTimeout, status, stubMessages }
 import play.api.test.{ FakeHeaders, FakeRequest, Helpers }
 import uk.gov.hmrc.auth.core._
@@ -641,7 +641,9 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
 
   class CreateSecureMessageTestCase(requestBody: JsValue) extends TestCase {
     val fakeRequest = FakeRequest(POST, routes.SecureMessageController.createMessage().url).withJsonBody(requestBody)
-    when(mockSecureMessageService.createSecureMessage(any[SecureMessage])(any[HeaderCarrier], any[ExecutionContext]))
+    when(
+      mockSecureMessageService
+        .createSecureMessage(any[SecureMessage])(any[Request[AnyContent]], any[HeaderCarrier], any[ExecutionContext]))
       .thenReturn(Future.successful(Created("")))
   }
 }

@@ -267,8 +267,10 @@ class SecureMessageController @Inject()(
           logger.warn(s"Could not validate or parse the request: $error")
           Future.successful(BadRequest(Json.obj("error" -> error)))
         case _ =>
-          logger.warn("Message for v4 has processed successfully")
+          logger.warn(s"Request received for V4 ${json.toString} ")
           secureMessageService.createSecureMessage(json.as[SecureMessage]).recover {
+            case e: MessageValidationException =>
+              InternalServerError(Json.obj("reason" -> s"${e.getMessage}"))
             case e: Throwable =>
               InternalServerError(Json.obj("reason" -> s"Unable to create the message: ${e.getMessage}"))
           }

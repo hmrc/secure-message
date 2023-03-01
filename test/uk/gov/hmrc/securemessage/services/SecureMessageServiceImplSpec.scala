@@ -37,6 +37,7 @@ import uk.gov.hmrc.common.message.emailaddress.EmailAddress
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.securemessage.connectors.{ ChannelPreferencesConnector, EISConnector, EmailConnector }
+import uk.gov.hmrc.securemessage.controllers.SecureMessageUtil
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.ConversationMetadata
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
@@ -500,6 +501,7 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
     val mockAuditConnector: AuditConnector = mock[AuditConnector]
     val mockConversationRepository: ConversationRepository = mock[ConversationRepository]
     val mockMessageRepository: MessageRepository = mock[MessageRepository]
+    val mockSecureMessageUtil: SecureMessageUtil = mock[SecureMessageUtil]
     val mockSecureMessageRepository: SecureMessageRepository = mock[SecureMessageRepository]
     val mockEmailConnector: EmailConnector = mock[EmailConnector]
     when(mockEmailConnector.send(any[EmailRequest])(any[HeaderCarrier])).thenReturn(Future.successful(Right(())))
@@ -520,7 +522,7 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
       new SecureMessageServiceImpl(
         mockConversationRepository,
         mockMessageRepository,
-        mockSecureMessageRepository,
+        mockSecureMessageUtil,
         mockEmailConnector,
         mockChannelPreferencesConnector,
         mockEisConnector,
@@ -616,6 +618,7 @@ trait TestHelpers extends MockitoSugar with UnitTest {
   val mockAuditConnector: AuditConnector = mock[AuditConnector]
   val mockConversationRepository: ConversationRepository = mock[ConversationRepository]
   val mockMessageRepository: MessageRepository = mock[MessageRepository]
+  val mockSecureMessageUtil: SecureMessageUtil = mock[SecureMessageUtil]
   val mockSecureMessageRepository: SecureMessageRepository = mock[SecureMessageRepository]
   val mockEmailConnector: EmailConnector = mock[EmailConnector]
   when(mockEmailConnector.send(any[EmailRequest])(any[HeaderCarrier])).thenReturn(Future.successful(Right(())))
@@ -628,7 +631,7 @@ trait TestHelpers extends MockitoSugar with UnitTest {
     new SecureMessageServiceImpl(
       mockConversationRepository,
       mockMessageRepository,
-      mockSecureMessageRepository,
+      mockSecureMessageUtil,
       mockEmailConnector,
       mockChannelPreferencesConnector,
       mockEisConnector,

@@ -18,10 +18,18 @@ package uk.gov.hmrc.securemessage.models.v4
 
 import org.joda.time.LocalDate
 import org.mongodb.scala.bson.ObjectId
-import play.api.libs.json.{ Format, Json, OFormat }
+import play.api.libs.json.{ Format, JsObject, JsString, Json, OFormat, OWrites, Reads }
 import uk.gov.hmrc.mongo.play.json.formats.{ MongoFormats, MongoJodaFormats }
+import uk.gov.hmrc.mongo.workitem.ProcessingStatus
 
 object SecureMessageMongoFormat {
+  implicit val reads: Reads[ProcessingStatus] = ProcessingStatus.reads
+  implicit val writes: OWrites[ProcessingStatus] = new OWrites[ProcessingStatus] {
+    override def writes(o: ProcessingStatus): JsObject = new JsObject(Map("status" -> JsString(o.name)))
+  }
+
+  implicit val format: Format[ProcessingStatus] = OFormat[ProcessingStatus](reads, writes)
+
   implicit val localDateFormat: Format[LocalDate] = MongoJodaFormats.localDateFormat
   implicit val objectIdFormat: Format[ObjectId] = MongoFormats.objectIdFormat
   implicit val mongoMessageFormat: OFormat[SecureMessage] = Json.format[SecureMessage]

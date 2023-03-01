@@ -16,9 +16,13 @@
 
 package uk.gov.hmrc.securemessage
 
-import com.google.inject.AbstractModule
+import com.google.inject.{ AbstractModule, Provides }
+import com.google.inject.name.Named
+import play.api.Configuration
 import uk.gov.hmrc.securemessage.services.{ SecureMessageService, SecureMessageServiceImpl }
 import uk.gov.hmrc.time.DateTimeUtils
+
+import javax.inject.Singleton
 
 class SecureMessageModule extends AbstractModule {
 
@@ -27,6 +31,14 @@ class SecureMessageModule extends AbstractModule {
     bind(classOf[SecureMessageService]).to(classOf[SecureMessageServiceImpl]).asEagerSingleton()
     super.configure()
   }
+
+  @Provides
+  @Named("app-name")
+  @Singleton
+  def appNameProvider(configuration: Configuration): String =
+    configuration
+      .getOptional[String]("appName")
+      .getOrElse(throw new RuntimeException("App name not found in config"))
 }
 
 class TimeProvider extends DateTimeUtils

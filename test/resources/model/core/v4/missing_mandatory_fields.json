@@ -4,7 +4,7 @@
     "source": "mdtp"
   },
   "recipient": {
-    "regime": "SDIL",
+    "regime": "sdil",
     "taxIdentifier": {
       "name": "HMRC-OBTDS-ORG",
       "value": "XZSD00000100024"

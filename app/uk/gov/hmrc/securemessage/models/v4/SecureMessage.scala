@@ -21,26 +21,30 @@ import org.joda.time.LocalDate
 import org.mongodb.scala.bson.ObjectId
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
-import uk.gov.hmrc.common.message.model
-import uk.gov.hmrc.common.message.model.{AlertEmailTemplateMapper, ExternalRef, MessageDetails, Recipient}
+import uk.gov.hmrc.common.message.model._
+import uk.gov.hmrc.mongo.workitem.ProcessingStatus
+import uk.gov.hmrc.mongo.workitem.ProcessingStatus.ToDo
 import uk.gov.hmrc.securemessage.controllers.model.ApiFormats
 import uk.gov.hmrc.securemessage.models.core.Language
 
 import java.security.MessageDigest
 
-case class SecureMessage(_id: ObjectId = new ObjectId,
-                          externalRef: ExternalRef,
-                          recipient: model.Recipient,
-                          tags: Option[Map[String, String]] = None,
-                          messageType: String,
-                          validFrom: LocalDate,
-                          content: List[Content],
-                          alertDetails: Option[Map[String, String]] = None,
-                          alertQueue: Option[String],
-                          details: Option[MessageDetails],
-                          hash: String)
+case class SecureMessage(_id: ObjectId,
+                         externalRef: ExternalRef,
+                         recipient: Recipient,
+                         tags: Option[Map[String, String]] = None,
+                         messageType: String,
+                         validFrom: LocalDate,
+                         content: List[Content],
+                         alertDetails: AlertDetails,
+                         alertQueue: Option[String],
+                         details: Option[MessageDetails],
+                         hash: String,
+                         status: ProcessingStatus = ToDo,
+                         verificationBrake: Option[Boolean] = None)
 
 object SecureMessage extends ApiFormats with AlertEmailTemplateMapper {
+
   implicit val secureMessageReads: Reads[SecureMessage] =
     ((__ \ "externalRef").read[ExternalRef] and
       (__ \ "recipient").read[Recipient] and
@@ -60,7 +64,7 @@ object SecureMessage extends ApiFormats with AlertEmailTemplateMapper {
             .map(Some.apply)
             .orElse(JsError("tags : invalid data provided"))
           case JsUndefined() => JsSuccess(None)})) {
-      (externalRef, recipient, messageType, validFrom, content, alertQueue, messageDetails, alertDetails, tags) =>
+      (externalRef, recipient, messageType, validFrom, content, alertQueue, messageDetails, alertDetailsData, tags) =>
 
         val hash: String = {
           val sha256Digester = MessageDigest.getInstance("SHA-256")
@@ -68,6 +72,7 @@ object SecureMessage extends ApiFormats with AlertEmailTemplateMapper {
             sha256Digester.digest(
               Seq(
                 content,
+                externalRef.id,
                 messageDetails.map(_.formId).getOrElse(""),
                 recipient.taxIdentifier.name,
                 recipient.taxIdentifier.value,
@@ -77,19 +82,33 @@ object SecureMessage extends ApiFormats with AlertEmailTemplateMapper {
           )
         }
 
+        val email = recipient.email.fold[Map[String, String]](Map.empty)(v => Map("email" -> v))
+        val responseTime: Map[String, String] =
+          messageDetails.flatMap(_.waitTime).fold[Map[String, String]](Map.empty)(v => Map("waitTime" -> v))
+
+        val data = email ++ responseTime ++ Map("date" -> validFrom.toString) ++ alertDetailsData.getOrElse(Map())
+
+        val templateId = messageDetails
+          .map(_.formId)
+          .map(emailTemplateFromMessageFormId(_))
+          .getOrElse(messageType)
+
+        val recipientName = recipient.name.map(_.withDefaultLine1)
+
         SecureMessage(
-          _id = new ObjectId(),
+          new ObjectId(),
           externalRef,
           recipient,
           tags,
           messageType,
           validFrom.getOrElse(LocalDate.now),
           content,
-          alertDetails,
+          AlertDetails(templateId, recipientName, data),
           alertQueue,
           messageDetails,
           hash)
     }
+
 }
 
 case class Content(lang: Language, subject: String, body: String)
