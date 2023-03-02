@@ -30,7 +30,6 @@ import scala.concurrent.ExecutionContext
 
 @Singleton
 class ExtraAlertRepository @Inject()(
-  val timeSource: TimeSource,
   val environment: Environment,
   val configuration: Configuration,
   mongo: MongoComponent

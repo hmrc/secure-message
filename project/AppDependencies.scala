@@ -21,8 +21,9 @@ import sbt._
 object AppDependencies {
 
   val compile = Seq(
-    cacheApi,
+    ehcache,
     "uk.gov.hmrc"       %% "bootstrap-backend-play-28" % "6.4.0",
+    "uk.gov.hmrc"       %% "dc-message-library"        % "0.23.0-play-28",
     "uk.gov.hmrc.mongo" %% "hmrc-mongo-play-28"        % "0.74.0",
     "uk.gov.hmrc"       %% "time"                      % "3.19.0",
     "org.webjars"       % "swagger-ui"                 % "3.50.0",
@@ -30,12 +31,10 @@ object AppDependencies {
     "com.typesafe.play" %% "play-json-joda"            % "2.9.4",
     "org.typelevel"     %% "cats-core"                 % "2.9.0",
     "com.networknt"     % "json-schema-validator"      % "1.0.77" exclude ("com.fasterxml.jackson.core", "jackson-databind"),
-    "org.jsoup"         % "jsoup"                      % "1.15.4",
-    "uk.gov.hmrc"       %% "dc-message-library"        % "0.23.0-play-28"
+    "org.jsoup"         % "jsoup"                      % "1.15.4"
   )
 
   val test = Seq(
-    cacheApi,
     "uk.gov.hmrc"            %% "bootstrap-test-play-28"   % "6.4.0"         % Test,
     "uk.gov.hmrc.mongo"      %% "hmrc-mongo-test-play-28"  % "0.74.0"        % Test,
     "com.typesafe.play"      %% "play-test"                % current         % Test,
