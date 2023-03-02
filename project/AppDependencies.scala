@@ -31,7 +31,8 @@ object AppDependencies {
     "com.typesafe.play" %% "play-json-joda"            % "2.9.4",
     "org.typelevel"     %% "cats-core"                 % "2.9.0",
     "com.networknt"     % "json-schema-validator"      % "1.0.77" exclude ("com.fasterxml.jackson.core", "jackson-databind"),
-    "org.jsoup"         % "jsoup"                      % "1.15.4"
+    "org.jsoup"         % "jsoup"                      % "1.15.4",
+    "net.codingwell"    %% "scala-guice"               % "5.1.0"
   )
 
   val test = Seq(

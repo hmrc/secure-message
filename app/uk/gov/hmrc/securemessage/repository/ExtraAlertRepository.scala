@@ -17,16 +17,19 @@
 package uk.gov.hmrc.securemessage.repository
 
 import org.bson.types.ObjectId
+import org.joda.time.LocalDate
+import org.mongodb.scala.model.Filters
 import play.api.libs.json.{ Json, OFormat }
 import play.api.{ Configuration, Environment }
 import uk.gov.hmrc.common.message.model._
 import uk.gov.hmrc.mongo.MongoComponent
-import uk.gov.hmrc.mongo.workitem.{ WorkItemFields, WorkItemRepository }
+import uk.gov.hmrc.mongo.workitem.{ ProcessingStatus, WorkItem, WorkItemFields, WorkItemRepository }
 
 import java.time
 import java.time.Instant
 import javax.inject.{ Inject, Singleton }
-import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.{ ExecutionContext, Future }
 
 @Singleton
 class ExtraAlertRepository @Inject()(
@@ -48,6 +51,55 @@ class ExtraAlertRepository @Inject()(
         item = "item"
       )
     ) {
+  def pullMessageToAlert(): Future[Option[Alertable]] =
+    pullOutstanding(failedBefore = now.minusMillis(retryIntervalMillis.toLong), availableBefore = now)
+      .map(_.flatMap {
+        case WorkItem(workItemId, _, _, _, _, _, alert) =>
+          Option(new Alertable {
+            def alertParams: Map[String, String] = alert.alertDetails.data
+
+            def auditData: Map[String, String] = Map(
+              "alertId"                              -> id.toString,
+              alert.messageRecipient.identifier.name -> alert.messageRecipient.identifier.value,
+              "messageId"                            -> alert.reference
+            )
+
+            def statutory: Boolean = false
+
+            def alertTemplateName: String = alert.emailTemplateId
+
+            def taxPayerName: Option[TaxpayerName] = alert.alertDetails.recipientName
+
+            def id = new ObjectId(workItemId.toString)
+
+            def externalRef: Option[ExternalRef] = alert.externalRef
+
+            def recipient = alert.messageRecipient
+
+            def hardCopyAuditData: Map[String, String] =
+              throw new UnsupportedOperationException("No hard copy requests for extra alerts")
+
+            def validFrom: LocalDate =
+              throw new UnsupportedOperationException("validFrom not supported in extra alerts")
+
+            def alertQueue: Option[String] = None
+
+            def source: Option[String] = None
+          })
+      })
+
+  lazy val retryIntervalMillis = {
+    configuration
+      .getOptional[FiniteDuration](s"messages.retryFailedAfter")
+      .getOrElse(throw new RuntimeException(s"messages.retryFailedAfter not specified"))
+  }.toMillis.toInt
+
+  def alertCompleted(id: ObjectId, status: ProcessingStatus): Future[Boolean] =
+    markAs(id, status)
+
+  def removeAlerts(ref: String)(implicit ec: ExecutionContext): Future[Unit] =
+    collection.deleteMany(Filters.equal("item.reference", ref)).toFuture().map(_ => ())
+
   def now: Instant = Instant.now()
   override def inProgressRetryAfter: time.Duration = time.Duration.ofHours(1)
 }
