@@ -29,14 +29,14 @@ import play.api.libs.json.{ JsArray, JsObject, JsValue, Json }
 import play.api.mvc.Results.Created
 import play.api.mvc.{ AnyContent, Request, Result }
 import uk.gov.hmrc.common.message.emailaddress.EmailAddress
-import uk.gov.hmrc.common.message.model.{ AlertDetails, AlertQueueTypes, TaxEntity }
+import uk.gov.hmrc.common.message.model.{ AlertDetails, AlertQueueTypes }
 import uk.gov.hmrc.domain.SaUtr
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.Deferred
 import uk.gov.hmrc.mongo.workitem.WorkItem
 import uk.gov.hmrc.play.audit.http.connector.{ AuditConnector, AuditResult }
 import uk.gov.hmrc.play.audit.model.{ DataEvent, EventTypes }
-import uk.gov.hmrc.securemessage.connectors.{ EntityResolverConnector, TaxpayerNameConnector }
+import uk.gov.hmrc.securemessage.connectors.{ EmailValidation, EntityResolverConnector, TaxpayerNameConnector }
 import uk.gov.hmrc.securemessage.models.v4.{ Content, ExtraAlertConfig, SecureMessage }
 import uk.gov.hmrc.securemessage.repository.{ ExtraAlert, ExtraAlertRepository, SecureMessageRepository, StatsMetricRepository }
 import uk.gov.hmrc.securemessage.services.MessageBrakeService
@@ -87,7 +87,7 @@ class SecureMessageUtil @Inject()(
   extraAlertRepository: ExtraAlertRepository,
   statsMetricRepository: StatsMetricRepository,
   messageBrakeService: MessageBrakeService,
-  audit: AuditConnector,
+  auditConnector: AuditConnector,
   configuration: Configuration)(implicit ec: ExecutionContext)
     extends Logging {
   import SecureMessageUtil._
@@ -171,7 +171,7 @@ class SecureMessageUtil @Inject()(
   }
 
   def checkEmailAbsentIfInvalidTaxId(message: SecureMessage): Try[SecureMessage] = message.recipient.email match {
-    case None if !isValidTaxIdentifier(message.recipient.taxIdentifier.name) =>
+    case None if !isValidTaxIdentifier(message.recipient.identifier.name) =>
       Failure(MessageValidationException("email: email address not provided"))
     case _ => Success(message)
   }
@@ -201,6 +201,7 @@ class SecureMessageUtil @Inject()(
 
   def checkPreferencesAndCreateMessage(
     message: SecureMessage)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Result] = {
+
     val TAXPAYER_NOTFOUND = errorResponseResult(
       "The backend has rejected the message due to not being able to verify the email address.",
       NOT_FOUND)
@@ -212,7 +213,10 @@ class SecureMessageUtil @Inject()(
             Future.successful(errorResponseResult(failure.getMessage, BAD_REQUEST))
 
           case Left(_) => Future.successful(TAXPAYER_NOTFOUND)
-          case _       => cleanUpAndCreateMessage(message)
+          case Right(EmailValidation(email)) =>
+            val updatedAlertDetails: AlertDetails =
+              message.alertDetails.copy(data = message.alertDetails.data ++ Map("email" -> email))
+            cleanUpAndCreateMessage(message.copy(emailAddress = email, alertDetails = updatedAlertDetails))
         }
       }
       .recover {
@@ -333,7 +337,7 @@ class SecureMessageUtil @Inject()(
         auditCreateMessageFor(EventTypes.Succeeded, messageWithTaxpayerName, "Message Created")
         statsMetricRepository
           .incrementCreated(
-            messageWithTaxpayerName.recipient.taxIdentifier.name,
+            messageWithTaxpayerName.recipient.identifier.name,
             messageWithTaxpayerName.details.map(_.formId).getOrElse("NoForm"))
 
         addExtraAlerts(messageWithTaxpayerName)
@@ -364,17 +368,17 @@ class SecureMessageUtil @Inject()(
       "topic"       -> m.details.flatMap(_.topic)
     )
 
-    audit
+    auditConnector
       .sendEvent(
         DataEvent(
           auditSource = appName,
           auditType = auditType,
           tags = Map("transactionName" -> transactionName),
           detail = Map(
-            "messageId"                    -> m._id.toString,
-            "formId"                       -> m.details.map(_.formId).getOrElse(""),
-            "messageType"                  -> m.messageType,
-            m.recipient.taxIdentifier.name -> m.recipient.taxIdentifier.value,
+            "messageId"                 -> m._id.toString,
+            "formId"                    -> m.details.map(_.formId).getOrElse(""),
+            "messageType"               -> m.messageType,
+            m.recipient.identifier.name -> m.recipient.identifier.value,
             "originalRequest" -> {
               val requestStr = Json.stringify(request.body.asJson.getOrElse(JsArray(Array.empty[JsValue])))
               if (requestStr.length > auditEventMaxSize) {
@@ -423,7 +427,7 @@ class SecureMessageUtil @Inject()(
     implicit hc: HeaderCarrier,
     request: Request[JsValue]
   ): Future[Unit] =
-    audit
+    auditConnector
       .sendEvent(
         DataEvent(
           auditSource = appName,
@@ -458,27 +462,27 @@ class SecureMessageUtil @Inject()(
       case Some(_) => Future.successful(message)
       case None =>
         taxpayerNameConnector
-          .taxpayerName(SaUtr(message.recipient.taxIdentifier.value))
+          .taxpayerName(SaUtr(message.recipient.identifier.value))
           .flatMap(name =>
             Future.successful(message.copy(alertDetails = message.alertDetails.copy(recipientName = name))))
     }
 
   // DC-1722
   def ignoreAlertQueueIfGmcAndSa(message: SecureMessage): Future[SecureMessage] = message match {
-    case m if isGmc(m) && m.recipient.taxIdentifier.name.toLowerCase == "sautr" =>
+    case m if isGmc(m) && m.recipient.identifier.name.toLowerCase == "sautr" =>
       Future.successful(m.copy(alertQueue = None))
     case _ => Future.successful(message)
   }
 
   private def addExtraAlerts(message: SecureMessage): Future[Seq[WorkItem[ExtraAlert]]] = {
-    val recipient = message.recipient
+    val recipient = message.alertDetails.recipientName
     val templateId = message.alertDetails.templateId
     val iterator = Iterator.from(1)
     Future.sequence(
       extraAlerts.filter(_.mainTemplate == templateId).map { extraAlert =>
-        val alertDetails = AlertDetails(extraAlert.extraTemplate, recipient.name, Map[String, String]())
+        val alertDetails = AlertDetails(extraAlert.extraTemplate, recipient, Map[String, String]())
         val item = ExtraAlert.build(
-          TaxEntity.create(recipient.taxIdentifier, recipient.email, recipient.regime),
+          message.recipient,
           message._id.toString,
           extraAlert.extraTemplate,
           alertDetails,

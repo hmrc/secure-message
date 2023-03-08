@@ -19,8 +19,10 @@ package uk.gov.hmrc.securemessage.repository
 import org.mongodb.scala.model.Filters
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
+import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.test.Helpers.{ await, defaultAwaitTimeout }
+import uk.gov.hmrc.common.message.model.TimeSource
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.v4.SecureMessage
@@ -28,9 +30,10 @@ import uk.gov.hmrc.securemessage.models.v4.SecureMessage
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class SecureMessageRepositorySpec
-    extends PlaySpec with DefaultPlayMongoRepositorySupport[SecureMessage] with BeforeAndAfterEach with ScalaFutures {
+    extends PlaySpec with MockitoSugar with DefaultPlayMongoRepositorySupport[SecureMessage] with BeforeAndAfterEach
+    with ScalaFutures {
 
-  override lazy val repository = new SecureMessageRepository(mongoComponent)
+  override lazy val repository = new SecureMessageRepository(mongoComponent, mock[TimeSource], 30, 30, 30)
 
   override def afterEach(): Unit =
     await(repository.collection.deleteMany(Filters.empty()).toFuture().map(_ => ()))

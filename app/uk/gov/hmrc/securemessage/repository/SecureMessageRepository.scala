@@ -16,18 +16,33 @@
 
 package uk.gov.hmrc.securemessage.repository
 
+import com.mongodb.ReadPreference
 import com.mongodb.client.model.Indexes.ascending
+import com.mongodb.client.model.ReturnDocument
+import org.bson.conversions.Bson
+import org.bson.types.ObjectId
+import org.joda.time.DateTime
 import org.mongodb.scala.MongoException
 import org.mongodb.scala.model._
+import uk.gov.hmrc.common.message.model.{ EmailAlert, TimeSource }
 import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.mongo.workitem.ProcessingStatus
+import uk.gov.hmrc.mongo.workitem.ProcessingStatus.{ Failed, InProgress, ToDo }
 import uk.gov.hmrc.securemessage.models.core.Identifier
 import uk.gov.hmrc.securemessage.models.v4.{ SecureMessage, SecureMessageMongoFormat }
 
-import javax.inject.{ Inject, Singleton }
+import java.util.concurrent.TimeUnit
+import javax.inject.{ Inject, Named, Singleton }
+import scala.concurrent.duration.Duration
 import scala.concurrent.{ ExecutionContext, Future }
 
 @Singleton
-class SecureMessageRepository @Inject()(mongo: MongoComponent)(implicit ec: ExecutionContext)
+class SecureMessageRepository @Inject()(
+  mongo: MongoComponent,
+  val timeSource: TimeSource,
+  @Named("retryFailedAfter") retryIntervalMillis: Int,
+  @Named("retryInProgressAfter") retryInProgressAfter: Int,
+  @Named("queryMaxTimeMs") queryMaxTimeMs: Int)(implicit ec: ExecutionContext)
     extends AbstractMessageRepository[SecureMessage](
       "secure-message",
       mongo,
@@ -49,6 +64,68 @@ class SecureMessageRepository @Inject()(mongo: MongoComponent)(implicit ec: Exec
         logger.warn(s"Ignoring duplicate message found on insertion to MessageV4 collection: $message.")
         Future.successful(false)
     }
+
+  def pullMessageToAlert(): Future[Option[SecureMessage]] = {
+
+    val failedBefore: DateTime = timeSource.now().minusMillis(retryIntervalMillis)
+    val startedProcessingBefore: DateTime = DateTime.now().minusMillis(retryInProgressAfter)
+
+    def pull(query: Bson): Future[Option[SecureMessage]] =
+      collection
+        .findOneAndUpdate(
+          query,
+          setStatusOperation(ProcessingStatus.InProgress),
+          FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER)
+        )
+        .toFutureOption()
+
+    val todoQuery = Filters.and(
+      Filters.equal("status", ToDo.name),
+      Filters.lte("alertFrom", timeSource.today)
+    )
+
+    val failedBeforeQuery = Filters.or(
+      Filters.and(Filters.equal("status", InProgress.name), Filters.lt("lastUpdated", startedProcessingBefore)),
+      Filters.and(Filters.equal("status", Failed.name), Filters.lt("lastUpdated", failedBefore))
+    )
+    pull(todoQuery).flatMap {
+      case None        => pull(failedBeforeQuery)
+      case messageToDo => Future.successful(messageToDo)
+    }
+  }
+
+  private def setStatusOperation(newStatus: ProcessingStatus): Bson =
+    Updates.combine(
+      Updates.set("status", newStatus.name),
+      Updates.set("lastUpdated", timeSource.now)
+    )
+
+  def alertCompleted(id: ObjectId, status: ProcessingStatus, alert: EmailAlert): Future[Boolean] =
+    collection
+      .updateOne(
+        Filters.equal("_id", id),
+        Updates.combine(
+          Updates.set("status", status.name),
+          Updates.set("alerts", alert)
+        )
+      )
+      .toFuture()
+      .map(_.getModifiedCount == 1)
+
+  def findById(id: ObjectId): Future[Option[SecureMessage]] = {
+
+    val query = Filters.and(Filters.equal("_id", id), readyForViewingQuery)
+
+    collection
+      .withReadPreference(ReadPreference.secondaryPreferred)
+      .find(query)
+      .maxTime(Duration(queryMaxTimeMs.toLong, TimeUnit.MILLISECONDS))
+      .headOption()
+
+  }
+
+  def readyForViewingQuery: Bson =
+    Filters.and(Filters.lte("validFrom", timeSource.today), Filters.nor(Filters.equal("verificationBrake", true)))
 
   protected def findByIdentifierQuery(identifier: Identifier): Seq[(String, String)] = Seq()
 }

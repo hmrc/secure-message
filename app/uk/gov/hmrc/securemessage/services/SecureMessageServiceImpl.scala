@@ -40,7 +40,7 @@ import uk.gov.hmrc.securemessage.models.core.ParticipantType.Customer.eqCustomer
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.{ Customer => PCustomer }
 import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, _ }
 import uk.gov.hmrc.securemessage.models.v4.SecureMessage
-import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository }
+import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository, SecureMessageRepository }
 import uk.gov.hmrc.securemessage.services.utils.ContentValidator
 
 import java.util.UUID
@@ -52,6 +52,7 @@ import scala.concurrent.{ ExecutionContext, Future }
 class SecureMessageServiceImpl @Inject()(
   conversationRepository: ConversationRepository,
   messageRepository: MessageRepository,
+  secureMessageRepository: SecureMessageRepository,
   secureMessageUtil: SecureMessageUtil,
   emailConnector: EmailConnector,
   channelPrefConnector: ChannelPreferencesConnector,
@@ -75,6 +76,9 @@ class SecureMessageServiceImpl @Inject()(
     hc: HeaderCarrier,
     ec: ExecutionContext): Future[Result] =
     secureMessageUtil.validateAndCreateMessage(secureMessage)
+
+  def findSecureMessageById(id: ObjectId): Future[Option[SecureMessage]] =
+    secureMessageRepository.findById(id)
 
   def getConversations(authEnrolments: Enrolments, filters: Filters)(
     implicit ec: ExecutionContext,

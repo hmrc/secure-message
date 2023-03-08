@@ -501,8 +501,8 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
     val mockAuditConnector: AuditConnector = mock[AuditConnector]
     val mockConversationRepository: ConversationRepository = mock[ConversationRepository]
     val mockMessageRepository: MessageRepository = mock[MessageRepository]
-    val mockSecureMessageUtil: SecureMessageUtil = mock[SecureMessageUtil]
     val mockSecureMessageRepository: SecureMessageRepository = mock[SecureMessageRepository]
+    val mockSecureMessageUtil: SecureMessageUtil = mock[SecureMessageUtil]
     val mockEmailConnector: EmailConnector = mock[EmailConnector]
     when(mockEmailConnector.send(any[EmailRequest])(any[HeaderCarrier])).thenReturn(Future.successful(Right(())))
     val mockChannelPreferencesConnector: ChannelPreferencesConnector = mock[ChannelPreferencesConnector]
@@ -522,6 +522,7 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
       new SecureMessageServiceImpl(
         mockConversationRepository,
         mockMessageRepository,
+        mockSecureMessageRepository,
         mockSecureMessageUtil,
         mockEmailConnector,
         mockChannelPreferencesConnector,
@@ -631,6 +632,7 @@ trait TestHelpers extends MockitoSugar with UnitTest {
     new SecureMessageServiceImpl(
       mockConversationRepository,
       mockMessageRepository,
+      mockSecureMessageRepository,
       mockSecureMessageUtil,
       mockEmailConnector,
       mockChannelPreferencesConnector,

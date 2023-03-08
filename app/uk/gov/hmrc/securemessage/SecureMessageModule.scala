@@ -18,11 +18,14 @@ package uk.gov.hmrc.securemessage
 
 import com.google.inject.{ AbstractModule, Provides }
 import com.google.inject.name.Named
+import org.joda.time.{ DateTime, DateTimeZone }
 import play.api.Configuration
+import uk.gov.hmrc.common.message.model.TimeSource
 import uk.gov.hmrc.securemessage.services.{ SecureMessageService, SecureMessageServiceImpl }
 import uk.gov.hmrc.time.DateTimeUtils
 
 import javax.inject.Singleton
+import scala.concurrent.duration.FiniteDuration
 
 class SecureMessageModule extends AbstractModule {
 
@@ -30,6 +33,11 @@ class SecureMessageModule extends AbstractModule {
     bind(classOf[DateTimeUtils]).to(classOf[TimeProvider])
     bind(classOf[SecureMessageService]).to(classOf[SecureMessageServiceImpl]).asEagerSingleton()
     super.configure()
+  }
+  @Singleton
+  @Provides
+  def systemTimeSourceProvider(): TimeSource = new TimeSource() {
+    override def now(): DateTime = DateTime.now.withZone(DateTimeZone.UTC)
   }
 
   @Provides
@@ -39,6 +47,33 @@ class SecureMessageModule extends AbstractModule {
     configuration
       .getOptional[String]("appName")
       .getOrElse(throw new RuntimeException("App name not found in config"))
+
+  @Provides
+  @Named("retryFailedAfter")
+  @Singleton
+  def mongoRetryFailedAfter(configuration: Configuration): Int = {
+    configuration
+      .getOptional[FiniteDuration]("mongodb.retryFailedAfter")
+      .getOrElse(throw new RuntimeException("mongodb.retryFailedAfter not found in config"))
+  }.toMillis.toInt
+
+  @Provides
+  @Named("retryInProgressAfter")
+  @Singleton
+  def mongoRetryInProgressAfter(configuration: Configuration): Int = {
+    configuration
+      .getOptional[FiniteDuration]("mongodb.retryInProgressAfter")
+      .getOrElse(throw new RuntimeException("mongodb.retryInProgressAfter not found in config"))
+  }.toMillis.toInt
+  @Provides
+  @Named("queryMaxTimeMs")
+  @Singleton
+  def queryMaxTimeMs(configuration: Configuration): Int = {
+    configuration
+      .getOptional[FiniteDuration]("mongodb.queryMaxTimeMs")
+      .getOrElse(throw new RuntimeException("mongodb.queryMaxTimeMs not found in config"))
+  }.toMillis.toInt
+
 }
 
 class TimeProvider extends DateTimeUtils

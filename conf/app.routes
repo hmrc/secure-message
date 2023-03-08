@@ -123,3 +123,4 @@ GET        /messages/:encodedId   uk.gov.hmrc.securemessage.controllers.SecureMe
 ###
 POST        /v4/message    uk.gov.hmrc.securemessage.controllers.SecureMessageController.createMessage()
 
+GET         /message/system/:id/send-alert      uk.gov.hmrc.securemessage.controllers.SecureMessageController.sendAlert(id: String)

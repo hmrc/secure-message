@@ -29,6 +29,7 @@ object AppDependencies {
     "org.webjars"       % "swagger-ui"                 % "3.50.0",
     "com.beachape"      %% "enumeratum-play"           % "1.5.17",
     "com.typesafe.play" %% "play-json-joda"            % "2.9.4",
+    "com.typesafe.play"     %% "play-iteratees"        % "2.6.1",
     "org.typelevel"     %% "cats-core"                 % "2.9.0",
     "com.networknt"     % "json-schema-validator"      % "1.0.77" exclude ("com.fasterxml.jackson.core", "jackson-databind"),
     "org.jsoup"         % "jsoup"                      % "1.15.4",
@@ -44,6 +45,7 @@ object AppDependencies {
     "org.mockito"            % "mockito-core"              % "5.1.1"         % "test, it",
     "com.vladsch.flexmark"   % "flexmark-all"              % "0.36.8"        % "test, it",
     "uk.gov.hmrc"            %% "service-integration-test" % "1.1.0-play-28" % "test, it",
-    "org.pegdown"            % "pegdown"                   % "1.6.0"         % "test, it"
+    "org.pegdown"            % "pegdown"                   % "1.6.0"         % "test, it",
+    "uk.gov.hmrc"           %% "dc-message-library"        % "0.23.0-play-28" % "test, it"
   )
 }

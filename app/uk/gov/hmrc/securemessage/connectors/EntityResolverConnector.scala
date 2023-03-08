@@ -20,7 +20,7 @@ import play.api.{ Configuration, Logging }
 import play.api.libs.json.Json
 import play.mvc.Http.Status
 import uk.gov.hmrc.http.HttpClient
-import uk.gov.hmrc.common.message.model.Recipient
+import uk.gov.hmrc.common.message.model.TaxEntity
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import javax.inject.{ Inject, Singleton }
@@ -67,9 +67,9 @@ class EntityResolverConnector @Inject()(config: Configuration, httpClient: HttpC
 
   def url(path: String): String = s"${baseUrl("entity-resolver")}$path"
 
-  def verifiedEmailAddress(recipient: Recipient): Future[VerifiedEmailAddressResponse] =
+  def verifiedEmailAddress(recipient: TaxEntity): Future[VerifiedEmailAddressResponse] =
     httpClient
-      .doGet(url(s"/portal/preferences/${recipient.regime}/${recipient.taxIdentifier.value}/verified-email-address"))
+      .doGet(url(s"/portal/preferences/${recipient.regime}/${recipient.identifier.value}/verified-email-address"))
       .map { response =>
         response.status match {
           case Status.OK        => response.json.as[EmailValidation]

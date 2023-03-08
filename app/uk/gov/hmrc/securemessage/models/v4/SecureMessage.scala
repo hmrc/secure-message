@@ -17,7 +17,7 @@
 package uk.gov.hmrc.securemessage.models.v4
 
 import org.apache.commons.codec.binary.Base64
-import org.joda.time.LocalDate
+import org.joda.time.{DateTime, LocalDate}
 import org.mongodb.scala.bson.ObjectId
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
@@ -31,7 +31,7 @@ import java.security.MessageDigest
 
 case class SecureMessage(_id: ObjectId,
                          externalRef: ExternalRef,
-                         recipient: Recipient,
+                         recipient: TaxEntity,
                          tags: Option[Map[String, String]] = None,
                          messageType: String,
                          validFrom: LocalDate,
@@ -39,9 +39,19 @@ case class SecureMessage(_id: ObjectId,
                          alertDetails: AlertDetails,
                          alertQueue: Option[String],
                          details: Option[MessageDetails],
+                         emailAddress: String,
                          hash: String,
                          status: ProcessingStatus = ToDo,
-                         verificationBrake: Option[Boolean] = None)
+                         alerts: Option[EmailAlert] = None,
+                         readTime: Option[DateTime] = None,
+                         verificationBrake: Option[Boolean] = None) {
+
+  def templateId: String = alertDetails.templateId
+
+  def auditData: Map[String, String] = alertDetails.data ++
+    Map("messageId" -> _id.toString, recipient.identifier.name -> recipient.identifier.value)
+
+}
 
 object SecureMessage extends ApiFormats with AlertEmailTemplateMapper {
 
@@ -98,7 +108,7 @@ object SecureMessage extends ApiFormats with AlertEmailTemplateMapper {
         SecureMessage(
           new ObjectId(),
           externalRef,
-          recipient,
+          TaxEntity.create(recipient.taxIdentifier, recipient.email, recipient.regime),
           tags,
           messageType,
           validFrom.getOrElse(LocalDate.now),
@@ -106,6 +116,7 @@ object SecureMessage extends ApiFormats with AlertEmailTemplateMapper {
           AlertDetails(templateId, recipientName, data),
           alertQueue,
           messageDetails,
+          email.getOrElse("email",""),
           hash)
     }
 

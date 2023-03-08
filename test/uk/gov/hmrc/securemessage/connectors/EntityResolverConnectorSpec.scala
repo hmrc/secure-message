@@ -68,7 +68,7 @@ class EntityResolverConnectorSpec
           Future.successful(HttpResponse(200, "{\"email\" :  \"an@email.com\"}", Map.empty[String, Seq[String]])))
 
       connector
-        .verifiedEmailAddress(MessageFixtures.createRecipient(SaUtr("someUtr")))
+        .verifiedEmailAddress(MessageFixtures.createTaxEntity(SaUtr("someUtr")))
         .futureValue mustBe EmailValidation("an@email.com")
     }
 
@@ -77,7 +77,7 @@ class EntityResolverConnectorSpec
       when(mockHttp.doGet(any[String], any[Seq[(String, String)]])(any[ExecutionContext]))
         .thenReturn(Future.successful(
           HttpResponse(200, JsObject(Seq("email" -> JsString("an@email.com"))), Map.empty[String, Seq[String]])))
-      connector.verifiedEmailAddress(MessageFixtures.createRecipient(nino)).futureValue mustBe EmailValidation(
+      connector.verifiedEmailAddress(MessageFixtures.createTaxEntity(nino)).futureValue mustBe EmailValidation(
         "an@email.com"
       )
     }
@@ -88,7 +88,7 @@ class EntityResolverConnectorSpec
           HttpResponse(404, JsObject(Seq("reason" -> JsString("not found"))), Map.empty[String, Seq[String]])))
 
       connector
-        .verifiedEmailAddress(MessageFixtures.createRecipient(SaUtr("someUtr")))
+        .verifiedEmailAddress(MessageFixtures.createTaxEntity(SaUtr("someUtr")))
         .futureValue mustBe VerifiedEmailNotFound("not found")
     }
 
@@ -96,7 +96,7 @@ class EntityResolverConnectorSpec
       when(mockHttp.doGet(any[String], any[Seq[(String, String)]])(any[ExecutionContext]))
         .thenReturn(Future.successful(HttpResponse(504, "", Map.empty[String, Seq[String]])))
 
-      val e = connector.verifiedEmailAddress(MessageFixtures.createRecipient(SaUtr("someUtr"))).failed.futureValue
+      val e = connector.verifiedEmailAddress(MessageFixtures.createTaxEntity(SaUtr("someUtr"))).failed.futureValue
       e mustBe an[OtherException]
       e.getMessage mustBe "OTHER_EXCEPTION_504"
     }
@@ -105,7 +105,7 @@ class EntityResolverConnectorSpec
       when(mockHttp.doGet(any[String], any[Seq[(String, String)]])(any[ExecutionContext]))
         .thenReturn(Future.successful(HttpResponse(403, "", Map.empty[String, Seq[String]])))
 
-      val e = connector.verifiedEmailAddress(MessageFixtures.createRecipient(SaUtr("someUtr"))).failed.futureValue
+      val e = connector.verifiedEmailAddress(MessageFixtures.createTaxEntity(SaUtr("someUtr"))).failed.futureValue
       e mustBe an[OtherException]
       e.getMessage mustBe "OTHER_EXCEPTION_403"
     }
