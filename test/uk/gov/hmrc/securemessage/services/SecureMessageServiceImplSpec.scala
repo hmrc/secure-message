@@ -45,7 +45,7 @@ import uk.gov.hmrc.securemessage.helpers.{ ConversationUtil, MessageUtil, Resour
 import uk.gov.hmrc.securemessage.models.core.Conversation._
 import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryMessageWrapper, Tags }
-import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository, SecureMessageRepository }
+import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository }
 import uk.gov.hmrc.securemessage.{ DuplicateConversationError, EmailLookupError, NoReceiverEmailError, SecureMessageError, _ }
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -493,7 +493,7 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
   "getMessagesCount" must {
     "return count" in new AddReadTimesTestContext {
       val result = service.getMessagesCount(enrolments, filters()).futureValue
-      result mustBe MessagesCount(2, 1)
+      result mustBe MessagesCount(3, 2)
     }
   }
   class AddReadTimesTestContext {
@@ -517,11 +517,10 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
       mockMessageRepository
         .getLettersCount(any[Set[Identifier]](), any[Option[List[FilterTag]]]())(any[ExecutionContext]))
       .thenReturn(Future.successful(Count(1, 0)))
-
     when(
       mockSecureMessageUtil
         .getSecureMessageCount(any[Set[Identifier]](), any[Option[List[FilterTag]]]())(any[ExecutionContext]))
-      .thenReturn(Future.successful(Count(1, 0)))
+      .thenReturn(Future.successful(Count(1, 1)))
 
     val service: SecureMessageServiceImpl =
       new SecureMessageServiceImpl(
@@ -625,7 +624,6 @@ trait TestHelpers extends MockitoSugar with UnitTest {
   val mockConversationRepository: ConversationRepository = mock[ConversationRepository]
   val mockMessageRepository: MessageRepository = mock[MessageRepository]
   val mockSecureMessageUtil: SecureMessageUtil = mock[SecureMessageUtil]
-  val mockSecureMessageRepository: SecureMessageRepository = mock[SecureMessageRepository]
   val mockEmailConnector: EmailConnector = mock[EmailConnector]
   when(mockEmailConnector.send(any[EmailRequest])(any[HeaderCarrier])).thenReturn(Future.successful(Right(())))
   val mockChannelPreferencesConnector: ChannelPreferencesConnector = mock[ChannelPreferencesConnector]
