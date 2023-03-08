@@ -59,8 +59,10 @@ trait SecureMessageService {
   def getMessagesCount(authEnrolments: Enrolments, filters: Filters)(
     implicit ec: ExecutionContext): Future[MessagesCount]
 
-  def getMessagesCount(
-    authTaxIds: Set[TaxIdWithName])(implicit hc: HeaderCarrier, messageFilter: MessageFilter): Future[MessagesCount]
+  def getMessagesCount(authTaxIds: Set[TaxIdWithName])(
+    implicit ec: ExecutionContext,
+    hc: HeaderCarrier,
+    messageFilter: MessageFilter): Future[MessagesCount]
 
   def getConversation(id: ObjectId, enrolments: Set[CustomerEnrolment])(
     implicit ec: ExecutionContext): Future[Either[SecureMessageError, ApiConversation]]

@@ -107,9 +107,15 @@ class SecureMessageServiceImpl @Inject()(
     messageFilter: MessageFilter): Future[List[Letter]] =
     messageRepository.findBy(authTaxIds)
 
-  def getMessagesCount(
-    authTaxIds: Set[TaxIdWithName])(implicit hc: HeaderCarrier, messageFilter: MessageFilter): Future[MessagesCount] =
-    messageRepository.countBy(authTaxIds)
+  def getMessagesCount(authTaxIds: Set[TaxIdWithName])(
+    implicit ec: ExecutionContext,
+    hc: HeaderCarrier,
+    messageFilter: MessageFilter): Future[MessagesCount] =
+    for {
+      v3MessagesCount <- messageRepository.countBy(authTaxIds)
+      v4MessagesCount <- secureMessageUtil.countBy(authTaxIds)
+    } yield
+      MessagesCount(v3MessagesCount.total + v4MessagesCount.total, v3MessagesCount.unread + v4MessagesCount.unread)
 
   def getMessagesCount(authEnrolments: Enrolments, filters: Filters)(
     implicit ec: ExecutionContext): Future[MessagesCount] = {
@@ -118,10 +124,11 @@ class SecureMessageServiceImpl @Inject()(
     for {
       conversationsCount <- conversationRepository.getConversationsCount(identifiers, filters.tags)
       lettersCount       <- messageRepository.getLettersCount(identifiers, filters.tags)
+      v4MessagesCount    <- secureMessageUtil.getSecureMessageCount(identifiers, filters.tags)
     } yield
       MessagesCount(
-        total = conversationsCount.total + lettersCount.total,
-        unread = conversationsCount.unread + lettersCount.unread
+        total = conversationsCount.total + lettersCount.total + v4MessagesCount.total,
+        unread = conversationsCount.unread + lettersCount.unread + v4MessagesCount.unread
       )
   }
 

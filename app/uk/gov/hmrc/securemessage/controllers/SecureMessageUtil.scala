@@ -41,6 +41,8 @@ import uk.gov.hmrc.securemessage.models.v4.{ Content, ExtraAlertConfig, SecureMe
 import uk.gov.hmrc.securemessage.repository.{ ExtraAlert, ExtraAlertRepository, SecureMessageRepository, StatsMetricRepository }
 import uk.gov.hmrc.securemessage.services.MessageBrakeService
 import uk.gov.hmrc.common.message.failuremodule.FailureResponseService.errorResponseResult
+import uk.gov.hmrc.domain.TaxIds.TaxIdWithName
+import uk.gov.hmrc.securemessage.models.core.{ Count, FilterTag, Identifier, MessageFilter }
 
 import javax.inject.{ Inject, Named }
 import scala.collection.JavaConverters._
@@ -511,6 +513,13 @@ class SecureMessageUtil @Inject()(
     } else {
       Future.successful(message)
     }
+
+  def countBy(authTaxIds: Set[TaxIdWithName])(
+    implicit messageFilter: MessageFilter
+  ): Future[MessagesCount] = secureMessageRepository.countBy(authTaxIds)
+
+  def getSecureMessageCount(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
+    implicit ec: ExecutionContext): Future[Count] = secureMessageRepository.getSecureMessageCount(identifiers, tags)
 }
 
 case class MessageValidationException(message: String) extends RuntimeException(message)

@@ -25,10 +25,13 @@ import org.joda.time.DateTime
 import org.mongodb.scala.MongoException
 import org.mongodb.scala.model._
 import uk.gov.hmrc.common.message.model.{ EmailAlert, TimeSource }
+import uk.gov.hmrc.common.message.model.MessagesCount
+import uk.gov.hmrc.domain.TaxIds.TaxIdWithName
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.{ Failed, InProgress, ToDo }
 import uk.gov.hmrc.securemessage.models.core.Identifier
+import uk.gov.hmrc.securemessage.models.core.{ Count, FilterTag, Identifier, MessageFilter }
 import uk.gov.hmrc.securemessage.models.v4.{ SecureMessage, SecureMessageMongoFormat }
 
 import java.util.concurrent.TimeUnit
@@ -54,14 +57,14 @@ class SecureMessageRepository @Inject()(
         )
       ),
       replaceIndexes = false
-    ) {
+    ) with MessageSelector {
 
   private final val DuplicateKey = 11000
 
   def save(message: SecureMessage): Future[Boolean] =
     collection.insertOne(message).toFuture().map(_.wasAcknowledged()).recoverWith {
       case e: MongoException if e.getCode == DuplicateKey =>
-        logger.warn(s"Ignoring duplicate message found on insertion to MessageV4 collection: $message.")
+        logger.warn(s"Ignoring duplicate message found on insertion to MessageV4 collection: ${message._id}.")
         Future.successful(false)
     }
 
@@ -124,8 +127,24 @@ class SecureMessageRepository @Inject()(
 
   }
 
-  def readyForViewingQuery: Bson =
-    Filters.and(Filters.lte("validFrom", timeSource.today), Filters.nor(Filters.equal("verificationBrake", true)))
-
   protected def findByIdentifierQuery(identifier: Identifier): Seq[(String, String)] = Seq()
+
+  def getSecureMessageCount(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
+    implicit ec: ExecutionContext): Future[Count] =
+    getMessagesCount(identifiers, tags)
+
+  def countBy(authTaxIds: Set[TaxIdWithName])(
+    implicit messageFilter: MessageFilter
+  ): Future[MessagesCount] =
+    taxIdRegimeSelector(authTaxIds)
+      .map(Filters.and(_, readyForViewingQuery, rescindedExcludedQuery))
+      .fold(Future.successful(MessagesCount(0, 0)))(query =>
+        for {
+          unreadCount <- collection
+                        // scalastyle:off null
+                          .countDocuments(Filters.and(query, Filters.equal("readTime", null)))
+                          // scalastyle:on null
+                          .toFuture()
+          totalCount <- collection.countDocuments(query).toFuture()
+        } yield MessagesCount(totalCount.toInt, unreadCount.toInt))
 }
