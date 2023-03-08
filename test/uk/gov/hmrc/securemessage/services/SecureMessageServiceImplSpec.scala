@@ -518,6 +518,11 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
         .getLettersCount(any[Set[Identifier]](), any[Option[List[FilterTag]]]())(any[ExecutionContext]))
       .thenReturn(Future.successful(Count(1, 0)))
 
+    when(
+      mockSecureMessageUtil
+        .getSecureMessageCount(any[Set[Identifier]](), any[Option[List[FilterTag]]]())(any[ExecutionContext]))
+      .thenReturn(Future.successful(Count(1, 0)))
+
     val service: SecureMessageServiceImpl =
       new SecureMessageServiceImpl(
         mockConversationRepository,

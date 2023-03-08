@@ -28,11 +28,10 @@ import uk.gov.hmrc.securemessage.controllers.model.{ ApiMessage, MessageResource
 import uk.gov.hmrc.securemessage.models.core.{ Identifier, Letter, MessageFilter, MessageRequestWrapper }
 import uk.gov.hmrc.securemessage.services.SecureMessageServiceImpl
 
-import javax.inject.{ Inject, Singleton }
+import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.xml.XML
 
-@Singleton
 class NonCDSMessageRetriever @Inject()(
   val authIdentifiersConnector: AuthIdentifiersConnector,
   secureMessageService: SecureMessageServiceImpl)(implicit ec: ExecutionContext)
