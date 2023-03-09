@@ -76,7 +76,6 @@ abstract class AbstractMessageRepository[A: ClassTag](
     implicit ec: ExecutionContext): Future[Count] = {
     val querySelector = messagesQuerySelector(identifiers, tags)
     val totalCount: Future[Int] = {
-      val querySelector = messagesQuerySelector(identifiers, tags)
       if (querySelector != Filters.empty()) {
         collection
           .find(querySelector)

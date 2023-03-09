@@ -16,10 +16,13 @@
 
 package uk.gov.hmrc.securemessage.models.v4
 
-import org.joda.time.LocalDate
+import org.joda.time.{ DateTime, LocalDate }
 import org.mongodb.scala.bson.ObjectId
 import play.api.libs.json.{ Format, JsObject, JsString, Json, OFormat, OWrites, Reads }
 import uk.gov.hmrc.common.message.model.EmailAlert
+import play.api.libs.json._
+import uk.gov.hmrc.common.message.model.{ MongoTaxIdentifierFormats, Recipient }
+import uk.gov.hmrc.domain.TaxIds.TaxIdWithName
 import uk.gov.hmrc.mongo.play.json.formats.{ MongoFormats, MongoJodaFormats }
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus
 

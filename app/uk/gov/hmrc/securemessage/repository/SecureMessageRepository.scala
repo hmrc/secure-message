@@ -22,15 +22,20 @@ import com.mongodb.client.model.ReturnDocument
 import org.bson.conversions.Bson
 import org.bson.types.ObjectId
 import org.joda.time.DateTime
+import org.joda.time.LocalDate
 import org.mongodb.scala.MongoException
+import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model._
 import uk.gov.hmrc.common.message.model.{ EmailAlert, TimeSource }
 import uk.gov.hmrc.common.message.model.MessagesCount
+import play.api.libs.json.{ JsObject, JsValue, Json }
+import uk.gov.hmrc.common.message.model.{ MessagesCount, Regime }
 import uk.gov.hmrc.domain.TaxIds.TaxIdWithName
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.{ Failed, InProgress, ToDo }
 import uk.gov.hmrc.securemessage.models.core.Identifier
+import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.securemessage.models.core.{ Count, FilterTag, Identifier, MessageFilter }
 import uk.gov.hmrc.securemessage.models.v4.{ SecureMessage, SecureMessageMongoFormat }
 
@@ -54,7 +59,13 @@ class SecureMessageRepository @Inject()(
         IndexModel(
           ascending("hash"),
           IndexOptions().name("unique-messageHash").unique(true)
-        )
+        ),
+        IndexModel(
+          ascending("recipient.taxIdentifier.value", "recipient.taxIdentifier.name"),
+          IndexOptions()
+            .name("recipient-tax-id")
+            .unique(false)
+            .background(true))
       ),
       replaceIndexes = false
     ) with MessageSelector {
@@ -127,7 +138,19 @@ class SecureMessageRepository @Inject()(
 
   }
 
-  protected def findByIdentifierQuery(identifier: Identifier): Seq[(String, String)] = Seq()
+  protected def findByIdentifierQuery(identifier: Identifier): Seq[(String, String)] =
+    identifier.enrolment match {
+      case Some(enrolment) =>
+        Seq[(String, String)](
+          "recipient.taxIdentifier.name"  -> enrolment,
+          "recipient.taxIdentifier.value" -> identifier.value
+        )
+      case None =>
+        Seq[(String, String)](
+          "recipient.taxIdentifier.name"  -> "Unknown",
+          "recipient.taxIdentifier.value" -> identifier.value
+        )
+    }
 
   def getSecureMessageCount(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
     implicit ec: ExecutionContext): Future[Count] =
@@ -137,7 +160,7 @@ class SecureMessageRepository @Inject()(
     implicit messageFilter: MessageFilter
   ): Future[MessagesCount] =
     taxIdRegimeSelector(authTaxIds)
-      .map(Filters.and(_, readyForViewingQuery, rescindedExcludedQuery))
+      .map(Filters.and(_, readyForViewingQuery))
       .fold(Future.successful(MessagesCount(0, 0)))(query =>
         for {
           unreadCount <- collection
