@@ -523,6 +523,11 @@ class SecureMessageUtil @Inject()(
     implicit ec: ExecutionContext): Future[Count] = secureMessageRepository.getSecureMessageCount(identifiers, tags)
 
   def findById(id: ObjectId): Future[Option[SecureMessage]] = secureMessageRepository.findById(id)
+
+  def findBy(authTaxIds: Set[TaxIdWithName])(
+    implicit messageFilter: MessageFilter,
+    ec: ExecutionContext
+  ): Future[List[SecureMessage]] = secureMessageRepository.findBy(authTaxIds)
 }
 
 case class MessageValidationException(message: String) extends RuntimeException(message)

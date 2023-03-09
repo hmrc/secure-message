@@ -103,8 +103,11 @@ class SecureMessageServiceImpl @Inject()(
   def getMessagesList(authTaxIds: Set[TaxIdWithName])(
     implicit ec: ExecutionContext,
     hc: HeaderCarrier,
-    messageFilter: MessageFilter): Future[List[Letter]] =
-    messageRepository.findBy(authTaxIds)
+    messageFilter: MessageFilter): Future[List[Message]] =
+    for {
+      v3Messages <- messageRepository.findBy(authTaxIds)
+      v4Messages <- secureMessageUtil.findBy(authTaxIds)
+    } yield v3Messages ++ v4Messages
 
   def getMessagesCount(authTaxIds: Set[TaxIdWithName])(
     implicit ec: ExecutionContext,
