@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.securemessage.repository
 
+import org.joda.time.DateTime
 import org.mongodb.scala.model.Filters
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
@@ -23,8 +24,10 @@ import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.test.Helpers.{ await, defaultAwaitTimeout }
 import uk.gov.hmrc.common.message.model.TimeSource
+import uk.gov.hmrc.common.message.model.MessagesCount
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 import uk.gov.hmrc.securemessage.helpers.Resources
+import uk.gov.hmrc.securemessage.models.core.MessageFilter
 import uk.gov.hmrc.securemessage.models.v4.SecureMessage
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -39,6 +42,7 @@ class SecureMessageRepositorySpec
     await(repository.collection.deleteMany(Filters.empty()).toFuture().map(_ => ()))
 
   val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+  val niMessage: SecureMessage = Resources.readJson("model/core/v4/valid_NI_message.json").as[SecureMessage]
 
   "Message V4" should {
     "be saved if unique" in {
@@ -50,6 +54,17 @@ class SecureMessageRepositorySpec
       await(repository.save(message))
       val result: Boolean = await(repository.save(message))
       result mustBe false
+    }
+
+    "return the total & unread messages count for given tax identifiers" in {
+      await(repository.save(message.copy(verificationBrake = Some(false))))
+      val result: MessagesCount = await(repository.countBy(Set(message.recipient.identifier))(MessageFilter()))
+      result mustBe MessagesCount(1, 1)
+
+      await(repository.save(niMessage.copy(readTime = Some(DateTime.now()), verificationBrake = Some(false))))
+      val result1: MessagesCount =
+        await(repository.countBy(Set(message.recipient.identifier, niMessage.recipient.identifier))(MessageFilter()))
+      result1 mustBe MessagesCount(2, 1)
     }
   }
 }

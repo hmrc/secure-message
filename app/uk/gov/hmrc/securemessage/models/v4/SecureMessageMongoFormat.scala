@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.securemessage.models.v4
 
-import org.joda.time.LocalDate
+import org.joda.time.{ DateTime, LocalDate }
 import org.mongodb.scala.bson.ObjectId
 import play.api.libs.json.{ Format, JsObject, JsString, Json, OFormat, OWrites, Reads }
 import uk.gov.hmrc.common.message.model.EmailAlert
@@ -37,11 +37,10 @@ object SecureMessageMongoFormat {
 
   //LocalDate
   implicit val localDateFormat: Format[LocalDate] = MongoJodaFormats.localDateFormat
-
   //ObjectId
   implicit val objectIdFormat: Format[ObjectId] = MongoFormats.objectIdFormat
 
-  import uk.gov.hmrc.mongo.play.json.formats.MongoJodaFormats.Implicits.jotDateTimeFormat
+  implicit val dateTimeFormat: Format[DateTime] = MongoJodaFormats.dateTimeFormat
   implicit val emailAlertFormat: OFormat[EmailAlert] = Json.format[EmailAlert]
 
   //SecureMessage

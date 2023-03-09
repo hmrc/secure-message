@@ -17,30 +17,33 @@
 package uk.gov.hmrc.securemessage.controllers
 
 import org.apache.commons.codec.binary.Base64
+import org.bson.types.ObjectId
 import org.joda.time.LocalDate
 import org.joda.time.format.DateTimeFormat
 import org.jsoup.Jsoup
-import org.jsoup.safety.{ Safelist => JsouptAllowList }
 import org.jsoup.nodes.Document.OutputSettings
-import play.api.{ Configuration, Logging }
+import org.jsoup.safety.{ Safelist => JsouptAllowList }
 import play.api.http.Status.{ BAD_REQUEST, CONFLICT, NOT_FOUND }
 import play.api.i18n.Messages
 import play.api.libs.json.{ JsArray, JsObject, JsValue, Json }
 import play.api.mvc.Results.Created
 import play.api.mvc.{ AnyContent, Request, Result }
+import play.api.{ Configuration, Logging }
 import uk.gov.hmrc.common.message.emailaddress.EmailAddress
-import uk.gov.hmrc.common.message.model.{ AlertDetails, AlertQueueTypes }
+import uk.gov.hmrc.common.message.failuremodule.FailureResponseService.errorResponseResult
+import uk.gov.hmrc.common.message.model.{ AlertDetails, AlertQueueTypes, MessagesCount }
 import uk.gov.hmrc.domain.SaUtr
+import uk.gov.hmrc.domain.TaxIds.TaxIdWithName
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.Deferred
 import uk.gov.hmrc.mongo.workitem.WorkItem
 import uk.gov.hmrc.play.audit.http.connector.{ AuditConnector, AuditResult }
 import uk.gov.hmrc.play.audit.model.{ DataEvent, EventTypes }
 import uk.gov.hmrc.securemessage.connectors.{ EmailValidation, EntityResolverConnector, TaxpayerNameConnector }
+import uk.gov.hmrc.securemessage.models.core.{ Count, FilterTag, Identifier, MessageFilter }
 import uk.gov.hmrc.securemessage.models.v4.{ Content, ExtraAlertConfig, SecureMessage }
 import uk.gov.hmrc.securemessage.repository.{ ExtraAlert, ExtraAlertRepository, SecureMessageRepository, StatsMetricRepository }
 import uk.gov.hmrc.securemessage.services.MessageBrakeService
-import uk.gov.hmrc.common.message.failuremodule.FailureResponseService.errorResponseResult
 
 import javax.inject.{ Inject, Named }
 import scala.collection.JavaConverters._
@@ -511,6 +514,15 @@ class SecureMessageUtil @Inject()(
     } else {
       Future.successful(message)
     }
+
+  def countBy(authTaxIds: Set[TaxIdWithName])(
+    implicit messageFilter: MessageFilter
+  ): Future[MessagesCount] = secureMessageRepository.countBy(authTaxIds)
+
+  def getSecureMessageCount(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
+    implicit ec: ExecutionContext): Future[Count] = secureMessageRepository.getSecureMessageCount(identifiers, tags)
+
+  def findById(id: ObjectId): Future[Option[SecureMessage]] = secureMessageRepository.findById(id)
 }
 
 case class MessageValidationException(message: String) extends RuntimeException(message)
