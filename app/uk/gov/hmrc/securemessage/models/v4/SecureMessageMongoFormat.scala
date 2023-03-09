@@ -20,9 +20,6 @@ import org.joda.time.{ DateTime, LocalDate }
 import org.mongodb.scala.bson.ObjectId
 import play.api.libs.json.{ Format, JsObject, JsString, Json, OFormat, OWrites, Reads }
 import uk.gov.hmrc.common.message.model.EmailAlert
-import play.api.libs.json._
-import uk.gov.hmrc.common.message.model.{ MongoTaxIdentifierFormats, Recipient }
-import uk.gov.hmrc.domain.TaxIds.TaxIdWithName
 import uk.gov.hmrc.mongo.play.json.formats.{ MongoFormats, MongoJodaFormats }
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus
 
@@ -44,7 +41,9 @@ object SecureMessageMongoFormat {
   //ObjectId
   implicit val objectIdFormat: Format[ObjectId] = MongoFormats.objectIdFormat
 
-  import uk.gov.hmrc.mongo.play.json.formats.MongoJodaFormats.Implicits.jotDateTimeFormat
+  //DateTime
+  implicit val dateTimeFormat: Format[DateTime] = MongoJodaFormats.dateTimeFormat
+
   implicit val emailAlertFormat: OFormat[EmailAlert] = Json.format[EmailAlert]
 
   //SecureMessage

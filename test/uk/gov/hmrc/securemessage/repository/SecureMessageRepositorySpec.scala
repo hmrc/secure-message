@@ -58,12 +58,12 @@ class SecureMessageRepositorySpec
 
     "return the total & unread messages count for given tax identifiers" in {
       await(repository.save(message.copy(verificationBrake = Some(false))))
-      val result: MessagesCount = await(repository.countBy(Set(message.recipient.taxIdentifier))(MessageFilter()))
+      val result: MessagesCount = await(repository.countBy(Set(message.recipient.identifier))(MessageFilter()))
       result mustBe MessagesCount(1, 1)
 
       await(repository.save(niMessage.copy(readTime = Some(DateTime.now()), verificationBrake = Some(false))))
-      val result1: MessagesCount = await(
-        repository.countBy(Set(message.recipient.taxIdentifier, niMessage.recipient.taxIdentifier))(MessageFilter()))
+      val result1: MessagesCount =
+        await(repository.countBy(Set(message.recipient.identifier, niMessage.recipient.identifier))(MessageFilter()))
       result1 mustBe MessagesCount(2, 1)
     }
   }

@@ -30,17 +30,17 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.securemessage._
 import uk.gov.hmrc.securemessage.connectors.{ ChannelPreferencesConnector, EISConnector, EmailConnector }
-import uk.gov.hmrc.securemessage.controllers.{ Auditing, SecureMessageUtil }
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.{ ApiConversation, ConversationMetadata }
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage
 import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.ApiLetter
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
+import uk.gov.hmrc.securemessage.controllers.{ Auditing, SecureMessageUtil }
 import uk.gov.hmrc.securemessage.models._
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.Customer.eqCustomer
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.{ Customer => PCustomer }
 import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, _ }
 import uk.gov.hmrc.securemessage.models.v4.SecureMessage
-import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository, SecureMessageRepository }
+import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository }
 import uk.gov.hmrc.securemessage.services.utils.ContentValidator
 
 import java.util.UUID
@@ -52,7 +52,6 @@ import scala.concurrent.{ ExecutionContext, Future }
 class SecureMessageServiceImpl @Inject()(
   conversationRepository: ConversationRepository,
   messageRepository: MessageRepository,
-  secureMessageRepository: SecureMessageRepository,
   secureMessageUtil: SecureMessageUtil,
   emailConnector: EmailConnector,
   channelPrefConnector: ChannelPreferencesConnector,
@@ -78,7 +77,7 @@ class SecureMessageServiceImpl @Inject()(
     secureMessageUtil.validateAndCreateMessage(secureMessage)
 
   def findSecureMessageById(id: ObjectId): Future[Option[SecureMessage]] =
-    secureMessageRepository.findById(id)
+    secureMessageUtil.findById(id)
 
   def getConversations(authEnrolments: Enrolments, filters: Filters)(
     implicit ec: ExecutionContext,

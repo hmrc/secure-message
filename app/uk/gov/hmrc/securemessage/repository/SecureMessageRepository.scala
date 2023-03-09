@@ -19,23 +19,16 @@ package uk.gov.hmrc.securemessage.repository
 import com.mongodb.ReadPreference
 import com.mongodb.client.model.Indexes.ascending
 import com.mongodb.client.model.ReturnDocument
-import org.bson.conversions.Bson
 import org.bson.types.ObjectId
 import org.joda.time.DateTime
-import org.joda.time.LocalDate
 import org.mongodb.scala.MongoException
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model._
-import uk.gov.hmrc.common.message.model.{ EmailAlert, TimeSource }
-import uk.gov.hmrc.common.message.model.MessagesCount
-import play.api.libs.json.{ JsObject, JsValue, Json }
-import uk.gov.hmrc.common.message.model.{ MessagesCount, Regime }
+import uk.gov.hmrc.common.message.model.{ EmailAlert, MessagesCount, TimeSource }
 import uk.gov.hmrc.domain.TaxIds.TaxIdWithName
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.{ Failed, InProgress, ToDo }
-import uk.gov.hmrc.securemessage.models.core.Identifier
-import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.securemessage.models.core.{ Count, FilterTag, Identifier, MessageFilter }
 import uk.gov.hmrc.securemessage.models.v4.{ SecureMessage, SecureMessageMongoFormat }
 
