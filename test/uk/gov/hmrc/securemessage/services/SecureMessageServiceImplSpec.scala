@@ -421,10 +421,14 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
         a.issueDate.isAfter(b.issueDate)
       }
     }
-    "return just conversations when there are no letters" in new GetMessagesTestContext(dbLetters = List.empty, v4Messages = List.empty) {
+    "return just conversations when there are no letters" in new GetMessagesTestContext(
+      dbLetters = List.empty,
+      v4Messages = List.empty) {
       service.getMessages(enrolments, filters()).futureValue mustBe conversations
     }
-    "return just letters when there are no conversations" in new GetMessagesTestContext(dbConversations = List.empty, v4Messages = List.empty)) {
+    "return just letters when there are no conversations" in new GetMessagesTestContext(
+      dbConversations = List.empty,
+      v4Messages = List.empty) {
       service.getMessages(enrolments, filters()).futureValue mustBe letters
     }
 
