@@ -44,6 +44,7 @@ import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
 import uk.gov.hmrc.securemessage.helpers.{ ConversationUtil, MessageUtil, Resources }
 import uk.gov.hmrc.securemessage.models.core.Conversation._
 import uk.gov.hmrc.securemessage.models.core._
+import uk.gov.hmrc.securemessage.models.v4.SecureMessage
 import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryMessageWrapper, Tags }
 import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository }
 import uk.gov.hmrc.securemessage.{ DuplicateConversationError, EmailLookupError, NoReceiverEmailError, SecureMessageError, _ }
@@ -416,20 +417,25 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
     "return both conversations and letters sorted in descending order by issue date" in new GetMessagesTestContext() {
       private val result: List[Message] = service.getMessages(enrolments, filters()).futureValue
       result must not be (conversations ++ letters)
-      result mustBe (conversations ++ letters).sortWith { (a, b) =>
+      result mustBe (conversations ++ letters ++ List(v4Message)).sortWith { (a, b) =>
         a.issueDate.isAfter(b.issueDate)
       }
     }
-    "return just conversations when there are no letters" in new GetMessagesTestContext(dbLetters = List.empty) {
+    "return just conversations when there are no letters" in new GetMessagesTestContext(
+      dbLetters = List.empty,
+      v4Messages = List.empty) {
       service.getMessages(enrolments, filters()).futureValue mustBe conversations
     }
-    "return just letters when there are no conversations" in new GetMessagesTestContext(dbConversations = List.empty) {
+    "return just letters when there are no conversations" in new GetMessagesTestContext(
+      dbConversations = List.empty,
+      v4Messages = List.empty) {
       service.getMessages(enrolments, filters()).futureValue mustBe letters
     }
 
     "return an empty list when there are neither conversations nor letters" in new GetMessagesTestContext(
       dbConversations = List.empty,
-      dbLetters = List.empty) {
+      dbLetters = List.empty,
+      v4Messages = List.empty) {
       service.getMessages(enrolments, filters()).futureValue mustBe empty
     }
 
@@ -550,13 +556,18 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
       .thenReturn(Future.successful(Right(())))
   }
 
-  class GetMessagesTestContext(dbConversations: List[Conversation] = conversations, dbLetters: List[Letter] = letters) {
+  class GetMessagesTestContext(
+    dbConversations: List[Conversation] = conversations,
+    dbLetters: List[Letter] = letters,
+    v4Messages: List[SecureMessage] = List(v4Message)) {
     when(
       mockConversationRepository.getConversations(any[Set[Identifier]], any[Option[List[FilterTag]]])(
         any[ExecutionContext]))
       .thenReturn(Future(dbConversations))
     when(mockMessageRepository.getLetters(any[Set[Identifier]], any[Option[List[FilterTag]]])(any[ExecutionContext]))
       .thenReturn(Future(dbLetters))
+    when(mockSecureMessageUtil.getMessages(any[Set[Identifier]], any[Option[List[FilterTag]]])(any[ExecutionContext]))
+      .thenReturn(Future(v4Messages))
   }
 
   class GetConversationByIDTestContext(getConversationResult: Either[MessageNotFound, Conversation]) {
@@ -681,6 +692,9 @@ trait TestHelpers extends MockitoSugar with UnitTest {
   val conversations = List(conversation)
   val letter: Letter = MessageUtil.getMessage("subject", "content")
   val letters = List(letter)
+  val v4JsonMessage: JsObject = Resources.readJson("model/core/v4/valid_message.json").as[JsObject] + ("_id" -> Json
+    .toJson(new ObjectId))
+  val v4Message: SecureMessage = v4JsonMessage.as[SecureMessage]
   val conversationJson: JsObject = Resources
     .readJson("model/api/cdcm/write/conversation-request.json")
     .as[JsObject] + ("_id" -> Json.toJson(objectID))

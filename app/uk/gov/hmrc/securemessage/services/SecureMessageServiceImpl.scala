@@ -97,14 +97,18 @@ class SecureMessageServiceImpl @Inject()(
     for {
       conversations <- conversationRepository.getConversations(identifiers, filters.tags)
       letters       <- messageRepository.getLetters(identifiers, filters.tags)
-    } yield (conversations ++ letters).sortBy(_.issueDate)(dateTimeDescending)
+      v4Messages    <- secureMessageUtil.getMessages(identifiers, filters.tags)
+    } yield (conversations ++ letters ++ v4Messages).sortBy(_.issueDate)(dateTimeDescending)
   }
 
   def getMessagesList(authTaxIds: Set[TaxIdWithName])(
     implicit ec: ExecutionContext,
     hc: HeaderCarrier,
-    messageFilter: MessageFilter): Future[List[Letter]] =
-    messageRepository.findBy(authTaxIds)
+    messageFilter: MessageFilter): Future[List[Message]] =
+    for {
+      v3Messages <- messageRepository.findBy(authTaxIds)
+      v4Messages <- secureMessageUtil.findBy(authTaxIds)
+    } yield v3Messages ++ v4Messages
 
   def getMessagesCount(authTaxIds: Set[TaxIdWithName])(
     implicit ec: ExecutionContext,

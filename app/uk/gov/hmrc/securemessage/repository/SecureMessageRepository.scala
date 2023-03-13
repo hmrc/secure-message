@@ -37,6 +37,7 @@ import java.util.concurrent.TimeUnit
 import javax.inject.{ Inject, Named, Singleton }
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.control.NonFatal
 
 @Singleton
 class SecureMessageRepository @Inject()(
@@ -157,8 +158,29 @@ class SecureMessageRepository @Inject()(
       Filters.nor(Filters.equal("verificationBrake", true)))
   }
 
+  def findBy(authTaxIds: Set[TaxIdWithName])(
+    implicit messageFilter: MessageFilter,
+    ec: ExecutionContext
+  ): Future[List[SecureMessage]] =
+    taxIdRegimeSelector(authTaxIds)
+      .map(Filters.and(_, readyForViewingQuery))
+      .fold(Future.successful(List[SecureMessage]())) { query =>
+        collection
+          .find(query)
+          .maxTime(Duration(1, TimeUnit.MINUTES))
+          .sort(Filters.equal("_id", -1))
+          .toFuture()
+          .map(_.toList)
+      }
+      .recoverWith {
+        case NonFatal(e) =>
+          logger.error(s"Error processing the query ${e.getMessage}")
+          Future.successful(List())
+      }
+
   def countBy(authTaxIds: Set[TaxIdWithName])(
-    implicit messageFilter: MessageFilter
+    implicit messageFilter: MessageFilter,
+    ec: ExecutionContext
   ): Future[MessagesCount] =
     taxIdRegimeSelector(authTaxIds)
       .map(Filters.and(_, readyForViewingQuery))
@@ -171,4 +193,8 @@ class SecureMessageRepository @Inject()(
                           .toFuture()
           totalCount <- collection.countDocuments(query).toFuture()
         } yield MessagesCount(totalCount.toInt, unreadCount.toInt))
+
+  def getSecureMessages(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
+    implicit ec: ExecutionContext): Future[List[SecureMessage]] =
+    getMessages(identifiers, tags)
 }
