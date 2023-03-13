@@ -19,22 +19,25 @@ package uk.gov.hmrc.securemessage.repository
 import com.mongodb.ReadPreference
 import com.mongodb.client.model.Indexes.ascending
 import com.mongodb.client.model.ReturnDocument
-import org.bson.conversions.Bson
 import org.bson.types.ObjectId
-import org.joda.time.DateTime
+import org.joda.time.{ DateTime, LocalDate }
 import org.mongodb.scala.MongoException
+import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model._
-import uk.gov.hmrc.common.message.model.{ EmailAlert, TimeSource }
+import uk.gov.hmrc.common.message.model.{ EmailAlert, MessagesCount, TimeSource }
+import uk.gov.hmrc.domain.TaxIds.TaxIdWithName
 import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.{ Failed, InProgress, ToDo }
-import uk.gov.hmrc.securemessage.models.core.Identifier
+import uk.gov.hmrc.securemessage.models.core.{ Count, FilterTag, Identifier, MessageFilter }
 import uk.gov.hmrc.securemessage.models.v4.{ SecureMessage, SecureMessageMongoFormat }
 
 import java.util.concurrent.TimeUnit
 import javax.inject.{ Inject, Named, Singleton }
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.control.NonFatal
 
 @Singleton
 class SecureMessageRepository @Inject()(
@@ -51,17 +54,23 @@ class SecureMessageRepository @Inject()(
         IndexModel(
           ascending("hash"),
           IndexOptions().name("unique-messageHash").unique(true)
-        )
+        ),
+        IndexModel(
+          ascending("recipient.identifier.value", "recipient.identifier.name"),
+          IndexOptions()
+            .name("recipient-tax-id")
+            .unique(false)
+            .background(true))
       ),
       replaceIndexes = false
-    ) {
+    ) with MessageSelector {
 
   private final val DuplicateKey = 11000
 
   def save(message: SecureMessage): Future[Boolean] =
     collection.insertOne(message).toFuture().map(_.wasAcknowledged()).recoverWith {
       case e: MongoException if e.getCode == DuplicateKey =>
-        logger.warn(s"Ignoring duplicate message found on insertion to MessageV4 collection: $message.")
+        logger.warn(s"Ignoring duplicate message found on insertion to MessageV4 collection: ${message._id}.")
         Future.successful(false)
     }
 
@@ -124,8 +133,68 @@ class SecureMessageRepository @Inject()(
 
   }
 
-  def readyForViewingQuery: Bson =
-    Filters.and(Filters.lte("validFrom", timeSource.today), Filters.nor(Filters.equal("verificationBrake", true)))
+  protected def findByIdentifierQuery(identifier: Identifier): Seq[(String, String)] =
+    identifier.enrolment match {
+      case Some(enrolment) =>
+        Seq[(String, String)](
+          "recipient.identifier.name"  -> enrolment,
+          "recipient.identifier.value" -> identifier.value
+        )
+      case None =>
+        Seq[(String, String)](
+          "recipient.identifier.name"  -> "Unknown",
+          "recipient.identifier.value" -> identifier.value
+        )
+    }
 
-  protected def findByIdentifierQuery(identifier: Identifier): Seq[(String, String)] = Seq()
+  def getSecureMessageCount(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
+    implicit ec: ExecutionContext): Future[Count] =
+    getMessagesCount(identifiers, tags)
+
+  override def readyForViewingQuery: Bson = {
+    import SecureMessageMongoFormat.localDateFormat
+    Filters.and(
+      Filters.lte("validFrom", Codecs.toBson(LocalDate.now())),
+      Filters.nor(Filters.equal("verificationBrake", true)))
+  }
+
+  def findBy(authTaxIds: Set[TaxIdWithName])(
+    implicit messageFilter: MessageFilter,
+    ec: ExecutionContext
+  ): Future[List[SecureMessage]] =
+    taxIdRegimeSelector(authTaxIds)
+      .map(Filters.and(_, readyForViewingQuery))
+      .fold(Future.successful(List[SecureMessage]())) { query =>
+        collection
+          .find(query)
+          .maxTime(Duration(1, TimeUnit.MINUTES))
+          .sort(Filters.equal("_id", -1))
+          .toFuture()
+          .map(_.toList)
+      }
+      .recoverWith {
+        case NonFatal(e) =>
+          logger.error(s"Error processing the query ${e.getMessage}")
+          Future.successful(List())
+      }
+
+  def countBy(authTaxIds: Set[TaxIdWithName])(
+    implicit messageFilter: MessageFilter,
+    ec: ExecutionContext
+  ): Future[MessagesCount] =
+    taxIdRegimeSelector(authTaxIds)
+      .map(Filters.and(_, readyForViewingQuery))
+      .fold(Future.successful(MessagesCount(0, 0)))(query =>
+        for {
+          unreadCount <- collection
+                        // scalastyle:off null
+                          .countDocuments(Filters.and(query, Filters.equal("readTime", null)))
+                          // scalastyle:on null
+                          .toFuture()
+          totalCount <- collection.countDocuments(query).toFuture()
+        } yield MessagesCount(totalCount.toInt, unreadCount.toInt))
+
+  def getSecureMessages(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
+    implicit ec: ExecutionContext): Future[List[SecureMessage]] =
+    getMessages(identifiers, tags)
 }

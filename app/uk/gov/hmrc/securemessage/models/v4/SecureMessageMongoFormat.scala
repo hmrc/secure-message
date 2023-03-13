@@ -16,9 +16,9 @@
 
 package uk.gov.hmrc.securemessage.models.v4
 
-import org.joda.time.LocalDate
+import org.joda.time.{ DateTime, LocalDate }
 import org.mongodb.scala.bson.ObjectId
-import play.api.libs.json.{ Format, JsObject, JsString, Json, OFormat, OWrites, Reads }
+import play.api.libs.json.{ Format, Json, OFormat }
 import uk.gov.hmrc.common.message.model.EmailAlert
 import uk.gov.hmrc.mongo.play.json.formats.{ MongoFormats, MongoJodaFormats }
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus
@@ -28,20 +28,14 @@ object SecureMessageMongoFormat {
   import uk.gov.hmrc.common.message.model.MongoTaxIdentifierFormats._
 
   //ProcessingStatus
-  implicit val processingStatusReads: Reads[ProcessingStatus] = ProcessingStatus.reads
-  implicit val processingStatusWrites: OWrites[ProcessingStatus] = new OWrites[ProcessingStatus] {
-    override def writes(o: ProcessingStatus): JsObject = new JsObject(Map("status" -> JsString(o.name)))
-  }
-  implicit val format: Format[ProcessingStatus] =
-    OFormat[ProcessingStatus](processingStatusReads, processingStatusWrites)
+  implicit val format: Format[ProcessingStatus] = ProcessingStatus.format
 
   //LocalDate
   implicit val localDateFormat: Format[LocalDate] = MongoJodaFormats.localDateFormat
-
   //ObjectId
   implicit val objectIdFormat: Format[ObjectId] = MongoFormats.objectIdFormat
 
-  import uk.gov.hmrc.mongo.play.json.formats.MongoJodaFormats.Implicits.jotDateTimeFormat
+  implicit val dateTimeFormat: Format[DateTime] = MongoJodaFormats.dateTimeFormat
   implicit val emailAlertFormat: OFormat[EmailAlert] = Json.format[EmailAlert]
 
   //SecureMessage

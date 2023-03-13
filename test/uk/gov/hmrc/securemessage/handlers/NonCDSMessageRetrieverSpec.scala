@@ -133,7 +133,9 @@ class NonCDSMessageRetrieverSpec extends PlaySpec with MockitoSugar with UnitTes
         .getMessagesList(eqTo(authTaxIds))(any[ExecutionContext], any[HeaderCarrier], eqTo(messageFilter)))
       .thenReturn(Future.successful(letters))
 
-    when(mockSecureMessageService.getMessagesCount(eqTo(authTaxIds))(any[HeaderCarrier], eqTo(messageFilter)))
+    when(
+      mockSecureMessageService
+        .getMessagesCount(eqTo(authTaxIds))(any[ExecutionContext], any[HeaderCarrier], eqTo(messageFilter)))
       .thenReturn(Future.successful(MessagesCount(1, 1)))
 
     when(mockAuthConnector.currentEffectiveTaxIdentifiers(any[HeaderCarrier])).thenReturn(Future.successful(authTaxIds))

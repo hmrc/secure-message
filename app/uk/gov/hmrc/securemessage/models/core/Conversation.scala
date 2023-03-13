@@ -38,6 +38,7 @@ final case class Conversation(
     extends Message with OrderingDefinitions {
 
   override def issueDate: DateTime = latestMessage.created
+  override def readTime: Option[DateTime] = None //Used for other message types
 
   def latestMessage: ConversationMessage = messages.toList.maxBy(_.created)(dateTimeAscending)
 

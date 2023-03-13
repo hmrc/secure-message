@@ -95,7 +95,6 @@ class MessageRepository @Inject()(mongo: MongoComponent)(implicit ec: ExecutionC
     taxIdRegimeSelector(authTaxIds)
       .map(Filters.and(_, readyForViewingQuery, rescindedExcludedQuery))
       .fold(Future.successful(List[Letter]())) { query =>
-        logger.warn(s"Query - $query")
         collection
           .find(query)
           .maxTime(Duration(1, TimeUnit.MINUTES))
