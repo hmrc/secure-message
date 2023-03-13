@@ -179,7 +179,8 @@ class SecureMessageRepository @Inject()(
       }
 
   def countBy(authTaxIds: Set[TaxIdWithName])(
-    implicit messageFilter: MessageFilter
+    implicit messageFilter: MessageFilter,
+    ec: ExecutionContext
   ): Future[MessagesCount] =
     taxIdRegimeSelector(authTaxIds)
       .map(Filters.and(_, readyForViewingQuery))
@@ -192,4 +193,8 @@ class SecureMessageRepository @Inject()(
                           .toFuture()
           totalCount <- collection.countDocuments(query).toFuture()
         } yield MessagesCount(totalCount.toInt, unreadCount.toInt))
+
+  def getSecureMessages(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
+    implicit ec: ExecutionContext): Future[List[SecureMessage]] =
+    getMessages(identifiers, tags)
 }

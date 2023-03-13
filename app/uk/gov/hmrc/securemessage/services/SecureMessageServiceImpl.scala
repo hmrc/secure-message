@@ -97,7 +97,8 @@ class SecureMessageServiceImpl @Inject()(
     for {
       conversations <- conversationRepository.getConversations(identifiers, filters.tags)
       letters       <- messageRepository.getLetters(identifiers, filters.tags)
-    } yield (conversations ++ letters).sortBy(_.issueDate)(dateTimeDescending)
+      v4Messages    <- secureMessageUtil.getMessages(identifiers, filters.tags)
+    } yield (conversations ++ letters ++ v4Messages).sortBy(_.issueDate)(dateTimeDescending)
   }
 
   def getMessagesList(authTaxIds: Set[TaxIdWithName])(
