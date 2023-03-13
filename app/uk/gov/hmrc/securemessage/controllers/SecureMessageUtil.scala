@@ -79,6 +79,9 @@ object SecureMessageUtil {
     date.toString(formatter)
   }
 
+  private def errorResponseWithErrorId(errorMessage: String, responseCode: Int = BAD_REQUEST) =
+    errorResponseResult(errorMessage, responseCode, showErrorID = true)
+
   private val NotificationType = "notificationType"
 }
 
@@ -112,7 +115,7 @@ class SecureMessageUtil @Inject()(
     isValidSecureMessage(message) match {
       case Success(_) if message.recipient.email.nonEmpty => checkPreferencesAndCreateMessage(message)
       case Success(_)                                     => cleanUpAndCreateMessage(message)
-      case Failure(exception)                             => Future.successful(errorResponseResult(exception.getMessage))
+      case Failure(exception)                             => Future.successful(errorResponseWithErrorId(exception.getMessage))
     }
 
   def isValidSecureMessage(message: SecureMessage): Try[SecureMessage] =
@@ -120,6 +123,7 @@ class SecureMessageUtil @Inject()(
       _ <- checkValidSourceData(message)
       _ <- checkEmptyEmailAddress(message)
       _ <- checkEmptyAlertQueue(message)
+      _ <- checkDetailsIsPresent(message)
       _ <- checkValidIssueDate(message)
       _ <- checkInvalidEmailAddress(message)
       _ <- checkEmailAbsentIfInvalidTaxId(message)
@@ -142,6 +146,11 @@ class SecureMessageUtil @Inject()(
     case Some(data) if data.trim.nonEmpty || Base64.isBase64(data) => Success(message)
     case None if !isGmc(message)                                   => Success(message)
     case _                                                         => Failure(MessageValidationException("Invalid Message"))
+  }
+
+  def checkDetailsIsPresent(message: SecureMessage): Try[SecureMessage] = message match {
+    case m if m.details.exists(_.formId.nonEmpty) => Success(m)
+    case _                                        => Failure(MessageValidationException("details: details not provided where it is required"))
   }
 
   def checkEmptyEmailAddress(message: SecureMessage): Try[SecureMessage] =
@@ -205,7 +214,7 @@ class SecureMessageUtil @Inject()(
   def checkPreferencesAndCreateMessage(
     message: SecureMessage)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Result] = {
 
-    val TAXPAYER_NOTFOUND = errorResponseResult(
+    val TAXPAYER_NOTFOUND = errorResponseWithErrorId(
       "The backend has rejected the message due to not being able to verify the email address.",
       NOT_FOUND)
     entityResolverConnector
@@ -213,7 +222,7 @@ class SecureMessageUtil @Inject()(
       .flatMap { resp =>
         resp.value match {
           case Left(failure) if failure.getMessage.startsWith("email: not verified") =>
-            Future.successful(errorResponseResult(failure.getMessage, BAD_REQUEST))
+            Future.successful(errorResponseWithErrorId(failure.getMessage, BAD_REQUEST))
 
           case Left(_) => Future.successful(TAXPAYER_NOTFOUND)
           case Right(EmailValidation(email)) =>
@@ -230,7 +239,7 @@ class SecureMessageUtil @Inject()(
   def cleanUpAndCreateMessage(
     message: SecureMessage)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Result] =
     cleanupContent(message).flatMap(m => createMessage(m)).recoverWith {
-      case e: Throwable => Future.successful(errorResponseResult(e.getMessage))
+      case e: Throwable => Future.successful(errorResponseWithErrorId(e.getMessage))
     }
 
   def cleanupContent(message: SecureMessage): Future[SecureMessage] = {
@@ -350,7 +359,7 @@ class SecureMessageUtil @Inject()(
         logger.warn(s"Duplicate message with ref $ref has not been stored")
         statsMetricRepository.incrementDuplicate(ref)
         auditCreateMessageFor(EventTypes.Failed, messageWithTaxpayerName, "Message Duplicated")
-        errorResponseResult(
+        errorResponseWithErrorId(
           "The backend has rejected the message due to duplicated message content or external reference ID.",
           CONFLICT)
 
