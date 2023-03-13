@@ -113,9 +113,9 @@ class SecureMessageUtil @Inject()(
   def validateAndCreateMessage(
     message: SecureMessage)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Result] =
     isValidSecureMessage(message) match {
-      case Success(_) if message.recipient.email.nonEmpty => checkPreferencesAndCreateMessage(message)
-      case Success(_)                                     => cleanUpAndCreateMessage(message)
-      case Failure(exception)                             => Future.successful(errorResponseWithErrorId(exception.getMessage))
+      case Success(_) if message.recipient.email.isEmpty => checkPreferencesAndCreateMessage(message)
+      case Success(_)                                    => cleanUpAndCreateMessage(message)
+      case Failure(exception)                            => Future.successful(errorResponseWithErrorId(exception.getMessage))
     }
 
   def isValidSecureMessage(message: SecureMessage): Try[SecureMessage] =
