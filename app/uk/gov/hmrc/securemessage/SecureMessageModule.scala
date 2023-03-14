@@ -22,6 +22,7 @@ import org.joda.time.{ DateTime, DateTimeZone }
 import play.api.Configuration
 import play.api.libs.concurrent.AkkaGuiceSupport
 import uk.gov.hmrc.common.message.model.TimeSource
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.securemessage.scheduler.SendEmailJob
 import uk.gov.hmrc.securemessage.services.{ SecureMessageService, SecureMessageServiceImpl }
 import uk.gov.hmrc.time.DateTimeUtils
@@ -76,6 +77,27 @@ class SecureMessageModule extends AbstractModule with AkkaGuiceSupport {
       .getOptional[FiniteDuration]("mongodb.queryMaxTimeMs")
       .getOrElse(throw new RuntimeException("mongodb.queryMaxTimeMs not found in config"))
   }.toMillis.toInt
+
+  @Provides
+  @Named("invalid-template-ids-push-notifications")
+  @Singleton
+  def invalidTemplateIdsForPushNotifications(
+    configuration: Configuration
+  ): List[String] =
+    configuration
+      .getOptional[Seq[String]]("invalidTemplateIdsForPushNotifications")
+      .getOrElse(
+        throw new RuntimeException(
+          "key invalidTemplateIdsForPushNotifications not defined in config"
+        )
+      )
+      .toList
+
+  @Provides
+  @Named("mobile-push-notifications-orchestration-base-url")
+  @Singleton
+  def mobilePushNotificationsConnectorBaseUrl(servicesConfig: ServicesConfig): String =
+    servicesConfig.baseUrl("mobile-push-notifications-orchestration")
 
 }
 

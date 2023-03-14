@@ -21,11 +21,12 @@ import play.api.{ Configuration, Logging }
 import uk.gov.hmrc.mongo.lock.{ LockRepository, LockService }
 import uk.gov.hmrc.securemessage.services.{ EmailAlerter, EmailResults }
 
-import javax.inject.Inject
+import javax.inject.{ Inject, Singleton }
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration.{ Duration, FiniteDuration, HOURS, MILLISECONDS }
 
+@Singleton
 class SendEmailJob @Inject()(
   val configuration: Configuration,
   lockRepository: LockRepository,
