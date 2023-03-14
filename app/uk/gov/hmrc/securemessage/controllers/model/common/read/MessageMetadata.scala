@@ -138,7 +138,8 @@ object MessageMetadata extends ApiFormats with ImplicitClassesExtensions {
       taxpayerName = secureMessage.alertDetails.recipientName map taxpayerNameToRecipientName,
       validFrom = Some(secureMessage.validFrom),
       readTime = secureMessage.readTime,
-      replyTo = secureMessage.details.flatMap(_.replyTo)
+      replyTo = secureMessage.details.flatMap(_.replyTo),
+      sentInError = Some(false)
     )
   }
 
