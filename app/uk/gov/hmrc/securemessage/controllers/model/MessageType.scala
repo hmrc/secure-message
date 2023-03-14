@@ -27,4 +27,5 @@ object MessageType extends Enum[MessageType] with PlayEnum[MessageType] {
   val values: immutable.IndexedSeq[MessageType] = findValues
   case object Conversation extends MessageType
   case object Letter extends MessageType
+  case object SecureMessage extends MessageType
 }

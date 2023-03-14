@@ -21,7 +21,7 @@ import play.api.libs.json._
 import uk.gov.hmrc.common.message.model.MessagesCount
 import uk.gov.hmrc.http.controllers.RestFormats
 import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata
-import uk.gov.hmrc.securemessage.models.core.Message
+import uk.gov.hmrc.securemessage.models.core.{ Language, Message }
 
 import scala.annotation.tailrec
 
@@ -76,9 +76,9 @@ object MessagesResponse extends RestFormats {
 
   def fromMessagesCount(count: MessagesCount): MessagesResponse = MessagesResponse(None, count)
 
-  def fromMessages[A <: Message](items: Seq[A]): MessagesResponse =
+  def fromMessages[A <: Message](items: Seq[A], language: Language): MessagesResponse =
     MessagesResponse(
-      Some(items.sortWith(_._id.toString > _._id.toString).map(MessageMetadata(_))),
+      Some(items.sortWith(_._id.toString > _._id.toString).map(MessageMetadata(_)(language))),
       MessagesCount(
         items.size,
         items.count(message => message.readTime.isEmpty)

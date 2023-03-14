@@ -18,8 +18,10 @@ package uk.gov.hmrc.securemessage.controllers.model.cdsf.read
 
 import org.joda.time.{ DateTime, LocalDate }
 import play.api.libs.json.{ Format, Json }
+import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata
 import uk.gov.hmrc.securemessage.controllers.model.{ ApiFormats, ApiMessage }
-import uk.gov.hmrc.securemessage.models.core.{ Identifier, Letter }
+import uk.gov.hmrc.securemessage.models.core.{ Identifier, Language, Letter }
+import uk.gov.hmrc.securemessage.models.v4.SecureMessage
 
 final case class ApiLetter(
   subject: String,
@@ -45,6 +47,20 @@ object ApiLetter extends ApiFormats {
       readTime = letter.readTime,
       tags = letter.tags
     )
+
+  def fromSecureMessage(secureMessage: SecureMessage)(implicit language: Language): ApiLetter = {
+    val taxId = secureMessage.recipient.identifier
+    val content = MessageMetadata.contentForLanguage(language, secureMessage.content)
+    ApiLetter(
+      content.map(_.subject).getOrElse(""),
+      content.map(_.body).getOrElse(""),
+      secureMessage.readTime.map(FirstReaderInformation(None, _)),
+      SenderInformation("HMRC", secureMessage.validFrom),
+      identifier = Identifier("", taxId.value, Some(taxId.name)),
+      readTime = secureMessage.readTime,
+      tags = secureMessage.tags
+    )
+  }
 
   implicit val firstReaderInformationFormat: Format[FirstReaderInformation] =
     Json.format[FirstReaderInformation]

@@ -153,6 +153,16 @@ class SecureMessageServiceImpl @Inject()(
     } yield ApiLetter.fromCore(letter)
   }.value
 
+  def getSecureMessage(id: ObjectId, enrolments: Set[CustomerEnrolment])(
+    implicit ec: ExecutionContext,
+    language: Language): Future[Either[SecureMessageError, ApiLetter]] = {
+    val identifiers = enrolments.map(_.asIdentifier)
+    for {
+      secureMessage <- EitherT(secureMessageUtil.getMessage(id, identifiers))
+      _             <- EitherT(secureMessageUtil.addReadTime(id))
+    } yield ApiLetter.fromSecureMessage(secureMessage)
+  }.value
+
   def getLetter(id: ObjectId)(implicit ec: ExecutionContext): Future[Option[Letter]] =
     messageRepository.getLetter(id, Set.empty[Identifier]) map {
       case Right(letter) => Some(letter)

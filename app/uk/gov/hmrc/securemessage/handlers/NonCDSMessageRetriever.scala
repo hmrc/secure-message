@@ -25,7 +25,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.securemessage.{ MessageNotFound, SecureMessageError, UserNotAuthorised }
 import uk.gov.hmrc.securemessage.connectors.AuthIdentifiersConnector
 import uk.gov.hmrc.securemessage.controllers.model.{ ApiMessage, MessageResourceResponse, MessagesResponse }
-import uk.gov.hmrc.securemessage.models.core.{ Identifier, Letter, MessageFilter, MessageRequestWrapper }
+import uk.gov.hmrc.securemessage.models.core.{ Identifier, Language, Letter, MessageFilter, MessageRequestWrapper }
 import uk.gov.hmrc.securemessage.services.SecureMessageServiceImpl
 
 import javax.inject.Inject
@@ -36,7 +36,9 @@ class NonCDSMessageRetriever @Inject()(
   val authIdentifiersConnector: AuthIdentifiersConnector,
   secureMessageService: SecureMessageServiceImpl)(implicit ec: ExecutionContext)
     extends MessageRetriever {
-  def fetch(requestWrapper: MessageRequestWrapper)(implicit hc: HeaderCarrier, messages: Messages): Future[JsValue] = {
+  def fetch(requestWrapper: MessageRequestWrapper, language: Language)(
+    implicit hc: HeaderCarrier,
+    messages: Messages): Future[JsValue] = {
     implicit val mf: MessageFilter =
       requestWrapper.messageFilter.copy(taxIdentifiers = requestWrapper.messageFilter.taxIdentifiers.flatMap { taxId =>
         taxId match {
@@ -49,7 +51,7 @@ class NonCDSMessageRetriever @Inject()(
       authTaxIds <- authIdentifiersConnector.currentEffectiveTaxIdentifiers
       _          <- Future(logger.warn(s"MessagesController: authTaxIds $authTaxIds"))
       result <- secureMessageService.getMessagesList(authTaxIds).map { items =>
-                 MessagesResponse.fromMessages(items).toConversations
+                 MessagesResponse.fromMessages(items, language).toConversations
                }
     } yield Json.toJson(result)
   }
@@ -75,7 +77,8 @@ class NonCDSMessageRetriever @Inject()(
 
   def getMessage(readRequest: MessageReadRequest)(
     implicit hc: HeaderCarrier,
-    messages: Messages): Future[Either[SecureMessageError, ApiMessage]] =
+    messages: Messages,
+    language: Language): Future[Either[SecureMessageError, ApiMessage]] =
     for {
       taxIds <- authIdentifiersConnector.currentEffectiveTaxIdentifiers.map(l =>
                  l.map(s => Identifier(s.name, s.value, None)))

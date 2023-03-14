@@ -20,11 +20,13 @@ import org.joda.time.{ DateTime, LocalDate }
 import play.api.i18n.Messages
 import play.api.libs.json.{ Json, OFormat }
 import uk.gov.hmrc.auth.core.Enrolments
+import uk.gov.hmrc.common.message.model.TaxpayerName
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.ConversationMetadata
 import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.ApiLetter
 import uk.gov.hmrc.securemessage.controllers.model.{ ApiFormats, MessageType }
 import uk.gov.hmrc.securemessage.controllers.utils.IdCoder
-import uk.gov.hmrc.securemessage.models.core.{ Conversation, Letter, Message, RecipientName }
+import uk.gov.hmrc.securemessage.models.core.{ Conversation, Language, Letter, Message, RecipientName }
+import uk.gov.hmrc.securemessage.models.v4.{ Content, SecureMessage }
 import uk.gov.hmrc.securemessage.services.ImplicitClassesExtensions
 
 final case class MessageMetadata(
@@ -46,12 +48,13 @@ final case class MessageMetadata(
 
 object MessageMetadata extends ApiFormats with ImplicitClassesExtensions {
 
-  def apply(message: Message): MessageMetadata = mapForMessage(message.asInstanceOf[Letter])
+  def apply(message: Message)(implicit language: Language): MessageMetadata = mapForMessage(message, language)
 
-  def apply(message: Message, reader: Enrolments)(implicit messages: Messages): MessageMetadata =
+  def apply(message: Message, reader: Enrolments, language: Language)(implicit messages: Messages): MessageMetadata =
     message match {
-      case c: Conversation => map(c, reader)
-      case l: Letter       => map(l)
+      case c: Conversation  => map(c, reader)
+      case l: Letter        => map(l)
+      case s: SecureMessage => map(s, language)
     }
 
   private def map(conversation: Conversation, reader: Enrolments)(implicit messages: Messages): MessageMetadata = {
@@ -81,7 +84,27 @@ object MessageMetadata extends ApiFormats with ImplicitClassesExtensions {
     )
   }
 
-  private def mapForMessage(letter: Letter): MessageMetadata = {
+  private def map(secureMessage: SecureMessage, language: Language): MessageMetadata = {
+    val messageType = MessageType.Letter
+    val content = contentForLanguage(language, secureMessage.content)
+    new MessageMetadata(
+      messageType = messageType,
+      id = IdCoder.encodeId(messageType, secureMessage._id.toString),
+      subject = content.map(_.subject).getOrElse(""),
+      issueDate = secureMessage.issueDate,
+      senderName = Some("HMRC"),
+      unreadMessages = secureMessage.readTime.isEmpty,
+      count = 1
+    )
+  }
+
+  private def mapForMessage(message: Message, language: Language): MessageMetadata =
+    message match {
+      case l: Letter        => mapForLetter(l)
+      case s: SecureMessage => mapForSecureMessage(s, language)
+    }
+
+  private def mapForLetter(letter: Letter) = {
     val messageType = MessageType.Letter
     val al = ApiLetter.fromCore(letter)
     new MessageMetadata(
@@ -100,6 +123,31 @@ object MessageMetadata extends ApiFormats with ImplicitClassesExtensions {
       messageDesc = letter.body.flatMap(_.`type`)
     )
   }
+
+  private def mapForSecureMessage(secureMessage: SecureMessage, language: Language): MessageMetadata = {
+    val messageType = MessageType.SecureMessage
+    val content = contentForLanguage(language, secureMessage.content)
+    new MessageMetadata(
+      messageType = messageType,
+      id = secureMessage._id.toString,
+      subject = content.map(_.subject).getOrElse(""),
+      issueDate = secureMessage.issueDate,
+      senderName = Some("HMRC"),
+      unreadMessages = secureMessage.readTime.isEmpty,
+      count = 1,
+      taxpayerName = secureMessage.alertDetails.recipientName map taxpayerNameToRecipientName,
+      validFrom = Some(secureMessage.validFrom),
+      readTime = secureMessage.readTime,
+      replyTo = secureMessage.details.flatMap(_.replyTo),
+      sentInError = Some(false)
+    )
+  }
+
+  def taxpayerNameToRecipientName(t: TaxpayerName): RecipientName =
+    RecipientName(t.title, t.forename, t.secondForename, t.surname, t.honours, t.line1)
+
+  def contentForLanguage(lang: Language, content: List[Content]): Option[Content] =
+    content.find(_.lang == lang).orElse(content.headOption)
 
   implicit val messageMetadataFormat: OFormat[MessageMetadata] =
     Json.format[MessageMetadata]

@@ -33,6 +33,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.securemessage.UnitTest
 import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata
 import uk.gov.hmrc.securemessage.helpers.Resources
+import uk.gov.hmrc.securemessage.models.core.Language.English
 import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.securemessage.services.SecureMessageServiceImpl
 
@@ -46,7 +47,7 @@ class CDSMessageRetrieverSpec extends PlaySpec with MockitoSugar with UnitTest {
 
   "fetch messages" must {
     "return metadata for both conversations and letters" in new TestCase {
-      val result = retriever.fetch(MessageRequestWrapper(None, Some(List(testEnrolment)), None))(hc, stubMsgs)
+      val result = retriever.fetch(MessageRequestWrapper(None, Some(List(testEnrolment)), None), English)(hc, stubMsgs)
       result.map(_.as[List[MessageMetadata]] mustBe messagesMetadata)
     }
   }

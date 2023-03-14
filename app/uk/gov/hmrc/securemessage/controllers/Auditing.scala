@@ -40,15 +40,16 @@ trait Auditing {
 
   protected val isoDtf = ISODateTimeFormat.basicDateTime()
   protected val txnName = "transactionName"
-  protected val newConversationTxnName: (String, String) = txnName   -> "Create new query conversation"
-  protected val retrieveEmailTxnName: (String, String) = txnName     -> "Retrieve Email Address"
-  protected val emailSentTxnName: (String, String) = txnName         -> "Email Alert Sent"
-  protected val caseworkerReplyTxnName: (String, String) = txnName   -> "Caseworker reply to query conversation"
-  protected val customerReplyTxnName: (String, String) = txnName     -> "Customer reply to query conversation"
-  protected val conversationReadTxnName: (String, String) = txnName  -> "Message is Read"
-  protected val letterReadSuccessTxnName: (String, String) = txnName -> "Message is Read"
-  protected val letterReadFailedTxnName: (String, String) = txnName  -> "Message not Read"
-  protected val messageForwardedTxnName: (String, String) = txnName  -> "Message forwarded to caseworker"
+  protected val newConversationTxnName: (String, String) = txnName         -> "Create new query conversation"
+  protected val retrieveEmailTxnName: (String, String) = txnName           -> "Retrieve Email Address"
+  protected val emailSentTxnName: (String, String) = txnName               -> "Email Alert Sent"
+  protected val caseworkerReplyTxnName: (String, String) = txnName         -> "Caseworker reply to query conversation"
+  protected val customerReplyTxnName: (String, String) = txnName           -> "Customer reply to query conversation"
+  protected val conversationReadTxnName: (String, String) = txnName        -> "Message is Read"
+  protected val letterReadSuccessTxnName: (String, String) = txnName       -> "Message is Read"
+  protected val letterReadFailedTxnName: (String, String) = txnName        -> "Message not Read"
+  protected val secureMessageReadFailedTxnName: (String, String) = txnName -> "Secure Message not Read"
+  protected val messageForwardedTxnName: (String, String) = txnName        -> "Message forwarded to caseworker"
 
   private val NotificationType = "notificationType"
 
@@ -172,6 +173,7 @@ trait Auditing {
   private val letterMessageType = ("messageType", "Letter")
   private val LetterReadSuccess = "LetterReadSuccess"
   private val LetterReadFailed = "LetterReadFailed"
+  private val SecureMessageReadFailed = "SecureMessageReadFailed"
   private val zone: DateTimeZone = DateTimeZone.UTC
 
   /** TOOD: replace with with the common [[auditMessageRead()]]
@@ -248,6 +250,8 @@ trait Auditing {
           case MessageType.Conversation =>
             (messageType.entryName, decodedId, conversationReadTxnName, ConversationReadFailed)
           case MessageType.Letter => (messageType.entryName, decodedId, letterReadFailedTxnName, LetterReadFailed)
+          case MessageType.SecureMessage =>
+            (messageType.entryName, decodedId, secureMessageReadFailedTxnName, SecureMessageReadFailed)
         }
       case Left(_) => ("message", encodedId, conversationReadTxnName, ConversationReadFailed)
     }
