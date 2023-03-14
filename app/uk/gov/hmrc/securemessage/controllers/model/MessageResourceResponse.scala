@@ -20,7 +20,9 @@ import org.joda.time.{ DateTime, LocalDate }
 import play.api.libs.json.{ Writes, _ }
 import uk.gov.hmrc.common.message.model.MessageContentParameters
 import uk.gov.hmrc.http.controllers.RestFormats
-import uk.gov.hmrc.securemessage.models.core.{ Details, Letter, RenderUrl }
+import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata
+import uk.gov.hmrc.securemessage.models.core.{ Details, Language, Letter, Message, RenderUrl }
+import uk.gov.hmrc.securemessage.models.v4.SecureMessage
 
 final case class ServiceUrl(service: String, url: String)
 
@@ -64,8 +66,8 @@ object MessageResourceResponse extends RestFormats {
       (__ \ "renderUrl").write[ServiceUrl]
   )(m => (m.id, m.subject, m.body, m.validFrom, m.readTime, m.contentParameters, m.sentInError, m.renderUrl))
 
-  def readTimeUrl(letter: Letter, appName: String): ServiceUrl =
-    ServiceUrl(appName, s"/messages/${letter._id}/read-time ")
+  def readTimeUrl(msg: Message, appName: String): ServiceUrl =
+    ServiceUrl(appName, s"/messages/${msg._id}/read-time ")
 
   def from(letter: Letter): MessageResourceResponse =
     MessageResourceResponse(
@@ -78,4 +80,19 @@ object MessageResourceResponse extends RestFormats {
       letter.rescindment.isDefined,
       ServiceUrl.fromRenderUrl(letter.renderUrl)
     )
+
+  def from(secureMessage: SecureMessage)(implicit language: Language): MessageResourceResponse = {
+    val content = MessageMetadata.contentForLanguage(language, secureMessage.content)
+    val id = secureMessage._id.toString
+    MessageResourceResponse(
+      id,
+      content.map(_.subject).getOrElse(""),
+      None,
+      secureMessage.validFrom,
+      secureMessage.readTime.toRight(readTimeUrl(secureMessage, "secure-message")),
+      None,
+      false,
+      ServiceUrl.fromRenderUrl(RenderUrl("secure-message", s"/messages/$id/content"))
+    )
+  }
 }

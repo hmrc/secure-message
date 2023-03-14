@@ -221,7 +221,6 @@ class SecureMessageController @Inject()(
   def getMessage(encodedId: String, language: Option[Language] = None): Action[AnyContent] = Action.async {
     implicit request =>
       implicit val lang: Language = language.getOrElse(English)
-      logger.warn(s"getMessage for the language $lang")
       val message: EitherT[Future, SecureMessageError, (ApiMessage, Enrolments)] = for {
         messageRequestTuple <- EitherT(Future.successful(IdCoder.decodeId(encodedId)))
         enrolments          <- EitherT(getEnrolments())

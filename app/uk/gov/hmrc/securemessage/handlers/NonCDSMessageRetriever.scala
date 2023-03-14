@@ -22,11 +22,12 @@ import org.joda.time.format.DateTimeFormat
 import play.api.i18n.Messages
 import play.api.libs.json.{ JsValue, Json }
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.securemessage.{ MessageNotFound, SecureMessageError, UserNotAuthorised }
 import uk.gov.hmrc.securemessage.connectors.AuthIdentifiersConnector
 import uk.gov.hmrc.securemessage.controllers.model.{ ApiMessage, MessageResourceResponse, MessagesResponse }
-import uk.gov.hmrc.securemessage.models.core.{ Identifier, Language, Letter, MessageFilter, MessageRequestWrapper }
+import uk.gov.hmrc.securemessage.models.core._
+import uk.gov.hmrc.securemessage.models.v4.SecureMessage
 import uk.gov.hmrc.securemessage.services.SecureMessageServiceImpl
+import uk.gov.hmrc.securemessage.{ MessageNotFound, SecureMessageError, UserNotAuthorised }
 
 import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
@@ -80,13 +81,19 @@ class NonCDSMessageRetriever @Inject()(
     messages: Messages,
     language: Language): Future[Either[SecureMessageError, ApiMessage]] =
     for {
-      taxIds <- authIdentifiersConnector.currentEffectiveTaxIdentifiers.map(l =>
-                 l.map(s => Identifier(s.name, s.value, None)))
+      taxIds <- authIdentifiersConnector.currentEffectiveTaxIdentifiers
+      identifiers = taxIds.map(s => Identifier(s.name, s.value, None))
       letter     <- secureMessageService.getLetter(new ObjectId(readRequest.messageId))
       strideUser <- authIdentifiersConnector.isStrideUser
-      updatedMsg <- updateMessageContent(letter)
-      result <- updatedMsg match {
-                 case Some(m) if taxIds.contains(m.recipient.identifier) || strideUser =>
+      v4MessageOrLetter <- if (letter.isDefined) {
+                            updateMessageContent(letter)
+                          } else {
+                            secureMessageService.getSecureMessage(new ObjectId(readRequest.messageId))
+                          }
+      result <- v4MessageOrLetter match {
+                 case Some(m: Letter) if identifiers.contains(m.recipient.identifier) || strideUser =>
+                   Future.successful(Right(MessageResourceResponse.from(m)))
+                 case Some(m: SecureMessage) if taxIds.contains(m.recipient.identifier) || strideUser =>
                    Future.successful(Right(MessageResourceResponse.from(m)))
                  case Some(_) =>
                    Future.successful(Left(UserNotAuthorised("Unauthorised for the requested identifiers")))

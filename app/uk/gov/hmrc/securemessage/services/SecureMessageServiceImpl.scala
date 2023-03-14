@@ -163,6 +163,12 @@ class SecureMessageServiceImpl @Inject()(
     } yield ApiLetter.fromSecureMessage(secureMessage)
   }.value
 
+  def getSecureMessage(id: ObjectId)(implicit ec: ExecutionContext): Future[Option[SecureMessage]] =
+    secureMessageUtil.getMessage(id, Set.empty[Identifier]) map {
+      case Right(secureMessage) => Some(secureMessage)
+      case _                    => None
+    }
+
   def getLetter(id: ObjectId)(implicit ec: ExecutionContext): Future[Option[Letter]] =
     messageRepository.getLetter(id, Set.empty[Identifier]) map {
       case Right(letter) => Some(letter)
