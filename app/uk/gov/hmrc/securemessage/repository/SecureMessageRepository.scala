@@ -24,12 +24,14 @@ import org.joda.time.{ DateTime, LocalDate }
 import org.mongodb.scala.MongoException
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model._
+import play.api.libs.json.Json
 import uk.gov.hmrc.common.message.model.{ EmailAlert, MessagesCount, TimeSource }
 import uk.gov.hmrc.domain.TaxIds.TaxIdWithName
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.{ Failed, InProgress, ToDo }
+import uk.gov.hmrc.securemessage.{ SecureMessageError, StoreError }
 import uk.gov.hmrc.securemessage.models.core.{ Count, FilterTag, Identifier, MessageFilter }
 import uk.gov.hmrc.securemessage.models.v4.{ SecureMessage, SecureMessageMongoFormat }
 
@@ -197,4 +199,21 @@ class SecureMessageRepository @Inject()(
   def getSecureMessages(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
     implicit ec: ExecutionContext): Future[List[SecureMessage]] =
     getMessages(identifiers, tags)
+
+  def getSecureMessage(id: ObjectId, identifiers: Set[Identifier])(
+    implicit ec: ExecutionContext): Future[Either[SecureMessageError, SecureMessage]] = getMessage(id, identifiers)
+
+  import SecureMessageMongoFormat.dateTimeFormat
+  def addReadTime(id: ObjectId, readTime: DateTime)(
+    implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] =
+    collection
+      .updateOne(
+        filter = Filters.and(Filters.equal("_id", id), Filters.exists("readTime", exists = false)),
+        update = Updates.set("readTime", Codecs.toBson(Json.toJson(readTime)))
+      )
+      .toFuture()
+      .map(_ => Right(()))
+      .recoverWith {
+        case error => Future.successful(Left(StoreError(error.getMessage, None)))
+      }
 }

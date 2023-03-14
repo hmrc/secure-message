@@ -182,7 +182,7 @@ class SecureMessageController @Inject()(
     enrolment: Option[List[CustomerEnrolment]],
     tag: Option[List[FilterTag]],
     messageFilter: Option[MessageFilter] = None,
-    language: Option[Language] = Some(English)): Action[AnyContent] =
+    language: Option[Language] = None): Action[AnyContent] =
     Action.async { implicit request =>
       {
         logger.warn(s"getMessages for the language $language")
@@ -195,7 +195,7 @@ class SecureMessageController @Inject()(
             Future.successful(BadRequest(Json.toJson(e.getMessage)))
           case Right(value) =>
             logger.warn(s"Valid Request $value - Params: ${request.queryString}")
-            messageBroker.messageRetriever(value).fetch(requestWrapper).map(Ok(_))
+            messageBroker.messageRetriever(value).fetch(requestWrapper, language.getOrElse(English)).map(Ok(_))
         }
       }
     }
@@ -218,9 +218,10 @@ class SecureMessageController @Inject()(
       }
     }
 
-  def getMessage(encodedId: String, language: Option[Language] = Some(English)): Action[AnyContent] = Action.async {
+  def getMessage(encodedId: String, language: Option[Language] = None): Action[AnyContent] = Action.async {
     implicit request =>
-      logger.warn(s"getMessage for the language $language")
+      implicit val lang: Language = language.getOrElse(English)
+      logger.warn(s"getMessage for the language $lang")
       val message: EitherT[Future, SecureMessageError, (ApiMessage, Enrolments)] = for {
         messageRequestTuple <- EitherT(Future.successful(IdCoder.decodeId(encodedId)))
         enrolments          <- EitherT(getEnrolments())

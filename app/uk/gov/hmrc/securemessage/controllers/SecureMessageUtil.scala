@@ -18,7 +18,7 @@ package uk.gov.hmrc.securemessage.controllers
 
 import org.apache.commons.codec.binary.Base64
 import org.bson.types.ObjectId
-import org.joda.time.LocalDate
+import org.joda.time.{ DateTime, LocalDate }
 import org.joda.time.format.DateTimeFormat
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document.OutputSettings
@@ -39,6 +39,7 @@ import uk.gov.hmrc.mongo.workitem.ProcessingStatus.Deferred
 import uk.gov.hmrc.mongo.workitem.WorkItem
 import uk.gov.hmrc.play.audit.http.connector.{ AuditConnector, AuditResult }
 import uk.gov.hmrc.play.audit.model.{ DataEvent, EventTypes }
+import uk.gov.hmrc.securemessage.SecureMessageError
 import uk.gov.hmrc.securemessage.connectors.{ EmailValidation, EntityResolverConnector, TaxpayerNameConnector }
 import uk.gov.hmrc.securemessage.models.core.{ Count, FilterTag, Identifier, MessageFilter }
 import uk.gov.hmrc.securemessage.models.v4.{ Content, ExtraAlertConfig, SecureMessage }
@@ -541,6 +542,13 @@ class SecureMessageUtil @Inject()(
   def getMessages(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
     implicit ec: ExecutionContext): Future[List[SecureMessage]] =
     secureMessageRepository.getSecureMessages(identifiers, tags)
+
+  def getMessage(id: ObjectId, identifiers: Set[Identifier])(
+    implicit ec: ExecutionContext): Future[Either[SecureMessageError, SecureMessage]] =
+    secureMessageRepository.getSecureMessage(id, identifiers)
+
+  def addReadTime(id: ObjectId)(implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] =
+    secureMessageRepository.addReadTime(id, DateTime.now())
 }
 
 case class MessageValidationException(message: String) extends RuntimeException(message)

@@ -34,6 +34,7 @@ import uk.gov.hmrc.securemessage.UnitTest
 import uk.gov.hmrc.securemessage.connectors.AuthIdentifiersConnector
 import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata
 import uk.gov.hmrc.securemessage.helpers.Resources
+import uk.gov.hmrc.securemessage.models.core.Language.English
 import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.securemessage.services.SecureMessageServiceImpl
 
@@ -48,7 +49,7 @@ class NonCDSMessageRetrieverSpec extends PlaySpec with MockitoSugar with UnitTes
   "fetch messages" must {
     "return metadata for both conversations and letters" in new TestCase {
       val result: Future[JsValue] =
-        retriever.fetch(MessageRequestWrapper(None, None, None, MessageFilter(List("nino"))))(hc, stubMsgs)
+        retriever.fetch(MessageRequestWrapper(None, None, None, MessageFilter(List("nino"))), English)(hc, stubMsgs)
       result.map(_.as[List[MessageMetadata]] mustBe letters)
     }
   }
