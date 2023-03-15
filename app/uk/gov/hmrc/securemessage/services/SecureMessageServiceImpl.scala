@@ -19,6 +19,7 @@ package uk.gov.hmrc.securemessage.services
 import cats.data._
 import cats.implicits._
 import com.google.inject.Inject
+import org.apache.commons.codec.binary.Base64
 import org.joda.time.{ DateTime, LocalDate }
 import org.joda.time.format.DateTimeFormat
 import org.mongodb.scala.bson.ObjectId
@@ -38,7 +39,7 @@ import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
 import uk.gov.hmrc.securemessage.controllers.{ Auditing, SecureMessageUtil }
 import uk.gov.hmrc.securemessage.models._
-import uk.gov.hmrc.securemessage.models.core.Language.Welsh
+import uk.gov.hmrc.securemessage.models.core.Language.{ English, Welsh }
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.Customer.eqCustomer
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.{ Customer => PCustomer }
 import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, _ }
@@ -355,14 +356,14 @@ class SecureMessageServiceImpl @Inject()(
   private def formatMessageContent(message: SecureMessage)(implicit messages: Messages) =
     if (messages.lang.language == "cy") {
       val welshContent: Option[Content] = MessageMetadata.contentForLanguage(Welsh, message.content)
-      formatSubject(welshContent.map(_.subject).getOrElse(""), isWelshSubject = true) ++ addIssueDate(message) ++ welshContent
-        .map(_.body)
-        .getOrElse("")
+      val welshBody = welshContent.map(_.body).getOrElse("")
+      val welshSubject = welshContent.map(_.subject).getOrElse("")
+      formatSubject(welshSubject, isWelshSubject = true) ++ addIssueDate(message) ++ decodeBase64String(welshBody)
     } else {
-      val englishContent: Option[Content] = MessageMetadata.contentForLanguage(Welsh, message.content)
-      formatSubject(englishContent.map(_.subject).getOrElse(""), isWelshSubject = false) ++ addIssueDate(message) ++ englishContent
-        .map(_.body)
-        .getOrElse("")
+      val englishContent: Option[Content] = MessageMetadata.contentForLanguage(English, message.content)
+      val body = englishContent.map(_.body).getOrElse("")
+      val subject = englishContent.map(_.subject).getOrElse("")
+      formatSubject(subject, isWelshSubject = false) ++ addIssueDate(message) ++ decodeBase64String(body)
     }
 
   private def formatSubject(messageSubject: String, isWelshSubject: Boolean): String =
@@ -386,4 +387,7 @@ class SecureMessageServiceImpl @Inject()(
       }
     date.toString(formatter)
   }
+
+  def decodeBase64String(input: String): String =
+    new String(Base64.decodeBase64(input.getBytes("UTF-8")))
 }
