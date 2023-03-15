@@ -338,7 +338,7 @@ class SecureMessageServiceImpl @Inject()(
 
   def getContentBy(
     id: ObjectId
-  )(implicit hc: HeaderCarrier, ec: ExecutionContext, messages: Messages): Future[Option[String]] =
+  )(implicit ec: ExecutionContext, messages: Messages): Future[Option[String]] =
     for {
       msg <- secureMessageUtil.findById(id)
       result <- msg match {
@@ -347,7 +347,12 @@ class SecureMessageServiceImpl @Inject()(
                }
     } yield result
 
-  private def formatMessageContent(message: SecureMessage)(implicit ec: ExecutionContext, messages: Messages) =
+  def setReadTime(
+    id: ObjectId
+  )(implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] =
+    secureMessageUtil.addReadTime(id)
+
+  private def formatMessageContent(message: SecureMessage)(implicit messages: Messages) =
     if (messages.lang.language == "cy") {
       val welshContent: Option[Content] = MessageMetadata.contentForLanguage(Welsh, message.content)
       formatSubject(welshContent.map(_.subject).getOrElse(""), isWelshSubject = true) ++ addIssueDate(message) ++ welshContent

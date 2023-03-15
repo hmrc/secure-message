@@ -94,7 +94,9 @@ package object binders {
         case Right(id) =>
           if (ObjectId.isValid(id)) {
             Right(new ObjectId(id))
-          } else Left(s"ID $id was invalid")
+          } else {
+            Left(s"ID $id was invalid")
+          }
       }
 
       def unbind(key: String, value: ObjectId): String = value.toString

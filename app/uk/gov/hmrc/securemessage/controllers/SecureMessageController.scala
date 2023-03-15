@@ -315,4 +315,12 @@ class SecureMessageController @Inject()(
         NotFound
     }
   }
+
+  def setReadTime(id: ObjectId): Action[AnyContent] = Action.async { _ =>
+    secureMessageService.setReadTime(id).flatMap {
+      case Left(e) =>
+        logger.error(s"Unable to set secure message read time ${e.message}"); Future.successful(InternalServerError)
+      case _ => logger.warn(s"Secure Message is Read $id"); Future.successful(Ok)
+    }
+  }
 }
