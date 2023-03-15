@@ -95,7 +95,10 @@ object SecureMessage extends ApiFormats with AlertEmailTemplateMapper {
             .map(Some.apply)
             .orElse(JsError("tags : invalid data provided"))
           case JsUndefined() => JsSuccess(None)})) {
-      (externalRef, recipient, messageType, validFrom, content, alertQueue, messageDetails, alertDetailsData, tags) =>
+      (externalRef, recipient, messageType, vf, content, alertQueue, messageDetails, alertDetailsData, tags) =>
+
+        val issueDate = messageDetails.flatMap(_.issueDate).getOrElse(LocalDate.now)
+        val validFrom = vf.filter(_.isAfter(issueDate)).getOrElse(issueDate)
 
         val hash: String = {
           val sha256Digester = MessageDigest.getInstance("SHA-256")
@@ -132,7 +135,7 @@ object SecureMessage extends ApiFormats with AlertEmailTemplateMapper {
           TaxEntity.create(recipient.taxIdentifier, recipient.email, recipient.regime),
           tags,
           messageType,
-          validFrom.getOrElse(LocalDate.now),
+          validFrom,
           content,
           AlertDetails(templateId, recipientName, data),
           alertQueue,

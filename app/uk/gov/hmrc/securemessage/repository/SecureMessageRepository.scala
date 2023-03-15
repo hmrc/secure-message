@@ -99,7 +99,7 @@ class SecureMessageRepository @Inject()(
 
     val todoQuery = Filters.and(
       Filters.equal("status", ToDo.name),
-      Filters.lte("alertFrom", timeSource.today)
+      Filters.lte("validFrom", timeSource.today)
     )
 
     val failedBeforeQuery = Filters.or(

@@ -66,7 +66,9 @@ class SendEmailJob @Inject()(
             s"$name: Succeeded - $sent, Will be retried - $requeued"
         }
         .recover {
-          case e: Exception => s"$name Error processing Alerts ${e.getMessage}"
+          case e: Exception =>
+            e.printStackTrace //TODO: Keeping it know more info. Will be removed once testing done.
+            s"$name Error processing Alerts ${e.getMessage}"
         }
     } map { msg =>
       val msgStr = msg.getOrElse(s"$name cannot acquire mongo lock, not running")
