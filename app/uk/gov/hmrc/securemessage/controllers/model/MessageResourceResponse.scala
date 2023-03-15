@@ -66,8 +66,8 @@ object MessageResourceResponse extends RestFormats {
       (__ \ "renderUrl").write[ServiceUrl]
   )(m => (m.id, m.subject, m.body, m.validFrom, m.readTime, m.contentParameters, m.sentInError, m.renderUrl))
 
-  def readTimeUrl(msg: Message, appName: String): ServiceUrl =
-    ServiceUrl(appName, s"/messages/${msg._id}/read-time ")
+  def readTimeUrl(msg: Message, appName: String, uri: String): ServiceUrl =
+    ServiceUrl(appName, s"$uri/${msg._id}/read-time ")
 
   def from(letter: Letter): MessageResourceResponse =
     MessageResourceResponse(
@@ -75,7 +75,7 @@ object MessageResourceResponse extends RestFormats {
       letter.subject,
       letter.body,
       letter.validFrom,
-      letter.readTime.toRight(readTimeUrl(letter, "message")),
+      letter.readTime.toRight(readTimeUrl(letter, "message", "/messages")),
       letter.contentParameters,
       letter.rescindment.isDefined,
       ServiceUrl.fromRenderUrl(letter.renderUrl)
@@ -89,10 +89,10 @@ object MessageResourceResponse extends RestFormats {
       content.map(_.subject).getOrElse(""),
       None,
       secureMessage.validFrom,
-      secureMessage.readTime.toRight(readTimeUrl(secureMessage, "secure-message")),
+      secureMessage.readTime.toRight(readTimeUrl(secureMessage, "secure-message", "/secure-messaging/messages")),
       None,
       false,
-      ServiceUrl.fromRenderUrl(RenderUrl("secure-message", s"/messages/$id/content"))
+      ServiceUrl.fromRenderUrl(RenderUrl("secure-message", s"/secure-messaging/messages/$id/content"))
     )
   }
 }
