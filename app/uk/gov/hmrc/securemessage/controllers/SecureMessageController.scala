@@ -306,4 +306,13 @@ class SecureMessageController @Inject()(
       case None => NotFound
     }
   }
+
+  def getContentBy(id: ObjectId): Action[AnyContent] = Action.async { implicit request =>
+    secureMessageService.getContentBy(id).map {
+      case Some(content) => Ok(content)
+      case None =>
+        logger.warn(s"""Content for message with id: ${id.toString} is empty""")
+        NotFound
+    }
+  }
 }

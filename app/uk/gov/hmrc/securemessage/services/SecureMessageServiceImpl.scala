@@ -19,7 +19,8 @@ package uk.gov.hmrc.securemessage.services
 import cats.data._
 import cats.implicits._
 import com.google.inject.Inject
-import org.joda.time.DateTime
+import org.joda.time.{ DateTime, LocalDate }
+import org.joda.time.format.DateTimeFormat
 import org.mongodb.scala.bson.ObjectId
 import play.api.i18n.Messages
 import play.api.mvc.{ AnyContent, Request, Result }
@@ -33,19 +34,22 @@ import uk.gov.hmrc.securemessage.connectors.{ ChannelPreferencesConnector, EISCo
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.{ ApiConversation, ConversationMetadata }
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage
 import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.ApiLetter
+import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
 import uk.gov.hmrc.securemessage.controllers.{ Auditing, SecureMessageUtil }
 import uk.gov.hmrc.securemessage.models._
+import uk.gov.hmrc.securemessage.models.core.Language.Welsh
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.Customer.eqCustomer
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.{ Customer => PCustomer }
 import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, _ }
-import uk.gov.hmrc.securemessage.models.v4.SecureMessage
+import uk.gov.hmrc.securemessage.models.v4.{ Content, SecureMessage }
 import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository }
 import uk.gov.hmrc.securemessage.services.utils.ContentValidator
 
 import java.util.UUID
 import javax.inject.Singleton
 import scala.concurrent.{ ExecutionContext, Future }
+import scala.xml.XML
 
 //TODO: refactor service to only accept core model classes as params
 @Singleton
@@ -332,4 +336,49 @@ class SecureMessageServiceImpl @Inject()(
   }
   case class CustomerEmailError(customer: Participant, error: EmailLookupError)
 
+  def getContentBy(
+    id: ObjectId
+  )(implicit hc: HeaderCarrier, ec: ExecutionContext, messages: Messages): Future[Option[String]] =
+    for {
+      msg <- secureMessageUtil.findById(id)
+      result <- msg match {
+                 case Some(m) => Future.successful(Some(formatMessageContent(m)))
+                 case None    => Future.successful(None)
+               }
+    } yield result
+
+  private def formatMessageContent(message: SecureMessage)(implicit ec: ExecutionContext, messages: Messages) =
+    if (messages.lang.language == "cy") {
+      val welshContent: Option[Content] = MessageMetadata.contentForLanguage(Welsh, message.content)
+      formatSubject(welshContent.map(_.subject).getOrElse(""), isWelshSubject = true) ++ addIssueDate(message) ++ welshContent
+        .map(_.body)
+        .getOrElse("")
+    } else {
+      val englishContent: Option[Content] = MessageMetadata.contentForLanguage(Welsh, message.content)
+      formatSubject(englishContent.map(_.subject).getOrElse(""), isWelshSubject = false) ++ addIssueDate(message) ++ englishContent
+        .map(_.body)
+        .getOrElse("")
+    }
+
+  private def formatSubject(messageSubject: String, isWelshSubject: Boolean): String =
+    if (isWelshSubject) {
+      <h1 lang="cy" class="govuk-heading-xl">{XML.loadString("<root>" + messageSubject + "</root>").child}</h1>.mkString
+    } else {
+      <h1 lang="en" class="govuk-heading-xl">{XML.loadString("<root>" + messageSubject + "</root>").child}</h1>.mkString
+    }
+
+  private def addIssueDate(message: SecureMessage)(implicit messages: Messages): String = {
+    val issueDate = localizedFormatter(message.issueDate.toLocalDate)
+    <p class='message_time faded-text--small govuk-hint'>{s"${messages("date.text.advisor", issueDate)}"}</p><br/>.mkString
+  }
+
+  private def localizedFormatter(date: LocalDate)(implicit messages: Messages): String = {
+    val formatter =
+      if (messages.lang.language == "cy") {
+        DateTimeFormat.forPattern(s"d '${messages(s"month.${date.getMonthOfYear}")}' yyyy")
+      } else {
+        DateTimeFormat.forPattern("dd MMMM yyyy")
+      }
+    date.toString(formatter)
+  }
 }

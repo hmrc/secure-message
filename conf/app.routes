@@ -124,3 +124,7 @@ GET        /messages/:encodedId   uk.gov.hmrc.securemessage.controllers.SecureMe
 POST        /v4/message    uk.gov.hmrc.securemessage.controllers.SecureMessageController.createMessage()
 
 GET         /message/system/:id/send-alert      uk.gov.hmrc.securemessage.controllers.SecureMessageController.sendAlert(id: String)
+
+GET     /messages/:id/content                           uk.gov.hmrc.securemessage.controllers.SecureMessageController.getContentBy(id: org.mongodb.scala.bson.ObjectId)
+
+POST    /messages/:id/read-time                         uk.gov.hmrc.securemessage.controllers.SecureMessageController.setReadTime(id: org.mongodb.scala.bson.ObjectId)
