@@ -150,8 +150,8 @@ class SecureMessageUtil @Inject()(
   }
 
   def checkDetailsIsPresent(message: SecureMessage): Try[SecureMessage] = message match {
-    case m if m.details.exists(_.formId.nonEmpty) => Success(m)
-    case _                                        => Failure(MessageValidationException("details: details not provided where it is required"))
+    case m if !isGmc(m) || m.details.exists(_.formId.nonEmpty) => Success(m)
+    case _                                                     => Failure(MessageValidationException("details: details not provided where it is required"))
   }
 
   def checkEmptyEmailAddress(message: SecureMessage): Try[SecureMessage] =

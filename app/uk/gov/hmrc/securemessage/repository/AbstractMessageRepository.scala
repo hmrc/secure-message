@@ -17,6 +17,7 @@
 package uk.gov.hmrc.securemessage.repository
 
 import cats.implicits.toFoldableOps
+import org.bson.codecs.Codec
 import org.mongodb.scala.bson.ObjectId
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.{ Filters, IndexModel }
@@ -35,8 +36,15 @@ abstract class AbstractMessageRepository[A: ClassTag](
   mongo: MongoComponent,
   domainFormat: Format[A],
   indexes: Seq[IndexModel],
-  replaceIndexes: Boolean)(implicit ec: ExecutionContext)
-    extends PlayMongoRepository[A](mongo, collectionName, domainFormat, indexes, replaceIndexes = replaceIndexes) {
+  replaceIndexes: Boolean,
+  extraCodecs: Seq[Codec[_]] = Seq.empty)(implicit ec: ExecutionContext)
+    extends PlayMongoRepository[A](
+      mongo,
+      collectionName,
+      domainFormat,
+      indexes,
+      replaceIndexes = replaceIndexes,
+      extraCodecs = extraCodecs) {
 
   implicit val format: OFormat[A] = domainFormat.asInstanceOf[OFormat[A]]
   val logger = Logger(getClass)

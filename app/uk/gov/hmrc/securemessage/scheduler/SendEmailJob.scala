@@ -51,26 +51,27 @@ class SendEmailJob @Inject()(
 
   override def receive: Receive = {
     case StartProcess =>
-      logger.warn(s"Start processing secure messages to send email requests")
-      processSecureMessages
-      logger.warn(s"Stop processing secure messages to send email requests")
+      logger.warn(s"$name Start processing secure messages to send email requests")
+      processSecureMessages()
+      logger.warn(s"$name Stop processing secure messages to send email requests")
   }
 
   def processSecureMessages(): Future[Result] =
-    ls.withLock {
-      emailAlerter.sendEmailAlerts().map {
-        case EmailResults(0, 0) =>
-          val msg = "SendEmailJob: No messages to process"
-          logger.warn(msg)
-          Result(msg)
-        case EmailResults(sent, requeued) =>
-          val msg =
-            s"SendEmailJob: Succeeded - $sent, Will be retried - $requeued"
-          Result(msg)
-      }
-    } map {
-      case Some(Result(msg)) => Result(s"$msg")
-      case None              => Result(s"$name cannot acquire mongo lock, not running")
+    ls.withLock[String] {
+      emailAlerter
+        .sendEmailAlerts()
+        .map {
+          case EmailResults(0, 0) => s"$name No messages to process"
+          case EmailResults(sent, requeued) =>
+            s"$name: Succeeded - $sent, Will be retried - $requeued"
+        }
+        .recover {
+          case e: Exception => s"$name Error processing Alerts ${e.getMessage}"
+        }
+    } map { msg =>
+      val msgStr = msg.getOrElse(s"$name cannot acquire mongo lock, not running")
+      logger.warn(msgStr)
+      Result(msgStr)
     }
 }
 
