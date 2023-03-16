@@ -291,6 +291,10 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     "return Not Found (404) with a JSON body of No letter found" in new TestCase {
       when(mockSecureMessageService.getLetter(any[ObjectId], any[Set[CustomerEnrolment]])(any[ExecutionContext]))
         .thenReturn(Future.successful(Left(MessageNotFound("letter not found"))))
+      when(
+        mockSecureMessageService
+          .getSecureMessage(any[ObjectId], any[Set[CustomerEnrolment]])(any[ExecutionContext], any[Language]))
+        .thenReturn(Future.successful(Left(MessageNotFound("letter not found"))))
 
       val response: Future[Result] = controller
         .getMessage(base64Encode(s"${MessageType.Letter.entryName}/$objectID"))
