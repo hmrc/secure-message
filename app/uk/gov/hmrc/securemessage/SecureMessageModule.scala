@@ -23,7 +23,7 @@ import play.api.Configuration
 import play.api.libs.concurrent.AkkaGuiceSupport
 import uk.gov.hmrc.common.message.model.TimeSource
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-import uk.gov.hmrc.securemessage.scheduler.SendEmailJob
+import uk.gov.hmrc.securemessage.scheduler.EmailAlertJob
 import uk.gov.hmrc.securemessage.services.{ SecureMessageService, SecureMessageServiceImpl }
 import uk.gov.hmrc.time.DateTimeUtils
 
@@ -35,7 +35,7 @@ class SecureMessageModule extends AbstractModule with AkkaGuiceSupport {
   override def configure(): Unit = {
     bind(classOf[DateTimeUtils]).to(classOf[TimeProvider])
     bind(classOf[SecureMessageService]).to(classOf[SecureMessageServiceImpl]).asEagerSingleton()
-    bindActor[SendEmailJob]("SendEmailJob-actor")
+    bindActor[EmailAlertJob]("EmailAlertJob-actor")
     super.configure()
   }
   @Singleton

@@ -39,7 +39,7 @@ import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.Success
 
 @Singleton
-class EmailAlerter @Inject()(
+class EmailAlertService @Inject()(
   val secureMessageRepository: SecureMessageRepository,
   val emailConnector: EmailConnector,
   val entityResolverConnector: EntityResolverConnector,

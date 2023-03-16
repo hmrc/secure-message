@@ -18,8 +18,9 @@ package uk.gov.hmrc.securemessage.scheduler
 
 import akka.actor.{ Actor, Timers }
 import play.api.{ Configuration, Logging }
+import play.libs.exception.ExceptionUtils
 import uk.gov.hmrc.mongo.lock.{ LockRepository, LockService }
-import uk.gov.hmrc.securemessage.services.{ EmailAlerter, EmailResults }
+import uk.gov.hmrc.securemessage.services.{ EmailAlertService, EmailResults }
 
 import javax.inject.{ Inject, Singleton }
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -27,13 +28,13 @@ import scala.concurrent.Future
 import scala.concurrent.duration.{ Duration, FiniteDuration, HOURS, MILLISECONDS }
 
 @Singleton
-class SendEmailJob @Inject()(
+class EmailAlertJob @Inject()(
   val configuration: Configuration,
   lockRepository: LockRepository,
-  emailAlerter: EmailAlerter)
+  emailAlerter: EmailAlertService)
     extends Actor with Timers with SchedulingConfig with Logging {
 
-  override val name: String = "SendEmailJob"
+  override val name: String = "EmailAlertJob"
 
   lazy val maxLockHours: Long = 1
   lazy val releaseLockAfter: Duration = lockDuration match {
@@ -41,7 +42,7 @@ class SendEmailJob @Inject()(
     case _                        => Duration(maxLockHours, HOURS)
   }
 
-  val ls = LockService(lockRepository = lockRepository, lockId = name, ttl = releaseLockAfter)
+  lazy val ls = LockService(lockRepository = lockRepository, lockId = name, ttl = releaseLockAfter)
 
   override def preStart(): Unit = {
     logger.warn(s"Job $name starting")
@@ -66,9 +67,7 @@ class SendEmailJob @Inject()(
             s"$name: Succeeded - $sent, Will be retried - $requeued"
         }
         .recover {
-          case e: Exception =>
-            e.printStackTrace //TODO: Keeping it know more info. Will be removed once testing done.
-            s"$name Error processing Alerts ${e.getMessage}"
+          case e: Exception => s"$name Error processing Alerts ${ExceptionUtils.getStackTrace(e)}"
         }
     } map { msg =>
       val msgStr = msg.getOrElse(s"$name cannot acquire mongo lock, not running")
