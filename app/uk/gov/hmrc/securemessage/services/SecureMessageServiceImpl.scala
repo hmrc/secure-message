@@ -165,7 +165,10 @@ class SecureMessageServiceImpl @Inject()(
     for {
       secureMessage <- EitherT(secureMessageUtil.getMessage(id, identifiers))
       _             <- EitherT(secureMessageUtil.addReadTime(id))
-    } yield ApiLetter.fromSecureMessage(secureMessage)
+    } yield {
+      val apiLetter = ApiLetter.fromSecureMessage(secureMessage)
+      apiLetter.copy(content = decodeBase64String(apiLetter.content))
+    }
   }.value
 
   def getSecureMessage(id: ObjectId)(implicit ec: ExecutionContext): Future[Option[SecureMessage]] =

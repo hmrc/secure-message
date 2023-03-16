@@ -125,7 +125,7 @@ object MessageMetadata extends ApiFormats with ImplicitClassesExtensions {
   }
 
   private def mapForSecureMessage(secureMessage: SecureMessage, language: Language): MessageMetadata = {
-    val messageType = MessageType.SecureMessage
+    val messageType = MessageType.Letter
     val content = contentForLanguage(language, secureMessage.content)
     new MessageMetadata(
       messageType = messageType,
