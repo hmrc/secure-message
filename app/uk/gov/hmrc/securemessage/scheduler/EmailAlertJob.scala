@@ -18,8 +18,9 @@ package uk.gov.hmrc.securemessage.scheduler
 
 import akka.actor.{ Actor, Timers }
 import play.api.{ Configuration, Logging }
+import play.libs.exception.ExceptionUtils
 import uk.gov.hmrc.mongo.lock.{ LockRepository, LockService }
-import uk.gov.hmrc.securemessage.services.{ EmailAlerter, EmailResults }
+import uk.gov.hmrc.securemessage.services.{ EmailAlertService, EmailResults }
 
 import javax.inject.{ Inject, Singleton }
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -27,13 +28,13 @@ import scala.concurrent.Future
 import scala.concurrent.duration.{ Duration, FiniteDuration, HOURS, MILLISECONDS }
 
 @Singleton
-class SendEmailJob @Inject()(
+class EmailAlertJob @Inject()(
   val configuration: Configuration,
   lockRepository: LockRepository,
-  emailAlerter: EmailAlerter)
+  emailAlerter: EmailAlertService)
     extends Actor with Timers with SchedulingConfig with Logging {
 
-  override val name: String = "SendEmailJob"
+  override val name: String = "EmailAlertJob"
 
   lazy val maxLockHours: Long = 1
   lazy val releaseLockAfter: Duration = lockDuration match {
@@ -41,7 +42,7 @@ class SendEmailJob @Inject()(
     case _                        => Duration(maxLockHours, HOURS)
   }
 
-  val ls = LockService(lockRepository = lockRepository, lockId = name, ttl = releaseLockAfter)
+  lazy val ls = LockService(lockRepository = lockRepository, lockId = name, ttl = releaseLockAfter)
 
   override def preStart(): Unit = {
     logger.warn(s"Job $name starting")
@@ -51,26 +52,27 @@ class SendEmailJob @Inject()(
 
   override def receive: Receive = {
     case StartProcess =>
-      logger.warn(s"Start processing secure messages to send email requests")
-      processSecureMessages
-      logger.warn(s"Stop processing secure messages to send email requests")
+      logger.warn(s"$name Start processing secure messages to send email requests")
+      processSecureMessages()
+      logger.warn(s"$name Stop processing secure messages to send email requests")
   }
 
   def processSecureMessages(): Future[Result] =
-    ls.withLock {
-      emailAlerter.sendEmailAlerts().map {
-        case EmailResults(0, 0) =>
-          val msg = "SendEmailJob: No messages to process"
-          logger.warn(msg)
-          Result(msg)
-        case EmailResults(sent, requeued) =>
-          val msg =
-            s"SendEmailJob: Succeeded - $sent, Will be retried - $requeued"
-          Result(msg)
-      }
-    } map {
-      case Some(Result(msg)) => Result(s"$msg")
-      case None              => Result(s"$name cannot acquire mongo lock, not running")
+    ls.withLock[String] {
+      emailAlerter
+        .sendEmailAlerts()
+        .map {
+          case EmailResults(0, 0) => s"$name No messages to process"
+          case EmailResults(sent, requeued) =>
+            s"$name: Succeeded - $sent, Will be retried - $requeued"
+        }
+        .recover {
+          case e: Exception => s"$name Error processing Alerts ${ExceptionUtils.getStackTrace(e)}"
+        }
+    } map { msg =>
+      val msgStr = msg.getOrElse(s"$name cannot acquire mongo lock, not running")
+      logger.warn(msgStr)
+      Result(msgStr)
     }
 }
 

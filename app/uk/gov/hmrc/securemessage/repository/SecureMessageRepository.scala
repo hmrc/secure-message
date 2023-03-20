@@ -34,7 +34,7 @@ import uk.gov.hmrc.mongo.workitem.ProcessingStatus.{ Failed, InProgress, ToDo }
 import uk.gov.hmrc.securemessage.{ SecureMessageError, StoreError }
 import uk.gov.hmrc.securemessage.models.core.{ Count, FilterTag, Identifier, MessageFilter }
 import uk.gov.hmrc.securemessage.models.v4.{ SecureMessage, SecureMessageMongoFormat }
-
+import uk.gov.hmrc.securemessage.models.v4.SecureMessageMongoFormat._
 import java.util.concurrent.TimeUnit
 import javax.inject.{ Inject, Named, Singleton }
 import scala.concurrent.duration.Duration
@@ -64,7 +64,14 @@ class SecureMessageRepository @Inject()(
             .unique(false)
             .background(true))
       ),
-      replaceIndexes = false
+      replaceIndexes = false,
+      extraCodecs = Seq(
+        Codecs.playFormatCodec(uk.gov.hmrc.mongo.play.json.formats.MongoJodaFormats.localDateFormat),
+        Codecs.playFormatCodec(SecureMessageMongoFormat.localDateFormat),
+        Codecs.playFormatCodec(uk.gov.hmrc.mongo.play.json.formats.MongoJodaFormats.dateTimeFormat),
+        Codecs.playFormatCodec(uk.gov.hmrc.common.message.model.EmailAlert.alertFormat),
+        Codecs.playFormatCodec(uk.gov.hmrc.common.message.model.Regime.format)
+      )
     ) with MessageSelector {
 
   private final val DuplicateKey = 11000
@@ -92,7 +99,7 @@ class SecureMessageRepository @Inject()(
 
     val todoQuery = Filters.and(
       Filters.equal("status", ToDo.name),
-      Filters.lte("alertFrom", timeSource.today)
+      Filters.lte("validFrom", timeSource.today)
     )
 
     val failedBeforeQuery = Filters.or(

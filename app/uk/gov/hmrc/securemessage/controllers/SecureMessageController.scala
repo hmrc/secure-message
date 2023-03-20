@@ -221,7 +221,6 @@ class SecureMessageController @Inject()(
   def getMessage(encodedId: String, language: Option[Language] = None): Action[AnyContent] = Action.async {
     implicit request =>
       implicit val lang: Language = language.getOrElse(English)
-      logger.warn(s"getMessage for the language $lang")
       val message: EitherT[Future, SecureMessageError, (ApiMessage, Enrolments)] = for {
         messageRequestTuple <- EitherT(Future.successful(IdCoder.decodeId(encodedId)))
         enrolments          <- EitherT(getEnrolments())
@@ -305,6 +304,23 @@ class SecureMessageController @Inject()(
         }
         shouldSendEmailNotification(result)
       case None => NotFound
+    }
+  }
+
+  def getContentBy(id: ObjectId): Action[AnyContent] = Action.async { implicit request =>
+    secureMessageService.getContentBy(id).map {
+      case Some(content) => Ok(content)
+      case None =>
+        logger.warn(s"""Content for message with id: ${id.toString} is empty""")
+        NotFound
+    }
+  }
+
+  def setReadTime(id: ObjectId): Action[AnyContent] = Action.async { _ =>
+    secureMessageService.setReadTime(id).flatMap {
+      case Left(e) =>
+        logger.error(s"Unable to set secure message read time ${e.message}"); Future.successful(InternalServerError)
+      case _ => logger.warn(s"Secure Message is Read $id"); Future.successful(Ok)
     }
   }
 }

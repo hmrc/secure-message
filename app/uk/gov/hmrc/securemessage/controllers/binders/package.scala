@@ -16,8 +16,9 @@
 
 package uk.gov.hmrc.securemessage.controllers
 
+import org.bson.types.ObjectId
 import play.api.libs.json.JsString
-import play.api.mvc.QueryStringBindable
+import play.api.mvc.{ PathBindable, QueryStringBindable }
 import uk.gov.hmrc.common.message.model.Regime
 import uk.gov.hmrc.securemessage.models.core.Language.English
 import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag, Language, MessageFilter }
@@ -84,5 +85,20 @@ package object binders {
       override def unbind(key: String, messageFilter: MessageFilter): String =
         seqBinder.unbind("taxIdentifiers", messageFilter.taxIdentifiers) + "&" + seqBinder
           .unbind("regime", messageFilter.regimes.map(_.toString))
+    }
+
+  implicit def objectIdBinder(implicit stringBinder: PathBindable[String]): PathBindable[ObjectId] =
+    new PathBindable[ObjectId] {
+      def bind(key: String, value: String): Either[String, ObjectId] = stringBinder.bind(key, value) match {
+        case Left(msg) => Left(msg)
+        case Right(id) =>
+          if (ObjectId.isValid(id)) {
+            Right(new ObjectId(id))
+          } else {
+            Left(s"ID $id was invalid")
+          }
+      }
+
+      def unbind(key: String, value: ObjectId): String = value.toString
     }
 }

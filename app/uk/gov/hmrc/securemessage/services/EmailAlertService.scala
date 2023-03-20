@@ -39,7 +39,7 @@ import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.Success
 
 @Singleton
-class EmailAlerter @Inject()(
+class EmailAlertService @Inject()(
   val secureMessageRepository: SecureMessageRepository,
   val emailConnector: EmailConnector,
   val entityResolverConnector: EntityResolverConnector,
@@ -50,7 +50,7 @@ class EmailAlerter @Inject()(
 ) extends AuditAlerts with Logging {
 
   lazy val baseUrl = servicesConfig.baseUrl("secure-message")
-  lazy val alertUrl = (id: String) => Some(s"$baseUrl{${routes.SecureMessageController.sendAlert(id).url}")
+  lazy val alertUrl = (id: String) => Some(s"$baseUrl${routes.SecureMessageController.sendAlert(id).url}")
 
   implicit val headerCarrier = HeaderCarrier()
 

@@ -18,7 +18,7 @@ package uk.gov.hmrc.securemessage.controllers
 
 import org.apache.commons.codec.binary.Base64
 import org.bson.types.ObjectId
-import org.joda.time.{ DateTime, LocalDate }
+import org.joda.time.{ DateTime, DateTimeZone, LocalDate }
 import org.joda.time.format.DateTimeFormat
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document.OutputSettings
@@ -150,8 +150,8 @@ class SecureMessageUtil @Inject()(
   }
 
   def checkDetailsIsPresent(message: SecureMessage): Try[SecureMessage] = message match {
-    case m if m.details.exists(_.formId.nonEmpty) => Success(m)
-    case _                                        => Failure(MessageValidationException("details: details not provided where it is required"))
+    case m if !isGmc(m) || m.details.exists(_.formId.nonEmpty) => Success(m)
+    case _                                                     => Failure(MessageValidationException("details: details not provided where it is required"))
   }
 
   def checkEmptyEmailAddress(message: SecureMessage): Try[SecureMessage] =
@@ -548,7 +548,7 @@ class SecureMessageUtil @Inject()(
     secureMessageRepository.getSecureMessage(id, identifiers)
 
   def addReadTime(id: ObjectId)(implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] =
-    secureMessageRepository.addReadTime(id, DateTime.now())
+    secureMessageRepository.addReadTime(id, DateTime.now.withZone(DateTimeZone.UTC))
 }
 
 case class MessageValidationException(message: String) extends RuntimeException(message)

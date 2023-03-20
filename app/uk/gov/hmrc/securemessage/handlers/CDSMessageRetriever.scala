@@ -23,7 +23,7 @@ import uk.gov.hmrc.auth.core.{ AuthConnector, AuthorisedFunctions }
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.securemessage.SecureMessageError
-import uk.gov.hmrc.securemessage.controllers.model.MessageType.{ Conversation, Letter, SecureMessage }
+import uk.gov.hmrc.securemessage.controllers.model.MessageType.{ Conversation, Letter }
 import uk.gov.hmrc.securemessage.controllers.model.ApiMessage
 import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata
 import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata.EnrolmentsExtensions
@@ -73,10 +73,17 @@ class CDSMessageRetriever @Inject()(val authConnector: AuthConnector, secureMess
         secureMessageService
           .getConversation(new ObjectId(readRequest.messageId), readRequest.authEnrolments.asCustomerEnrolments)
       case Letter =>
-        secureMessageService
-          .getLetter(new ObjectId(readRequest.messageId), readRequest.authEnrolments.asCustomerEnrolments)
-      case SecureMessage =>
-        secureMessageService
-          .getSecureMessage(new ObjectId(readRequest.messageId), readRequest.authEnrolments.asCustomerEnrolments)
+        for {
+          letter <- secureMessageService
+                     .getLetter(new ObjectId(readRequest.messageId), readRequest.authEnrolments.asCustomerEnrolments)
+          secureMessage <- if (letter.isLeft) {
+                            secureMessageService
+                              .getSecureMessage(
+                                new ObjectId(readRequest.messageId),
+                                readRequest.authEnrolments.asCustomerEnrolments)
+                          } else {
+                            Future.successful(letter)
+                          }
+        } yield secureMessage
     }
 }
