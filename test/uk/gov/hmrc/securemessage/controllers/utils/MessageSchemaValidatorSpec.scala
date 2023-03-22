@@ -30,6 +30,12 @@ class MessageSchemaValidatorSpec extends PlaySpec with ScalaFutures with Message
       isValidJson(messageJson) mustBe Left(true)
     }
 
+    "return error for the fieds having empty value " in {
+      val messageJson = Resources.readJson("model/core/v4/valid_message_with_empty_values.json").as[JsObject]
+      isValidJson(messageJson) mustBe Right(
+        "Missing mandatory fields: {$.content[0].lang: must be at least 1 characters long, $.content[0].lang: does not match the regex pattern ^\\S.*$}")
+    }
+
     "return error for the missing fields " in {
       val messageJson = Resources.readJson("model/core/v4/missing_mandatory_fields.json").as[JsObject]
       isValidJson(messageJson) mustBe Right(
