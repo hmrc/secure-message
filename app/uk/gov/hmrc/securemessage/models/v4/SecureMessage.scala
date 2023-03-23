@@ -28,6 +28,7 @@ import uk.gov.hmrc.mongo.workitem.ProcessingStatus
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.ToDo
 import uk.gov.hmrc.securemessage.controllers.model.ApiFormats
 import uk.gov.hmrc.securemessage.models.core.Language
+import uk.gov.hmrc.securemessage.models.core.Language.English
 
 import java.security.MessageDigest
 
@@ -117,10 +118,13 @@ object SecureMessage extends ApiFormats with AlertEmailTemplateMapper {
         }
 
         val email = recipient.email.fold[Map[String, String]](Map.empty)(v => Map("email" -> v))
+
+        val subject = content.find(_.lang == English).getOrElse(content.head).subject
+
         val responseTime: Map[String, String] =
           messageDetails.flatMap(_.waitTime).fold[Map[String, String]](Map.empty)(v => Map("waitTime" -> v))
 
-        val data = email ++ responseTime ++ Map("date" -> validFrom.toString) ++ alertDetailsData.getOrElse(Map())
+        val data = email ++ responseTime ++ Map("date" -> validFrom.toString, "subject" -> subject) ++ alertDetailsData.getOrElse(Map())
 
         val templateId = messageDetails
           .map(_.formId)
