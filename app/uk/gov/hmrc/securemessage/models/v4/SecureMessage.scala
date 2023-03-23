@@ -37,6 +37,7 @@ case class SecureMessage(_id: ObjectId,
                          recipient: TaxEntity,
                          tags: Option[Map[String, String]] = None,
                          messageType: String,
+                         language: Option[Language],
                          validFrom: LocalDate,
                          content: List[Content],
                          alertDetails: AlertDetails,
@@ -81,6 +82,7 @@ object SecureMessage extends ApiFormats with AlertEmailTemplateMapper {
     ((__ \ "externalRef").read[ExternalRef] and
       (__ \ "recipient").read[Recipient] and
       (__ \ "messageType").read[String] and
+      (__ \ "language").readNullable[Language] and
       (__ \ "validFrom").readNullable[LocalDate] and
       (__ \ "content").read[List[Content]] and
       (__ \ "alertQueue").readNullable[String] and
@@ -96,7 +98,7 @@ object SecureMessage extends ApiFormats with AlertEmailTemplateMapper {
             .map(Some.apply)
             .orElse(JsError("tags : invalid data provided"))
           case JsUndefined() => JsSuccess(None)})) {
-      (externalRef, recipient, messageType, vf, content, alertQueue, messageDetails, alertDetailsData, tags) =>
+      (externalRef, recipient, messageType, lang, vf, content, alertQueue, messageDetails, alertDetailsData, tags) =>
 
         val issueDate = messageDetails.flatMap(_.issueDate).getOrElse(LocalDate.now)
         val validFrom = vf.filter(_.isAfter(issueDate)).getOrElse(issueDate)
@@ -119,12 +121,17 @@ object SecureMessage extends ApiFormats with AlertEmailTemplateMapper {
 
         val email = recipient.email.fold[Map[String, String]](Map.empty)(v => Map("email" -> v))
 
-        val subject = content.find(_.lang == English).getOrElse(content.head).subject
+        val subjectLang = lang.getOrElse(English)
+        val subject = content.find(_.lang == subjectLang).getOrElse(content.head).subject
 
         val responseTime: Map[String, String] =
           messageDetails.flatMap(_.waitTime).fold[Map[String, String]](Map.empty)(v => Map("waitTime" -> v))
 
-        val data = email ++ responseTime ++ Map("date" -> validFrom.toString, "subject" -> subject) ++ alertDetailsData.getOrElse(Map())
+        val data = email ++ responseTime ++ Map(
+          "date" -> validFrom.toString,
+          "language" -> subjectLang.entryName,
+          "subject" -> subject) ++
+          alertDetailsData.getOrElse(Map())
 
         val templateId = messageDetails
           .map(_.formId)
@@ -139,6 +146,7 @@ object SecureMessage extends ApiFormats with AlertEmailTemplateMapper {
           TaxEntity.create(recipient.taxIdentifier, recipient.email, recipient.regime),
           tags,
           messageType,
+          lang,
           validFrom,
           content,
           AlertDetails(templateId, recipientName, data),

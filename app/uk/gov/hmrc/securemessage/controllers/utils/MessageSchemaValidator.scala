@@ -111,6 +111,10 @@ trait MessageSchemaValidator {
       |      "type": "string",
       |      "description": "This is used to determine the email alert to use for this message."
       |    },
+      |    "language": {
+      |      "type": "string",
+      |      "description": "This is optional, will be used to determine the language sets for email subjaect"
+      |    },
       |    "validFrom": {
       |      "type": "string",
       |      "format": "date",
