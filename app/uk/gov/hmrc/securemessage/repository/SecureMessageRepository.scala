@@ -174,6 +174,7 @@ class SecureMessageRepository @Inject()(
     taxIdRegimeSelector(authTaxIds)
       .map(Filters.and(_, readyForViewingQuery))
       .fold(Future.successful(List[SecureMessage]())) { query =>
+        logger.warn(s"SecureMessageQuery $query")
         collection
           .find(query)
           .maxTime(Duration(1, TimeUnit.MINUTES))
@@ -193,7 +194,8 @@ class SecureMessageRepository @Inject()(
   ): Future[MessagesCount] =
     taxIdRegimeSelector(authTaxIds)
       .map(Filters.and(_, readyForViewingQuery))
-      .fold(Future.successful(MessagesCount(0, 0)))(query =>
+      .fold(Future.successful(MessagesCount(0, 0)))(query => {
+        logger.warn(s"SecureMessageCountQuery $query")
         for {
           unreadCount <- collection
                         // scalastyle:off null
@@ -201,7 +203,8 @@ class SecureMessageRepository @Inject()(
                           // scalastyle:on null
                           .toFuture()
           totalCount <- collection.countDocuments(query).toFuture()
-        } yield MessagesCount(totalCount.toInt, unreadCount.toInt))
+        } yield MessagesCount(totalCount.toInt, unreadCount.toInt)
+      })
 
   def getSecureMessages(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
     implicit ec: ExecutionContext): Future[List[SecureMessage]] =
