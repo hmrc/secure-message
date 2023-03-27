@@ -22,8 +22,6 @@ import org.mongodb.scala.bson.ObjectId
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import uk.gov.hmrc.common.message.model._
-import uk.gov.hmrc.domain.TaxIds
-import uk.gov.hmrc.domain.TaxIds.TaxIdWithName
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.ToDo
 import uk.gov.hmrc.securemessage.controllers.model.ApiFormats
@@ -58,24 +56,6 @@ case class SecureMessage(_id: ObjectId,
 }
 
 object SecureMessage extends ApiFormats with AlertEmailTemplateMapper {
-
-  private val identifierReads = new Reads[TaxIdWithName] {
-    override def reads(json: JsValue): JsResult[TaxIdWithName] =
-      TaxIds.defaultSerialisableIds.toList.collectFirst {
-        case taxId if (json \ taxId.taxIdName).asOpt[String].isDefined =>
-          taxId.build((json \ taxId.taxIdName).as[String])
-      } match {
-        case Some(id) if id.value != null && id.value.trim.nonEmpty => JsSuccess(id)
-        case Some(id)                                               => JsError(s"Blank identifier value provided for ${id.name}")
-        case None                                                   => JsError(s"unsupported identifier in ${Json.stringify(json)}")
-      }
-  }
-
-  private val identifierWrites = new Writes[TaxIdWithName] {
-    override def writes(taxId: TaxIdWithName): JsValue = JsObject(Seq(taxId.name -> JsString(taxId.value)))
-  }
-
-  implicit val format: Format[TaxIdWithName] = Format(identifierReads, identifierWrites)
 
   implicit val secureMessageReads: Reads[SecureMessage] =
     ((__ \ "externalRef").read[ExternalRef] and

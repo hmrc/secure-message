@@ -18,14 +18,17 @@ package uk.gov.hmrc.securemessage.models.v4
 
 import org.joda.time.{ DateTime, LocalDate }
 import org.mongodb.scala.bson.ObjectId
-import play.api.libs.json.{ Format, Json, OFormat }
+import play.api.libs.json.{ Format, JsError, JsSuccess, Json, OFormat, Reads, Writes, __ }
+import uk.gov.hmrc.common.message.model.TaxEntity.{ Epaye, HmceVatdecOrg, HmrcCusOrg, HmrcPodsOrg, HmrcPodsPpOrg, HmrcPptOrg }
 import uk.gov.hmrc.common.message.model.EmailAlert
+import uk.gov.hmrc.domain.{ SerialisableTaxId, TaxIds }
+import uk.gov.hmrc.domain.TaxIds.TaxIdWithName
 import uk.gov.hmrc.mongo.play.json.formats.{ MongoFormats, MongoJodaFormats }
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus
 
-object SecureMessageMongoFormat {
+import play.api.libs.functional.syntax._
 
-  import uk.gov.hmrc.common.message.model.MongoTaxIdentifierFormats._
+object SecureMessageMongoFormat {
 
   //ProcessingStatus
   implicit val format: Format[ProcessingStatus] = ProcessingStatus.format
@@ -38,6 +41,34 @@ object SecureMessageMongoFormat {
   implicit val dateTimeFormat: Format[DateTime] = MongoJodaFormats.dateTimeFormat
   implicit val emailAlertFormat: OFormat[EmailAlert] = Json.format[EmailAlert]
 
+  val taxIdentifierReads: Reads[TaxIdWithName] =
+    ((__ \ "name").read[String] and (__ \ "value").read[String]).tupled.flatMap[TaxIdWithName] {
+      case (name, value) =>
+        (TaxIds.defaultSerialisableIds :+ SerialisableTaxId("EMPREF", Epaye.apply)
+          :+ SerialisableTaxId("HMCE-VATDEC-ORG", HmceVatdecOrg.apply)
+          :+ SerialisableTaxId("HMRC-CUS-ORG", HmrcCusOrg.apply)
+          :+ SerialisableTaxId("ETMPREGISTRATIONNUMBER", HmrcPptOrg.apply)
+          :+ SerialisableTaxId("PSAID", HmrcPodsOrg.apply)
+          :+ SerialisableTaxId("PSPID", HmrcPodsPpOrg.apply))
+          .find(_.taxIdName == name)
+          .map { _.build(value) } match {
+          case Some(taxIdWithName) =>
+            Reads[TaxIdWithName] { _ =>
+              JsSuccess(taxIdWithName)
+            }
+          case None =>
+            Reads[TaxIdWithName] { _ =>
+              JsError(s"could not determine tax id with name = $name and value = $value")
+            }
+        }
+    }
+
+  val taxIdentifierWrites = Writes[TaxIdWithName] { taxId =>
+    Json.obj("name" -> taxId.name, "value" -> taxId.value)
+  }
+
+  implicit val mongoTaxIdentifierFormat: Format[TaxIdWithName] =
+    Format(taxIdentifierReads, taxIdentifierWrites)
   //SecureMessage
   implicit val mongoMessageFormat: OFormat[SecureMessage] = Json.format[SecureMessage]
 }
