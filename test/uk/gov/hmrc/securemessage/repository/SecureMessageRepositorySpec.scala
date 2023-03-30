@@ -108,5 +108,19 @@ class SecureMessageRepositorySpec
       val result1: List[SecureMessage] = await(repository.getSecureMessages(Set(identifier, niIdentifier), None))
       result1 mustBe List(niMessage, message)
     }
+
+    "add the read time for given message id" in {
+      val taxIdWithName = message.recipient.identifier
+      val niTaxIdWithName = niMessage.recipient.identifier
+      val identifier = Identifier("", taxIdWithName.value, Some(taxIdWithName.name))
+      val niIdentifier = Identifier("", niTaxIdWithName.value, Some(niTaxIdWithName.name))
+      val readTime = DateTime.now()
+      await(repository.save(message))
+      await(repository.addReadTime(message._id, readTime))
+
+      val result1: Boolean =
+        await(repository.getSecureMessage(message._id, Set(identifier, niIdentifier))).forall(_.readTime.isDefined)
+      result1 mustBe true
+    }
   }
 }

@@ -72,6 +72,12 @@ trait SecureMessageService {
 
   def getLetter(id: ObjectId)(implicit ec: ExecutionContext): Future[Option[Letter]]
 
+  def getSecureMessage(id: ObjectId, enrolments: Set[CustomerEnrolment])(
+    implicit ec: ExecutionContext,
+    language: Language): Future[Either[SecureMessageError, ApiLetter]]
+
+  def getSecureMessage(id: ObjectId)(implicit ec: ExecutionContext): Future[Option[SecureMessage]]
+
   def addCaseWorkerMessageToConversation(
     client: String,
     conversationId: String,
