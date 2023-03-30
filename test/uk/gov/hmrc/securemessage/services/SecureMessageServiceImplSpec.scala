@@ -334,11 +334,9 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
         .thenReturn(Future(Right(v4Message)))
       when(mockSecureMessageUtil.addReadTime(any[ObjectId])(any[ExecutionContext]))
         .thenReturn(Future(Right(())))
-      val result = await(
-        service
-          .getSecureMessage(new ObjectId(), Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777"))))
-      result.right.get.subject mustBe "subject"
-      result.right.get.content mustBe "content"
+      val result = await(service
+        .getSecureMessage(new ObjectId(), Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777")))).right.get
+      result.subject mustBe "Nodyn atgoffa i ffeilio ffurflen Hunanasesiad"
     }
 
     "return a v4 message with ApiLetter for given id" in {
@@ -349,7 +347,7 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
       val result = await(
         service
           .getSecureMessage(new ObjectId()))
-      result.get.content mustBe "subject"
+      result.get.content mustBe v4Message.content
     }
 
     "return a Left(MessageNotFound)" in {
