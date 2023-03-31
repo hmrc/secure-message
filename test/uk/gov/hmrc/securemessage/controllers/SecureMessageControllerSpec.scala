@@ -40,6 +40,7 @@ import uk.gov.hmrc.auth.core.authorise.Predicate
 import uk.gov.hmrc.auth.core.retrieve.Retrieval
 import uk.gov.hmrc.common.message.model.MessagesCount
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.HttpVerbs.GET
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.securemessage._
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.{ ApiConversation, ConversationMetadata }
@@ -431,6 +432,15 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     }
   }
 
+  "getContentBy" must {
+    val messageId = new ObjectId
+    "return content as string" in new GetContentTestCase(messageId) {
+      val response: Future[Result] = controller.getContentBy(messageId)(fakeRequest)
+      status(response) mustBe OK
+      contentAsString(response) mustBe "Message-Content"
+    }
+  }
+
   "createMessage" must {
     "return CREATED for the valid message" in
       new CreateSecureMessageTestCase(requestBody = Resources.readJson("model/core/v4/valid_message.json")) {
@@ -649,5 +659,13 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       mockSecureMessageService
         .createSecureMessage(any[SecureMessage])(any[Request[AnyContent]], any[HeaderCarrier], any[ExecutionContext]))
       .thenReturn(Future.successful(Created("")))
+  }
+
+  class GetContentTestCase(id: ObjectId) extends TestCase {
+    val fakeRequest = FakeRequest(GET, routes.SecureMessageController.getContentBy(id).url)
+    when(
+      mockSecureMessageService
+        .getContentBy(any[ObjectId])(any[ExecutionContext], any[Messages]))
+      .thenReturn(Future.successful(Some("Message-Content")))
   }
 }

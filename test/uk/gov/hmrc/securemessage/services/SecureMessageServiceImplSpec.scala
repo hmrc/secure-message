@@ -325,7 +325,53 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
           .getLetter(new ObjectId(), Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777"))))
       result.left.get.message mustBe "cant store readTime"
     }
+  }
 
+  "getSecureMessage by id with enrolments" must {
+    implicit val language: Language = Language.Welsh
+    "return a v4 message with ApiLetter for given id & enrolments" in {
+      when(mockSecureMessageUtil.getMessage(any[ObjectId], any[Set[Identifier]])(any[ExecutionContext]))
+        .thenReturn(Future(Right(v4Message)))
+      when(mockSecureMessageUtil.addReadTime(any[ObjectId])(any[ExecutionContext]))
+        .thenReturn(Future(Right(())))
+      val result = await(service
+        .getSecureMessage(new ObjectId(), Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777")))).right.get
+      result.subject mustBe "Nodyn atgoffa i ffeilio ffurflen Hunanasesiad"
+    }
+
+    "return a v4 message with ApiLetter for given id" in {
+      when(mockSecureMessageUtil.getMessage(any[ObjectId], any[Set[Identifier]])(any[ExecutionContext]))
+        .thenReturn(Future(Right(v4Message)))
+      when(mockSecureMessageUtil.addReadTime(any[ObjectId])(any[ExecutionContext]))
+        .thenReturn(Future(Right(())))
+      val result = await(
+        service
+          .getSecureMessage(new ObjectId()))
+      result.get.content mustBe v4Message.content
+    }
+
+    "return a Left(MessageNotFound)" in {
+      when(mockSecureMessageUtil.getMessage(any[ObjectId], any[Set[Identifier]])(any[ExecutionContext]))
+        .thenReturn(Future(Left(MessageNotFound("Message not found"))))
+      when(mockSecureMessageUtil.addReadTime(any[ObjectId])(any[ExecutionContext]))
+        .thenReturn(Future(Right(())))
+      val result = await(
+        service
+          .getSecureMessage(new ObjectId(), Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777"))))
+      result mustBe
+        Left(MessageNotFound(s"Message not found"))
+    }
+
+    "return a left if update readTime fails" in {
+      when(mockSecureMessageUtil.getMessage(any[ObjectId], any[Set[Identifier]])(any[ExecutionContext]))
+        .thenReturn(Future(Right(v4Message)))
+      when(mockSecureMessageUtil.addReadTime(any[ObjectId])(any[ExecutionContext]))
+        .thenReturn(Future(Left(StoreError("cant store readTime", None))))
+      val result = await(
+        service
+          .getSecureMessage(new ObjectId(), Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777"))))
+      result.left.get.message mustBe "cant store readTime"
+    }
   }
 
   "Adding a customer message to a conversation" must {
