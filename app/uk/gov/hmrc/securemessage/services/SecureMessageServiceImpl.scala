@@ -19,10 +19,12 @@ package uk.gov.hmrc.securemessage.services
 import cats.data._
 import cats.implicits._
 import com.google.inject.Inject
-import org.joda.time.DateTime
+import org.apache.commons.codec.binary.Base64
+import org.joda.time.{ DateTime, LocalDate }
+import org.joda.time.format.DateTimeFormat
 import org.mongodb.scala.bson.ObjectId
 import play.api.i18n.Messages
-import play.api.mvc.Request
+import play.api.mvc.{ AnyContent, Request, Result }
 import uk.gov.hmrc.auth.core.Enrolments
 import uk.gov.hmrc.common.message.model.MessagesCount
 import uk.gov.hmrc.domain.TaxIds.TaxIdWithName
@@ -30,27 +32,32 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.securemessage._
 import uk.gov.hmrc.securemessage.connectors.{ ChannelPreferencesConnector, EISConnector, EmailConnector }
-import uk.gov.hmrc.securemessage.controllers.Auditing
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.{ ApiConversation, ConversationMetadata }
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage
 import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.ApiLetter
+import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
+import uk.gov.hmrc.securemessage.controllers.{ Auditing, SecureMessageUtil }
 import uk.gov.hmrc.securemessage.models._
+import uk.gov.hmrc.securemessage.models.core.Language.{ English, Welsh }
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.Customer.eqCustomer
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.{ Customer => PCustomer }
 import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, _ }
+import uk.gov.hmrc.securemessage.models.v4.{ Content, SecureMessage }
 import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository }
 import uk.gov.hmrc.securemessage.services.utils.ContentValidator
 
 import java.util.UUID
 import javax.inject.Singleton
 import scala.concurrent.{ ExecutionContext, Future }
+import scala.xml.XML
 
 //TODO: refactor service to only accept core model classes as params
 @Singleton
 class SecureMessageServiceImpl @Inject()(
   conversationRepository: ConversationRepository,
   messageRepository: MessageRepository,
+  secureMessageUtil: SecureMessageUtil,
   emailConnector: EmailConnector,
   channelPrefConnector: ChannelPreferencesConnector,
   eisConnector: EISConnector,
@@ -67,6 +74,15 @@ class SecureMessageServiceImpl @Inject()(
       _            <- sendAlert(participants.customer, conversation.alert)
     } yield ()
   }.value
+
+  def createSecureMessage(secureMessage: SecureMessage)(
+    implicit request: Request[AnyContent],
+    hc: HeaderCarrier,
+    ec: ExecutionContext): Future[Result] =
+    secureMessageUtil.validateAndCreateMessage(secureMessage)
+
+  def findSecureMessageById(id: ObjectId): Future[Option[SecureMessage]] =
+    secureMessageUtil.findById(id)
 
   def getConversations(authEnrolments: Enrolments, filters: Filters)(
     implicit ec: ExecutionContext,
@@ -86,18 +102,28 @@ class SecureMessageServiceImpl @Inject()(
     for {
       conversations <- conversationRepository.getConversations(identifiers, filters.tags)
       letters       <- messageRepository.getLetters(identifiers, filters.tags)
-    } yield (conversations ++ letters).sortBy(_.issueDate)(dateTimeDescending)
+      v4Messages    <- secureMessageUtil.getMessages(identifiers, filters.tags)
+    } yield (conversations ++ letters ++ v4Messages).sortBy(_.issueDate)(dateTimeDescending)
   }
 
   def getMessagesList(authTaxIds: Set[TaxIdWithName])(
     implicit ec: ExecutionContext,
     hc: HeaderCarrier,
-    messageFilter: MessageFilter): Future[List[Letter]] =
-    messageRepository.findBy(authTaxIds)
+    messageFilter: MessageFilter): Future[List[Message]] =
+    for {
+      v3Messages <- messageRepository.findBy(authTaxIds)
+      v4Messages <- secureMessageUtil.findBy(authTaxIds)
+    } yield v3Messages ++ v4Messages
 
-  def getMessagesCount(
-    authTaxIds: Set[TaxIdWithName])(implicit hc: HeaderCarrier, messageFilter: MessageFilter): Future[MessagesCount] =
-    messageRepository.countBy(authTaxIds)
+  def getMessagesCount(authTaxIds: Set[TaxIdWithName])(
+    implicit ec: ExecutionContext,
+    hc: HeaderCarrier,
+    messageFilter: MessageFilter): Future[MessagesCount] =
+    for {
+      v3MessagesCount <- messageRepository.countBy(authTaxIds)
+      v4MessagesCount <- secureMessageUtil.countBy(authTaxIds)
+    } yield
+      MessagesCount(v3MessagesCount.total + v4MessagesCount.total, v3MessagesCount.unread + v4MessagesCount.unread)
 
   def getMessagesCount(authEnrolments: Enrolments, filters: Filters)(
     implicit ec: ExecutionContext): Future[MessagesCount] = {
@@ -106,10 +132,11 @@ class SecureMessageServiceImpl @Inject()(
     for {
       conversationsCount <- conversationRepository.getConversationsCount(identifiers, filters.tags)
       lettersCount       <- messageRepository.getLettersCount(identifiers, filters.tags)
+      v4MessagesCount    <- secureMessageUtil.getSecureMessageCount(identifiers, filters.tags)
     } yield
       MessagesCount(
-        total = conversationsCount.total + lettersCount.total,
-        unread = conversationsCount.unread + lettersCount.unread
+        total = conversationsCount.total + lettersCount.total + v4MessagesCount.total,
+        unread = conversationsCount.unread + lettersCount.unread + v4MessagesCount.unread
       )
   }
 
@@ -130,6 +157,25 @@ class SecureMessageServiceImpl @Inject()(
       _      <- EitherT(messageRepository.addReadTime(id))
     } yield ApiLetter.fromCore(letter)
   }.value
+
+  def getSecureMessage(id: ObjectId, enrolments: Set[CustomerEnrolment])(
+    implicit ec: ExecutionContext,
+    language: Language): Future[Either[SecureMessageError, ApiLetter]] = {
+    val identifiers = enrolments.map(_.asIdentifier)
+    for {
+      secureMessage <- EitherT(secureMessageUtil.getMessage(id, identifiers))
+      _             <- EitherT(secureMessageUtil.addReadTime(id))
+    } yield {
+      val apiLetter = ApiLetter.fromSecureMessage(secureMessage)
+      apiLetter.copy(content = decodeBase64String(apiLetter.content))
+    }
+  }.value
+
+  def getSecureMessage(id: ObjectId)(implicit ec: ExecutionContext): Future[Option[SecureMessage]] =
+    secureMessageUtil.getMessage(id, Set.empty[Identifier]) map {
+      case Right(secureMessage) => Some(secureMessage)
+      case _                    => None
+    }
 
   def getLetter(id: ObjectId)(implicit ec: ExecutionContext): Future[Option[Letter]] =
     messageRepository.getLetter(id, Set.empty[Identifier]) map {
@@ -294,4 +340,57 @@ class SecureMessageServiceImpl @Inject()(
   }
   case class CustomerEmailError(customer: Participant, error: EmailLookupError)
 
+  def getContentBy(
+    id: ObjectId
+  )(implicit ec: ExecutionContext, messages: Messages): Future[Option[String]] =
+    for {
+      msg <- secureMessageUtil.findById(id)
+      result <- msg match {
+                 case Some(m) => Future.successful(Some(formatMessageContent(m)))
+                 case None    => Future.successful(None)
+               }
+    } yield result
+
+  def setReadTime(
+    id: ObjectId
+  )(implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] =
+    secureMessageUtil.addReadTime(id)
+
+  private def formatMessageContent(message: SecureMessage)(implicit messages: Messages) =
+    if (messages.lang.language == "cy") {
+      val welshContent: Option[Content] = MessageMetadata.contentForLanguage(Welsh, message.content)
+      val welshBody = welshContent.map(_.body).getOrElse("")
+      val welshSubject = welshContent.map(_.subject).getOrElse("")
+      formatSubject(welshSubject, isWelshSubject = true) ++ addIssueDate(message) ++ decodeBase64String(welshBody)
+    } else {
+      val englishContent: Option[Content] = MessageMetadata.contentForLanguage(English, message.content)
+      val body = englishContent.map(_.body).getOrElse("")
+      val subject = englishContent.map(_.subject).getOrElse("")
+      formatSubject(subject, isWelshSubject = false) ++ addIssueDate(message) ++ decodeBase64String(body)
+    }
+
+  private def formatSubject(messageSubject: String, isWelshSubject: Boolean): String =
+    if (isWelshSubject) {
+      <h1 lang="cy" class="govuk-heading-xl">{XML.loadString("<root>" + messageSubject + "</root>").child}</h1>.mkString
+    } else {
+      <h1 lang="en" class="govuk-heading-xl">{XML.loadString("<root>" + messageSubject + "</root>").child}</h1>.mkString
+    }
+
+  private def addIssueDate(message: SecureMessage)(implicit messages: Messages): String = {
+    val issueDate = localizedFormatter(message.issueDate.toLocalDate)
+    <p class='message_time faded-text--small govuk-hint'>{s"${messages("date.text.advisor", issueDate)}"}</p><br/>.mkString
+  }
+
+  private def localizedFormatter(date: LocalDate)(implicit messages: Messages): String = {
+    val formatter =
+      if (messages.lang.language == "cy") {
+        DateTimeFormat.forPattern(s"d '${messages(s"month.${date.getMonthOfYear}")}' yyyy")
+      } else {
+        DateTimeFormat.forPattern("dd MMMM yyyy")
+      }
+    date.toString(formatter)
+  }
+
+  def decodeBase64String(input: String): String =
+    new String(Base64.decodeBase64(input.getBytes("UTF-8")))
 }

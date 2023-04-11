@@ -111,6 +111,10 @@ trait MessageSchemaValidator {
       |      "type": "string",
       |      "description": "This is used to determine the email alert to use for this message."
       |    },
+      |    "language": {
+      |      "type": "string",
+      |      "description": "This is optional, will be used to determine the language sets for email subjaect"
+      |    },
       |    "validFrom": {
       |      "type": "string",
       |      "format": "date",
@@ -124,14 +128,20 @@ trait MessageSchemaValidator {
       |          "properties": {
       |            "lang": {
       |              "type": "string",
+      |              "minLength": 1,
+      |              "pattern": "^\\S.*$",
       |              "description": "Content language i.e. 'en' or 'cy'"
       |            },
       |            "subject": {
       |              "type": "string",
+      |              "minLength": 1,
+      |              "pattern": "^\\S.*$",
       |              "description": "Subject line"
       |            },
       |            "body": {
       |              "type": "string",
+      |              "minLength": 1,
+      |              "pattern": "^\\S.*$",
       |              "description": "<base64 encoded source data>"
       |            }
       |          },
@@ -202,10 +212,14 @@ trait MessageSchemaValidator {
       |                  "type": "object",
       |                  "properties": {
       |                    "name": {
-      |                      "type": "string"
+      |                      "type": "string",
+      |                      "minLength": 1,
+      |                      "pattern": "^\\S.*$"
       |                    },
       |                    "value": {
-      |                      "type": "string"
+      |                      "type": "string",
+      |                      "minLength": 1,
+      |                      "pattern": "^\\S.*$"
       |                    }
       |                  },
       |                  "required": [
@@ -222,9 +236,7 @@ trait MessageSchemaValidator {
       |        }
       |      },
       |      "required": [
-      |        "formId",
-      |        "issueDate",
-      |        "batchId"
+      |        "formId"
       |      ]
       |    }
       |  },

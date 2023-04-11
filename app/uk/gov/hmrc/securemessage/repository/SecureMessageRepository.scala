@@ -16,155 +16,214 @@
 
 package uk.gov.hmrc.securemessage.repository
 
-import cats.implicits.toFoldableOps
-import org.mongodb.scala.bson.ObjectId
+import com.mongodb.ReadPreference
+import com.mongodb.client.model.Indexes.ascending
+import com.mongodb.client.model.ReturnDocument
+import org.bson.types.ObjectId
+import org.joda.time.{ DateTime, LocalDate }
+import org.mongodb.scala.MongoException
 import org.mongodb.scala.bson.conversions.Bson
-import org.mongodb.scala.model.{ Filters, IndexModel }
-import play.api.Logger
-import play.api.libs.json._
+import org.mongodb.scala.model._
+import play.api.libs.json.Json
+import uk.gov.hmrc.common.message.model.{ EmailAlert, MessagesCount, TimeSource }
+import uk.gov.hmrc.domain.TaxIds.TaxIdWithName
 import uk.gov.hmrc.mongo.MongoComponent
-import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
-import uk.gov.hmrc.securemessage.models.core.{ Conversation, Count, FilterTag, Identifier }
-import uk.gov.hmrc.securemessage.{ MessageNotFound, SecureMessageError }
-
+import uk.gov.hmrc.mongo.play.json.Codecs
+import uk.gov.hmrc.mongo.workitem.ProcessingStatus
+import uk.gov.hmrc.mongo.workitem.ProcessingStatus.{ Failed, InProgress, ToDo }
+import uk.gov.hmrc.securemessage.{ SecureMessageError, StoreError }
+import uk.gov.hmrc.securemessage.models.core.{ Count, FilterTag, Identifier, MessageFilter }
+import uk.gov.hmrc.securemessage.models.v4.{ SecureMessage, SecureMessageMongoFormat }
+import uk.gov.hmrc.securemessage.models.v4.SecureMessageMongoFormat._
+import java.util.concurrent.TimeUnit
+import javax.inject.{ Inject, Named, Singleton }
+import scala.concurrent.duration.Duration
 import scala.concurrent.{ ExecutionContext, Future }
-import scala.reflect.{ ClassTag, classTag }
+import scala.util.control.NonFatal
 
-abstract class SecureMessageRepository[A: ClassTag](
-  collectionName: String,
+@Singleton
+class SecureMessageRepository @Inject()(
   mongo: MongoComponent,
-  domainFormat: Format[A],
-  indexes: Seq[IndexModel],
-  replaceIndexes: Boolean)(implicit ec: ExecutionContext)
-    extends PlayMongoRepository[A](mongo, collectionName, domainFormat, indexes, replaceIndexes = replaceIndexes) {
+  val timeSource: TimeSource,
+  @Named("retryFailedAfter") retryIntervalMillis: Int,
+  @Named("retryInProgressAfter") retryInProgressAfter: Int,
+  @Named("queryMaxTimeMs") queryMaxTimeMs: Int)(implicit ec: ExecutionContext)
+    extends AbstractMessageRepository[SecureMessage](
+      "secure-message",
+      mongo,
+      SecureMessageMongoFormat.mongoMessageFormat,
+      Seq(
+        IndexModel(
+          ascending("hash"),
+          IndexOptions().name("unique-messageHash").unique(true)
+        ),
+        IndexModel(
+          ascending("recipient.identifier.value", "recipient.identifier.name"),
+          IndexOptions()
+            .name("recipient-tax-id")
+            .unique(false)
+            .background(true))
+      ),
+      replaceIndexes = false,
+      extraCodecs = Seq(
+        Codecs.playFormatCodec(uk.gov.hmrc.mongo.play.json.formats.MongoJodaFormats.localDateFormat),
+        Codecs.playFormatCodec(SecureMessageMongoFormat.localDateFormat),
+        Codecs.playFormatCodec(uk.gov.hmrc.mongo.play.json.formats.MongoJodaFormats.dateTimeFormat),
+        Codecs.playFormatCodec(uk.gov.hmrc.common.message.model.EmailAlert.alertFormat),
+        Codecs.playFormatCodec(uk.gov.hmrc.common.message.model.Regime.format)
+      )
+    ) with MessageSelector {
 
-  implicit val format: OFormat[A] = domainFormat.asInstanceOf[OFormat[A]]
-  val logger = Logger(getClass)
+  private final val DuplicateKey = 11000
 
-  protected def messagesQuerySelector(identifiers: Set[Identifier], tags: Option[List[FilterTag]]): Bson =
-    (identifiers, tags) match {
-      case (identifiers, _) if identifiers.isEmpty => //TODO: move this case to service
-        Filters.empty()
-      case (identifiers, None) =>
-        identifierQuery(identifiers)
-      case (identifiers, Some(Nil)) =>
-        identifierQuery(identifiers)
-      case (identifiers, Some(tags)) =>
-        Filters.and(
-          identifierQuery(identifiers),
-          Filters.or(tagQuery(tags): _*)
+  def save(message: SecureMessage): Future[Boolean] =
+    collection.insertOne(message).toFuture().map(_.wasAcknowledged()).recoverWith {
+      case e: MongoException if e.getCode == DuplicateKey =>
+        logger.warn(s"Ignoring duplicate message found on insertion to MessageV4 collection: ${message._id}.")
+        Future.successful(false)
+    }
+
+  def pullMessageToAlert(): Future[Option[SecureMessage]] = {
+
+    val failedBefore: DateTime = timeSource.now().minusMillis(retryIntervalMillis)
+    val startedProcessingBefore: DateTime = DateTime.now().minusMillis(retryInProgressAfter)
+
+    def pull(query: Bson): Future[Option[SecureMessage]] =
+      collection
+        .findOneAndUpdate(
+          query,
+          setStatusOperation(ProcessingStatus.InProgress),
+          FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER)
         )
-      case _ =>
-        Filters.empty()
-    }
+        .toFutureOption()
 
-  protected def getMessages(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
-    implicit ec: ExecutionContext): Future[List[A]] = {
-    val querySelector = messagesQuerySelector(identifiers, tags)
-    if (querySelector != Filters.empty()) {
-      collection
-        .find(querySelector)
-        .sort(Filters.equal("_id", -1))
-        .toFuture()
-        .map(_.toList)
-    } else {
-      Future(List())
+    val todoQuery = Filters.and(
+      Filters.equal("status", ToDo.name),
+      Filters.lte("validFrom", timeSource.today)
+    )
+
+    val failedBeforeQuery = Filters.or(
+      Filters.and(Filters.equal("status", InProgress.name), Filters.lt("lastUpdated", startedProcessingBefore)),
+      Filters.and(Filters.equal("status", Failed.name), Filters.lt("lastUpdated", failedBefore))
+    )
+    pull(todoQuery).flatMap {
+      case None        => pull(failedBeforeQuery)
+      case messageToDo => Future.successful(messageToDo)
     }
   }
 
-  protected def getMessagesCount(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
-    implicit ec: ExecutionContext): Future[Count] = {
-    val querySelector = messagesQuerySelector(identifiers, tags)
-    val totalCount: Future[Int] = {
-      val querySelector = messagesQuerySelector(identifiers, tags)
-      if (querySelector != Filters.empty()) {
-        collection
-          .find(querySelector)
-          .sort(Filters.equal("_id", -1))
-          .toFuture()
-          .map(_.toList.size)
-      } else {
-        Future(0)
-      }
-    }
-    val unreadCount: Future[Int] = totalCount.flatMap { total =>
-      if (total == 0) {
-        Future.successful(0)
-      } else if (collectionName == "conversation") {
-        getConversationsUnreadCount(identifiers, tags)
-      } else {
-        getMessageUnreadCount(querySelector)
-      }
-    }
+  private def setStatusOperation(newStatus: ProcessingStatus): Bson =
+    Updates.combine(
+      Updates.set("status", newStatus.name),
+      Updates.set("lastUpdated", timeSource.now)
+    )
 
-    for {
-      total  <- totalCount
-      unread <- unreadCount
-    } yield Count(total, unread)
-  }
-
-  private[repository] def conversationRead(conversation: A, identifier: Set[Identifier]): Int =
-    if (conversation.asInstanceOf[Conversation].unreadMessagesFor(identifier).isEmpty) 0 else 1
-
-  private[repository] def getConversationsUnreadCount(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
-    implicit ec: ExecutionContext): Future[Int] =
-    getMessages(identifiers, tags).map { conversations =>
-      conversations.foldMap(c => conversationRead(c, identifiers))
-    }
-
-  private def getMessageUnreadCount(baseQuery: Bson)(implicit ec: ExecutionContext) =
-    if (baseQuery != Filters.empty()) {
-      collection
-        .find(Filters.and(baseQuery, Filters.exists("readTime", exists = false)))
-        .sort(Filters.equal("_id", -1))
-        .toFuture()
-        .map(_.toList.size)
-    } else {
-      Future(0)
-    }
-
-  protected def getMessage(id: ObjectId, identifiers: Set[Identifier])(
-    implicit ec: ExecutionContext): Future[Either[SecureMessageError, A]] = {
-    val query = identifierQuery(identifiers)
+  def alertCompleted(id: ObjectId, status: ProcessingStatus, alert: EmailAlert): Future[Boolean] =
     collection
-      .find(
-        Filters.and(
-          Filters.equal("_id", id),
-          query
+      .updateOne(
+        Filters.equal("_id", id),
+        Updates.combine(
+          Updates.set("status", status.name),
+          Updates.set("alerts", alert)
         )
       )
-      .first()
       .toFuture()
-      .map(Option(_) match {
-        case Some(m) => Right(m)
-        case None =>
-          logger.debug(identifiers.toString())
-          Left(MessageNotFound(s"${classTag[A].runtimeClass.getSimpleName} not found for identifiers: $identifiers"))
-      })
-      .recoverWith {
-        case exception =>
-          Future.successful(Left(MessageNotFound(exception.getMessage)))
-      }
+      .map(_.getModifiedCount == 1)
+
+  def findById(id: ObjectId): Future[Option[SecureMessage]] = {
+
+    val query = Filters.and(Filters.equal("_id", id), readyForViewingQuery)
+
+    collection
+      .withReadPreference(ReadPreference.secondaryPreferred)
+      .find(query)
+      .maxTime(Duration(queryMaxTimeMs.toLong, TimeUnit.MILLISECONDS))
+      .headOption()
+
   }
 
-  protected def identifierQuery(identifiers: Set[Identifier]): Bson = {
-    val listOfFilters = identifiers.foldLeft(List.empty[Bson])(
-      (l, i) =>
-        l :+
-          findByIdentifierQuery(i)
-            .map(q => Filters.equal(q._1, q._2))
-            .fold(Filters.empty())((nameFilter, valueFilter) => Filters.and(nameFilter, valueFilter)))
-    if (listOfFilters.isEmpty) {
-      Filters.empty()
-    } else if (listOfFilters.size > 1) {
-      Filters.or(listOfFilters: _*)
-    } else {
-      listOfFilters.head
+  protected def findByIdentifierQuery(identifier: Identifier): Seq[(String, String)] =
+    identifier.enrolment match {
+      case Some(enrolment) =>
+        Seq[(String, String)](
+          "recipient.identifier.name"  -> enrolment,
+          "recipient.identifier.value" -> identifier.value
+        )
+      case None =>
+        Seq[(String, String)](
+          "recipient.identifier.name"  -> "Unknown",
+          "recipient.identifier.value" -> identifier.value
+        )
     }
+
+  def getSecureMessageCount(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
+    implicit ec: ExecutionContext): Future[Count] =
+    getMessagesCount(identifiers, tags)
+
+  override def readyForViewingQuery: Bson = {
+    import SecureMessageMongoFormat.localDateFormat
+    Filters.and(
+      Filters.lte("validFrom", Codecs.toBson(LocalDate.now())),
+      Filters.nor(Filters.equal("verificationBrake", true)))
   }
 
-  protected def findByIdentifierQuery(identifier: Identifier): Seq[(String, String)]
+  def findBy(authTaxIds: Set[TaxIdWithName])(
+    implicit messageFilter: MessageFilter,
+    ec: ExecutionContext
+  ): Future[List[SecureMessage]] =
+    taxIdRegimeSelector(authTaxIds)
+      .map(Filters.and(_, readyForViewingQuery))
+      .fold(Future.successful(List[SecureMessage]())) { query =>
+        logger.warn(s"SecureMessageQuery $query")
+        collection
+          .find(query)
+          .maxTime(Duration(1, TimeUnit.MINUTES))
+          .sort(Filters.equal("_id", -1))
+          .toFuture()
+          .map(_.toList)
+      }
+      .recoverWith {
+        case NonFatal(e) =>
+          logger.error(s"Error processing the query ${e.getMessage}")
+          Future.successful(List())
+      }
 
-  protected def tagQuery(tags: List[FilterTag]): List[Bson] =
-    tags.foldLeft(List.empty[Bson])((l, t) => l :+ Filters.equal(s"tags.${t.key}", t.value))
+  def countBy(authTaxIds: Set[TaxIdWithName])(
+    implicit messageFilter: MessageFilter,
+    ec: ExecutionContext
+  ): Future[MessagesCount] =
+    taxIdRegimeSelector(authTaxIds)
+      .map(Filters.and(_, readyForViewingQuery))
+      .fold(Future.successful(MessagesCount(0, 0)))(query => {
+        logger.warn(s"SecureMessageCountQuery $query")
+        for {
+          unreadCount <- collection
+                        // scalastyle:off null
+                          .countDocuments(Filters.and(query, Filters.equal("readTime", null)))
+                          // scalastyle:on null
+                          .toFuture()
+          totalCount <- collection.countDocuments(query).toFuture()
+        } yield MessagesCount(totalCount.toInt, unreadCount.toInt)
+      })
+
+  def getSecureMessages(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
+    implicit ec: ExecutionContext): Future[List[SecureMessage]] =
+    getMessages(identifiers, tags)
+
+  def getSecureMessage(id: ObjectId, identifiers: Set[Identifier])(
+    implicit ec: ExecutionContext): Future[Either[SecureMessageError, SecureMessage]] = getMessage(id, identifiers)
+
+  import SecureMessageMongoFormat.dateTimeFormat
+  def addReadTime(id: ObjectId, readTime: DateTime)(
+    implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] =
+    collection
+      .updateOne(
+        filter = Filters.and(Filters.equal("_id", id), Filters.exists("readTime", exists = false)),
+        update = Updates.set("readTime", Codecs.toBson(Json.toJson(readTime)))
+      )
+      .toFuture()
+      .map(_ => Right(()))
+      .recoverWith {
+        case error => Future.successful(Left(StoreError(error.getMessage, None)))
+      }
 }

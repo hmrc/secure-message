@@ -31,7 +31,8 @@ import play.api.http.HeaderNames._
 import play.api.http.Status._
 import play.api.i18n.Messages
 import play.api.libs.json.{ JsObject, JsValue, Json, OFormat }
-import play.api.mvc.{ AnyContentAsEmpty, Request, Result }
+import play.api.mvc.Results.Created
+import play.api.mvc.{ AnyContent, AnyContentAsEmpty, Request, Result }
 import play.api.test.Helpers.{ POST, PUT, contentAsJson, contentAsString, defaultAwaitTimeout, status, stubMessages }
 import play.api.test.{ FakeHeaders, FakeRequest, Helpers }
 import uk.gov.hmrc.auth.core._
@@ -39,6 +40,7 @@ import uk.gov.hmrc.auth.core.authorise.Predicate
 import uk.gov.hmrc.auth.core.retrieve.Retrieval
 import uk.gov.hmrc.common.message.model.MessagesCount
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.HttpVerbs.GET
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.securemessage._
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.{ ApiConversation, ConversationMetadata }
@@ -52,6 +54,7 @@ import uk.gov.hmrc.securemessage.handlers.{ CDSMessageRetriever, MessageBroker, 
 import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core.Letter._
 import uk.gov.hmrc.securemessage.models.core._
+import uk.gov.hmrc.securemessage.models.v4.SecureMessage
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
 import uk.gov.hmrc.securemessage.services.SecureMessageServiceImpl
 
@@ -289,6 +292,10 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     "return Not Found (404) with a JSON body of No letter found" in new TestCase {
       when(mockSecureMessageService.getLetter(any[ObjectId], any[Set[CustomerEnrolment]])(any[ExecutionContext]))
         .thenReturn(Future.successful(Left(MessageNotFound("letter not found"))))
+      when(
+        mockSecureMessageService
+          .getSecureMessage(any[ObjectId], any[Set[CustomerEnrolment]])(any[ExecutionContext], any[Language]))
+        .thenReturn(Future.successful(Left(MessageNotFound("letter not found"))))
 
       val response: Future[Result] = controller
         .getMessage(base64Encode(s"${MessageType.Letter.entryName}/$objectID"))
@@ -425,14 +432,23 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     }
   }
 
+  "getContentBy" must {
+    val messageId = new ObjectId
+    "return content as string" in new GetContentTestCase(messageId) {
+      val response: Future[Result] = controller.getContentBy(messageId)(fakeRequest)
+      status(response) mustBe OK
+      contentAsString(response) mustBe "Message-Content"
+    }
+  }
+
   "createMessage" must {
     "return CREATED for the valid message" in
-      new CreateMessageTestCase(requestBody = Resources.readJson("model/core/v4/valid_message.json")) {
+      new CreateSecureMessageTestCase(requestBody = Resources.readJson("model/core/v4/valid_message.json")) {
         val response = controller.createMessage()(fakeRequest)
         status(response) mustBe CREATED
       }
     "return BAD_REQUEST for the message with missing mandatory fields" in
-      new CreateMessageTestCase(requestBody = Resources.readJson("model/core/v4/missing_mandatory_fields.json")) {
+      new CreateSecureMessageTestCase(requestBody = Resources.readJson("model/core/v4/missing_mandatory_fields.json")) {
         val response = controller.createMessage()(fakeRequest)
         status(response) mustBe BAD_REQUEST
       }
@@ -637,7 +653,19 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
         any[Option[Reference]])(any[ExecutionContext], any[HeaderCarrier])).thenReturn(serviceResponse)
   }
 
-  class CreateMessageTestCase(requestBody: JsValue) extends TestCase {
+  class CreateSecureMessageTestCase(requestBody: JsValue) extends TestCase {
     val fakeRequest = FakeRequest(POST, routes.SecureMessageController.createMessage().url).withJsonBody(requestBody)
+    when(
+      mockSecureMessageService
+        .createSecureMessage(any[SecureMessage])(any[Request[AnyContent]], any[HeaderCarrier], any[ExecutionContext]))
+      .thenReturn(Future.successful(Created("")))
+  }
+
+  class GetContentTestCase(id: ObjectId) extends TestCase {
+    val fakeRequest = FakeRequest(GET, routes.SecureMessageController.getContentBy(id).url)
+    when(
+      mockSecureMessageService
+        .getContentBy(any[ObjectId])(any[ExecutionContext], any[Messages]))
+      .thenReturn(Future.successful(Some("Message-Content")))
   }
 }

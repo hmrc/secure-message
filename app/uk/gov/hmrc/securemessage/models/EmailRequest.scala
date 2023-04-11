@@ -25,7 +25,12 @@ final case class EmailRequest(
   to: List[EmailAddress],
   templateId: String,
   parameters: Map[String, String],
-  tags: Option[Tags])
+  tags: Option[Tags],
+  auditData: Map[String, String] = Map.empty,
+  eventUrl: Option[String] = None,
+  onSendUrl: Option[String] = None,
+  alertQueue: Option[String] = None,
+  emailSource: Option[String] = None)
 
 object EmailRequest {
 

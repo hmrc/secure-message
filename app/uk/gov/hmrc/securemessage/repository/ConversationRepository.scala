@@ -32,7 +32,7 @@ import scala.concurrent.{ ExecutionContext, Future }
 
 @Singleton
 class ConversationRepository @Inject()(mongo: MongoComponent)(implicit ec: ExecutionContext)
-    extends SecureMessageRepository[Conversation](
+    extends AbstractMessageRepository[Conversation](
       "conversation",
       mongo,
       Conversation.conversationFormat,
