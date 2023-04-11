@@ -34,7 +34,7 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{ ExecutionContext, Future }
 
 class MessageRepository @Inject()(mongo: MongoComponent)(implicit ec: ExecutionContext)
-    extends SecureMessageRepository[Letter](
+    extends AbstractMessageRepository[Letter](
       "message",
       mongo,
       Letter.letterFormat,
@@ -95,7 +95,6 @@ class MessageRepository @Inject()(mongo: MongoComponent)(implicit ec: ExecutionC
     taxIdRegimeSelector(authTaxIds)
       .map(Filters.and(_, readyForViewingQuery, rescindedExcludedQuery))
       .fold(Future.successful(List[Letter]())) { query =>
-        logger.warn(s"Query - $query")
         collection
           .find(query)
           .maxTime(Duration(1, TimeUnit.MINUTES))

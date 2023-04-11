@@ -94,7 +94,11 @@ trait ISpec extends PlaySpec with ServiceSpec with BeforeAndAfterEach with AuthH
       .put(new File("./it/resources/cdcm/create-conversation.json"))
   }
 
-  override def additionalConfig: Map[String, _] = Map("metrics.jvm" -> false)
+  override def additionalConfig: Map[String, _] =
+    Map(
+      "metrics.jvm"                  -> false,
+      "play.cache.bindCaches"        -> Seq("controller-cache", "document-cache"),
+      "play.cache.createBoundCaches" -> false)
 
   def base64Encode(path: String): String = Base64.encodeBase64String(path.getBytes("UTF-8"))
 

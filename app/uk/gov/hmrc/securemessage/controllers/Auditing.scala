@@ -20,6 +20,7 @@ import org.joda.time.format.ISODateTimeFormat
 import org.joda.time.{ DateTime, DateTimeZone }
 import uk.gov.hmrc.auth.core.Enrolments
 import uk.gov.hmrc.common.message.emailaddress.EmailAddress
+import uk.gov.hmrc.common.message.model.TaxEntity
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.securemessage.SecureMessageError
@@ -30,6 +31,7 @@ import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
 import uk.gov.hmrc.securemessage.controllers.model.{ ApiMessage, ClientName, MessageResourceResponse, MessageType }
 import uk.gov.hmrc.securemessage.controllers.utils.IdCoder
 import uk.gov.hmrc.securemessage.models.core.{ Conversation, Reference }
+import uk.gov.hmrc.securemessage.models.v4.SecureMessage
 import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryMessageRequest }
 
 import scala.concurrent.ExecutionContext
@@ -273,6 +275,20 @@ trait Auditing {
       "message"                  -> qrw.requestDetail.message
     )
     auditConnector.sendExplicitAudit(txnStatus, detail)
+  }
+
+  def auditUpdatedMessageFor(m: SecureMessage, transactionName: String)(
+    implicit hc: HeaderCarrier,
+    ec: ExecutionContext): Unit = {
+    val formId: Map[String, String] = m.details.map("formId" -> _.formId).toMap
+    val detail: Map[String, String] = Map(
+      "messageId"   -> m._id.toString,
+      "source"      -> m.externalRef.source,
+      "templateId"  -> m.alertDetails.templateId,
+      "messageType" -> m.messageType) ++
+      formId ++
+      TaxEntity.forAudit(m.recipient)
+    auditConnector.sendExplicitAudit(transactionName, detail)
   }
 
   private def prettyPrintEnrolments(enrolments: Enrolments): String =

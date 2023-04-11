@@ -18,12 +18,14 @@ package uk.gov.hmrc.securemessage.controllers
 
 import cats.data._
 import cats.implicits._
+import org.mongodb.scala.bson.ObjectId
 import play.api.Logging
 import play.api.i18n.I18nSupport
 import play.api.libs.json._
 import play.api.mvc.{ Action, AnyContent, ControllerComponents, Request, Result }
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
+import uk.gov.hmrc.common.message.model.SendAlertResponse
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
@@ -36,6 +38,7 @@ import uk.gov.hmrc.securemessage.controllers.utils.{ IdCoder, MessageSchemaValid
 import uk.gov.hmrc.securemessage.handlers.{ MessageBroker, MessageReadRequest }
 import uk.gov.hmrc.securemessage.models.core.Language.English
 import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag, Language, MessageFilter, MessageRequestWrapper, Reference }
+import uk.gov.hmrc.securemessage.models.v4.SecureMessage
 import uk.gov.hmrc.securemessage.services.{ ImplicitClassesExtensions, SecureMessageServiceImpl }
 import uk.gov.hmrc.time.DateTimeUtils
 
@@ -179,7 +182,7 @@ class SecureMessageController @Inject()(
     enrolment: Option[List[CustomerEnrolment]],
     tag: Option[List[FilterTag]],
     messageFilter: Option[MessageFilter] = None,
-    language: Option[Language] = Some(English)): Action[AnyContent] =
+    language: Option[Language] = None): Action[AnyContent] =
     Action.async { implicit request =>
       {
         logger.warn(s"getMessages for the language $language")
@@ -192,7 +195,7 @@ class SecureMessageController @Inject()(
             Future.successful(BadRequest(Json.toJson(e.getMessage)))
           case Right(value) =>
             logger.warn(s"Valid Request $value - Params: ${request.queryString}")
-            messageBroker.messageRetriever(value).fetch(requestWrapper).map(Ok(_))
+            messageBroker.messageRetriever(value).fetch(requestWrapper, language.getOrElse(English)).map(Ok(_))
         }
       }
     }
@@ -215,9 +218,9 @@ class SecureMessageController @Inject()(
       }
     }
 
-  def getMessage(encodedId: String, language: Option[Language] = Some(English)): Action[AnyContent] = Action.async {
+  def getMessage(encodedId: String, language: Option[Language] = None): Action[AnyContent] = Action.async {
     implicit request =>
-      logger.warn(s"getMessage for the language $language")
+      implicit val lang: Language = language.getOrElse(English)
       val message: EitherT[Future, SecureMessageError, (ApiMessage, Enrolments)] = for {
         messageRequestTuple <- EitherT(Future.successful(IdCoder.decodeId(encodedId)))
         enrolments          <- EitherT(getEnrolments())
@@ -255,20 +258,76 @@ class SecureMessageController @Inject()(
     }
   }
 
-  def createMessage(): Action[AnyContent] = Action { implicit request =>
-    request.body.asJson.fold[Result] {
+  def createMessage(): Action[AnyContent] = Action.async { implicit request =>
+    request.body.asJson.fold[Future[Result]] {
       val errMsg = "Payload is not JSON"
       logger.warn(s"$errMsg. Request Body: ${request.body}")
-      BadRequest(Json.obj("error" -> errMsg))
+      Future.successful(BadRequest(Json.obj("error" -> errMsg)))
     } { json =>
       isValidJson(json) match {
         case Right(error) =>
           logger.warn(s"Could not validate or parse the request: $error")
-          BadRequest(Json.obj("error" -> error))
+          Future.successful(BadRequest(Json.obj("error" -> error)))
         case _ =>
-          logger.warn("Message for v4 has processed successfully")
-          Created(Json.obj("id" -> UUID.randomUUID().toString))
+          logger.warn(s"Request received for V4 ${json.toString} ")
+          secureMessageService.createSecureMessage(json.as[SecureMessage]).recover {
+            case e: MessageValidationException =>
+              InternalServerError(Json.obj("reason" -> s"${e.getMessage}"))
+            case e: Throwable =>
+              InternalServerError(Json.obj("reason" -> s"Unable to create the message: ${e.getMessage}"))
+          }
       }
+    }
+  }
+
+  def sendAlert(id: String): Action[AnyContent] = Action.async { _ =>
+    val MessageRead, EmailSent, IsGmc, Send = true
+    val MessageNotRead, EmailNotSent, DontSend = false
+
+    val shouldSendEmailNotification = (result: Boolean) => Ok(Json.toJson(SendAlertResponse(result)))
+
+    val extract = (m: SecureMessage) => {
+      (m.readTime.isDefined, m.alerts.fold(false)(_.success), SecureMessageUtil.isGmc(m))
+    }
+
+    secureMessageService.findSecureMessageById(new ObjectId(id)).map {
+      case Some(message) =>
+        val result = extract(message) match {
+          case (_, _, IsGmc)                     => Send
+          case (MessageNotRead, EmailSent, _)    => Send
+          case (MessageRead, EmailNotSent, _)    => Send
+          case (MessageRead, EmailSent, _)       => Send
+          case (MessageNotRead, EmailNotSent, _) => DontSend
+          case (MessageNotRead, _, _)            => Send
+          case (MessageRead, _, _)               => DontSend
+          case _                                 => Send
+        }
+        shouldSendEmailNotification(result)
+      case None => NotFound
+    }
+  }
+
+  def getContentBy(id: ObjectId): Action[AnyContent] = Action.async { implicit request =>
+    secureMessageService.getContentBy(id).map {
+      case Some(content) => Ok(content)
+      case None =>
+        logger.warn(s"""Content for message with id: ${id.toString} is empty""")
+        NotFound
+    }
+  }
+
+  def setReadTime(id: ObjectId): Action[AnyContent] = Action.async { implicit request =>
+    secureMessageService.findSecureMessageById(id) flatMap {
+      case Some(message) =>
+        secureMessageService.setReadTime(id).flatMap {
+          case Left(e) =>
+            logger.error(s"Unable to set secure message read time ${e.message}"); Future.successful(InternalServerError)
+          case _ =>
+            logger.warn(s"Secure Message is Read $id")
+            auditUpdatedMessageFor(message, "Message is Read")
+            Future.successful(Ok)
+        }
+      case None => Future.successful(NotFound)
     }
   }
 }
