@@ -261,7 +261,7 @@ class SecureMessageController @Inject()(
   def createMessage(): Action[AnyContent] = Action.async { implicit request =>
     request.body.asJson.fold[Future[Result]] {
       val errMsg = "Payload is not JSON"
-      logger.warn(s"$errMsg. Request Body: ${request.body}")
+      logger.error(s"$errMsg. Request: ${request.id}")
       Future.successful(BadRequest(Json.obj("error" -> errMsg)))
     } { json =>
       isValidJson(json) match {
@@ -269,7 +269,7 @@ class SecureMessageController @Inject()(
           logger.warn(s"Could not validate or parse the request: $error")
           Future.successful(BadRequest(Json.obj("error" -> error)))
         case _ =>
-          logger.warn(s"Request received for V4 ${json.toString} ")
+          logger.debug(s"Request received for V4 ${json.toString} ")
           secureMessageService.createSecureMessage(json.as[SecureMessage]).recover {
             case e: MessageValidationException =>
               InternalServerError(Json.obj("reason" -> s"${e.getMessage}"))
