@@ -57,7 +57,6 @@ class EmailAlertService @Inject()(
   val initialState = EmailResults()
 
   def sendEmailAlerts()(implicit ec: ExecutionContext): Future[EmailResults] = {
-
     val pullWorkItems = Enumerator.generateM(pullItem)
     val processWorkItems = Iteratee.foldM(initialState)(processItem)
 
