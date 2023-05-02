@@ -16,9 +16,11 @@
 
 package uk.gov.hmrc.securemessage.services
 
+import akka.NotUsed
+import akka.stream.Materializer
+import akka.stream.scaladsl.Source
 import cats.syntax.option.catsSyntaxOptionId
 import play.api.Logging
-import play.api.libs.iteratee.{ Enumerator, Iteratee }
 import uk.gov.hmrc.common.message.emailaddress.EmailAddress
 import uk.gov.hmrc.common.message.model.EmailAlert
 import uk.gov.hmrc.common.message.model.TaxEntity.getEnrolments
@@ -56,12 +58,16 @@ class EmailAlertService @Inject()(
 
   val initialState = EmailResults()
 
-  def sendEmailAlerts()(implicit ec: ExecutionContext): Future[EmailResults] = {
-    val pullWorkItems = Enumerator.generateM(pullItem)
-    val processWorkItems = Iteratee.foldM(initialState)(processItem)
-
-    pullWorkItems.run(processWorkItems)
-  }
+  def sendEmailAlerts()(implicit ec: ExecutionContext, mat: Materializer): Future[EmailResults] =
+    Source
+      .unfoldAsync(NotUsed) { _ =>
+        pullItem()
+          .map {
+            case None       => None
+            case Some(item) => Some(NotUsed -> item)
+          }
+      }
+      .runFoldAsync(initialState)(processItem)
 
   def pullItem(): Future[Option[SecureMessage]] =
     secureMessageRepository.pullMessageToAlert()

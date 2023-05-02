@@ -17,6 +17,7 @@
 package uk.gov.hmrc.securemessage.scheduler
 
 import akka.actor.{ Actor, Timers }
+import akka.stream.Materializer
 import play.api.{ Configuration, Logging }
 import play.libs.exception.ExceptionUtils
 import uk.gov.hmrc.mongo.lock.{ LockRepository, LockService }
@@ -31,7 +32,7 @@ import scala.concurrent.duration.{ Duration, FiniteDuration, HOURS, MILLISECONDS
 class EmailAlertJob @Inject()(
   val configuration: Configuration,
   lockRepository: LockRepository,
-  emailAlerter: EmailAlertService)
+  emailAlerter: EmailAlertService)(implicit mat: Materializer)
     extends Actor with Timers with SchedulingConfig with Logging {
 
   override val name: String = "EmailAlertJob"

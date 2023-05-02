@@ -29,7 +29,6 @@ object AppDependencies {
     "org.webjars"       % "swagger-ui"                 % "3.50.0",
     "com.beachape"      %% "enumeratum-play"           % "1.5.17",
     "com.typesafe.play" %% "play-json-joda"            % "2.9.4",
-    "com.typesafe.play"     %% "play-iteratees"        % "2.6.1",
     "org.typelevel"     %% "cats-core"                 % "2.9.0",
     "com.networknt"     % "json-schema-validator"      % "1.0.77" exclude ("com.fasterxml.jackson.core", "jackson-databind"),
     "org.jsoup"         % "jsoup"                      % "1.15.4",
