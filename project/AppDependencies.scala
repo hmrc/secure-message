@@ -24,7 +24,6 @@ object AppDependencies {
     ehcache,
     "uk.gov.hmrc"       %% "bootstrap-backend-play-28" % "6.4.0",
     "uk.gov.hmrc"       %% "dc-message-library"        % "0.23.0-play-28",
-    "uk.gov.hmrc.mongo" %% "hmrc-mongo-play-28"        % "0.74.0",
     "uk.gov.hmrc"       %% "time"                      % "3.19.0",
     "org.webjars"       % "swagger-ui"                 % "3.50.0",
     "com.beachape"      %% "enumeratum-play"           % "1.5.17",
