@@ -22,7 +22,10 @@ import com.mongodb.client.model.ReturnDocument
 import org.bson.types.ObjectId
 import org.joda.time.{ DateTime, LocalDate }
 import org.mongodb.scala.MongoException
+import org.mongodb.scala.bson.{ BsonArray, BsonDocument }
 import org.mongodb.scala.bson.conversions.Bson
+import org.mongodb.scala.model.Aggregates.{ `match`, sample }
+import org.mongodb.scala.model.Updates.set
 import org.mongodb.scala.model._
 import play.api.libs.json.Json
 import uk.gov.hmrc.common.message.model.{ EmailAlert, MessagesCount, TimeSource }
@@ -30,11 +33,12 @@ import uk.gov.hmrc.domain.TaxIds.TaxIdWithName
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus
-import uk.gov.hmrc.mongo.workitem.ProcessingStatus.{ Failed, InProgress, ToDo }
+import uk.gov.hmrc.mongo.workitem.ProcessingStatus.{ Cancelled, Deferred, Failed, InProgress, ToDo }
 import uk.gov.hmrc.securemessage.{ SecureMessageError, StoreError }
 import uk.gov.hmrc.securemessage.models.core.{ Count, FilterTag, Identifier, MessageFilter }
-import uk.gov.hmrc.securemessage.models.v4.{ SecureMessage, SecureMessageMongoFormat }
+import uk.gov.hmrc.securemessage.models.v4.{ BrakeBatch, BrakeBatchApproval, BrakeBatchDetails, BrakeBatchMessage, SecureMessage, SecureMessageMongoFormat }
 import uk.gov.hmrc.securemessage.models.v4.SecureMessageMongoFormat._
+
 import java.util.concurrent.TimeUnit
 import javax.inject.{ Inject, Named, Singleton }
 import scala.concurrent.duration.Duration
@@ -226,4 +230,104 @@ class SecureMessageRepository @Inject()(
       .recoverWith {
         case error => Future.successful(Left(StoreError(error.getMessage, None)))
       }
+
+  def pullBrakeBatchDetails(): Future[List[BrakeBatchDetails]] = {
+    import org.mongodb.scala.model.Aggregates._
+    collection
+      .aggregate[BrakeBatchDetails](List(
+        `match`(Filters.and(Filters.equal("status", Deferred.name), Filters.equal("verificationBrake", true))),
+        project(Projections.fields(
+          Filters.equal("formId", BsonDocument(f"$$ifNull" -> BsonArray(f"$$body.form", "Unspecified"))),
+          Filters
+            .equal(
+              "issueDate",
+              BsonDocument(f"$$ifNull"                      -> BsonArray(f"$$body.issueDate", Codecs.toBson(new LocalDate(0))))),
+          Filters.equal("batchId", BsonDocument(f"$$ifNull" -> BsonArray(f"$$body.batchId", "Unspecified"))),
+          Filters.equal("templateId", f"$$alertDetails.templateId")
+        )),
+        group(
+          BsonDocument(
+            "batchId"    -> f"$$batchId",
+            "formId"     -> f"$$formId",
+            "issueDate"  -> f"$$issueDate",
+            "templateId" -> f"$$templateId"),
+          Accumulators.first("formId", f"$$formId"),
+          Accumulators.first("batchId", f"$$batchId"),
+          Accumulators.first("issueDate", f"$$issueDate"),
+          Accumulators.first("templateId", f"$$templateId"),
+          Accumulators.sum("count", 1)
+        )
+      ))
+      .collect()
+      .toFuture()
+      .map(_.toList)
+  }
+
+  def brakeBatchAccepted(brakeBatchApproval: BrakeBatchApproval): Future[Boolean] =
+    collection
+      .updateMany(
+        Filters.and(
+          Filters.equal("status", Deferred.name),
+          Filters.equal(
+            "body.batchId",
+            if (brakeBatchApproval.batchId.equals("Unspecified")) null else brakeBatchApproval.batchId),
+          Filters.equal(
+            "body.form",
+            if (brakeBatchApproval.formId.equals("Unspecified")) null else brakeBatchApproval.formId),
+          Filters.equal("alertDetails.templateId", brakeBatchApproval.templateId),
+          Filters.equal("body.issueDate", if (brakeBatchApproval.issueDate.equals(new LocalDate(0))) {
+            null
+          } else {
+            brakeBatchApproval.issueDate.toString
+          })
+        ),
+        Updates.combine(Updates.set("status", ToDo.name), Updates.set("verificationBrake", false))
+      )
+      .toFuture()
+      .map(_.getModifiedCount >= 1)
+
+  def brakeBatchRejected(brakeBatchApproval: BrakeBatchApproval): Future[Boolean] =
+    collection
+      .updateMany(
+        Filters.and(
+          Filters.equal("status", Deferred.name),
+          Filters.equal(
+            "body.batchId",
+            if (brakeBatchApproval.batchId.equals("Unspecified")) null else brakeBatchApproval.batchId),
+          Filters.equal(
+            "body.form",
+            if (brakeBatchApproval.formId.equals("Unspecified")) null else brakeBatchApproval.formId),
+          Filters.equal("alertDetails.templateId", brakeBatchApproval.templateId),
+          Filters.equal("body.issueDate", if (brakeBatchApproval.issueDate.equals(new LocalDate(0))) {
+            null
+          } else {
+            brakeBatchApproval.issueDate.toString
+          })
+        ),
+        set("status", Cancelled.name)
+      )
+      .toFuture()
+      .map(_.getModifiedCount >= 1)
+
+  def brakeBatchMessageRandom(
+    brakeBatch: BrakeBatch
+  ): Future[Option[BrakeBatchMessage]] =
+    collection
+      .aggregate[SecureMessage](List(
+        `match`(
+          Filters.and(
+            Filters.equal("status", Deferred.name),
+            Filters.equal("body.batchId", if (brakeBatch.batchId.equals("Unspecified")) null else brakeBatch.batchId),
+            Filters.equal("body.form", if (brakeBatch.formId.equals("Unspecified")) null else brakeBatch.formId),
+            Filters.equal("alertDetails.templateId", brakeBatch.templateId),
+            Filters.equal("body.issueDate", {
+              if (brakeBatch.issueDate.equals(new LocalDate(0))) null else brakeBatch.issueDate.toString
+            })
+          )
+        ),
+        sample(1)
+      ))
+      .collect()
+      .toFuture()
+      .map(_.headOption.map(x => BrakeBatchMessage(x)))
 }

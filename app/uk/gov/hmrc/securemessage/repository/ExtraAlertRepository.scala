@@ -17,13 +17,15 @@
 package uk.gov.hmrc.securemessage.repository
 
 import org.bson.types.ObjectId
-import org.joda.time.LocalDate
-import org.mongodb.scala.model.Filters
+import org.joda.time.{ Duration, LocalDate }
+import org.mongodb.scala.model.{ Filters, Updates }
 import play.api.libs.json.{ Json, OFormat }
 import play.api.{ Configuration, Environment }
 import uk.gov.hmrc.common.message.model._
 import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.mongo.workitem.ProcessingStatus.{ Cancelled, Deferred, ToDo }
 import uk.gov.hmrc.mongo.workitem.{ ProcessingStatus, WorkItem, WorkItemFields, WorkItemRepository }
+import uk.gov.hmrc.securemessage.models.v4.{ BrakeBatchApproval, ExtraAlertConfig }
 
 import java.time
 import java.time.Instant
@@ -51,6 +53,9 @@ class ExtraAlertRepository @Inject()(
         item = "item"
       )
     ) {
+
+  lazy val extraAlertConfig: Seq[ExtraAlertConfig] = ExtraAlertConfig(configuration)
+
   def pullMessageToAlert(): Future[Option[Alertable]] =
     pullOutstanding(failedBefore = now.minusMillis(retryIntervalMillis.toLong), availableBefore = now)
       .map(_.flatMap {
@@ -99,6 +104,47 @@ class ExtraAlertRepository @Inject()(
 
   def removeAlerts(ref: String)(implicit ec: ExecutionContext): Future[Unit] =
     collection.deleteMany(Filters.equal("item.reference", ref)).toFuture().map(_ => ())
+
+  def brakeBatchAccepted(brakeBatchApproval: BrakeBatchApproval)(implicit ec: ExecutionContext): Future[Boolean] = {
+
+    val extraAlertDelay = extraAlertConfig
+      .find(_.mainTemplate == brakeBatchApproval.templateId)
+      .map(_.delay)
+      .getOrElse(Duration.millis(0))
+      .getMillis
+    val availableAt = now().plusMillis(extraAlertDelay)
+
+    collection
+      .updateOne(
+        Filters.and(
+          Filters.equal("status", Deferred.name),
+          Filters.equal(
+            "item.formId",
+            if (brakeBatchApproval.formId.equals("Unspecified")) null else brakeBatchApproval.formId),
+          Filters.equal("item.alertDetails.templateId", s"${brakeBatchApproval.templateId}_D2")
+        ),
+        Updates.combine(Updates.set("status", ToDo.name), Updates.set("availableAt", availableAt))
+      )
+      .toFuture()
+      .map(_.getModifiedCount >= 1)
+  }
+
+  def brakeBatchRejected(brakeBatchApproval: BrakeBatchApproval)(implicit ec: ExecutionContext): Future[Boolean] =
+    collection
+      .updateOne(
+        Filters.and(
+          Filters.equal("status", Deferred.name),
+          Filters.equal(
+            "item.formId",
+            if (brakeBatchApproval.formId.equals("Unspecified")) null else brakeBatchApproval.formId),
+          Filters.equal("item.alertDetails.templateId", {
+            s"${brakeBatchApproval.templateId}_D2"
+          })
+        ),
+        Updates.set("status", Cancelled.name)
+      )
+      .toFuture()
+      .map(_.getModifiedCount >= 1)
 
   def now: Instant = Instant.now()
   override def inProgressRetryAfter: time.Duration = time.Duration.ofHours(1)
