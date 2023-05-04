@@ -20,24 +20,25 @@ import cats.implicits.toFoldableOps
 import org.bson.codecs.Codec
 import org.mongodb.scala.bson.ObjectId
 import org.mongodb.scala.bson.conversions.Bson
-import org.mongodb.scala.model.{ Filters, IndexModel }
+import org.mongodb.scala.model.{Filters, IndexModel}
 import play.api.Logger
 import play.api.libs.json._
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
-import uk.gov.hmrc.securemessage.models.core.{ Conversation, Count, FilterTag, Identifier }
-import uk.gov.hmrc.securemessage.{ MessageNotFound, SecureMessageError }
+import uk.gov.hmrc.securemessage.models.core.{Conversation, Count, FilterTag, Identifier}
+import uk.gov.hmrc.securemessage.{MessageNotFound, SecureMessageError}
 
-import scala.concurrent.{ ExecutionContext, Future }
-import scala.reflect.{ ClassTag, classTag }
+import scala.collection.immutable
+import scala.concurrent.{ExecutionContext, Future}
+import scala.reflect.{ClassTag, classTag}
 
 abstract class AbstractMessageRepository[A: ClassTag](
   collectionName: String,
   mongo: MongoComponent,
   domainFormat: Format[A],
-  indexes: Seq[IndexModel],
+  indexes: immutable.Seq[IndexModel],
   replaceIndexes: Boolean,
-  extraCodecs: Seq[Codec[_]] = Seq.empty)(implicit ec: ExecutionContext)
+  extraCodecs: immutable.Seq[Codec[_]] = immutable.Seq.empty)(implicit ec: ExecutionContext)
     extends PlayMongoRepository[A](
       mongo,
       collectionName,

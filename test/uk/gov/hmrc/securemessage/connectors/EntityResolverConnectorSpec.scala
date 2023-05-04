@@ -16,15 +16,11 @@
 
 package uk.gov.hmrc.securemessage.connectors
 
-import com.google.inject.AbstractModule
-import net.codingwell.scalaguice.ScalaModule
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
 import org.scalatest.concurrent.{ IntegrationPatience, ScalaFutures }
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import play.api.Application
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{ JsObject, JsString }
@@ -36,7 +32,7 @@ import uk.gov.hmrc.securemessage.services.utils.{ GenerateRandom, MessageFixture
 import scala.concurrent.{ ExecutionContext, Future }
 
 class EntityResolverConnectorSpec
-    extends PlaySpec with ScalaFutures with MockitoSugar with GuiceOneAppPerSuite with MetricOrchestratorStub
+    extends PlaySpec with ScalaFutures with MockitoSugar with MetricOrchestratorStub
     with IntegrationPatience {
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
@@ -44,22 +40,14 @@ class EntityResolverConnectorSpec
 
   lazy val mockHttp: HttpClient = mock[HttpClient]
 
-  override def fakeApplication(): Application =
-    new GuiceApplicationBuilder()
-      .overrides(
-        bind[MetricOrchestrator].toInstance(mockMetricOrchestrator).eagerly()
-      )
-      .overrides(new AbstractModule with ScalaModule {
-        override def configure(): Unit =
-          bind[HttpClient].toInstance(mockHttp)
-      })
-      .configure(
-        "metrics.enabled" -> "false"
-      )
-      .build()
+  private val injector = new GuiceApplicationBuilder()
+    .overrides(bind[MetricOrchestrator].to(mockMetricOrchestrator))
+    .overrides(bind[HttpClient].to(mockHttp))
+    .configure("metrics.enabled" -> false)
+    .injector()
 
   lazy val connector: EntityResolverConnector =
-    app.injector.instanceOf[EntityResolverConnector]
+    injector.instanceOf[EntityResolverConnector]
 
   "verifiedEmailAddress in connector" must {
     "return a valid email when a preference is found for sautr" in {

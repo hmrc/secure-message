@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.securemessage.connectors
 
-import com.github.nscala_time.time.Imports.DateTime
+import org.joda.time.DateTime
 import play.api.http.Status.BAD_REQUEST
 import play.api.http.Status.NO_CONTENT
 import org.mockito.ArgumentMatchers.any
@@ -25,13 +25,13 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json.Writes
-import uk.gov.hmrc.http.{ HttpClient, HttpResponse }
+import uk.gov.hmrc.http.{HttpClient, HttpResponse}
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-import uk.gov.hmrc.securemessage.models.{ QueryMessageRequest, QueryMessageWrapper, RequestCommon, RequestDetail }
+import uk.gov.hmrc.securemessage.models.{QueryMessageRequest, QueryMessageWrapper, RequestCommon, RequestDetail}
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.{ExecutionContext, Future}
 
 class EISConnectorSpec extends PlaySpec with ScalaFutures with MockitoSugar {
 

@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.securemessage.models.core
 import cats.data.NonEmptyList
-import com.github.ghik.silencer.silent
 import org.joda.time.DateTime
 import org.mongodb.scala.bson.ObjectId
 import play.api.libs.json.{ Format, Json, OFormat }
@@ -47,7 +46,7 @@ final case class Conversation(
   def findParticipant(identifiers: Set[Identifier]): Option[Participant] =
     participants.find(p => identifiers.contains(p.identifier))
 
-  @silent def unreadMessagesFor(reader: Set[Identifier]): List[ConversationMessage] = {
+  def unreadMessagesFor(reader: Set[Identifier]): List[ConversationMessage] = {
     val maybeParticipant = findParticipant(reader)
     val maybeLastRead = maybeParticipant.flatMap(_.lastReadTime.orElse(Some(new DateTime(0))))
     for {

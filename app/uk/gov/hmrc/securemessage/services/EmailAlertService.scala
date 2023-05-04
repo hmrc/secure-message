@@ -94,7 +94,7 @@ class EmailAlertService @Inject()(
         auditAlert(AlertSucceeded(message, message.emailAddress))
         secureMessageRepository.alertCompleted(
           id = message._id,
-          alert = EmailAlert.success(message.emailAddress, message.templateId),
+          alert = EmailAlert.success(message.emailAddress),
           status = Succeeded
         )
       }
@@ -112,7 +112,7 @@ class EmailAlertService @Inject()(
     failureReason: String,
     results: EmailResults)(implicit ec: ExecutionContext): Future[EmailResults] =
     secureMessageRepository
-      .alertCompleted(message._id, status, EmailAlert.failure(message.templateId, failureReason))
+      .alertCompleted(message._id, status, EmailAlert.failure(failureReason))
       .map(_ => results)
       .andThen { case _ => auditAlert(AlertFailed(message, failureReason)) }
 
