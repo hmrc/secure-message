@@ -66,7 +66,8 @@ class SecureMessageRepository @Inject()(
           IndexOptions()
             .name("recipient-tax-id")
             .unique(false)
-            .background(true))
+            .background(true)),
+        IndexModel(ascending("status"), IndexOptions().name("status").unique(false))
       ),
       replaceIndexes = false,
       extraCodecs = Seq(
@@ -74,7 +75,8 @@ class SecureMessageRepository @Inject()(
         Codecs.playFormatCodec(SecureMessageMongoFormat.localDateFormat),
         Codecs.playFormatCodec(uk.gov.hmrc.mongo.play.json.formats.MongoJodaFormats.dateTimeFormat),
         Codecs.playFormatCodec(uk.gov.hmrc.common.message.model.EmailAlert.alertFormat),
-        Codecs.playFormatCodec(uk.gov.hmrc.common.message.model.Regime.format)
+        Codecs.playFormatCodec(uk.gov.hmrc.common.message.model.Regime.format),
+        Codecs.playFormatCodec(BrakeBatchDetails.brakeBatchDetailsFormat)
       )
     ) with MessageSelector {
 
@@ -237,12 +239,12 @@ class SecureMessageRepository @Inject()(
       .aggregate[BrakeBatchDetails](List(
         `match`(Filters.and(Filters.equal("status", Deferred.name), Filters.equal("verificationBrake", true))),
         project(Projections.fields(
-          Filters.equal("formId", BsonDocument(f"$$ifNull" -> BsonArray(f"$$body.form", "Unspecified"))),
+          Filters.equal("formId", BsonDocument(f"$$ifNull" -> BsonArray(f"$$details.formId", "Unspecified"))),
           Filters
             .equal(
               "issueDate",
-              BsonDocument(f"$$ifNull"                      -> BsonArray(f"$$body.issueDate", Codecs.toBson(new LocalDate(0))))),
-          Filters.equal("batchId", BsonDocument(f"$$ifNull" -> BsonArray(f"$$body.batchId", "Unspecified"))),
+              BsonDocument(f"$$ifNull"                      -> BsonArray(f"$$details.issueDate", Codecs.toBson(new LocalDate(0))))),
+          Filters.equal("batchId", BsonDocument(f"$$ifNull" -> BsonArray(f"$$details.batchId", "Unspecified"))),
           Filters.equal("templateId", f"$$alertDetails.templateId")
         )),
         group(
@@ -269,13 +271,13 @@ class SecureMessageRepository @Inject()(
         Filters.and(
           Filters.equal("status", Deferred.name),
           Filters.equal(
-            "body.batchId",
+            "details.batchId",
             if (brakeBatchApproval.batchId.equals("Unspecified")) null else brakeBatchApproval.batchId),
           Filters.equal(
-            "body.form",
+            "details.formId",
             if (brakeBatchApproval.formId.equals("Unspecified")) null else brakeBatchApproval.formId),
           Filters.equal("alertDetails.templateId", brakeBatchApproval.templateId),
-          Filters.equal("body.issueDate", if (brakeBatchApproval.issueDate.equals(new LocalDate(0))) {
+          Filters.equal("details.issueDate", if (brakeBatchApproval.issueDate.equals(new LocalDate(0))) {
             null
           } else {
             brakeBatchApproval.issueDate.toString
@@ -292,13 +294,13 @@ class SecureMessageRepository @Inject()(
         Filters.and(
           Filters.equal("status", Deferred.name),
           Filters.equal(
-            "body.batchId",
+            "details.batchId",
             if (brakeBatchApproval.batchId.equals("Unspecified")) null else brakeBatchApproval.batchId),
           Filters.equal(
-            "body.form",
+            "details.formId",
             if (brakeBatchApproval.formId.equals("Unspecified")) null else brakeBatchApproval.formId),
           Filters.equal("alertDetails.templateId", brakeBatchApproval.templateId),
-          Filters.equal("body.issueDate", if (brakeBatchApproval.issueDate.equals(new LocalDate(0))) {
+          Filters.equal("details.issueDate", if (brakeBatchApproval.issueDate.equals(new LocalDate(0))) {
             null
           } else {
             brakeBatchApproval.issueDate.toString
@@ -317,10 +319,11 @@ class SecureMessageRepository @Inject()(
         `match`(
           Filters.and(
             Filters.equal("status", Deferred.name),
-            Filters.equal("body.batchId", if (brakeBatch.batchId.equals("Unspecified")) null else brakeBatch.batchId),
-            Filters.equal("body.form", if (brakeBatch.formId.equals("Unspecified")) null else brakeBatch.formId),
+            Filters
+              .equal("details.batchId", if (brakeBatch.batchId.equals("Unspecified")) null else brakeBatch.batchId),
+            Filters.equal("details.formId", if (brakeBatch.formId.equals("Unspecified")) null else brakeBatch.formId),
             Filters.equal("alertDetails.templateId", brakeBatch.templateId),
-            Filters.equal("body.issueDate", {
+            Filters.equal("details.issueDate", {
               if (brakeBatch.issueDate.equals(new LocalDate(0))) null else brakeBatch.issueDate.toString
             })
           )

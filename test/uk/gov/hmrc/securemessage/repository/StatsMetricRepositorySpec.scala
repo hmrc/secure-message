@@ -34,8 +34,8 @@ class StatsMetricRepositorySpec
 
   override def beforeEach(): Unit = {
     super.beforeEach()
-    val result = repo.collection.deleteMany(Filters.empty()).toFuture().futureValue
-    println(result)
+    repo.collection.deleteMany(Filters.empty()).toFuture().futureValue
+    ()
   }
 
   "Stats Metric repository" must {
