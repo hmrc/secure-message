@@ -17,19 +17,33 @@
 package uk.gov.hmrc.securemessage.connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import org.scalatest.concurrent.{ IntegrationPatience, ScalaFutures }
+import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import play.api.http.{ HeaderNames, Status }
-import uk.gov.hmrc.common.message.model.TaxEntity.{ HmceVatdecOrg, HmrcCusOrg, HmrcPodsOrg, HmrcPodsPpOrg, HmrcPptOrg }
+import play.api.Application
+import play.api.http.{HeaderNames, Status}
+import play.api.inject._
+import play.api.inject.guice.GuiceApplicationBuilder
+import uk.gov.hmrc.common.message.model.TaxEntity.{HmceVatdecOrg, HmrcCusOrg, HmrcPodsOrg, HmrcPodsPpOrg, HmrcPptOrg}
 import uk.gov.hmrc.domain._
-import uk.gov.hmrc.http.{ Authorization, HeaderCarrier, UpstreamErrorResponse }
-import uk.gov.hmrc.securemessage.services.utils.WithWireMock
+import uk.gov.hmrc.http.{Authorization, HeaderCarrier, UpstreamErrorResponse}
+import uk.gov.hmrc.mongo.metrix.MetricOrchestrator
+import uk.gov.hmrc.securemessage.services.utils.{MetricOrchestratorStub, WithWireMock}
 
 class AuthIdentifiersConnectorSpec
     extends PlaySpec with GuiceOneAppPerSuite with ScalaFutures with WithWireMock with MockitoSugar
-    with IntegrationPatience {
+    with MetricOrchestratorStub with IntegrationPatience {
+
+  override def fakeApplication(): Application =
+    new GuiceApplicationBuilder()
+      .overrides(
+        bind[MetricOrchestrator].toInstance(mockMetricOrchestrator).eagerly()
+      )
+      .configure(
+        "metrics.enabled" -> "false"
+      )
+      .build()
 
   override def dependenciesPort: Int =
     app.configuration

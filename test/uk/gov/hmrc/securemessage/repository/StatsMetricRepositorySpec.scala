@@ -18,31 +18,46 @@ package uk.gov.hmrc.securemessage.repository
 
 import org.mongodb.scala.model.Filters
 import org.scalatest.BeforeAndAfterEach
-import org.scalatest.concurrent.{ IntegrationPatience, ScalaFutures }
+import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import play.api.inject._
+import play.api.Application
+import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.mongo.metrix.MetricOrchestrator
+import uk.gov.hmrc.securemessage.services.utils.MetricOrchestratorStub
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class StatsMetricRepositorySpec
-    extends PlaySpec with ScalaFutures with BeforeAndAfterEach with IntegrationPatience with GuiceOneAppPerSuite {
+    extends PlaySpec with ScalaFutures with BeforeAndAfterEach with IntegrationPatience with GuiceOneAppPerSuite with MetricOrchestratorStub {
   self =>
+
+  override def fakeApplication(): Application =
+    new GuiceApplicationBuilder()
+      .overrides(
+        bind[MetricOrchestrator].toInstance(mockMetricOrchestrator).eagerly()
+      )
+      .configure(
+        "metrics.enabled" -> "false"
+      )
+      .build()
 
   val mongoComponent = app.injector.instanceOf[MongoComponent]
   lazy val repo = new StatsMetricRepository(mongoComponent)
 
   override def beforeEach(): Unit = {
     super.beforeEach()
-    val result = repo.collection.deleteMany(Filters.empty()).toFuture().futureValue
-    println(result)
+    repo.collection.deleteMany(Filters.empty()).toFuture().futureValue
+    ()
   }
 
   "Stats Metric repository" must {
     "increment the count and total for read" in {
-      (repo.incrementReads("sautr", "form1")).futureValue
-      (repo.incrementReads("sautr", "form2")).futureValue
-      (repo.incrementReads("sautr", "form1")).futureValue
+      repo.incrementReads("sautr", "form1").futureValue
+      repo.incrementReads("sautr", "form2").futureValue
+      repo.incrementReads("sautr", "form1").futureValue
 
       val value1 = repo.collection.find().toFuture().futureValue
       value1 must contain only (
@@ -52,9 +67,9 @@ class StatsMetricRepositorySpec
     }
 
     "increment the count and total for created" in {
-      (repo.incrementCreated("sautr", "form1")).futureValue
-      (repo.incrementCreated("sautr", "form2")).futureValue
-      (repo.incrementCreated("sautr", "form1")).futureValue
+      repo.incrementCreated("sautr", "form1").futureValue
+      repo.incrementCreated("sautr", "form2").futureValue
+      repo.incrementCreated("sautr", "form1").futureValue
 
       val value1 = repo.collection.find().toFuture().futureValue
       value1 must contain only (
@@ -64,24 +79,23 @@ class StatsMetricRepositorySpec
     }
 
     "increment the count and total for updated" in {
-      (repo.incrementUpdate("sautr", "form1", "update.envelopid")).futureValue
+      repo.incrementUpdate("sautr", "form1", "update.envelopid").futureValue
 
       val value1 = repo.collection.find().toFuture().futureValue
-      value1 must contain only (
+      value1 must contain only
         StatsCount(
           "stats.sautr.form1.update.envelopid",
           1,
           1
         )
-      )
     }
 
     "reset the count to 0 and retain the total value" in {
-      (repo.incrementReads("sautr", "form1")).futureValue
-      (repo.incrementReads("sautr", "form2")).futureValue
-      (repo.incrementReads("sautr", "form1")).futureValue
+      repo.incrementReads("sautr", "form1").futureValue
+      repo.incrementReads("sautr", "form2").futureValue
+      repo.incrementReads("sautr", "form1").futureValue
 
-      (repo.reset).futureValue
+      repo.reset.futureValue
 
       repo.collection.find().toFuture().futureValue must contain only (
         StatsCount("stats.sautr.form1.read", 2, 0),
@@ -90,12 +104,12 @@ class StatsMetricRepositorySpec
     }
 
     "return metrics for form count and total" in {
-      (repo.incrementReads("sautr", "form1")).futureValue
-      (repo.incrementReads("sautr", "form2")).futureValue
-      (repo.incrementReads("sautr", "form1")).futureValue
-      (repo.incrementCreated("sautr", "form1")).futureValue
-      (repo.incrementCreated("sautr", "form2")).futureValue
-      (repo.incrementCreated("sautr", "form1")).futureValue
+      repo.incrementReads("sautr", "form1").futureValue
+      repo.incrementReads("sautr", "form2").futureValue
+      repo.incrementReads("sautr", "form1").futureValue
+      repo.incrementCreated("sautr", "form1").futureValue
+      repo.incrementCreated("sautr", "form2").futureValue
+      repo.incrementCreated("sautr", "form1").futureValue
 
       val metrics = repo.metrics.futureValue
 
@@ -110,8 +124,8 @@ class StatsMetricRepositorySpec
     }
 
     "increment the source data deletions" in {
-      (repo.incrementSourceDataDeletions(1)).futureValue
-      (repo.incrementSourceDataDeletions(1)).futureValue
+      repo.incrementSourceDataDeletions(1).futureValue
+      repo.incrementSourceDataDeletions(1).futureValue
 
       val metrics = repo.metrics.futureValue
 
