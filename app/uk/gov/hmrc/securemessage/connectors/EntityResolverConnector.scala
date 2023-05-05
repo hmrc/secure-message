@@ -16,15 +16,15 @@
 
 package uk.gov.hmrc.securemessage.connectors
 
-import play.api.{Configuration, Logging}
+import play.api.{ Configuration, Logging }
 import play.api.libs.json.Json
 import play.mvc.Http.Status
 import uk.gov.hmrc.http.HttpClient
 import uk.gov.hmrc.common.message.model.TaxEntity
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import javax.inject.{ Inject, Singleton }
+import scala.concurrent.{ ExecutionContext, Future }
 
 sealed trait VerifiedEmailAddressResponse extends Product with Serializable {
   def fold[X](validated: String => X, notValidated: String => X): X =
