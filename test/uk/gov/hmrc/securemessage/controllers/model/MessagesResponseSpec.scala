@@ -51,29 +51,29 @@ class MessagesResponseSpec extends PlaySpec {
     }
 
     //ToDo verify this again, it fails locally passed in jenkins
-//    "be rendered correctly if items & count is provided" in {
-//      Json.toJson(MessagesResponse(Some(lettersMetadata), messagesCount)) mustBe Json.parse(
-//        """
-//          |{
-//          |   "count": {
-//          |     "total": 123,
-//          |     "unread": 23
-//          |   },
-//          |  "items": [
-//          |    {
-//          |      "messageType": "letter",
-//          |      "id": "bGV0dGVyLzYwOWE1YmQ1MDEwMDAwNmMxODAwMjcyZA==",
-//          |      "subject": "Test have subjects11",
-//          |      "issueDate": "2021-04-26T00:00:00.000+0000",
-//          |      "senderName": "HMRC",
-//          |      "unreadMessages": false,
-//          |      "count": 1
-//          |    }
-//          |  ]
-//          |}
-//        """.stripMargin
-//      )
-//    }
+    "be rendered correctly if items & count is provided" in {
+      Json.toJson(MessagesResponse(Some(lettersMetadata), messagesCount)) mustBe Json.parse(
+        """
+          |{
+          |   "count": {
+          |     "total": 123,
+          |     "unread": 23
+          |   },
+          |  "items": [
+          |    {
+          |      "messageType": "letter",
+          |      "id": "bGV0dGVyLzYwOWE1YmQ1MDEwMDAwNmMxODAwMjcyZA==",
+          |      "subject": "Test have subjects11",
+          |      "issueDate": "2021-04-26T00:00:00.000+0000",
+          |      "senderName": "HMRC",
+          |      "unreadMessages": false,
+          |      "count": 1
+          |    }
+          |  ]
+          |}
+        """.stripMargin
+      )
+    }
 
     "creates message response from letters" in {
       Json.toJson(MessagesResponse.fromMessages(letters, English)) mustBe Json.parse(

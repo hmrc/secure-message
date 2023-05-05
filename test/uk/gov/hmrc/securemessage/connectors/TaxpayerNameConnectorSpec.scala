@@ -177,8 +177,7 @@ class TaxpayerNameConnectorSpec
   override def fakeApplication(): Application =
     new GuiceApplicationBuilder()
       .overrides(
-        bind[MetricOrchestrator].toInstance(mockMetricOrchestrator).eagerly(),
-//        bind[HttpClient].toInstance(mockHttp)
+        bind[MetricOrchestrator].toInstance(mockMetricOrchestrator).eagerly()
       )
       .overrides(new AbstractModule with ScalaModule {
         override def configure(): Unit =
