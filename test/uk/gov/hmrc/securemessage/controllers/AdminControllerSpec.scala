@@ -55,8 +55,8 @@ class AdminControllerSpec extends PlaySpec with ScalaFutures with MockitoSugar {
 
       val response = controller.getGMCBrakeBatches()(fakeRequest)
       status(response) mustBe OK
-      contentAsJson(response) mustBe Json.parse(
-        """[{"batchId":"batchId","formId":"formId","issueDate":"2023-05-04","templateId":"templateId","count":1}]""")
+      contentAsJson(response) mustBe Json.parse(s"""[{"batchId":"batchId","formId":"formId","issueDate":"${LocalDate
+        .now()}","templateId":"templateId","count":1}]""")
     }
 
     "accept brake batch" in {
