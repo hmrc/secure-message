@@ -40,7 +40,7 @@ object AppDependencies {
     "org.scalatestplus"      %% "mockito-3-4"              % "3.2.10.0"       % "test, it",
     "uk.gov.hmrc"            %% "service-integration-test" % "1.3.0-play-28"  % "test, it",
     "uk.gov.hmrc"            %% "dc-message-library"       % "0.29.0"         % "test, it",
-    "com.vladsch.flexmark"   %  "flexmark-all"             % "0.36.8"         % "test, it",
+    "com.vladsch.flexmark"   %  "flexmark-all"             % "0.64.0"         % "test, it",
     "org.pegdown"            %  "pegdown"                  % "1.6.0"          % "test, it"
   )
 }
