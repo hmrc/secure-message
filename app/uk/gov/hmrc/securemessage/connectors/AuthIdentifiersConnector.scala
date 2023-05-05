@@ -19,20 +19,19 @@ package uk.gov.hmrc.securemessage.connectors
 import uk.gov.hmrc.auth.core
 import uk.gov.hmrc.auth.core.AuthProvider.PrivilegedApplication
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
-import uk.gov.hmrc.auth.core.{ Nino => _, _ }
-import uk.gov.hmrc.common.message.model.TaxEntity.{ Epaye, HmceVatdecOrg, HmrcCusOrg, HmrcPodsOrg, HmrcPodsPpOrg, HmrcPptOrg }
+import uk.gov.hmrc.auth.core.{Nino => _, _}
+import uk.gov.hmrc.common.message.model.TaxEntity.{Epaye, HmceVatdecOrg, HmrcCusOrg, HmrcPodsOrg, HmrcPodsPpOrg, HmrcPptOrg}
 import uk.gov.hmrc.domain.TaxIds._
 import uk.gov.hmrc.domain._
 import uk.gov.hmrc.http.HeaderCarrier
 
-import javax.inject.{ Inject, Singleton }
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class AuthIdentifiersConnector @Inject()(
   val authConnector: core.AuthConnector
-) extends AuthorisedFunctions {
+)(implicit ec: ExecutionContext) extends AuthorisedFunctions {
 
   def getIdentifierValue(enrolment: Enrolment): Option[String] =
     enrolment.identifiers match {

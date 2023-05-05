@@ -20,19 +20,18 @@ import play.api.Logging
 import play.api.libs.json._
 import uk.gov.hmrc.common.message.model.TaxpayerName
 import uk.gov.hmrc.domain.SaUtr
-import uk.gov.hmrc.http.{ HeaderCarrier, HttpClient, NotFoundException }
+import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, NotFoundException}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.http.HttpReads.Implicits._
 
-import javax.inject.{ Inject, Singleton }
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class TaxpayerNameConnector @Inject()(
   http: HttpClient,
   servicesConfig: ServicesConfig
-) extends Logging {
+)(implicit ec: ExecutionContext) extends Logging {
 
   def baseUrl: String = servicesConfig.baseUrl("taxpayer-data")
 
