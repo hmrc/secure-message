@@ -17,28 +17,28 @@
 package uk.gov.hmrc.securemessage.connectors
 
 import ch.qos.logback.classic.spi.ILoggingEvent
-import ch.qos.logback.classic.{Level, Logger => LogbackLogger}
+import ch.qos.logback.classic.{ Level, Logger => LogbackLogger }
 import ch.qos.logback.core.read.ListAppender
 import com.google.inject.AbstractModule
 import net.codingwell.scalaguice.ScalaModule
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
-import org.scalatest.concurrent.{Eventually, IntegrationPatience, ScalaFutures}
+import org.scalatest.concurrent.{ Eventually, IntegrationPatience, ScalaFutures }
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import org.slf4j.LoggerFactory
-import play.api.{Application, Logger}
+import play.api.{ Application, Logger }
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json._
 import uk.gov.hmrc.common.message.model.TaxpayerName
 import uk.gov.hmrc.domain.SaUtr
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpReads, NotFoundException}
+import uk.gov.hmrc.http.{ HeaderCarrier, HttpClient, HttpReads, NotFoundException }
 import uk.gov.hmrc.mongo.metrix.MetricOrchestrator
 import uk.gov.hmrc.securemessage.services.utils.MetricOrchestratorStub
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 
 class TaxpayerNameConnectorSpec
     extends PlaySpec with ScalaFutures with LogCapturing with Eventually with MockitoSugar with GuiceOneAppPerSuite

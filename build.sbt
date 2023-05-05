@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import com.lucidchart.sbt.scalafmt.ScalafmtCorePlugin.autoImport._
 import uk.gov.hmrc.DefaultBuildSettings.integrationTestSettings
 import uk.gov.hmrc.ServiceManagerPlugin.Keys.itDependenciesList
 import uk.gov.hmrc.{ ExternalService, ServiceManagerPlugin }
@@ -52,7 +51,7 @@ lazy val microservice = Project(appName, file("."))
     inConfig(IntegrationTest)(
       scalafmtCoreSettings ++
         Seq(compile / compileInputs := Def.taskDyn {
-          val task = (resolvedScoped.value.scope in scalafmt.key) / test
+          val task = resolvedScoped.value.scope / scalafmt.key / test
           val previousInputs = (compile / compileInputs).value
           task.map(_ => previousInputs)
         }.value)
@@ -95,7 +94,6 @@ swaggerFileName := "schema.json"
 swaggerPrettyJson := true
 swaggerRoutesFile := "prod.routes"
 swaggerV3 := true
-//scalafmtOnCompile := true
 PlayKeys.playDefaultPort := 9051
 
 dependencyUpdatesFailBuild := false
@@ -112,7 +110,6 @@ dependencyUpdatesFilter -= moduleFilter(name = "flexmark-all")
 
 Compile / doc / sources := Seq.empty
 
-scalaModuleInfo ~= (_.map(_.withOverrideScalaVersion(true)))
 //TODO make bellow work and rename resources/service/ContentValidation/*html.txt to html
 Test / resourceDirectory := baseDirectory.value / "test" / "resources"
 Test / resources / excludeFilter := HiddenFileFilter || "*.html"

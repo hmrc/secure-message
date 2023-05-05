@@ -18,7 +18,7 @@ package uk.gov.hmrc.securemessage.repository
 
 import org.mongodb.scala.model.Filters
 import org.scalatest.BeforeAndAfterEach
-import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
+import org.scalatest.concurrent.{ IntegrationPatience, ScalaFutures }
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.inject._
@@ -31,7 +31,8 @@ import uk.gov.hmrc.securemessage.services.utils.MetricOrchestratorStub
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class StatsMetricRepositorySpec
-    extends PlaySpec with ScalaFutures with BeforeAndAfterEach with IntegrationPatience with GuiceOneAppPerSuite with MetricOrchestratorStub {
+    extends PlaySpec with ScalaFutures with BeforeAndAfterEach with IntegrationPatience with GuiceOneAppPerSuite
+    with MetricOrchestratorStub {
   self =>
 
   override def fakeApplication(): Application =

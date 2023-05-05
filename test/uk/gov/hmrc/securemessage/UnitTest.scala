@@ -22,7 +22,6 @@ import uk.gov.hmrc.auth.core.{ Enrolment, EnrolmentIdentifier, Enrolments }
 import uk.gov.hmrc.securemessage.models.core.CustomerEnrolment
 import uk.gov.hmrc.securemessage.utils.DateTimeUtils
 
-
 /** This will be the base class for all our unit tests, replacing PlaySpec and all extended traits for consistency
   * */
 trait UnitTest {

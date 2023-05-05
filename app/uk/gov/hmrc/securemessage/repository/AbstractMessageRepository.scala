@@ -20,17 +20,17 @@ import cats.implicits.toFoldableOps
 import org.bson.codecs.Codec
 import org.mongodb.scala.bson.ObjectId
 import org.mongodb.scala.bson.conversions.Bson
-import org.mongodb.scala.model.{Filters, IndexModel}
+import org.mongodb.scala.model.{ Filters, IndexModel }
 import play.api.Logger
 import play.api.libs.json._
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
-import uk.gov.hmrc.securemessage.models.core.{Conversation, Count, FilterTag, Identifier}
-import uk.gov.hmrc.securemessage.{MessageNotFound, SecureMessageError}
+import uk.gov.hmrc.securemessage.models.core.{ Conversation, Count, FilterTag, Identifier }
+import uk.gov.hmrc.securemessage.{ MessageNotFound, SecureMessageError }
 
 import scala.collection.immutable
-import scala.concurrent.{ExecutionContext, Future}
-import scala.reflect.{ClassTag, classTag}
+import scala.concurrent.{ ExecutionContext, Future }
+import scala.reflect.{ ClassTag, classTag }
 
 abstract class AbstractMessageRepository[A: ClassTag](
   collectionName: String,

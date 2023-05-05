@@ -18,7 +18,7 @@ package uk.gov.hmrc.securemessage.services.utils
 
 import cats.data.EitherT
 import org.jsoup.Jsoup
-import org.jsoup.nodes.{Document, Element}
+import org.jsoup.nodes.{ Document, Element }
 import org.jsoup.parser.Parser
 import org.jsoup.safety.Safelist
 import uk.gov.hmrc.securemessage.InvalidContent
@@ -26,8 +26,8 @@ import uk.gov.hmrc.securemessage.InvalidContent
 import java.nio.charset.StandardCharsets
 import java.util.Base64
 import scala.jdk.CollectionConverters._
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
+import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.{ Failure, Success, Try }
 
 object ContentValidator {
   type NonEmptyString = String

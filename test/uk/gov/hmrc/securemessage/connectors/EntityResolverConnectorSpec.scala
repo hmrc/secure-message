@@ -32,8 +32,7 @@ import uk.gov.hmrc.securemessage.services.utils.{ GenerateRandom, MessageFixture
 import scala.concurrent.{ ExecutionContext, Future }
 
 class EntityResolverConnectorSpec
-    extends PlaySpec with ScalaFutures with MockitoSugar with MetricOrchestratorStub
-    with IntegrationPatience {
+    extends PlaySpec with ScalaFutures with MockitoSugar with MetricOrchestratorStub with IntegrationPatience {
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
   lazy implicit val ec: ExecutionContext = mock[ExecutionContext]
