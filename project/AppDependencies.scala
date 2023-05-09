@@ -43,8 +43,4 @@ object AppDependencies {
     "com.vladsch.flexmark"   %  "flexmark-all"             % "0.62.2"         % "test, it",
     "org.pegdown"            %  "pegdown"                  % "1.6.0"          % "test, it"
   )
-  
-  val overrides = Seq(
-    "com.vladsch.flexmark"   %  "flexmark-all"             % "0.62.2"         % "test, it"
-  )
 }
