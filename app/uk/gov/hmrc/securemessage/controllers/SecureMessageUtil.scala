@@ -47,7 +47,7 @@ import uk.gov.hmrc.securemessage.repository.{ ExtraAlert, ExtraAlertRepository, 
 import uk.gov.hmrc.securemessage.services.MessageBrakeService
 
 import javax.inject.{ Inject, Named }
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success, Try }
 
@@ -500,7 +500,7 @@ class SecureMessageUtil @Inject()(
           extraAlert.extraTemplate,
           alertDetails,
           Some(message.externalRef),
-          Some(s"${iterator.next}"),
+          Some(s"${iterator.next()}"),
           message.details.map(_.formId)
         )
         extraAlertRepository

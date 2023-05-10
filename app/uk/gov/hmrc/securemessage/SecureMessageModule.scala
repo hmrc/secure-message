@@ -25,7 +25,7 @@ import uk.gov.hmrc.common.message.model.TimeSource
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.securemessage.scheduler.EmailAlertJob
 import uk.gov.hmrc.securemessage.services.{ SecureMessageService, SecureMessageServiceImpl }
-import uk.gov.hmrc.time.DateTimeUtils
+import uk.gov.hmrc.securemessage.utils.DateTimeUtils
 
 import javax.inject.Singleton
 import scala.concurrent.duration.FiniteDuration

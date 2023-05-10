@@ -40,7 +40,7 @@ import uk.gov.hmrc.securemessage.models.core.Language.English
 import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag, Language, MessageFilter, MessageRequestWrapper, Reference }
 import uk.gov.hmrc.securemessage.models.v4.SecureMessage
 import uk.gov.hmrc.securemessage.services.{ ImplicitClassesExtensions, SecureMessageServiceImpl }
-import uk.gov.hmrc.time.DateTimeUtils
+import uk.gov.hmrc.securemessage.utils.DateTimeUtils
 
 import java.util.UUID
 import javax.inject.Inject

@@ -52,7 +52,7 @@ class ExtraAlertRepository @Inject()(
       )
     ) {
   def pullMessageToAlert(): Future[Option[Alertable]] =
-    pullOutstanding(failedBefore = now.minusMillis(retryIntervalMillis.toLong), availableBefore = now)
+    pullOutstanding(failedBefore = now().minusMillis(retryIntervalMillis.toLong), availableBefore = now())
       .map(_.flatMap {
         case WorkItem(workItemId, _, _, _, _, _, alert) =>
           Option(new Alertable {
@@ -100,7 +100,7 @@ class ExtraAlertRepository @Inject()(
   def removeAlerts(ref: String)(implicit ec: ExecutionContext): Future[Unit] =
     collection.deleteMany(Filters.equal("item.reference", ref)).toFuture().map(_ => ())
 
-  def now: Instant = Instant.now()
+  def now(): Instant = Instant.now()
   override def inProgressRetryAfter: time.Duration = time.Duration.ofHours(1)
 }
 

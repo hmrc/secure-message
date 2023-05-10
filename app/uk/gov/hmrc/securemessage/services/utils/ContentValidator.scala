@@ -22,9 +22,10 @@ import org.jsoup.nodes.{ Document, Element }
 import org.jsoup.parser.Parser
 import org.jsoup.safety.Safelist
 import uk.gov.hmrc.securemessage.InvalidContent
+
 import java.nio.charset.StandardCharsets
 import java.util.Base64
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success, Try }
 
@@ -89,6 +90,6 @@ object ContentValidator {
   private[utils] def listDisallowedHtmlElements(content: Html, dom: Document, whitelist: Safelist): Seq[String] =
     dom.getAllElements.asScala.collect {
       case e: Element if content.contains(e.tagName()) && !Jsoup.isValid(e.toString, whitelist) => e.tagName()
-    }
+    }.toSeq
 
 }

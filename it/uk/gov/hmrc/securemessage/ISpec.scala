@@ -17,9 +17,9 @@
 package uk.gov.hmrc.securemessage
 
 import cats.data.NonEmptyList
-import com.github.nscala_time.time.Imports.DateTime
 import org.apache.commons.codec.binary.Base64
 import org.bson.types.ObjectId
+import org.joda.time.DateTime
 import org.mongodb.scala.model.Filters
 import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.play.PlaySpec

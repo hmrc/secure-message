@@ -27,7 +27,6 @@ import uk.gov.hmrc.securemessage._
 import uk.gov.hmrc.securemessage.models.core.{ Filters => _, _ }
 
 import javax.inject.{ Inject, Singleton }
-import scala.collection.Seq
 import scala.concurrent.{ ExecutionContext, Future }
 
 @Singleton

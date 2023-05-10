@@ -23,7 +23,7 @@ import uk.gov.hmrc.securemessage.controllers.model.common
 import uk.gov.hmrc.securemessage.controllers.model.common.write.Recipient
 import uk.gov.hmrc.securemessage.models.core
 import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, _ }
-import uk.gov.hmrc.time.DateTimeUtils
+import uk.gov.hmrc.securemessage.utils.DateTimeUtils
 
 /**
   * @param tags metadata sent to the UI
@@ -78,7 +78,7 @@ final case class CdcmConversation(
     )
 
   private def getRecipientParticipants(recipients: List[Recipient]): List[Participant] =
-    recipients.zip(Stream from 2) map { r =>
+    recipients.zip(LazyList from 2) map { r =>
       val customer = r._1.customer
       Participant(r._2, ParticipantType.Customer, getCustomerIdentifier(customer.enrolment), None, None, None, None)
     }

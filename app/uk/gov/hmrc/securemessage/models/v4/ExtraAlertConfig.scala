@@ -19,7 +19,7 @@ package uk.gov.hmrc.securemessage.models.v4
 import org.joda.time.{ Duration => JodaDuration }
 import play.api.Configuration
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 case class ExtraAlertConfig(mainTemplate: String, extraTemplate: String, delay: JodaDuration)
 
