@@ -28,7 +28,7 @@ import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import org.slf4j.LoggerFactory
-import play.api.Application
+import play.api.{ Application, Logger }
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json._
@@ -190,7 +190,7 @@ class TaxpayerNameConnectorSpec
 
   val connector = app.injector.instanceOf[TaxpayerNameConnector]
 
-  def connectorWithResponse(json: Option[JsValue], status: Int = 200) = {
+  def connectorWithResponse(json: Option[JsValue], status: Int = 200): TaxpayerNameConnector = {
     val nameResponse = json
       .map(js => Future.successful(js.as[NameFromHods]))
       .getOrElse(
@@ -213,7 +213,7 @@ class TaxpayerNameConnectorSpec
 
 trait LogCapturing {
 
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
   import scala.reflect._
 
   def withCaptureOfLoggingFrom[T: ClassTag](body: (=> List[ILoggingEvent]) => Any): Any = {

@@ -22,13 +22,12 @@ import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.audit.model.DataEvent
 import uk.gov.hmrc.securemessage.models.v4.SecureMessage
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ ExecutionContext, Future }
 
 trait AuditAlerts extends Logging {
   def auditConnector: AuditConnector
 
-  def auditAlert(alertEvent: AlertEvent)(implicit hc: HeaderCarrier): Future[Unit] =
+  def auditAlert(alertEvent: AlertEvent)(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Unit] =
     auditConnector.sendEvent(alertEvent.auditEvent).map { r =>
       logger.debug(s"AuditEvent is processed for $alertEvent with the result $r")
     }

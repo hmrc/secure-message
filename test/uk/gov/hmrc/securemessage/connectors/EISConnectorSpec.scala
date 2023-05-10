@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.securemessage.connectors
 
-import com.github.nscala_time.time.Imports.DateTime
+import org.joda.time.DateTime
 import play.api.http.Status.BAD_REQUEST
 import play.api.http.Status.NO_CONTENT
 import org.mockito.ArgumentMatchers.any

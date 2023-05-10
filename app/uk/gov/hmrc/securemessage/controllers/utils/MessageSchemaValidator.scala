@@ -20,7 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.networknt.schema.{ JsonSchema, JsonSchemaFactory, SpecVersion, ValidationMessage }
 import play.api.libs.json.JsValue
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 trait MessageSchemaValidator {
 

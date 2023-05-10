@@ -25,6 +25,7 @@ import uk.gov.hmrc.securemessage.models.v4.SecureMessage
 import uk.gov.hmrc.securemessage.services.utils.MessageFixtures._
 import uk.gov.hmrc.securemessage.services.utils.SecureMessageFixtures
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ ExecutionContext, Future }
 
 class AuditAlertsSpec extends PlaySpec {
