@@ -21,39 +21,40 @@ import akka.stream.testkit.NoMaterializer
 import org.joda.time.DateTime
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.{ never, times, verify, when }
+import org.mockito.Mockito.{never, times, verify, when}
 import org.mongodb.scala.bson.ObjectId
+import org.scalatest.EitherValues
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.i18n.Messages
-import play.api.libs.json.{ JsObject, Json }
+import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.AnyContentAsEmpty
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import uk.gov.hmrc.auth.core.{ Enrolment, EnrolmentIdentifier, Enrolments }
+import uk.gov.hmrc.auth.core.{Enrolment, EnrolmentIdentifier, Enrolments}
 import uk.gov.hmrc.common.message.model.MessagesCount
 import uk.gov.hmrc.common.message.emailaddress.EmailAddress
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import uk.gov.hmrc.securemessage.connectors.{ ChannelPreferencesConnector, EISConnector, EmailConnector }
+import uk.gov.hmrc.securemessage.connectors.{ChannelPreferencesConnector, EISConnector, EmailConnector}
 import uk.gov.hmrc.securemessage.controllers.SecureMessageUtil
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.ConversationMetadata
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
-import uk.gov.hmrc.securemessage.helpers.{ ConversationUtil, MessageUtil, Resources }
+import uk.gov.hmrc.securemessage.helpers.{ConversationUtil, MessageUtil, Resources}
 import uk.gov.hmrc.securemessage.models.core.Conversation._
 import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.securemessage.models.v4.SecureMessage
-import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryMessageWrapper, Tags }
-import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository }
-import uk.gov.hmrc.securemessage.{ DuplicateConversationError, EmailLookupError, NoReceiverEmailError, SecureMessageError, _ }
+import uk.gov.hmrc.securemessage.models.{EmailRequest, QueryMessageWrapper, Tags}
+import uk.gov.hmrc.securemessage.repository.{ConversationRepository, MessageRepository}
+import uk.gov.hmrc.securemessage.{DuplicateConversationError, EmailLookupError, NoReceiverEmailError, SecureMessageError, _}
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.{ExecutionContext, Future}
 
 //TODO: move test data and mocks to TextContexts
-class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestHelpers with UnitTest {
+class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestHelpers with UnitTest with EitherValues {
 
   "createConversation" must {
 
@@ -256,7 +257,7 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
           .getFullConversation(id, conversationId, hmrcCusOrg, eoriName, enrolmentValue))
     ) {
       val result =
-        await(service.getConversation(id, Set(CustomerEnrolment(hmrcCusOrg, eoriName, enrolmentValue)))).right.get
+        await(service.getConversation(id, Set(CustomerEnrolment(hmrcCusOrg, eoriName, enrolmentValue)))).toOption.get
 
       result.client mustBe "CDCM"
       result.messages.size mustBe 1
@@ -271,7 +272,7 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
       val result =
         await(service.getConversation(id, Set(CustomerEnrolment(hmrcCusOrg, eoriName, enrolmentValue))))
 
-      result.left.get.message mustBe "Can not store read time"
+      result.left.value.message mustBe "Can not store read time"
     }
 
     "return a Left(ConversationNotFound)" in {
@@ -299,8 +300,8 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
       val result = await(
         service
           .getLetter(new ObjectId(), Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777"))))
-      result.right.get.subject mustBe "subject"
-      result.right.get.content mustBe "content"
+      result.toOption.get.subject mustBe "subject"
+      result.toOption.get.content mustBe "content"
     }
 
     "return a Left(LetterNotFound)" in {
@@ -323,7 +324,7 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
       val result = await(
         service
           .getLetter(new ObjectId(), Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777"))))
-      result.left.get.message mustBe "cant store readTime"
+      result.left.value.message mustBe "cant store readTime"
     }
   }
 
@@ -335,7 +336,7 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
       when(mockSecureMessageUtil.addReadTime(any[ObjectId])(any[ExecutionContext]))
         .thenReturn(Future(Right(())))
       val result = await(service
-        .getSecureMessage(new ObjectId(), Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777")))).right.get
+        .getSecureMessage(new ObjectId(), Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777")))).toOption.get
       result.subject mustBe "Nodyn atgoffa i ffeilio ffurflen Hunanasesiad"
     }
 
@@ -370,7 +371,7 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
       val result = await(
         service
           .getSecureMessage(new ObjectId(), Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777"))))
-      result.left.get.message mustBe "cant store readTime"
+      result.left.value.message mustBe "cant store readTime"
     }
   }
 
