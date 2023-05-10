@@ -38,7 +38,6 @@ import uk.gov.hmrc.securemessage.services.utils.MetricOrchestratorStub
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.util.Success
 
 class MessageBrakeServiceSpec
     extends PlaySpec with BeforeAndAfterEach with GuiceOneAppPerSuite with ScalaFutures with IntegrationPatience
@@ -78,9 +77,9 @@ class MessageBrakeServiceSpec
         val result = service.getOrInitialiseCachedAllowlist().futureValue
         result.get.formIdList mustBe defaultAllowlist
 
-        cache.get[Allowlist]("brake-gmc-allowlist") onComplete {
-          case Success(Some(Allowlist(allowlist))) => allowlist mustBe defaultAllowlist
-          case _                                   => Assertions.fail
+        cache.get[Allowlist]("brake-gmc-allowlist") map {
+          case Some(Allowlist(allowlist)) => allowlist mustBe defaultAllowlist
+          case _                          => Assertions.fail
         }
       }
 
@@ -93,9 +92,9 @@ class MessageBrakeServiceSpec
         val result = service.getOrInitialiseCachedAllowlist().futureValue
         result.get.formIdList mustBe List("TEST1", "TEST2")
 
-        cache.get[Allowlist]("brake-gmc-allowlist") onComplete {
-          case Success(Some(Allowlist(allowlist))) => allowlist mustBe List("TEST1", "TEST2")
-          case _                                   => Assertions.fail
+        cache.get[Allowlist]("brake-gmc-allowlist") map {
+          case Some(Allowlist(allowlist)) => allowlist mustBe List("TEST1", "TEST2")
+          case _                          => Assertions.fail
         }
       }
 
@@ -108,9 +107,9 @@ class MessageBrakeServiceSpec
         val result = service.getOrInitialiseCachedAllowlist().futureValue
         result.get.formIdList mustBe List("TEST8", "TEST9")
 
-        cache.get[Allowlist]("brake-gmc-allowlist") onComplete {
-          case Success(Some(Allowlist(allowlist))) => allowlist mustBe List("TEST8", "TEST9")
-          case _                                   => Assertions.fail
+        cache.get[Allowlist]("brake-gmc-allowlist") map {
+          case Some(Allowlist(allowlist)) => allowlist mustBe List("TEST8", "TEST9")
+          case _                          => Assertions.fail
         }
       }
     }
@@ -155,9 +154,9 @@ class MessageBrakeServiceSpec
         val result = service.addFormIdToAllowlist(allowlistUpdateRequest).futureValue
         result.get.formIdList mustBe List("TEST10", "TEST11", "TEST12")
 
-        cache.get[Allowlist]("brake-gmc-allowlist") onComplete {
-          case Success(Some(Allowlist(allowlist))) => allowlist mustBe List("TEST10", "TEST11", "TEST12")
-          case _                                   => Assertions.fail
+        cache.get[Allowlist]("brake-gmc-allowlist") map {
+          case Some(Allowlist(allowlist)) => allowlist mustBe List("TEST10", "TEST11", "TEST12")
+          case _                          => Assertions.fail
         }
       }
 
@@ -173,9 +172,9 @@ class MessageBrakeServiceSpec
         val result = service.addFormIdToAllowlist(allowlistUpdateRequest).futureValue
         result.get.formIdList mustBe newAllowlist
 
-        cache.get[Allowlist]("brake-gmc-allowlist") onComplete {
-          case Success(Some(Allowlist(allowlist))) => allowlist mustBe newAllowlist
-          case _                                   => Assertions.fail
+        cache.get[Allowlist]("brake-gmc-allowlist") map {
+          case Some(Allowlist(allowlist)) => allowlist mustBe newAllowlist
+          case _                          => Assertions.fail
         }
       }
     }
@@ -193,9 +192,9 @@ class MessageBrakeServiceSpec
         val result = service.addFormIdToAllowlist(allowlistUpdateRequest).futureValue
         result.get.formIdList mustBe List("TEST10", "TEST11", "TEST12")
 
-        cache.get[Allowlist]("brake-gmc-allowlist") onComplete {
-          case Success(Some(Allowlist(allowlist))) => allowlist mustBe List("TEST10", "TEST11", "TEST12")
-          case _                                   => Assertions.fail
+        cache.get[Allowlist]("brake-gmc-allowlist") map {
+          case Some(Allowlist(allowlist)) => allowlist mustBe List("TEST10", "TEST11", "TEST12")
+          case _                          => Assertions.fail
         }
       }
 
@@ -211,9 +210,9 @@ class MessageBrakeServiceSpec
         val result = service.deleteFormIdFromAllowlist(allowlistUpdateRequest).futureValue
         result.get.formIdList mustBe allowlistWithoutSA359
 
-        cache.get[Allowlist]("brake-gmc-allowlist") onComplete {
-          case Success(Some(Allowlist(allowlist))) => allowlist mustBe allowlistWithoutSA359
-          case _                                   => Assertions.fail
+        cache.get[Allowlist]("brake-gmc-allowlist") map {
+          case Some(Allowlist(allowlist)) => allowlist mustBe allowlistWithoutSA359
+          case _                          => Assertions.fail
         }
       }
     }
