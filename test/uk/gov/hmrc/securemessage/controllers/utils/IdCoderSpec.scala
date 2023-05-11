@@ -17,12 +17,13 @@
 package uk.gov.hmrc.securemessage.controllers.utils
 
 import org.apache.commons.codec.binary.Base64
+import org.scalatest.EitherValues
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 import uk.gov.hmrc.securemessage.controllers.model.MessageType
-import uk.gov.hmrc.securemessage.handlers.{ CDS, NonCDS }
+import uk.gov.hmrc.securemessage.handlers.{CDS, NonCDS}
 
-class IdCoderSpec extends AnyFreeSpec with Matchers {
+class IdCoderSpec extends AnyFreeSpec with Matchers with EitherValues {
 
   val id = "6086dc1f4700009fed2f5745"
   "decodeId should" - {
@@ -55,7 +56,7 @@ class IdCoderSpec extends AnyFreeSpec with Matchers {
       IdCoder
         .decodeId(path)
         .left
-        .get
+        .value
         .message mustBe "Invalid encoded id: YWJjL2RlZi8xMjM0NQ==, decoded string: abc/def/12345"
     }
 

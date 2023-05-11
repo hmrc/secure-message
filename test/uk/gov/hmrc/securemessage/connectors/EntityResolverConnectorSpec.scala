@@ -18,21 +18,22 @@ package uk.gov.hmrc.securemessage.connectors
 
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
-import org.scalatest.concurrent.{ IntegrationPatience, ScalaFutures }
+import org.scalatest.EitherValues
+import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.{ JsObject, JsString }
+import play.api.libs.json.{JsObject, JsString}
 import uk.gov.hmrc.domain.SaUtr
-import uk.gov.hmrc.http.{ HeaderCarrier, HttpClient, HttpResponse }
+import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse}
 import uk.gov.hmrc.mongo.metrix.MetricOrchestrator
-import uk.gov.hmrc.securemessage.services.utils.{ GenerateRandom, MessageFixtures, MetricOrchestratorStub }
+import uk.gov.hmrc.securemessage.services.utils.{GenerateRandom, MessageFixtures, MetricOrchestratorStub}
 
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.{ExecutionContext, Future}
 
 class EntityResolverConnectorSpec
-    extends PlaySpec with ScalaFutures with MockitoSugar with MetricOrchestratorStub with IntegrationPatience {
+    extends PlaySpec with ScalaFutures with MockitoSugar with MetricOrchestratorStub with IntegrationPatience with EitherValues {
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
   lazy implicit val ec: ExecutionContext = mock[ExecutionContext]
@@ -125,7 +126,7 @@ class EntityResolverConnectorSpec
     "return Left for VerifiedEmailNotFound" in {
       val result = VerifiedEmailNotFound("EMAIL_ADDRESS_NOT_VERIFIED").value
 
-      result.left.get mustBe VerifiedEmailNotFound("EMAIL_ADDRESS_NOT_VERIFIED")
+      result.left.value mustBe VerifiedEmailNotFound("EMAIL_ADDRESS_NOT_VERIFIED")
     }
   }
 }

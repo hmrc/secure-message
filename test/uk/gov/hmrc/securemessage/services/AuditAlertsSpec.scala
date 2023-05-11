@@ -45,16 +45,16 @@ class AuditAlertsSpec extends PlaySpec {
 
       //then
       event must have(
-        'auditSource ("secure-message"),
-        'auditType ("TxSucceeded"),
-        'tags (
+        Symbol("auditSource") ("secure-message"),
+        Symbol("auditType") ("TxSucceeded"),
+        Symbol("tags") (
           Map(
             "transactionName" -> "Send Email Alert",
             "sautr"           -> message.recipient.identifier.toString,
             "emailAddress"    -> email
           )
         ),
-        'detail (
+        Symbol("detail") (
           Map(
             "emailTemplateName" -> message.alertDetails.templateId,
             "messageId"         -> message._id.toString,
@@ -75,15 +75,15 @@ class AuditAlertsSpec extends PlaySpec {
 
       //then
       event must have(
-        'auditSource ("secure-message"),
-        'auditType ("TxFailed"),
-        'tags (
+        Symbol("auditSource") ("secure-message"),
+        Symbol("auditType") ("TxFailed"),
+        Symbol("tags") (
           Map(
             "transactionName" -> "Send Email Alert",
             "sautr"           -> message.recipient.identifier.toString
           )
         ),
-        'detail (
+        Symbol("detail") (
           Map(
             "emailTemplateName" -> message.alertDetails.templateId,
             "failureReason"     -> failureReason,

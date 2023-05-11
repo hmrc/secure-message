@@ -220,7 +220,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
         .getMessage(base64Encode(s"${MessageType.Conversation.entryName}/$objectID"))
         .apply(FakeRequest("GET", "/"))
       status(response) mustBe OK
-      contentAsJson(response).as[ApiConversation] mustBe apiConversation.right.get
+      contentAsJson(response).as[ApiConversation] mustBe apiConversation.toOption.get
 
     }
 
@@ -238,7 +238,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
         .getMessage(base64Encode(s"${MessageType.Conversation.entryName}/$objectID"))
         .apply(FakeRequest("GET", "/"))
       status(response) mustBe OK
-      contentAsJson(response).as[ApiConversation] mustBe apiConversation.right.get
+      contentAsJson(response).as[ApiConversation] mustBe apiConversation.toOption.get
 
     }
 

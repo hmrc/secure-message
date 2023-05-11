@@ -18,10 +18,10 @@ package uk.gov.hmrc.securemessage.services
 
 import com.google.inject.AbstractModule
 import net.codingwell.scalaguice.ScalaModule
-import org.mockito.ArgumentMatchers.{ eq => eqTo }
+import org.mockito.ArgumentMatchers.{eq => eqTo}
 import org.mockito.Mockito._
-import org.scalatest.concurrent.{ IntegrationPatience, ScalaFutures }
-import org.scalatest.{ Assertions, BeforeAndAfterEach, LoneElement }
+import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
+import org.scalatest.{Assertions, BeforeAndAfterEach, LoneElement}
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -35,11 +35,14 @@ import uk.gov.hmrc.securemessage.models.v4.Allowlist
 import uk.gov.hmrc.securemessage.repository.AllowlistRepository
 import uk.gov.hmrc.securemessage.services.utils.MetricOrchestratorStub
 
+import scala.annotation.nowarn
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.Success
 
+// TODO - remove
+@nowarn
 class MessageBrakeServiceSpec
     extends PlaySpec with BeforeAndAfterEach with GuiceOneAppPerSuite with ScalaFutures with IntegrationPatience
     with MetricOrchestratorStub with LoneElement with MockitoSugar {
