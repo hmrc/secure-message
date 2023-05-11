@@ -16,19 +16,19 @@
 
 package uk.gov.hmrc.securemessage.repository
 
-import org.joda.time.{DateTime, LocalDate}
+import org.joda.time.{ DateTime, LocalDate }
 import org.mongodb.scala.bson.ObjectId
 import org.mongodb.scala.model.Filters
-import org.scalatest.{BeforeAndAfterEach, EitherValues}
+import org.scalatest.{ BeforeAndAfterEach, EitherValues }
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.play.PlaySpec
-import play.api.libs.json.{JsObject, JsValue, Json}
-import play.api.test.Helpers.{await, defaultAwaitTimeout}
+import play.api.libs.json.{ JsObject, JsValue, Json }
+import play.api.test.Helpers.{ await, defaultAwaitTimeout }
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core.Letter._
-import uk.gov.hmrc.securemessage.models.core.{Count, FilterTag, Identifier, Letter}
-import uk.gov.hmrc.securemessage.{MessageNotFound, SecureMessageError}
+import uk.gov.hmrc.securemessage.models.core.{ Count, FilterTag, Identifier, Letter }
+import uk.gov.hmrc.securemessage.{ MessageNotFound, SecureMessageError }
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

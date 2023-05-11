@@ -61,7 +61,7 @@ class StatsMetricRepositorySpec
       repo.incrementReads("sautr", "form1").futureValue
 
       val value1 = repo.collection.find().toFuture().futureValue
-      value1 must contain.only (
+      value1 must contain.only(
         StatsCount("stats.sautr.form1.read", 2, 2),
         StatsCount("stats.sautr.form2.read", 1, 1)
       )
@@ -73,7 +73,7 @@ class StatsMetricRepositorySpec
       repo.incrementCreated("sautr", "form1").futureValue
 
       val value1 = repo.collection.find().toFuture().futureValue
-      value1 must contain.only (
+      value1 must contain.only(
         StatsCount("stats.sautr.form1.created", 2, 2),
         StatsCount("stats.sautr.form2.created", 1, 1)
       )
@@ -98,7 +98,7 @@ class StatsMetricRepositorySpec
 
       repo.reset.futureValue
 
-      repo.collection.find().toFuture().futureValue must contain.only (
+      repo.collection.find().toFuture().futureValue must contain.only(
         StatsCount("stats.sautr.form1.read", 2, 0),
         StatsCount("stats.sautr.form2.read", 1, 0)
       )

@@ -21,7 +21,7 @@ import org.scalatest.EitherValues
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 import uk.gov.hmrc.securemessage.controllers.model.MessageType
-import uk.gov.hmrc.securemessage.handlers.{CDS, NonCDS}
+import uk.gov.hmrc.securemessage.handlers.{ CDS, NonCDS }
 
 class IdCoderSpec extends AnyFreeSpec with Matchers with EitherValues {
 
