@@ -77,12 +77,16 @@ object BrakeBatchMessage {
     BrakeBatchMessage(
       subject = englishContent.map(_.subject).getOrElse(""),
       welshSubject = welshContent.map(_.subject).getOrElse(""),
-      content = new String(Base64.encodeBase64String(englishContent.map(_.body).getOrElse("").getBytes("UTF-8"))),
-      welshContent = new String(Base64.encodeBase64String(welshContent.map(_.body).getOrElse("").getBytes("UTF-8"))),
+      content = contentEncoded(englishContent),
+      welshContent = contentEncoded(welshContent),
       externalRefId = m.externalRef.id,
       messageType = m.messageType,
       issueDate = m.issueDate.toLocalDate,
       taxIdentifierName = m.recipient.identifier.name
     )
+  }
+
+  private val contentEncoded = { content: Option[Content] =>
+    new String(Base64.encodeBase64String(content.map(_.body).getOrElse("").getBytes("UTF-8")))
   }
 }
