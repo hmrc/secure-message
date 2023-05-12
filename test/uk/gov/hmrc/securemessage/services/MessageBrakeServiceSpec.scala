@@ -100,6 +100,9 @@ class MessageBrakeServiceSpec
           .set("brake-gmc-allowlist", Some(Allowlist(List("TEST8", "TEST9"))), 1.minute)
           .futureValue
 
+        when(mockAllowlistRepository.retrieve())
+          .thenReturn(Future.successful(Some(Allowlist(List("TEST8", "TEST9")))))
+
         val result = service.getOrInitialiseCachedAllowlist().futureValue.get.formIdList
         result mustBe List("TEST8", "TEST9")
         cache.get[Allowlist]("brake-gmc-allowlist").futureValue.get mustBe Some(Allowlist(List("TEST8", "TEST9")))

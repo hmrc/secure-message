@@ -104,7 +104,7 @@
         },
         "required" : [ "sender", "recipients", "alert", "tags", "subject", "message" ]
       },
-      "uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage" : {
+      "uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage" : {
         "properties" : {
           "content" : {
             "type" : "string"
@@ -112,7 +112,7 @@
         },
         "required" : [ "content" ]
       },
-      "uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage" : {
+      "uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage" : {
         "properties" : {
           "content" : {
             "type" : "string"
@@ -537,7 +537,7 @@
   },
   "info" : {
     "title" : "Secure Message API",
-    "version" : "0.148.0-SNAPSHOT"
+    "version" : "0.149.0-SNAPSHOT"
   },
   "tags" : [ {
     "name" : "app"
