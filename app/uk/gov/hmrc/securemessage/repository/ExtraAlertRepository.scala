@@ -146,7 +146,7 @@ class ExtraAlertRepository @Inject()(
       .toFuture()
       .map(_.getModifiedCount >= 1)
 
-  def now: Instant = Instant.now()
+  def now(): Instant = Instant.now()
   override def inProgressRetryAfter: time.Duration = time.Duration.ofHours(1)
 }
 
