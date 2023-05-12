@@ -60,7 +60,7 @@ class MessageBrakeService @Inject()(allowlistRepository: AllowlistRepository, ca
   )(implicit ec: ExecutionContext): Future[Option[Allowlist]] =
     allowlistRepository.store(updatedAllowlist.map(_.toUpperCase)) flatMap {
       case allowlist @ Some(_) =>
-        cache.set("brake-gmc-allowlist", Future.successful(allowlist), 1.minute)
+        cache.set("brake-gmc-allowlist", allowlist, 1.minute)
         Future.successful(allowlist)
 
       case None => Future.successful(None)

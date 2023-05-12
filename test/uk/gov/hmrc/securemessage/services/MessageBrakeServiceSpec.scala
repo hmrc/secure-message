@@ -16,12 +16,14 @@
 
 package uk.gov.hmrc.securemessage.services
 
+import akka.Done
 import com.google.inject.AbstractModule
 import net.codingwell.scalaguice.ScalaModule
+import net.sf.ehcache.Element
 import org.mockito.ArgumentMatchers.{ eq => eqTo }
 import org.mockito.Mockito._
 import org.scalatest.concurrent.{ IntegrationPatience, ScalaFutures }
-import org.scalatest.{ Assertions, BeforeAndAfterEach, LoneElement }
+import org.scalatest.{ BeforeAndAfterEach, LoneElement }
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -38,21 +40,22 @@ import uk.gov.hmrc.securemessage.services.utils.MetricOrchestratorStub
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.util.Success
+import scala.reflect.ClassTag
 
 class MessageBrakeServiceSpec
     extends PlaySpec with BeforeAndAfterEach with GuiceOneAppPerSuite with ScalaFutures with IntegrationPatience
     with MetricOrchestratorStub with LoneElement with MockitoSugar {
 
-  implicit val hc = HeaderCarrier()
+  implicit val hc: HeaderCarrier = HeaderCarrier()
 
-  val mockAllowlistRepository = mock[AllowlistRepository]
-  val mockCacheApi = mock[AsyncCacheApi]
+  val mockAllowlistRepository: AllowlistRepository = mock[AllowlistRepository]
+  val cache: AsyncCacheApi = new InMemoryCache()
 
   override def fakeApplication(): Application =
     new GuiceApplicationBuilder()
       .overrides(
-        bind[MetricOrchestrator].toInstance(mockMetricOrchestrator).eagerly()
+        bind[MetricOrchestrator].toInstance(mockMetricOrchestrator).eagerly(),
+        bind[AsyncCacheApi].toInstance(cache)
       )
       .overrides(new AbstractModule() with ScalaModule {
         override def configure(): Unit =
@@ -63,13 +66,14 @@ class MessageBrakeServiceSpec
       )
       .build()
 
+  val defaultAllowlist: List[String] = MessageBrakeAllowList.default
+  val service: MessageBrakeService = app.injector.instanceOf[MessageBrakeService]
+
   "The MessageBrakeService" must {
 
     "getOrInitialiseCachedAllowlist()" must {
 
       "initialise a new allowlist when collection or document is missing" in new TestCase {
-        cache.remove("brake-gmc-allowlist")
-
         when(mockAllowlistRepository.retrieve())
           .thenReturn(Future.successful(None))
         when(mockAllowlistRepository.store(eqTo(defaultAllowlist)))
@@ -78,47 +82,35 @@ class MessageBrakeServiceSpec
         val result = service.getOrInitialiseCachedAllowlist().futureValue
         result.get.formIdList mustBe defaultAllowlist
 
-        cache.get[Allowlist]("brake-gmc-allowlist") onComplete {
-          case Success(Some(Allowlist(allowlist))) => allowlist mustBe defaultAllowlist
-          case _                                   => Assertions.fail
-        }
+        cache.get[Allowlist]("brake-gmc-allowlist").futureValue.get mustBe Some(Allowlist(defaultAllowlist))
       }
 
       "not initialise the collection's document if one is already present with existing formIds in the list" in new TestCase {
-        cache.remove("brake-gmc-allowlist")
-
         when(mockAllowlistRepository.retrieve())
           .thenReturn(Future.successful(Some(Allowlist(List("TEST1", "TEST2")))))
 
         val result = service.getOrInitialiseCachedAllowlist().futureValue
         result.get.formIdList mustBe List("TEST1", "TEST2")
 
-        cache.get[Allowlist]("brake-gmc-allowlist") onComplete {
-          case Success(Some(Allowlist(allowlist))) => allowlist mustBe List("TEST1", "TEST2")
-          case _                                   => Assertions.fail
-        }
+        cache.get[Allowlist]("brake-gmc-allowlist").futureValue.get mustBe Some(Allowlist(List("TEST1", "TEST2")))
       }
 
       "fetch the allowlist from the cache instead of the database if the cache currently holds a allow list" in new TestCase {
-        cache.set("brake-gmc-allowlist", Future.successful(Some(Allowlist(List("TEST8", "TEST9")))), 1.minute)
+        cache
+          .set("brake-gmc-allowlist", Some(Allowlist(List("TEST8", "TEST9"))), 1.minute)
+          .futureValue
 
-        when(mockAllowlistRepository.retrieve())
-          .thenReturn(Future.successful(Some(Allowlist(List("TEST8", "TEST9")))))
-
-        val result = service.getOrInitialiseCachedAllowlist().futureValue
-        result.get.formIdList mustBe List("TEST8", "TEST9")
-
-        cache.get[Allowlist]("brake-gmc-allowlist") onComplete {
-          case Success(Some(Allowlist(allowlist))) => allowlist mustBe List("TEST8", "TEST9")
-          case _                                   => Assertions.fail
-        }
+        val result = service.getOrInitialiseCachedAllowlist().futureValue.get.formIdList
+        result mustBe List("TEST8", "TEST9")
+        cache.get[Allowlist]("brake-gmc-allowlist").futureValue.get mustBe Some(Allowlist(List("TEST8", "TEST9")))
       }
     }
 
     "allowlistContains" must {
 
       "return true if formId is in the lists" in new TestCase {
-        cache.set("brake-gmc-allowlist", Future.successful(Some(Allowlist(List("TEST8", "TEST9")))), 1.minute)
+        when(mockAllowlistRepository.retrieve())
+          .thenReturn(Future.successful(Some(Allowlist(List("TEST8")))))
 
         val result = service.allowlistContains("TEST8").futureValue
 
@@ -126,7 +118,8 @@ class MessageBrakeServiceSpec
       }
 
       "return false if formId is not in the lists" in new TestCase {
-        cache.set("brake-gmc-allowlist", Future.successful(Some(Allowlist(List("TEST8", "TEST9")))), 1.minute)
+        when(mockAllowlistRepository.retrieve())
+          .thenReturn(Future.successful(Some(Allowlist(List("TEST8", "TEST9")))))
 
         val result = service.allowlistContains("TEST10").futureValue
 
@@ -134,7 +127,8 @@ class MessageBrakeServiceSpec
       }
 
       "match the welsh(_cy) formId with the corresponding one in the lists" in new TestCase {
-        cache.set("brake-gmc-allowlist", Future.successful(Some(Allowlist(List("TEST8", "TEST9")))), 1.minute)
+        when(mockAllowlistRepository.retrieve())
+          .thenReturn(Future.successful(Some(Allowlist(List("TEST8", "TEST9")))))
 
         val result = service.allowlistContains("TEST8_CY").futureValue
 
@@ -155,10 +149,8 @@ class MessageBrakeServiceSpec
         val result = service.addFormIdToAllowlist(allowlistUpdateRequest).futureValue
         result.get.formIdList mustBe List("TEST10", "TEST11", "TEST12")
 
-        cache.get[Allowlist]("brake-gmc-allowlist") onComplete {
-          case Success(Some(Allowlist(allowlist))) => allowlist mustBe List("TEST10", "TEST11", "TEST12")
-          case _                                   => Assertions.fail
-        }
+        cache.get[Allowlist]("brake-gmc-allowlist").futureValue.get mustBe Some(
+          Allowlist(List("TEST10", "TEST11", "TEST12")))
       }
 
       "add a form id to a non-existing collection must update the cache and the database with an uppercased default version" in new TestCase {
@@ -173,10 +165,7 @@ class MessageBrakeServiceSpec
         val result = service.addFormIdToAllowlist(allowlistUpdateRequest).futureValue
         result.get.formIdList mustBe newAllowlist
 
-        cache.get[Allowlist]("brake-gmc-allowlist") onComplete {
-          case Success(Some(Allowlist(allowlist))) => allowlist mustBe newAllowlist
-          case _                                   => Assertions.fail
-        }
+        cache.get[Allowlist]("brake-gmc-allowlist").futureValue.get mustBe Some(Allowlist(newAllowlist))
       }
     }
 
@@ -193,10 +182,8 @@ class MessageBrakeServiceSpec
         val result = service.addFormIdToAllowlist(allowlistUpdateRequest).futureValue
         result.get.formIdList mustBe List("TEST10", "TEST11", "TEST12")
 
-        cache.get[Allowlist]("brake-gmc-allowlist") onComplete {
-          case Success(Some(Allowlist(allowlist))) => allowlist mustBe List("TEST10", "TEST11", "TEST12")
-          case _                                   => Assertions.fail
-        }
+        cache.get[Allowlist]("brake-gmc-allowlist").futureValue.get mustBe Some(
+          Allowlist(List("TEST10", "TEST11", "TEST12")))
       }
 
       "remove a form id from a non-existing collection must update the cache and the database with the default version" in new TestCase {
@@ -211,18 +198,52 @@ class MessageBrakeServiceSpec
         val result = service.deleteFormIdFromAllowlist(allowlistUpdateRequest).futureValue
         result.get.formIdList mustBe allowlistWithoutSA359
 
-        cache.get[Allowlist]("brake-gmc-allowlist") onComplete {
-          case Success(Some(Allowlist(allowlist))) => allowlist mustBe allowlistWithoutSA359
-          case _                                   => Assertions.fail
-        }
+        cache.get[Allowlist]("brake-gmc-allowlist").futureValue.get mustBe Some(Allowlist(allowlistWithoutSA359))
       }
     }
   }
 
   trait TestCase {
-    val service: MessageBrakeService = app.injector.instanceOf[MessageBrakeService]
-    val cache: AsyncCacheApi = app.injector.instanceOf[AsyncCacheApi]
+    reset(mockAllowlistRepository)
+    cache.removeAll()
+  }
 
-    val defaultAllowlist: List[String] = MessageBrakeAllowList.default
+  class InMemoryCache() extends AsyncCacheApi {
+
+    val cache = scala.collection.mutable.Map[String, Element]()
+
+    def remove(key: String): Future[Done] = Future {
+      cache -= key
+      Done
+    }
+
+    def getOrElseUpdate[A: ClassTag](key: String, expiration: Duration)(orElse: => Future[A]): Future[A] =
+      get[A](key).flatMap {
+        case Some(value) => Future.successful(value)
+        case None        => orElse.flatMap(value => set(key, value, expiration).map(_ => value))
+      }
+
+    def set(key: String, value: Any, expiration: Duration): Future[Done] = Future {
+      val element = new Element(key, value)
+
+      if (expiration.isFinite()) {
+        element.setTimeToLive(expiration.toSeconds.toInt)
+      } else {
+        element.setEternal(true)
+      }
+
+      cache.put(key, element)
+      Done
+    }
+
+    def get[T: ClassTag](key: String): Future[Option[T]] = Future {
+      cache.get(key).map(_.getObjectValue).asInstanceOf[Option[T]]
+    }
+
+    def removeAll(): Future[Done] = Future {
+      cache.clear()
+      Done
+    }
+
   }
 }
