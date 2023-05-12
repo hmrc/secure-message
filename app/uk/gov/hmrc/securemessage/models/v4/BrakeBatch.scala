@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.securemessage.models.v4
 
-import org.apache.commons.codec.binary.Base64
 import org.joda.time.LocalDate
 import play.api.libs.json.{ Json, OFormat }
 import uk.gov.hmrc.securemessage.models.core.Language.{ English, Welsh }
@@ -87,6 +86,6 @@ object BrakeBatchMessage {
   }
 
   private val contentEncoded = { content: Option[Content] =>
-    new String(Base64.encodeBase64String(content.map(_.body).getOrElse("").getBytes("UTF-8")))
+    content.map(_.body).getOrElse("")
   }
 }
