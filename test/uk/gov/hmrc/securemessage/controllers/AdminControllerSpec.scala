@@ -119,7 +119,7 @@ class AdminControllerSpec extends PlaySpec with ScalaFutures with MockitoSugar {
       val response = controller.randomBrakeBatchMessage()(fakeRequest)
       status(response) mustBe OK
       contentAsJson(response) mustBe Json.parse(
-        """{"subject":"Reminder to file a Self Assessment return","welshSubject":"Nodyn atgoffa i ffeilio ffurflen Hunanasesiad","content":"TWVzc2FnZSBjb250ZW50IC0gNDI1NDEwMTM4NDE3NDkxNzE0MQ==","welshContent":"Q3lubnd5cyAtIDQyNTQxMDEzODQxNzQ5MTcxNDE=","externalRefId":"abcd1234","messageType":"sdAlertMessage","issueDate":"2020-05-04","taxIdentifierName":"HMRC-OBTDS-ORG"}""")
+        """{"subject":"Reminder to file a Self Assessment return","welshSubject":"Nodyn atgoffa i ffeilio ffurflen Hunanasesiad","content":"Message content - 4254101384174917141","welshContent":"Cynnwys - 4254101384174917141","externalRefId":"abcd1234","messageType":"sdAlertMessage","issueDate":"2020-05-04","taxIdentifierName":"HMRC-OBTDS-ORG"}""")
     }
   }
 }
