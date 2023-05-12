@@ -151,6 +151,7 @@ trait Auditing {
       case c: ApiConversation =>
         auditConversationRead(ClientName.withNameOption(c.client), c.conversationId, enrolments)
       case mr: MessageResourceResponse => auditMessageResourceResponse(mr, enrolments)
+      case _                           => throw new IllegalArgumentException("Unsupported ApiMessage")
     }
 
   private val QueryMessageReadSuccess = "QueryMessageReadSuccess"

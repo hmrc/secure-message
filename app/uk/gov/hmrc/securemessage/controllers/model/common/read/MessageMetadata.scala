@@ -55,6 +55,7 @@ object MessageMetadata extends ApiFormats with ImplicitClassesExtensions {
       case c: Conversation  => map(c, reader)
       case l: Letter        => map(l)
       case s: SecureMessage => map(s, language)
+      case _                => throw new IllegalArgumentException("Unsupported Message")
     }
 
   private def map(conversation: Conversation, reader: Enrolments)(implicit messages: Messages): MessageMetadata = {
@@ -102,6 +103,7 @@ object MessageMetadata extends ApiFormats with ImplicitClassesExtensions {
     message match {
       case l: Letter        => mapForLetter(l)
       case s: SecureMessage => mapForSecureMessage(s, language)
+      case _                => throw new IllegalArgumentException("Unsupported Message")
     }
 
   private def mapForLetter(letter: Letter) = {

@@ -23,6 +23,8 @@ import uk.gov.hmrc.mongo.play.json.formats.MongoFormats
 import uk.gov.hmrc.securemessage.ParticipantNotFound
 import uk.gov.hmrc.securemessage.models.utils.NonEmptyListOps
 
+import scala.annotation.nowarn
+
 final case class Conversation(
   _id: ObjectId = new ObjectId(),
   client: String,
@@ -46,6 +48,7 @@ final case class Conversation(
   def findParticipant(identifiers: Set[Identifier]): Option[Participant] =
     participants.find(p => identifiers.contains(p.identifier))
 
+  @nowarn("msg=parameter value lastRead in anonymous function is never used") // false positive
   def unreadMessagesFor(reader: Set[Identifier]): List[ConversationMessage] = {
     val maybeParticipant = findParticipant(reader)
     val maybeLastRead = maybeParticipant.flatMap(_.lastReadTime.orElse(Some(new DateTime(0))))
