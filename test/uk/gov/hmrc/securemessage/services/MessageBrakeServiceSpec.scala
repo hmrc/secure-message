@@ -226,7 +226,7 @@ class MessageBrakeServiceSpec
     def set(key: String, value: Any, expiration: Duration): Future[Done] = Future {
       val element = new Element(key, value)
 
-      if (expiration.isFinite()) {
+      if (expiration.isFinite) {
         element.setTimeToLive(expiration.toSeconds.toInt)
       } else {
         element.setEternal(true)
