@@ -28,6 +28,7 @@ import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import uk.gov.hmrc.securemessage.models.core.{ Conversation, Count, FilterTag, Identifier }
 import uk.gov.hmrc.securemessage.{ MessageNotFound, SecureMessageError }
 
+import scala.collection.immutable
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.reflect.{ ClassTag, classTag }
 
@@ -35,9 +36,9 @@ abstract class AbstractMessageRepository[A: ClassTag](
   collectionName: String,
   mongo: MongoComponent,
   domainFormat: Format[A],
-  indexes: Seq[IndexModel],
+  indexes: immutable.Seq[IndexModel],
   replaceIndexes: Boolean,
-  extraCodecs: Seq[Codec[_]] = Seq.empty)(implicit ec: ExecutionContext)
+  extraCodecs: immutable.Seq[Codec[_]] = immutable.Seq.empty)(implicit ec: ExecutionContext)
     extends PlayMongoRepository[A](
       mongo,
       collectionName,

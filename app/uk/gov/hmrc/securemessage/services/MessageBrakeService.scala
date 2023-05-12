@@ -43,8 +43,8 @@ class MessageBrakeService @Inject()(allowlistRepository: AllowlistRepository, ca
 
   def addFormIdToAllowlist(request: AllowlistUpdateRequest)(implicit ec: ExecutionContext): Future[Option[Allowlist]] =
     allowlistRepository.retrieve() map {
-      case Some(allowlist) => allowlist.formIdList.union(List(request.formId)).distinct
-      case None            => MessageBrakeAllowList.default.union(List(request.formId)).distinct
+      case Some(allowlist) => allowlist.formIdList.concat(List(request.formId)).distinct
+      case None            => MessageBrakeAllowList.default.concat(List(request.formId)).distinct
     } flatMap storeAllowlistWithCacheRefresh
 
   def deleteFormIdFromAllowlist(

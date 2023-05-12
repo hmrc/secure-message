@@ -57,7 +57,7 @@ class ExtraAlertRepository @Inject()(
   lazy val extraAlertConfig: Seq[ExtraAlertConfig] = ExtraAlertConfig(configuration)
 
   def pullMessageToAlert(): Future[Option[Alertable]] =
-    pullOutstanding(failedBefore = now.minusMillis(retryIntervalMillis.toLong), availableBefore = now)
+    pullOutstanding(failedBefore = now().minusMillis(retryIntervalMillis.toLong), availableBefore = now())
       .map(_.flatMap {
         case WorkItem(workItemId, _, _, _, _, _, alert) =>
           Option(new Alertable {

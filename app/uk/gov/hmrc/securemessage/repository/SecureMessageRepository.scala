@@ -105,7 +105,7 @@ class SecureMessageRepository @Inject()(
 
     val todoQuery = Filters.and(
       Filters.equal("status", ToDo.name),
-      Filters.lte("validFrom", timeSource.today)
+      Filters.lte("validFrom", timeSource.today())
     )
 
     val failedBeforeQuery = Filters.or(
@@ -121,7 +121,7 @@ class SecureMessageRepository @Inject()(
   private def setStatusOperation(newStatus: ProcessingStatus): Bson =
     Updates.combine(
       Updates.set("status", newStatus.name),
-      Updates.set("lastUpdated", timeSource.now)
+      Updates.set("lastUpdated", timeSource.now())
     )
 
   def alertCompleted(id: ObjectId, status: ProcessingStatus, alert: EmailAlert): Future[Boolean] =

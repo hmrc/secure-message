@@ -26,13 +26,13 @@ import uk.gov.hmrc.domain._
 import uk.gov.hmrc.http.HeaderCarrier
 
 import javax.inject.{ Inject, Singleton }
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ ExecutionContext, Future }
 
 @Singleton
 class AuthIdentifiersConnector @Inject()(
   val authConnector: core.AuthConnector
-) extends AuthorisedFunctions {
+)(implicit ec: ExecutionContext)
+    extends AuthorisedFunctions {
 
   def getIdentifierValue(enrolment: Enrolment): Option[String] =
     enrolment.identifiers match {
