@@ -57,12 +57,12 @@ class ExtraAlertRepositorySpec
 
       repo.pushNew(item = alert).futureValue
 
-      val Some(alertable) = repo.pullMessageToAlert().futureValue
+      val alertable = repo.pullMessageToAlert().futureValue.get
 
       repo.alertCompleted(alertable.id, Succeeded).futureValue must be(true)
       alertable.alertTemplateName must be(alert.emailTemplateId)
 
-      repo.collection.find(Filters.empty()).toFuture().futureValue.loneElement must have('status (Succeeded))
+      repo.collection.find(Filters.empty()).toFuture().futureValue.loneElement.status must be(Succeeded)
     }
 
     "add a duplicate alert to ensure it is not added" in new TestCase {
@@ -91,13 +91,13 @@ class ExtraAlertRepositorySpec
           Instant.now().plusMillis(120000))
         .futureValue
 
-      val Some(alertable) = repo.pullMessageToAlert().futureValue
+      val alertable = repo.pullMessageToAlert().futureValue.get
 
       repo.alertCompleted(alertable.id, Succeeded).futureValue must be(true)
       repo.removeAlerts("foo").futureValue
       alertable.alertTemplateName must be(alert.emailTemplateId)
 
-      repo.collection.find(Filters.empty()).toFuture().futureValue.loneElement must have('status (Succeeded))
+      repo.collection.find(Filters.empty()).toFuture().futureValue.loneElement.status must be(Succeeded)
     }
 
   }

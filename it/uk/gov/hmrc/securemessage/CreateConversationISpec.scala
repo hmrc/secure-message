@@ -72,7 +72,7 @@ class CreateConversationISpec extends ISpec {
     }
 
     "return CONFLICT when a conversation with the given conversationId already exists" in new TestContent {
-      val _ = wsClient
+      wsClient
         .url(resource("/secure-messaging/conversation/CDCM/D-80542-20201120"))
         .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
         .put(new File("./it/resources/cdcm/create-conversation-minimal.json"))

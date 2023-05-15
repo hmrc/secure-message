@@ -23,6 +23,7 @@ import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{ never, times, verify, when }
 import org.mongodb.scala.bson.ObjectId
+import org.scalatest.EitherValues
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
@@ -53,7 +54,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ ExecutionContext, Future }
 
 //TODO: move test data and mocks to TextContexts
-class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestHelpers with UnitTest {
+class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestHelpers with UnitTest with EitherValues {
 
   "createConversation" must {
 
@@ -256,7 +257,7 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
           .getFullConversation(id, conversationId, hmrcCusOrg, eoriName, enrolmentValue))
     ) {
       val result =
-        await(service.getConversation(id, Set(CustomerEnrolment(hmrcCusOrg, eoriName, enrolmentValue)))).right.get
+        await(service.getConversation(id, Set(CustomerEnrolment(hmrcCusOrg, eoriName, enrolmentValue)))).toOption.get
 
       result.client mustBe "CDCM"
       result.messages.size mustBe 1
@@ -271,7 +272,7 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
       val result =
         await(service.getConversation(id, Set(CustomerEnrolment(hmrcCusOrg, eoriName, enrolmentValue))))
 
-      result.left.get.message mustBe "Can not store read time"
+      result.left.value.message mustBe "Can not store read time"
     }
 
     "return a Left(ConversationNotFound)" in {
@@ -299,8 +300,8 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
       val result = await(
         service
           .getLetter(new ObjectId(), Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777"))))
-      result.right.get.subject mustBe "subject"
-      result.right.get.content mustBe "content"
+      result.toOption.get.subject mustBe "subject"
+      result.toOption.get.content mustBe "content"
     }
 
     "return a Left(LetterNotFound)" in {
@@ -323,7 +324,7 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
       val result = await(
         service
           .getLetter(new ObjectId(), Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777"))))
-      result.left.get.message mustBe "cant store readTime"
+      result.left.value.message mustBe "cant store readTime"
     }
   }
 
@@ -335,7 +336,7 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
       when(mockSecureMessageUtil.addReadTime(any[ObjectId])(any[ExecutionContext]))
         .thenReturn(Future(Right(())))
       val result = await(service
-        .getSecureMessage(new ObjectId(), Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777")))).right.get
+        .getSecureMessage(new ObjectId(), Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777")))).toOption.get
       result.subject mustBe "Nodyn atgoffa i ffeilio ffurflen Hunanasesiad"
     }
 
@@ -370,7 +371,7 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
       val result = await(
         service
           .getSecureMessage(new ObjectId(), Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777"))))
-      result.left.get.message mustBe "cant store readTime"
+      result.left.value.message mustBe "cant store readTime"
     }
   }
 

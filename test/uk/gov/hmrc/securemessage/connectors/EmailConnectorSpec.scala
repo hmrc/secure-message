@@ -18,6 +18,7 @@ package uk.gov.hmrc.securemessage.connectors
 
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
+import org.scalatest.EitherValues
 import uk.gov.hmrc.common.message.emailaddress.EmailAddress
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
@@ -27,10 +28,11 @@ import org.scalatestplus.play.PlaySpec
 import play.api.libs.json.Writes
 import uk.gov.hmrc.http.{ HeaderCarrier, HttpClient, HttpReads, HttpResponse }
 import uk.gov.hmrc.securemessage.models.EmailRequest
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ ExecutionContext, Future }
 
-class EmailConnectorSpec extends PlaySpec with ScalaFutures with MockitoSugar {
+class EmailConnectorSpec extends PlaySpec with ScalaFutures with MockitoSugar with EitherValues {
 
   "send" must {
     val httpClient = mock[HttpClient]
@@ -50,7 +52,7 @@ class EmailConnectorSpec extends PlaySpec with ScalaFutures with MockitoSugar {
       val result =
         emailConnector.send(EmailRequest(List(EmailAddress("test@test.com")), "", Map.empty, None))(new HeaderCarrier())
 
-      result.futureValue.right.get mustBe (())
+      result.futureValue.toOption.get mustBe (())
     }
 
     "return error when not Accepted" in {
@@ -66,7 +68,7 @@ class EmailConnectorSpec extends PlaySpec with ScalaFutures with MockitoSugar {
 
       val result =
         emailConnector.send(EmailRequest(List(EmailAddress("test@test.com")), "", Map.empty, None))(new HeaderCarrier())
-      result.futureValue.left.get.message must include("Email request failed")
+      result.futureValue.left.value.message must include("Email request failed")
     }
   }
 }

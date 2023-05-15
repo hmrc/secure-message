@@ -18,6 +18,7 @@ package uk.gov.hmrc.securemessage.connectors
 
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
+import org.scalatest.EitherValues
 import org.scalatest.concurrent.{ IntegrationPatience, ScalaFutures }
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
@@ -32,7 +33,8 @@ import uk.gov.hmrc.securemessage.services.utils.{ GenerateRandom, MessageFixture
 import scala.concurrent.{ ExecutionContext, Future }
 
 class EntityResolverConnectorSpec
-    extends PlaySpec with ScalaFutures with MockitoSugar with MetricOrchestratorStub with IntegrationPatience {
+    extends PlaySpec with ScalaFutures with MockitoSugar with MetricOrchestratorStub with IntegrationPatience
+    with EitherValues {
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
   lazy implicit val ec: ExecutionContext = mock[ExecutionContext]
@@ -125,7 +127,7 @@ class EntityResolverConnectorSpec
     "return Left for VerifiedEmailNotFound" in {
       val result = VerifiedEmailNotFound("EMAIL_ADDRESS_NOT_VERIFIED").value
 
-      result.left.get mustBe VerifiedEmailNotFound("EMAIL_ADDRESS_NOT_VERIFIED")
+      result.left.value mustBe VerifiedEmailNotFound("EMAIL_ADDRESS_NOT_VERIFIED")
     }
   }
 }
