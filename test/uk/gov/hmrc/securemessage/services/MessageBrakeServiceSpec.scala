@@ -80,7 +80,7 @@ class MessageBrakeServiceSpec
 
         cache.get[Allowlist]("brake-gmc-allowlist") onComplete {
           case Success(Some(Allowlist(allowlist))) => allowlist mustBe defaultAllowlist
-          case _                                   => Assertions.fail
+          case _                                   => Assertions.fail()
         }
       }
 
@@ -95,7 +95,7 @@ class MessageBrakeServiceSpec
 
         cache.get[Allowlist]("brake-gmc-allowlist") onComplete {
           case Success(Some(Allowlist(allowlist))) => allowlist mustBe List("TEST1", "TEST2")
-          case _                                   => Assertions.fail
+          case _                                   => Assertions.fail()
         }
       }
 
@@ -110,7 +110,7 @@ class MessageBrakeServiceSpec
 
         cache.get[Allowlist]("brake-gmc-allowlist") onComplete {
           case Success(Some(Allowlist(allowlist))) => allowlist mustBe List("TEST8", "TEST9")
-          case _                                   => Assertions.fail
+          case _                                   => Assertions.fail()
         }
       }
     }
@@ -157,13 +157,13 @@ class MessageBrakeServiceSpec
 
         cache.get[Allowlist]("brake-gmc-allowlist") onComplete {
           case Success(Some(Allowlist(allowlist))) => allowlist mustBe List("TEST10", "TEST11", "TEST12")
-          case _                                   => Assertions.fail
+          case _                                   => Assertions.fail()
         }
       }
 
       "add a form id to a non-existing collection must update the cache and the database with an uppercased default version" in new TestCase {
 
-        val newAllowlist = defaultAllowlist.union(List("TEST12"))
+        val newAllowlist = defaultAllowlist.concat(List("TEST12"))
 
         when(mockAllowlistRepository.retrieve()).thenReturn(Future.successful(None))
         when(mockAllowlistRepository.store(eqTo(newAllowlist)))
@@ -175,7 +175,7 @@ class MessageBrakeServiceSpec
 
         cache.get[Allowlist]("brake-gmc-allowlist") onComplete {
           case Success(Some(Allowlist(allowlist))) => allowlist mustBe newAllowlist
-          case _                                   => Assertions.fail
+          case _                                   => Assertions.fail()
         }
       }
     }
@@ -195,7 +195,7 @@ class MessageBrakeServiceSpec
 
         cache.get[Allowlist]("brake-gmc-allowlist") onComplete {
           case Success(Some(Allowlist(allowlist))) => allowlist mustBe List("TEST10", "TEST11", "TEST12")
-          case _                                   => Assertions.fail
+          case _                                   => Assertions.fail()
         }
       }
 
@@ -213,7 +213,7 @@ class MessageBrakeServiceSpec
 
         cache.get[Allowlist]("brake-gmc-allowlist") onComplete {
           case Success(Some(Allowlist(allowlist))) => allowlist mustBe allowlistWithoutSA359
-          case _                                   => Assertions.fail
+          case _                                   => Assertions.fail()
         }
       }
     }

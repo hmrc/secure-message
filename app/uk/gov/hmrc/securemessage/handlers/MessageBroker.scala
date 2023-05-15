@@ -37,7 +37,7 @@ class MessageBroker @Inject()(cdsMessageRetriever: CDSMessageRetriever, other: N
   }
 }
 
-trait RetrieverType
+sealed trait RetrieverType
 object CDS extends RetrieverType
 object NonCDS extends RetrieverType
 

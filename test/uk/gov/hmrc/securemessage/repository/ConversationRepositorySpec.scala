@@ -216,7 +216,7 @@ class ConversationRepositorySpec
         await(
           repository
             .getConversation(conversation.client, conversation.id, conversation.participants.map(_.identifier).toSet))
-      result.right.get mustBe conversation
+      result.toOption.get mustBe conversation
     }
   }
 
@@ -248,7 +248,7 @@ class ConversationRepositorySpec
             conversation.client,
             conversation.id,
             Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")))))
-      val result: Conversation = updated.right.get
+      val result: Conversation = updated.toOption.get
       result.messages.size mustBe 3
     }
   }
@@ -302,7 +302,7 @@ class ConversationRepositorySpec
         await(
           repository
             .getConversation(conversation._id, conversation.participants.map(_.identifier).toSet))
-      result.right.get mustBe conversation
+      result.toOption.get mustBe conversation
     }
 
     "not be returned if the enrolment is not a participant" in new TestContext(

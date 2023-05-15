@@ -43,7 +43,7 @@ class queryMessageWrapperSpec extends PlaySpec {
 
       val expectedJson = Resources
         .readString("model/eisRequest.json")
-        .replaceAllLiterally("{{dateTime}}", dt.toString("yyyy-MM-dd'T'HH:mm:ss'Z'"))
+        .replace("{{dateTime}}", dt.toString("yyyy-MM-dd'T'HH:mm:ss'Z'"))
       val generatedJson = Json.prettyPrint(Json.toJson[QueryMessageWrapper](queryMessageRequest))
       generatedJson mustBe expectedJson
     }

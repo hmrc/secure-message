@@ -28,6 +28,7 @@ object ApiMessage {
       case c: ApiConversation         => ApiConversation.conversationFormat.writes(c)
       case l: ApiLetter               => ApiLetter.messageFormat.writes(l)
       case m: MessageResourceResponse => MessageResourceResponse.messageResourceResponseWrites.writes(m)
+      case _                          => throw new IllegalArgumentException("Unsupported ApiMessage")
     }
   }
 }
