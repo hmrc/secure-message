@@ -81,7 +81,6 @@ class MessageBrakeServiceSpec
 
         val result = service.getOrInitialiseCachedAllowlist().futureValue
         result.get.formIdList mustBe defaultAllowlist
-
         cache.get[Allowlist]("brake-gmc-allowlist").futureValue.get mustBe Some(Allowlist(defaultAllowlist))
       }
 
@@ -151,14 +150,14 @@ class MessageBrakeServiceSpec
         val allowlistUpdateRequest = AllowlistUpdateRequest("teSt12", "a reason to add this form id")
         val result = service.addFormIdToAllowlist(allowlistUpdateRequest).futureValue
         result.get.formIdList mustBe List("TEST10", "TEST11", "TEST12")
-
+        
         cache.get[Allowlist]("brake-gmc-allowlist").futureValue.get mustBe Some(
           Allowlist(List("TEST10", "TEST11", "TEST12")))
       }
 
       "add a form id to a non-existing collection must update the cache and the database with an uppercased default version" in new TestCase {
 
-        val newAllowlist = defaultAllowlist.union(List("TEST12"))
+        val newAllowlist = defaultAllowlist.concat(List("TEST12"))
 
         when(mockAllowlistRepository.retrieve()).thenReturn(Future.successful(None))
         when(mockAllowlistRepository.store(eqTo(newAllowlist)))

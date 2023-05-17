@@ -19,7 +19,7 @@ package uk.gov.hmrc.securemessage.repository
 import org.joda.time.{ DateTime, LocalDate }
 import org.mongodb.scala.bson.ObjectId
 import org.mongodb.scala.model.Filters
-import org.scalatest.BeforeAndAfterEach
+import org.scalatest.{ BeforeAndAfterEach, EitherValues }
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json.{ JsObject, JsValue, Json }
@@ -35,7 +35,7 @@ import scala.concurrent.Future
 
 class MessageRepositorySpec
     extends PlaySpec with DefaultPlayMongoRepositorySupport[Letter] with BeforeAndAfterEach with ScalaFutures
-    with StaticTestData {
+    with StaticTestData with EitherValues {
 
   override lazy val repository = new MessageRepository(mongoComponent)
 
@@ -52,7 +52,7 @@ class MessageRepositorySpec
     "be returned for a participating enrolment with no name" in new TestContext() {
       val result: Either[SecureMessageError, Letter] =
         await(repository.getLetter(objectID, Set(Identifier("", "GB1234567890", Some("HMRC-CUS-ORG")))))
-      result.right.get mustBe letters.head
+      result.toOption.get mustBe letters.head
     }
 
     "be returned for a participating enrolment without readTime timestamp" in new TestContext(
@@ -60,20 +60,20 @@ class MessageRepositorySpec
     ) {
       val result: Either[SecureMessageError, Letter] =
         await(repository.getLetter(objectID, Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")))))
-      result.right.get.readTime mustBe None
+      result.toOption.get.readTime mustBe None
     }
 
     "not be returned for a participating enrolment with no enrolment HMRC-CUS-ORG" in new TestContext() {
       val result: Either[SecureMessageError, Letter] =
         await(repository.getLetter(objectID, Set(Identifier("EORINumber", "GB1234567890", enrolment = None))))
-      result.left.get.message mustBe "Letter not found for identifiers: Set(Identifier(EORINumber,GB1234567890,None))"
+      result.left.value.message mustBe "Letter not found for identifiers: Set(Identifier(EORINumber,GB1234567890,None))"
     }
 
     "not be returned for a participating enrolment with different Enrolment" in new TestContext(
       coreLetters = List(Resources.readJson("model/core/letterWithOutHmrcCusOrg.json").add(timeFields))) {
       val result: Either[SecureMessageError, Letter] = await(repository.getLetter(objectID, identifiers))
 
-      result.left.get.message mustBe "Letter not found for identifiers: Set(Identifier(EORINumber,GB1234567890,Some(HMRC-CUS-ORG)))"
+      result.left.value.message mustBe "Letter not found for identifiers: Set(Identifier(EORINumber,GB1234567890,Some(HMRC-CUS-ORG)))"
     }
 
     "not be returned if the enrolment is not a recipient" in new TestContext(
@@ -81,7 +81,7 @@ class MessageRepositorySpec
     ) {
       val result: Either[SecureMessageError, Letter] =
         await(repository.getLetter(objectID, Set(Identifier("EORINumber", "GB1234567891", Some("HMRC-CUS-ORG")))))
-      result.left.get mustBe MessageNotFound(
+      result.left.value mustBe MessageNotFound(
         "Letter not found for identifiers: Set(Identifier(EORINumber,GB1234567891,Some(HMRC-CUS-ORG)))")
     }
   }
@@ -93,7 +93,7 @@ class MessageRepositorySpec
         await(
           repository
             .getLetter(objectID, Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")))))
-      result.right.get.readTime must not be empty
+      result.toOption.get.readTime must not be empty
     }
     "not update readTime if it already exists" in new TestContext() {
       await(repository.addReadTime(objectID))
@@ -101,7 +101,7 @@ class MessageRepositorySpec
         await(
           repository
             .getLetter(objectID, Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")))))
-      result.right.get.readTime mustBe letters.head.readTime
+      result.toOption.get.readTime mustBe letters.head.readTime
     }
   }
 

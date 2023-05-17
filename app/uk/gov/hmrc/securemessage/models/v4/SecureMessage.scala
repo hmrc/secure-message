@@ -70,13 +70,13 @@ object SecureMessage extends ApiFormats with AlertEmailTemplateMapper {
         ( __ \ "alertDetails" \ "data").asSingleJson(jsValue) match {
           case JsDefined(value) => value.validate[Map[String, String]].map(Some.apply).
             orElse(JsError("sourceData: invalid source data provided"))
-          case JsUndefined() => JsSuccess(None)}) and
+          case _ => JsSuccess(None)}) and
       Reads[Option[Map[String, String]]](jsValue =>
         ( __ \ "tags").asSingleJson(jsValue) match {
           case JsDefined(value) => value.validate[Map[String, String]]
             .map(Some.apply)
             .orElse(JsError("tags : invalid data provided"))
-          case JsUndefined() => JsSuccess(None)})) {
+          case _ => JsSuccess(None)})) {
       (externalRef, recipient, messageType, lang, vf, content, alertQueue, messageDetails, alertDetailsData, tags) =>
 
         val issueDate = messageDetails.flatMap(_.issueDate).getOrElse(LocalDate.now)

@@ -21,6 +21,7 @@ import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.parser.Parser
 import org.jsoup.safety.Safelist
+import org.scalatest.EitherValues
 import org.scalatestplus.play.PlaySpec
 import play.api.test.Helpers._
 import uk.gov.hmrc.securemessage.InvalidContent
@@ -29,7 +30,7 @@ import uk.gov.hmrc.securemessage.services.utils.ContentValidator.DecodedBase64
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class ContentValidatorSpec extends PlaySpec {
+class ContentValidatorSpec extends PlaySpec with EitherValues {
 
   "validate" should {
 
@@ -46,11 +47,11 @@ class ContentValidatorSpec extends PlaySpec {
     }
 
     "return left for non base64 encoded plain text" in new TestContext {
-      await(ContentValidator.validate(plainText).value).left.get.message must startWith("Invalid base64 content:")
+      await(ContentValidator.validate(plainText).value).left.value.message must startWith("Invalid base64 content:")
     }
 
     "return left for disallowed html" in new TestContext {
-      await(ContentValidator.validate(validDisallowedHtml.asBase64).value).left.get.message must startWith(
+      await(ContentValidator.validate(validDisallowedHtml.asBase64).value).left.value.message must startWith(
         disallowedErrorMessage)
     }
   }
@@ -71,7 +72,7 @@ class ContentValidatorSpec extends PlaySpec {
     }
 
     "return left for invalid base64 string" in new TestContext {
-      ContentValidator.decodeBase64(plainText).left.get.message must startWith("Invalid base64 content:")
+      ContentValidator.decodeBase64(plainText).left.value.message must startWith("Invalid base64 content:")
     }
   }
 
@@ -81,7 +82,7 @@ class ContentValidatorSpec extends PlaySpec {
       ContentValidator.validateHtml(html).map(_.toString) mustBe Right(html.asDom.toString)
     }
     "return left for an invalid" in new TestContext {
-      ContentValidator.validateHtml(invalidHtml).left.get.message must startWith("Invalid html:")
+      ContentValidator.validateHtml(invalidHtml).left.value.message must startWith("Invalid html:")
     }
   }
 
@@ -93,13 +94,13 @@ class ContentValidatorSpec extends PlaySpec {
 
     "return left when an HTML with disallowed tags" in new TestContext {
       private val html: String = disallowedTagsHtml
-      val error: InvalidContent = ContentValidator.validateAllowedHtml(html, html.asDom).left.get
+      val error: InvalidContent = ContentValidator.validateAllowedHtml(html, html.asDom).left.value
       error.message must startWith(disallowedErrorMessage)
     }
 
     "return left when an HTML with disallowed attributes" in new TestContext {
       private val html: String = disallowedAttributesHtml
-      val error: InvalidContent = ContentValidator.validateAllowedHtml(html, html.asDom).left.get
+      val error: InvalidContent = ContentValidator.validateAllowedHtml(html, html.asDom).left.value
       error.message must startWith(disallowedErrorMessage)
     }
   }

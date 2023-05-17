@@ -19,8 +19,6 @@ package uk.gov.hmrc.securemessage.connectors
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.classic.{ Level, Logger => LogbackLogger }
 import ch.qos.logback.core.read.ListAppender
-import com.google.inject.AbstractModule
-import net.codingwell.scalaguice.ScalaModule
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
 import org.scalatest.concurrent.{ Eventually, IntegrationPatience, ScalaFutures }
@@ -28,7 +26,7 @@ import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import org.slf4j.LoggerFactory
-import play.api.{ Application, Logger }
+import play.api.Application
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json._
@@ -177,12 +175,9 @@ class TaxpayerNameConnectorSpec
   override def fakeApplication(): Application =
     new GuiceApplicationBuilder()
       .overrides(
-        bind[MetricOrchestrator].toInstance(mockMetricOrchestrator).eagerly()
+        bind[MetricOrchestrator].toInstance(mockMetricOrchestrator).eagerly(),
+        bind[HttpClient].toInstance(mockHttp)
       )
-      .overrides(new AbstractModule with ScalaModule {
-        override def configure(): Unit =
-          bind[HttpClient].toInstance(mockHttp)
-      })
       .configure(
         "metrics.enabled" -> "false"
       )
