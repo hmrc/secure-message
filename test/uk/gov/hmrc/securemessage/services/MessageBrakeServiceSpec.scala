@@ -150,7 +150,7 @@ class MessageBrakeServiceSpec
         val allowlistUpdateRequest = AllowlistUpdateRequest("teSt12", "a reason to add this form id")
         val result = service.addFormIdToAllowlist(allowlistUpdateRequest).futureValue
         result.get.formIdList mustBe List("TEST10", "TEST11", "TEST12")
-        
+
         cache.get[Allowlist]("brake-gmc-allowlist").futureValue.get mustBe Some(
           Allowlist(List("TEST10", "TEST11", "TEST12")))
       }
