@@ -63,7 +63,7 @@ class AdminControllerSpec extends PlaySpec with ScalaFutures with MockitoSugar {
       val brakeBatchapproval = BrakeBatchApproval("batchId", "formId", LocalDate.now(), "templateId", "reason")
       val fakeRequest: FakeRequest[JsValue] = FakeRequest(
         method = POST,
-        uri = routes.AdminController.acceptBrakeBatch.url,
+        uri = routes.AdminController.acceptBrakeBatch().url,
         headers = FakeHeaders(Seq(CONTENT_TYPE -> JSON)),
         body = Json.toJson(brakeBatchapproval)
       )
@@ -84,7 +84,7 @@ class AdminControllerSpec extends PlaySpec with ScalaFutures with MockitoSugar {
       val brakeBatchapproval = BrakeBatchApproval("batchId", "formId", LocalDate.now(), "templateId", "reason")
       val fakeRequest: FakeRequest[JsValue] = FakeRequest(
         method = POST,
-        uri = routes.AdminController.rejectBrakeBatch.url,
+        uri = routes.AdminController.rejectBrakeBatch().url,
         headers = FakeHeaders(Seq(CONTENT_TYPE -> JSON)),
         body = Json.toJson(brakeBatchapproval)
       )
@@ -105,7 +105,7 @@ class AdminControllerSpec extends PlaySpec with ScalaFutures with MockitoSugar {
       val brakeBatch = BrakeBatch("batchId", "formId", LocalDate.now(), "templateId")
       val fakeRequest: FakeRequest[JsValue] = FakeRequest(
         method = POST,
-        uri = routes.AdminController.randomBrakeBatchMessage.url,
+        uri = routes.AdminController.randomBrakeBatchMessage().url,
         headers = FakeHeaders(Seq(CONTENT_TYPE -> JSON)),
         body = Json.toJson(brakeBatch)
       )
