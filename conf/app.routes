@@ -130,7 +130,7 @@ GET     /messages/:id/content                           uk.gov.hmrc.securemessag
 POST    /messages/:id/read-time                         uk.gov.hmrc.securemessage.controllers.SecureMessageController.setReadTime(id: org.mongodb.scala.bson.ObjectId)
 
 #Admin endpoints
-GET     /admin/message/brake/gmc/batches                uk.gov.hmrc.securemessage.controllers.AdminController.getGMCBrakeBatches
-POST    /admin/message/brake/accept                     uk.gov.hmrc.securemessage.controllers.AdminController.acceptBrakeBatch
-POST    /admin/message/brake/reject                     uk.gov.hmrc.securemessage.controllers.AdminController.rejectBrakeBatch
-POST    /admin/message/brake/random                     uk.gov.hmrc.securemessage.controllers.AdminController.randomBrakeBatchMessage
+GET     /admin/message/brake/gmc/batches                uk.gov.hmrc.securemessage.controllers.AdminController.getGMCBrakeBatches()
+POST    /admin/message/brake/accept                     uk.gov.hmrc.securemessage.controllers.AdminController.acceptBrakeBatch()
+POST    /admin/message/brake/reject                     uk.gov.hmrc.securemessage.controllers.AdminController.rejectBrakeBatch()
+POST    /admin/message/brake/random                     uk.gov.hmrc.securemessage.controllers.AdminController.randomBrakeBatchMessage()
