@@ -70,7 +70,7 @@ class AdminControllerSpec extends PlaySpec with ScalaFutures with MockitoSugar {
 
       when(mockMessageRepository.brakeBatchAccepted(ArgumentMatchers.eq(brakeBatchapproval)))
         .thenReturn(Future.successful(true))
-      when(mockExtraAlertRepository.brakeBatchRejected(ArgumentMatchers.eq(brakeBatchapproval))(any[ExecutionContext]))
+      when(mockExtraAlertRepository.brakeBatchAccepted(ArgumentMatchers.eq(brakeBatchapproval))(any[ExecutionContext]))
         .thenReturn(Future.successful(true))
 
       when(mockInstances.messageRepository).thenReturn(mockMessageRepository)
