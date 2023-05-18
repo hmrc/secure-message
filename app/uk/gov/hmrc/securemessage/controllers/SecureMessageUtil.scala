@@ -46,6 +46,7 @@ import uk.gov.hmrc.securemessage.models.v4.{ Content, ExtraAlertConfig, SecureMe
 import uk.gov.hmrc.securemessage.repository.{ ExtraAlert, ExtraAlertRepository, SecureMessageRepository, StatsMetricRepository }
 import uk.gov.hmrc.securemessage.services.MessageBrakeService
 
+import java.time.Instant
 import javax.inject.{ Inject, Named }
 import scala.jdk.CollectionConverters._
 import scala.concurrent.{ ExecutionContext, Future }
@@ -503,9 +504,12 @@ class SecureMessageUtil @Inject()(
           Some(s"${iterator.next()}"),
           message.details.map(_.formId)
         )
+        val availableAt: Instant = extraAlertRepository.now().plusMillis(extraAlert.delay.getMillis)
         extraAlertRepository
           .pushNew(
-            item
+            item,
+            availableAt,
+            _ => message.status
           )
       }
     )
