@@ -16,19 +16,19 @@
 
 package uk.gov.hmrc.securemessage.repository
 
-import org.joda.time.DateTime
+import org.joda.time.{ DateTime, LocalDate }
 import org.mongodb.scala.model.Filters
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.test.Helpers.{ await, defaultAwaitTimeout }
-import uk.gov.hmrc.common.message.model.TimeSource
-import uk.gov.hmrc.common.message.model.MessagesCount
+import uk.gov.hmrc.common.message.model.{ MessagesCount, TimeSource }
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
+import uk.gov.hmrc.mongo.workitem.ProcessingStatus.{ Deferred, Succeeded, ToDo }
 import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core.{ Count, Identifier, MessageFilter }
-import uk.gov.hmrc.securemessage.models.v4.SecureMessage
+import uk.gov.hmrc.securemessage.models.v4.{ BrakeBatch, BrakeBatchApproval, BrakeBatchDetails, BrakeBatchMessage, SecureMessage }
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -121,6 +121,168 @@ class SecureMessageRepositorySpec
       val result1: Boolean =
         await(repository.getSecureMessage(message._id, Set(identifier, niIdentifier))).forall(_.readTime.isDefined)
       result1 mustBe true
+    }
+  }
+
+  "pullBrakeBatches" must {
+
+    "return an empty batch list if there are no Deferred messages with verificationBrake set to true" in {
+      val details = message.details.map(_.copy(issueDate = Some(LocalDate.now())))
+      val brakeMessage =
+        message.copy(status = Succeeded, verificationBrake = Some(true), details = details)
+      (repository.save(brakeMessage)).futureValue
+      val batch = (repository.pullBrakeBatchDetails()).futureValue
+      batch must be(List.empty)
+    }
+
+    "return valid batches" in {
+      val details = message.details.map(_.copy(batchId = Some("foobar")))
+      val message1 = message.copy(status = Deferred, verificationBrake = Some(true))
+      val message2 = message.copy(status = Deferred, verificationBrake = Some(true))
+
+      val message3 = message.copy(status = Deferred, verificationBrake = Some(true), details = details)
+      val message4 = message.copy(status = Succeeded, verificationBrake = Some(true))
+
+      (repository.save(message1)).futureValue
+      (repository.save(message2)).futureValue
+      (repository.save(message3)).futureValue
+      (repository.save(message4)).futureValue
+
+      val batches = (repository.pullBrakeBatchDetails()).futureValue
+
+      batches must contain only (BrakeBatchDetails(
+        "1234567",
+        "SA300",
+        LocalDate.parse("2017-02-13"),
+        "newMessageAlert_SA300",
+        1))
+    }
+
+    "return batches if its just 1 message without any grouping" in {
+
+      val message1 = message.copy(status = Deferred, verificationBrake = Some(true))
+
+      (repository.save(message1)).futureValue
+
+      val batches = (repository.pullBrakeBatchDetails()).futureValue
+
+      batches must contain only (BrakeBatchDetails(
+        "1234567",
+        "SA300",
+        LocalDate.parse("2017-02-13"),
+        "newMessageAlert_SA300",
+        1))
+    }
+
+    "return batch with group by same message with status deferred" in {
+
+      val message1 = message.copy(status = Deferred, verificationBrake = Some(true))
+      val message2 = message.copy(status = Deferred, verificationBrake = Some(true))
+      val message3 = message.copy(status = Succeeded, verificationBrake = Some(true))
+
+      (repository.save(message1)).futureValue
+      (repository.save(message2)).futureValue
+      (repository.save(message3)).futureValue
+
+      val batches = (repository.pullBrakeBatchDetails()).futureValue
+
+      batches must contain only (BrakeBatchDetails(
+        "1234567",
+        "SA300",
+        LocalDate.parse("2017-02-13"),
+        "newMessageAlert_SA300",
+        1))
+    }
+  }
+
+  "brakeBatchAccepted" must {
+
+    "not update \"non-batch\" messages" in {
+      val testMessage: SecureMessage = message.copy(status = Succeeded, verificationBrake = Some(true))
+      val issueDate = message.details.flatMap(_.issueDate).getOrElse(LocalDate.now())
+
+      (repository.save(testMessage)).futureValue
+
+      val brakeBatch: BrakeBatchApproval =
+        BrakeBatchApproval("1234567", "SA300", issueDate, "newMessageAlert_SA300", "")
+
+      (repository.brakeBatchAccepted(brakeBatch)).futureValue must be(false)
+
+      (repository.collection.find().toFuture()).futureValue mustBe List(testMessage)
+    }
+
+    "update 1 message if in batch" in {
+      val testMessage: SecureMessage = message.copy(status = Deferred, verificationBrake = Some(true))
+      val updated_message = testMessage.copy(status = ToDo, verificationBrake = Some(false))
+      val issueDate = message.details.flatMap(_.issueDate).getOrElse(LocalDate.now())
+      (repository.save(testMessage)).futureValue
+
+      val brakeBatch: BrakeBatchApproval =
+        BrakeBatchApproval("1234567", "SA300", issueDate, "newMessageAlert_SA300", "")
+      (repository.brakeBatchAccepted(brakeBatch)).futureValue must be(true)
+
+      (repository.findById(message._id)).futureValue mustBe Some(updated_message)
+    }
+
+    "update 2 messages if in batch" in {
+      val message1 = message.copy(status = Deferred, verificationBrake = Some(true))
+      val message2 = message.copy(status = Deferred, verificationBrake = Some(true))
+      val updated_message1 = message1.copy(status = ToDo, verificationBrake = Some(false))
+      val updated_message2 = message2.copy(status = ToDo, verificationBrake = Some(false))
+      val issueDate = message.details.flatMap(_.issueDate).getOrElse(LocalDate.now())
+      (repository.save(message1)).futureValue
+      (repository.save(message2)).futureValue
+
+      val brakeBatch: BrakeBatchApproval =
+        BrakeBatchApproval("1234567", "SA300", issueDate, "newMessageAlert_SA300", "")
+      (repository.brakeBatchAccepted(brakeBatch)).futureValue must be(true)
+
+      (repository.findById(message1._id)).futureValue mustBe Some(updated_message1)
+      (repository.findById(message2._id)).futureValue mustBe Some(updated_message2)
+    }
+  }
+
+  "brakeBatchRejected" must {
+
+    "not update \"non-batch\" messages" in {
+      val issueDate = message.details.flatMap(_.issueDate).getOrElse(LocalDate.now())
+      val message1 = message.copy(status = Succeeded, verificationBrake = Some(true))
+      (repository.save(message1)).futureValue
+
+      val brakeBatch = BrakeBatchApproval("1234567", "SA300", issueDate, "newMessageAlert_SA300", "")
+      (repository.brakeBatchRejected(brakeBatch)).futureValue must be(false)
+
+      (repository.collection.find(Filters.equal("_id", message._id)).toFuture().futureValue mustBe List(
+        message1
+      ))
+
+    }
+  }
+
+  "brakeBatchMessageRandom" must {
+
+    "return None list if there are no Deferred messages with verificationBrake set to true" in {
+      val message1 = message.copy(status = Succeeded, verificationBrake = Some(true))
+      val issueDate = message.details.flatMap(_.issueDate).getOrElse(LocalDate.now())
+      val brakeBatch = BrakeBatch("1234567", "SA300", issueDate, "newMessageAlert_SA300")
+      (repository.save(message1)).futureValue
+
+      (repository.brakeBatchMessageRandom(brakeBatch)).futureValue must be(None)
+    }
+
+    "return a random message if it exists in a requested batch" in {
+
+      val message1 = message.copy(status = Deferred, verificationBrake = Some(true))
+      val message2 = message.copy(status = Deferred, verificationBrake = Some(true))
+
+      (repository.save(message1)).futureValue
+      (repository.save(message2)).futureValue
+
+      val issueDate = message.details.flatMap(_.issueDate).getOrElse(LocalDate.now())
+
+      val brakeBatch = BrakeBatch("1234567", "SA300", issueDate, "newMessageAlert_SA300")
+      val result = repository.brakeBatchMessageRandom(brakeBatch).futureValue
+      List(Some(BrakeBatchMessage(message1)), Some(BrakeBatchMessage(message2))) must contain(result)
     }
   }
 }

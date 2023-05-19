@@ -104,7 +104,7 @@
         },
         "required" : [ "sender", "recipients", "alert", "tags", "subject", "message" ]
       },
-      "uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage" : {
+      "uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage" : {
         "properties" : {
           "content" : {
             "type" : "string"
@@ -112,7 +112,7 @@
         },
         "required" : [ "content" ]
       },
-      "uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage" : {
+      "uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage" : {
         "properties" : {
           "content" : {
             "type" : "string"
@@ -467,11 +467,77 @@
           }
         }
       }
+    },
+    "/secure-messaging/message/system/{id}/send-alert" : {
+      "get" : {
+        "operationId" : "sendAlert",
+        "tags" : [ "app" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : true
+        } ]
+      }
+    },
+    "/secure-messaging/messages/{id}/content" : {
+      "get" : {
+        "operationId" : "getContentBy",
+        "tags" : [ "app" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "schema" : {
+            "type" : "org.mongodb.scala.bson.objectid"
+          },
+          "required" : true
+        } ]
+      }
+    },
+    "/secure-messaging/messages/{id}/read-time" : {
+      "post" : {
+        "operationId" : "setReadTime",
+        "tags" : [ "app" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "schema" : {
+            "type" : "org.mongodb.scala.bson.objectid"
+          },
+          "required" : true
+        } ]
+      }
+    },
+    "/secure-messaging/admin/message/brake/gmc/batches" : {
+      "get" : {
+        "operationId" : "getGMCBrakeBatches",
+        "tags" : [ "app" ]
+      }
+    },
+    "/secure-messaging/admin/message/brake/accept" : {
+      "post" : {
+        "operationId" : "acceptBrakeBatch",
+        "tags" : [ "app" ]
+      }
+    },
+    "/secure-messaging/admin/message/brake/reject" : {
+      "post" : {
+        "operationId" : "rejectBrakeBatch",
+        "tags" : [ "app" ]
+      }
+    },
+    "/secure-messaging/admin/message/brake/random" : {
+      "post" : {
+        "operationId" : "randomBrakeBatchMessage",
+        "tags" : [ "app" ]
+      }
     }
   },
   "info" : {
     "title" : "Secure Message API",
-    "version" : "0.144.0-SNAPSHOT"
+    "version" : "0.149.0-SNAPSHOT"
   },
   "tags" : [ {
     "name" : "app"
