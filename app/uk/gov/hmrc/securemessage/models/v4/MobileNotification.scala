@@ -23,6 +23,6 @@ case class MobileNotification(identifier: TaxIdWithName)
 
 object MobileNotification {
 
-  import uk.gov.hmrc.common.message.model.MongoTaxIdentifierFormats._
+  import uk.gov.hmrc.common.message.model.TaxIdentifierRESTV2Formats.format
   implicit val mobileNotificationFormats: Format[MobileNotification] = Json.format[MobileNotification]
 }
