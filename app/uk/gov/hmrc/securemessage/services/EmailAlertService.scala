@@ -89,7 +89,7 @@ class EmailAlertService @Inject()(
 
   def sendAlert(results: EmailResults, message: SecureMessage)(implicit ec: ExecutionContext): Future[EmailResults] = {
     for {
-      _ <- emailConnector.send(sendEmailRequest(message))
+      _ <- emailConnector.send(createEmailRequest(message))
       _ <- {
         auditAlert(AlertSucceeded(message, message.emailAddress))
         secureMessageRepository.alertCompleted(
@@ -137,12 +137,13 @@ class EmailAlertService @Inject()(
       }
     }
 
-  def sendEmailRequest(message: SecureMessage): EmailRequest =
+  def createEmailRequest(message: SecureMessage): EmailRequest =
     EmailRequest(
       to = List(EmailAddress(message.emailAddress)),
       templateId = message.templateId,
-      parameters = message.alertDetails.data ++ message.alertDetails.recipientName
-        .fold(Map.empty[String, String])(_.asMap),
+      parameters = message.alertDetails.data ++
+        message.alertDetails.recipientName.fold(Map.empty[String, String])(_.asMap) ++
+        Map(message.recipient.identifier.name -> message.recipient.identifier.value),
       auditData = message.auditData,
       eventUrl = None,
       onSendUrl = alertUrl(message._id.toString),

@@ -61,6 +61,14 @@ class EmailAlertServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures
       verify(auditConnector, times(3)).sendEvent(any[DataEvent])(any[HeaderCarrier], any[ExecutionContext])
       verify(secureMessageRepository, times(3)).alertCompleted(any[ObjectId], any[ProcessingStatus], any[EmailAlert])
     }
+
+    "email request should include tax identifier" in new TestCase {
+      val message = messageForSA(utr = "3254567990")
+
+      val emailRequest = emailAlertService.createEmailRequest(message)
+
+      emailRequest.parameters.get("sautr") mustBe Some("3254567990")
+    }
   }
 
   trait TestCase {
