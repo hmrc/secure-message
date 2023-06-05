@@ -474,11 +474,13 @@ class SecureMessageUtil @Inject()(
   def addTaxpayerNameToMessageIfRequired(message: SecureMessage)(implicit hc: HeaderCarrier): Future[SecureMessage] =
     message.alertDetails.recipientName match {
       case Some(_) => Future.successful(message)
-      case None =>
+      case None if message.recipient.identifier.name.toLowerCase == "sautr" =>
         taxpayerNameConnector
           .taxpayerName(SaUtr(message.recipient.identifier.value))
           .flatMap(name =>
             Future.successful(message.copy(alertDetails = message.alertDetails.copy(recipientName = name))))
+      case None =>
+        Future.successful(message.copy(alertDetails = message.alertDetails.copy(recipientName = None)))
     }
 
   // DC-1722
