@@ -1,0 +1,48 @@
+{
+  "externalRef": {
+    "id": "REF111111",
+    "source": "gmc"
+  },
+  "recipient": {
+    "regime": "sa",
+    "taxIdentifier": {
+      "name": "sautr",
+      "value": "1234567890"
+    },
+    "email": "test@test.com"
+  },
+  "tags": {
+    "notificationType": "Opt-in"
+  },
+  "alertDetails": {
+    "data": {}
+  },
+  "details": {
+    "formId": "SA300",
+    "issueDate": "2019-02-13",
+    "batchId": "1234567",
+    "sourceData": "<base64 encoded source data>",
+    "properties": [{
+      "property": {
+        "name": "printedVariant",
+        "value": "false"
+      }
+    }
+    ]
+  },
+  "content": [
+    {
+      "lang": "en",
+      "subject": "TEST Subject",
+      "body": "TEST Message content"
+    },
+    {
+      "lang": "cy",
+      "subject": "PRAWF Pwnc",
+      "body": "PRAWF Cynnwys y neges"
+    }
+  ],
+  "messageType": "sdAlertMessage",
+  "validFrom": "2021-05-04",
+  "alertQueue": "DEFAULT"
+}

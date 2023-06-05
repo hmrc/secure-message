@@ -47,10 +47,10 @@ class TaxpayerNameConnector @Inject()(
       .map(_.name)
       .recover {
         case notFound: NotFoundException =>
-          logger.warn(s"No taxpayer name found for utr: $utr", notFound)
+          logger.warn(s"No taxpayer name found for utr: $utr, ${notFound.getMessage}")
           None
         case e =>
-          logger.error(s"Unable to get taxpayer name for $utr", e)
+          logger.error(s"Unable to get taxpayer name for $utr, ${e.getMessage}")
           None
       }
   }
