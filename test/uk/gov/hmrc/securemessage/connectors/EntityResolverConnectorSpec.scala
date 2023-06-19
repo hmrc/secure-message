@@ -28,6 +28,7 @@ import play.api.libs.json.{ JsObject, JsString }
 import uk.gov.hmrc.domain.SaUtr
 import uk.gov.hmrc.http.{ HeaderCarrier, HttpClient, HttpResponse }
 import uk.gov.hmrc.mongo.metrix.MetricOrchestrator
+import uk.gov.hmrc.securemessage.models.TaxId
 import uk.gov.hmrc.securemessage.services.utils.{ GenerateRandom, MessageFixtures, MetricOrchestratorStub }
 
 import scala.concurrent.{ ExecutionContext, Future }
@@ -49,6 +50,23 @@ class EntityResolverConnectorSpec
 
   lazy val connector: EntityResolverConnector =
     injector.instanceOf[EntityResolverConnector]
+
+  "getTaxId in connector" must {
+    "return a valid taxId information for the given saUtr" in {
+      when(mockHttp.doGet(any[String], any[Seq[(String, String)]])(any[ExecutionContext]))
+        .thenReturn(Future.successful(HttpResponse(
+          200,
+          s"""{ "_id"  : "entityId",
+             |"sautr" :  "1234567890",
+             |"nino"  :  "SJ12345678A"}""".stripMargin,
+          Map.empty[String, Seq[String]]
+        )))
+
+      connector
+        .getTaxId(MessageFixtures.createTaxEntity(SaUtr("someUtr")))
+        .futureValue mustBe Some(TaxId("entityId", Some("1234567890"), Some("SJ12345678A")))
+    }
+  }
 
   "verifiedEmailAddress in connector" must {
     "return a valid email when a preference is found for sautr" in {

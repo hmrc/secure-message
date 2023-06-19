@@ -24,14 +24,14 @@ import org.mongodb.scala.bson.ObjectId
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
-import uk.gov.hmrc.common.message.model.EmailAlert
+import uk.gov.hmrc.common.message.model.{ EmailAlert, TaxEntity }
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus
 import uk.gov.hmrc.play.audit.http.connector.{ AuditConnector, AuditResult }
 import uk.gov.hmrc.play.audit.model.DataEvent
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.securemessage.connectors.{ EmailConnector, EntityResolverConnector, MobilePushNotificationsConnector }
-import uk.gov.hmrc.securemessage.models.EmailRequest
+import uk.gov.hmrc.securemessage.models.{ EmailRequest, TaxId }
 import uk.gov.hmrc.securemessage.models.v4.MobileNotification
 import uk.gov.hmrc.securemessage.repository.SecureMessageRepository
 import uk.gov.hmrc.securemessage.services.utils.SecureMessageFixtures.messageForSA
@@ -52,6 +52,8 @@ class EmailAlertServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures
         .thenReturn(Future.successful(Some(messageForSA(utr = "7764560597"))))
         .thenReturn(Future.successful(None))
 
+      when(entityResolverConnector.getTaxId(any[TaxEntity])).thenReturn(Future.successful(None))
+
       private val result = emailAlertService.sendEmailAlerts().futureValue
 
       //noinspection RedundantDefaultArgument
@@ -65,10 +67,21 @@ class EmailAlertServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures
     "email request should include tax identifier" in new TestCase {
       val message = messageForSA(utr = "3254567990")
 
+      val emailRequest =
+        emailAlertService.createEmailRequest(message, Some(TaxId("", Some("3254567990"), Some("SK12345678A"))))
+
+      emailRequest.parameters.get("sautr") mustBe Some("3254567990")
+      emailRequest.parameters.get("nino") mustBe Some("SK12345678A")
+    }
+
+    "email request should include tax identifier along with Nino and SaUtr" in new TestCase {
+      val message = messageForSA(utr = "3254567990")
+
       val emailRequest = emailAlertService.createEmailRequest(message)
 
       emailRequest.parameters.get("sautr") mustBe Some("3254567990")
     }
+
   }
 
   trait TestCase {
