@@ -33,7 +33,7 @@ import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.securemessage.connectors.{ EmailConnector, EntityResolverConnector, MobilePushNotificationsConnector }
 import uk.gov.hmrc.securemessage.controllers.routes
 import uk.gov.hmrc.securemessage.models.v4.{ MobileNotification, SecureMessage }
-import uk.gov.hmrc.securemessage.models.{ EmailRequest, Tags }
+import uk.gov.hmrc.securemessage.models.{ EmailRequest, Tags, TaxId }
 import uk.gov.hmrc.securemessage.repository.SecureMessageRepository
 
 import javax.inject.{ Inject, Named, Singleton }
@@ -89,7 +89,8 @@ class EmailAlertService @Inject()(
 
   def sendAlert(results: EmailResults, message: SecureMessage)(implicit ec: ExecutionContext): Future[EmailResults] = {
     for {
-      _ <- emailConnector.send(createEmailRequest(message))
+      taxIds <- entityResolverConnector.getTaxId(message.recipient)
+      _      <- emailConnector.send(createEmailRequest(message, taxIds))
       _ <- {
         auditAlert(AlertSucceeded(message, message.emailAddress))
         secureMessageRepository.alertCompleted(
@@ -137,13 +138,13 @@ class EmailAlertService @Inject()(
       }
     }
 
-  def createEmailRequest(message: SecureMessage): EmailRequest =
+  def createEmailRequest(message: SecureMessage, taxId: Option[TaxId] = None): EmailRequest =
     EmailRequest(
       to = List(EmailAddress(message.emailAddress)),
       templateId = message.templateId,
       parameters = message.alertDetails.data ++
         message.alertDetails.recipientName.fold(Map.empty[String, String])(_.asMap) ++
-        Map(message.recipient.identifier.name -> message.recipient.identifier.value),
+        taxIdentifiers(taxId, Map(message.recipient.identifier.name -> message.recipient.identifier.value)),
       auditData = message.auditData,
       eventUrl = None,
       onSendUrl = alertUrl(message._id.toString),
@@ -154,6 +155,14 @@ class EmailAlertService @Inject()(
         message.externalRef.source.some,
         getEnrolments(message.recipient).main.some).some
     )
+
+  private def taxIdentifiers(taxId: Option[TaxId], default: Map[String, String]): Map[String, String] =
+    taxId match {
+      case Some(id) =>
+        Map("sautr" -> id.sautr.getOrElse("N/A"), "nino" -> id.nino.getOrElse("N/A")) ++
+          default.filterNot(p => List("sautr", "nino") contains (p._1))
+      case _ => default
+    }
 }
 
 case class EmailResults(sent: Int = 0, requeued: Int = 0) {
