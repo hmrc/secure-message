@@ -22,6 +22,7 @@ import play.mvc.Http.Status
 import uk.gov.hmrc.http.HttpClient
 import uk.gov.hmrc.common.message.model.TaxEntity
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import uk.gov.hmrc.securemessage.models.TaxId
 
 import javax.inject.{ Inject, Singleton }
 import scala.concurrent.{ ExecutionContext, Future }
@@ -76,4 +77,14 @@ class EntityResolverConnector @Inject()(config: Configuration, httpClient: HttpC
           case status           => throw new OtherException(s"OTHER_EXCEPTION_$status")
         }
       }
+
+  def getTaxId(recipient: TaxEntity): Future[Option[TaxId]] =
+    httpClient.doGet(url(s"/entity-resolver/${recipient.regime}/${recipient.identifier.value}")).map { response =>
+      response.status match {
+        case Status.OK => response.json.asOpt[TaxId]
+        case _         => None
+      }
+
+    }
+
 }
