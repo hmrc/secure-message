@@ -157,7 +157,7 @@ class NonCDSMessageRetriever @Inject()(
 
   def addIssueDate(letter: Letter)(implicit messages: Messages): String = {
     val issueDate = localizedExtractMessageDate(letter)
-    <p class='message_time faded-text--small govuk-hint'>{s"${messages("date.text.advisor", issueDate)}"}</p><br/>.mkString
+    <p class='message_time faded-text--small govuk-body'>{s"${messages("date.text.advisor", issueDate)}"}</p><br/>.mkString
   }
 
   def localizedExtractMessageDate(letter: Letter)(implicit messages: Messages): String =

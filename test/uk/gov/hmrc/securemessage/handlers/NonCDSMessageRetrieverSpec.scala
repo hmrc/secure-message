@@ -91,7 +91,7 @@ class NonCDSMessageRetrieverSpec extends PlaySpec with MockitoSugar with UnitTes
         |  "alertQueue": "DEFAULT",
         |  "alertFrom": "2021-04-26",
         |  "status": "succeeded",
-        |  "content": "<h1 lang=\"en\" class=\"govuk-heading-xl\">Test have subjects11</h1><p class=\"message_time faded-text--small govuk-hint\">date.text.advisor</p><br/><h2>Test content</h2>",
+        |  "content": "<h1 lang=\"en\" class=\"govuk-heading-xl\">Test have subjects11</h1><p class=\"message_time faded-text--small govuk-body\">date.text.advisor</p><br/><h2>Test content</h2>",
         |  "statutory": false,
         |  "lastUpdated": {
         |    "$date": {
