@@ -378,7 +378,7 @@ class SecureMessageServiceImpl @Inject()(
 
   private def addIssueDate(message: SecureMessage)(implicit messages: Messages): String = {
     val issueDate = localizedFormatter(message.issueDate.toLocalDate)
-    <p class='message_time faded-text--small govuk-hint'>{s"${messages("date.text.advisor", issueDate)}"}</p><br/>.mkString
+    <p class='message_time faded-text--small govuk-body'>{s"${messages("date.text.advisor", issueDate)}"}</p><br/>.mkString
   }
 
   private def localizedFormatter(date: LocalDate)(implicit messages: Messages): String = {
