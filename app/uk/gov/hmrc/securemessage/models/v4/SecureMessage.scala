@@ -88,7 +88,6 @@ object SecureMessage extends ApiFormats with AlertEmailTemplateMapper {
             sha256Digester.digest(
               Seq(
                 content,
-                externalRef.id,
                 messageDetails.map(_.formId).getOrElse(""),
                 recipient.taxIdentifier.name,
                 recipient.taxIdentifier.value,
