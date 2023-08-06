@@ -187,7 +187,7 @@ class AuthIdentifiersConnectorSpec
                            |      "identifiers": [
                            |        {
                            |          "key": "VRN",
-                           |          "value": "example vrn"
+                           |          "value": "123 4567 89"
                            |        }
                            |      ],
                            |      "state": "Activated",
@@ -208,7 +208,7 @@ class AuthIdentifiersConnectorSpec
       )
 
       authConnector.currentEffectiveTaxIdentifiers.futureValue must be(
-        Set(Vrn("example vrn"))
+        Set(Vrn("123456789"), Vrn("123 4567 89"))
       )
     }
 
