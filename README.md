@@ -23,9 +23,9 @@ Ensure you have service-manager python environment setup:
 
 `source ../servicemanager/bin/activate`
 
-`sm --start DC_TWSM_ALL`
+`sm2 --start DC_TWSM_ALL`
 
-`sm --stop SECURE_MESSAGE`
+`sm2 --stop SECURE_MESSAGE`
 
 `sbt "run 9051 -Dplay.http.router=testOnlyDoNotUseInAppConf.Routes"`
 
