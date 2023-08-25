@@ -47,7 +47,7 @@ import uk.gov.hmrc.securemessage.repository.{ ExtraAlert, ExtraAlertRepository, 
 import uk.gov.hmrc.securemessage.services.MessageBrakeService
 
 import java.time.Instant
-import javax.inject.{ Inject, Named }
+import javax.inject.{ Inject, Named, Singleton }
 import scala.jdk.CollectionConverters._
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success, Try }
@@ -86,7 +86,7 @@ object SecureMessageUtil {
 
   private val NotificationType = "notificationType"
 }
-
+@Singleton
 class SecureMessageUtil @Inject()(
   @Named("app-name") appName: String,
   entityResolverConnector: EntityResolverConnector,
