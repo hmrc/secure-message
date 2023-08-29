@@ -25,8 +25,11 @@ import org.scalatest.concurrent.{ IntegrationPatience, ScalaFutures }
 import org.scalatest.{ BeforeAndAfterEach, SuiteMixin }
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
+import play.api.{ Application, Environment, Mode }
 import play.api.http.{ ContentTypes, HeaderNames }
+import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.{ WSClient, WSResponse }
+import play.api.Logger.applicationMode
 import play.api.test.Helpers.{ await, defaultAwaitTimeout }
 import uk.gov.hmrc.securemessage.controllers.model.MessageType
 import uk.gov.hmrc.securemessage.models.core._
@@ -96,7 +99,10 @@ trait ISpec
       .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
       .put(new File("./it/resources/cdcm/create-conversation.json"))
   }
-
+  override def fakeApplication(): Application =
+    GuiceApplicationBuilder(environment = Environment.simple(mode = applicationMode.getOrElse(Mode.Test)))
+      .configure(additionalConfig)
+      .build()
   def additionalConfig: Map[String, _] =
     Map(
       "metrics.jvm"                  -> false,
