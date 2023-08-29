@@ -41,7 +41,8 @@ class AuthIdentifiersConnectorSpec
         bind[MetricOrchestrator].toInstance(mockMetricOrchestrator).eagerly()
       )
       .configure(
-        "metrics.enabled" -> "false"
+        "metrics.enabled"                 -> "false",
+        "microservice.services.auth.port" -> "8501"
       )
       .build()
 

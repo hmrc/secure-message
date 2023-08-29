@@ -15,8 +15,6 @@
  */
 
 import uk.gov.hmrc.DefaultBuildSettings.integrationTestSettings
-import uk.gov.hmrc.ServiceManagerPlugin.Keys.itDependenciesList
-import uk.gov.hmrc.{ ExternalService, ServiceManagerPlugin }
 
 val appName = "secure-message"
 
@@ -57,22 +55,6 @@ lazy val microservice = Project(appName, file("."))
         }.value)
     )
   )
-  .settings(ServiceManagerPlugin.serviceManagerSettings)
-  .settings(itDependenciesList := List(
-    ExternalService("DATASTREAM"),
-    ExternalService("AUTH"),
-    ExternalService("AUTH_LOGIN_API"),
-    ExternalService("IDENTITY_VERIFICATION"),
-    ExternalService("USER_DETAILS"),
-    ExternalService("ENTITY_RESOLVER"),
-    ExternalService("CHANNEL_PREFERENCES"),
-    ExternalService("CUSTOMS_DATA_STORE"),
-    ExternalService("CUSTOMS_FINANCIALS_HODS_STUB"),
-    ExternalService("EMAIL"),
-    ExternalService("MAILGUN_STUB"),
-    ExternalService("SECURE_MESSAGE_STUB"),
-    ExternalService("MESSAGE")
-  ))
   .settings(ScoverageSettings())
 
 lazy val compileScalastyle = taskKey[Unit]("compileScalastyle1")
