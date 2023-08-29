@@ -23,9 +23,9 @@ Ensure you have service-manager python environment setup:
 
 `source ../servicemanager/bin/activate`
 
-`sm --start DC_TWSM_ALL`
+`sm2 --start DC_TWSM_ALL`
 
-`sm --stop SECURE_MESSAGE`
+`sm2 --stop SECURE_MESSAGE`
 
 `sbt "run 9051 -Dplay.http.router=testOnlyDoNotUseInAppConf.Routes"`
 
@@ -46,7 +46,12 @@ Then run the tests and coverage report:
 If your build fails due to poor test coverage, *DO NOT* lower the test coverage threshold, instead inspect the generated report located here on your local repo: `/target/scala-2.12/scoverage-report/index.html`
 
 Then run the integration tests:
-NOTE: for integration tests to work make sure to execute command: `smserver` in a separate terminal window.
+
+NOTE: for integration tests to work, make sure to have all the external services required. 
+You can use the following commands to start/stop the required services.
+
+`sm2 --start DC_SECURE_MESSAGE_IT`
+`sm2 --start DC_SECURE_MESSAGE_IT`
 
 `sbt it:test`
 
