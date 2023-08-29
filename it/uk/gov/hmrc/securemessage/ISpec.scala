@@ -21,14 +21,11 @@ import org.apache.commons.codec.binary.Base64
 import org.bson.types.ObjectId
 import org.joda.time.DateTime
 import org.mongodb.scala.model.Filters
-import org.scalatest.{ BeforeAndAfterEach, SuiteMixin }
 import org.scalatest.concurrent.{ IntegrationPatience, ScalaFutures }
+import org.scalatest.{ BeforeAndAfterEach, SuiteMixin }
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
-import play.api.{ Application, Environment, Logger, Mode }
-import play.api.Logger.applicationMode
 import play.api.http.{ ContentTypes, HeaderNames }
-import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.{ WSClient, WSResponse }
 import play.api.test.Helpers.{ await, defaultAwaitTimeout }
 import uk.gov.hmrc.securemessage.controllers.model.MessageType
@@ -44,9 +41,9 @@ trait ISpec
     with GuiceOneServerPerSuite with AuthHelper {
 
   implicit val ec: ExecutionContext = app.injector.instanceOf[ExecutionContext]
+
   override val ggAuthPort: Int = 8585
   override val wsClient: WSClient = app.injector.instanceOf[WSClient]
-  val logger = Logger(getClass)
 
   protected val conversationRepo: ConversationRepository = app.injector.instanceOf[ConversationRepository]
   protected val messageRepo: MessageRepository = app.injector.instanceOf[MessageRepository]
@@ -57,12 +54,6 @@ trait ISpec
   }
 
   protected def encodeId(id: ObjectId) = base64Encode(s"${MessageType.Conversation.entryName}/$id")
-
-  override def fakeApplication(): Application =
-//    logger.info(s"""Starting application with additional config: ${configMap.mkString("\n  ")}""")
-    GuiceApplicationBuilder(environment = Environment.simple(mode = applicationMode.getOrElse(Mode.Test)))
-      .configure(additionalConfig)
-      .build()
 
   protected def insertConversation(id: ObjectId) = {
     val conversationId = Random.nextInt(1000).toString
@@ -114,5 +105,8 @@ trait ISpec
 
   def base64Encode(path: String): String = Base64.encodeBase64String(path.getBytes("UTF-8"))
 
-  def resource(path: String): String = s"http://localhost:$port/$path}"
+  def resource(path: String): String = s"http://localhost:$port/${-/(path)}"
+
+  def -/(uri: String): String = if (uri.startsWith("/")) uri.drop(1) else uri
+
 }
