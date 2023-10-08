@@ -28,7 +28,13 @@ class QueryStringValidationSpec extends PlaySpec with QueryStringValidation {
 
   "validateQueryParameters method" must {
 
-    "return a valid result when no other parameters are present in the query string" in {
+    "confirm that the query is from non-CDS when there are no parameters" in {
+      val queryString: Map[String, Seq[String]] = Map.empty
+      val result = validateQueryParameters(queryString)
+      result mustBe Right(ValidNonCDSQueryParameters)
+    }
+
+    "confirm that the query parameters are for CDS" in {
       val queryString: Map[String, Seq[String]] = Map(
         "enrolment" -> Seq("3"),
         "enrolment" -> Seq("2"),
@@ -38,6 +44,18 @@ class QueryStringValidationSpec extends PlaySpec with QueryStringValidation {
       )
       val result = validateQueryParameters(queryString)
       result mustBe Right(ValidCDSQueryParameters)
+    }
+
+    "confirm that the query parameters are for non-CDS" in {
+      val queryString: Map[String, Seq[String]] = Map(
+        "taxIdentifiers" -> Seq("3"),
+        "taxIdentifiers" -> Seq("2"),
+        "taxIdentifiers" -> Seq("4"),
+        "regimes"        -> Seq("5"),
+        "regimes"        -> Seq("1")
+      )
+      val result = validateQueryParameters(queryString)
+      result mustBe Right(ValidNonCDSQueryParameters)
     }
 
     "return an invalid result when unknown parameters are present in the query string" in {
