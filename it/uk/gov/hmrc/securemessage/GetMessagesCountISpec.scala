@@ -31,7 +31,7 @@ class GetMessagesCountISpec extends ISpec {
     "return a JSON body of count of one unread message when no filters are provided by leveraging auth enrolments" in new TestClass {
       val response =
         wsClient
-          .url(resource("/secure-messaging/messages/count"))
+          .url(resource(s"/secure-messaging/messages/count?enrolment=HMRC-CUS-ORG%7EEoriNumber%7E$VALID_EORI"))
           .withHttpHeaders(buildEoriToken(VALID_EORI))
           .get()
           .futureValue
@@ -53,7 +53,7 @@ class GetMessagesCountISpec extends ISpec {
 
       val response =
         wsClient
-          .url(resource("/secure-messaging/messages/count"))
+          .url(resource(s"/secure-messaging/messages/count?enrolment=HMRC-CUS-ORG%7EEoriNumber%7E$VALID_EORI"))
           .withHttpHeaders(buildEoriToken(VALID_EORI))
           .get()
           .futureValue

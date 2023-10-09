@@ -109,7 +109,7 @@ class AddMessageToConversationISpec extends ISpec {
         .put(new File("./it/resources/cdcm/create-conversation-minimal.json")))
     val messageId: String =
       wsClient
-        .url(resource("/secure-messaging/messages"))
+        .url(resource(s"/secure-messaging/messages?enrolment=HMRC-CUS-ORG%7EEoriNumber%7E$eori"))
         .withHttpHeaders(buildEoriToken(eori))
         .get()
         .futureValue
