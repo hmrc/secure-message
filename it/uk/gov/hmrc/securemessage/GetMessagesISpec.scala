@@ -28,7 +28,7 @@ class GetMessagesISpec extends ISpec {
     "return a JSON body of conversation metadata when no filters are provided by leveraging auth enrolments" in new TestClass {
       val response =
         wsClient
-          .url(resource("/secure-messaging/messages"))
+          .url(resource(s"/secure-messaging/messages?enrolment=HMRC-CUS-ORG%7EEoriNumber%7E$VALID_EORI"))
           .withHttpHeaders(buildEoriToken(VALID_EORI))
           .get()
           .futureValue
