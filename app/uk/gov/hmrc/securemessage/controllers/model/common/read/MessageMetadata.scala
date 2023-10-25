@@ -43,7 +43,8 @@ final case class MessageMetadata(
   replyTo: Option[String] = None,
   sentInError: Option[Boolean] = None,
   messageDesc: Option[String] = None,
-  counter: Option[Int] = None
+  counter: Option[Int] = None,
+  language: Option[String] = None
 )
 
 object MessageMetadata extends ApiFormats with ImplicitClassesExtensions {
@@ -95,7 +96,8 @@ object MessageMetadata extends ApiFormats with ImplicitClassesExtensions {
       issueDate = secureMessage.issueDate,
       senderName = Some("HMRC"),
       unreadMessages = secureMessage.readTime.isEmpty,
-      count = 1
+      count = 1,
+      language = content.map(_.lang.entryName)
     )
   }
 
@@ -106,7 +108,7 @@ object MessageMetadata extends ApiFormats with ImplicitClassesExtensions {
       case _                => throw new IllegalArgumentException("Unsupported Message")
     }
 
-  private def mapForLetter(letter: Letter) = {
+  private def mapForLetter(letter: Letter): MessageMetadata = {
     val messageType = MessageType.Letter
     val al = ApiLetter.fromCore(letter)
     new MessageMetadata(
@@ -141,7 +143,8 @@ object MessageMetadata extends ApiFormats with ImplicitClassesExtensions {
       validFrom = Some(secureMessage.validFrom),
       readTime = secureMessage.readTime,
       replyTo = secureMessage.details.flatMap(_.replyTo),
-      sentInError = Some(false)
+      sentInError = Some(false),
+      language = content.map(_.lang.entryName)
     )
   }
 

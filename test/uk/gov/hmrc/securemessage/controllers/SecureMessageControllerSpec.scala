@@ -404,19 +404,24 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       status(response) mustBe OK
       contentAsJson(response).as[List[MessageMetadata]] mustBe messagesMetadata
     }
-    "return metadata for conversations when no letters" in new GetMessagesTestCase(storedLetters = List()) {
+    "return metadata for conversations when no letters" in new GetMessagesTestCase(
+      storedLetters = List(),
+      storedSecureMessages = List()) {
       val response: Future[Result] = controller.getMessages(None, Some(List(testEnrolment)), None)(fakeRequest)
       status(response) mustBe OK
       contentAsJson(response).as[List[MessageMetadata]] mustBe conversationsMetadata
     }
-    "return metadata for letters when no conversations" in new GetMessagesTestCase(storedConversations = List()) {
+    "return metadata for letters when no conversations" in new GetMessagesTestCase(
+      storedConversations = List(),
+      storedSecureMessages = List()) {
       val response: Future[Result] = controller.getMessages(None, Some(List(testEnrolment)), None, None)(fakeRequest)
       status(response) mustBe OK
       contentAsJson(response).as[List[MessageMetadata]] mustBe lettersMetadata
     }
     "return empty list when no conversations and no letters" in new GetMessagesTestCase(
       storedConversations = List(),
-      storedLetters = List()) {
+      storedLetters = List(),
+      storedSecureMessages = List()) {
       val response: Future[Result] = controller.getMessages(None, Some(List(testEnrolment)), None)(fakeRequest)
       status(response) mustBe OK
       contentAsJson(response).as[List[MessageMetadata]] mustBe empty
@@ -558,10 +563,11 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
           any[Messages]))
       .thenReturn(Future.successful(conversationsMetadata))
   }
-
+  import uk.gov.hmrc.securemessage.models.v4.SecureMessageMongoFormat._
   class GetMessagesTestCase(
     storedConversations: List[JsValue] = List(Resources.readJson("model/core/full-db-conversation.json")),
     storedLetters: List[JsValue] = List(Resources.readJson("model/core/full-db-letter.json")),
+    storedSecureMessages: List[JsValue] = List(Resources.readJson("model/core/v4/full-db-secure-message.json")),
     authEnrolments: Set[CustomerEnrolment] = Set(testEnrolment),
     customerEnrolments: Set[CustomerEnrolment] = Set(testEnrolment),
     filterTags: Option[List[FilterTag]] = None,
@@ -571,10 +577,13 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     val conversationsMetadata: List[MessageMetadata] = List(
       Resources.readJson("model/core/full-db-conversation-metadata.json").as[MessageMetadata])
     val letters: List[Letter] = storedLetters.map(_.as[Letter])
+    val secureMessages: List[SecureMessage] = storedSecureMessages.map(_.as[SecureMessage])
     val lettersMetadata: List[MessageMetadata] = List(
       Resources.readJson("model/core/full-db-letter-metadata.json").as[MessageMetadata])
-    val messages: List[Message] = conversations ++ letters
-    val messagesMetadata: List[MessageMetadata] = conversationsMetadata ++ lettersMetadata
+    val secureMessageMetadata: List[MessageMetadata] = List(
+      Resources.readJson("model/core/v4/secure-message-metadata.json").as[MessageMetadata])
+    val messages: List[Message] = conversations ++ letters ++ secureMessages
+    val messagesMetadata: List[MessageMetadata] = conversationsMetadata ++ lettersMetadata ++ secureMessageMetadata
     when(
       mockSecureMessageService
         .getMessages(

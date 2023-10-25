@@ -1,0 +1,79 @@
+{
+  "_id": {
+    "$oid": "609a5bd50100006c1800272d"
+  },
+  "externalRef": {
+    "id": "abcd121324432644243502",
+    "source": "gmc"
+  },
+  "recipient": {
+    "regime": "cds",
+    "identifier": {
+      "name": "HMRC-CUS-ORG",
+      "value": "GB1234567890"
+    }
+  },
+  "messageType": "mailout-batch",
+  "validFrom": {
+    "$date": {
+      "$numberLong": "1620728789509"
+    }
+  },
+  "content": [
+    {
+      "lang": "en",
+      "subject": "Reminder to file a Self Assessment return-P800 Test01",
+      "body": "Message content - 4254101384174917141"
+    },
+    {
+      "lang": "cy",
+      "subject": "Nodyn atgoffa i ffeilio ffurflen Hunanasesiad - ffeilio 01",
+      "body": "Cynnwys - 4254101384174917141"
+    }
+  ],
+  "alertDetails": {
+    "templateId": "newMessageAlert_P800",
+    "recipientName": {
+      "line1": "Line1",
+      "line2": "Line2",
+      "line3": "Line3"
+    },
+    "data": {
+      "date": "Some(2020-05-04)",
+      "key1": "value 1",
+      "key2": "value2",
+      "email": "anjali.nair+234@digital.hmrc.gov.uk"
+    }
+  },
+  "alertQueue": "DEFAULT",
+  "details": {
+    "formId": "P800 2022",
+    "sourceData": "VAoxMDI2MTIyMDAxCjAwMTAwMDAxMDAwMTAwMDBNUiBUIFAgVEVTVCBDQVNFIDE3ODAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAowMDEyMDAwMTAwMDEwMDAwQVNQSVJFICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKMDAxMjAwMDEwMDAyMDAwME1MRzEwIE1BVEhFU09OIEhPVVNFICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCjAwMTIwMDAxMDAwMzAwMDBHUkFOR0UgQ0VOVFJBTCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAowMDEyMDAwMTAwMDQwMDAwVEVMRk9SRCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKMDAxMjAwMDEwMDA1MDAwMFRGMyA0RVIgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCjAwNDIwMDAxMDAwMTAwMDBUU08gVEVMRk9SRCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAowMDQyMDAwMTAwMDIwMDAwTUFUSEVTT04gSE9VU0UgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKMDA0MjAwMDEwMDAzMDAwMFRFTEZPUkQgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCjAwNDMwMDAxMDAwMTAwMDAwMTk1MiAyOTQ0NjAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAowMTAyMDAwMTAwMDAwMDAwMDYgSkFOVUFSWSAyMDIyICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAowMTA1MDAwMTAwMDAwMDAwNTY3NTYgNzU2NzggICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKMDEwODAwMDEwMDAzMDAwMDc1NC8wMCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCjk5OTkKCg==",
+    "batchId": "1234567",
+    "issueDate": "2017-02-13"
+  },
+  "emailAddress": "anjali.nair+234@digital.hmrc.gov.uk",
+  "hash": "jy0LSq+YN7zFQ6MbSArOj7PwKcHIi3al312MC8/2Has=",
+  "status": "succeeded",
+  "lastUpdated": {
+    "$date": {
+      "$numberLong": "1620728789509"
+    }
+  },
+  "alerts": {
+    "emailAddress": "anjali.nair+234@digital.hmrc.gov.uk",
+    "alertTime": {
+      "$date": {
+        "$numberLong": "1620728789509"
+      }
+    },
+    "success": true
+  },
+  "readTime": {
+    "$date": {
+      "$numberLong": "1620728789509"
+    }
+  }
+}
+
+
