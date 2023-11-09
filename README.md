@@ -288,8 +288,8 @@ Example response for message that is unread:
   },
   "validFrom": "2016-08-22",
   "markAsReadUrl": {
-    "service": "message",
-    "url": "/messages/57bac7e90b0000490000b7cf/read-time"
+    "service": "secure-message",
+    "url": "/secure-messaging/messages/57bac7e90b0000490000b7cf/read-time"
   },
   "renderUrl": {
     "service": "sa-message-renderer",
