@@ -69,17 +69,19 @@ object MessageResourceResponse extends RestFormats {
   def readTimeUrl(msg: Message, appName: String, uri: String): ServiceUrl =
     ServiceUrl(appName, s"$uri/${msg._id}/read-time ")
 
-  def from(letter: Letter): MessageResourceResponse =
+  def from(letter: Letter): MessageResourceResponse = {
+    val id = letter._id.toString
     MessageResourceResponse(
-      letter._id.toString,
+      id,
       letter.subject,
       letter.body,
       letter.validFrom,
       letter.readTime.toRight(readTimeUrl(letter, "secure-message", "/secure-messaging/messages")),
       letter.contentParameters,
       letter.rescindment.isDefined,
-      ServiceUrl.fromRenderUrl(letter.renderUrl)
+      ServiceUrl.fromRenderUrl(RenderUrl("secure-message", s"/secure-messaging/messages/$id/content"))
     )
+  }
 
   def from(secureMessage: SecureMessage)(implicit language: Language): MessageResourceResponse = {
     val content = MessageMetadata.contentForLanguage(language, secureMessage.content)
