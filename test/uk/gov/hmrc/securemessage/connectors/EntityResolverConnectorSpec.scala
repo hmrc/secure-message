@@ -25,7 +25,7 @@ import org.scalatestplus.play.PlaySpec
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{ JsObject, JsString }
-import uk.gov.hmrc.domain.SaUtr
+import uk.gov.hmrc.domain.{ HmrcMtdVat, SaUtr }
 import uk.gov.hmrc.http.{ HeaderCarrier, HttpClient, HttpResponse }
 import uk.gov.hmrc.mongo.metrix.MetricOrchestrator
 import uk.gov.hmrc.securemessage.models.TaxId
@@ -65,6 +65,11 @@ class EntityResolverConnectorSpec
       connector
         .getTaxId(MessageFixtures.createTaxEntity(SaUtr("someUtr")))
         .futureValue mustBe Some(TaxId("entityId", Some("1234567890"), Some("SJ12345678A")))
+    }
+    "return None when regime is not in list of allowed regimes to make this call eg: vat" in {
+      connector
+        .getTaxId(MessageFixtures.createTaxEntity(HmrcMtdVat("123456789")))
+        .futureValue mustBe None
     }
   }
 
