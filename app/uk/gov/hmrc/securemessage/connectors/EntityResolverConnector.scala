@@ -20,7 +20,7 @@ import play.api.{ Configuration, Logging }
 import play.api.libs.json.Json
 import play.mvc.Http.Status
 import uk.gov.hmrc.http.HttpClient
-import uk.gov.hmrc.common.message.model.TaxEntity
+import uk.gov.hmrc.common.message.model.{ Regime, TaxEntity }
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.securemessage.models.TaxId
 
@@ -78,13 +78,20 @@ class EntityResolverConnector @Inject()(config: Configuration, httpClient: HttpC
         }
       }
 
-  def getTaxId(recipient: TaxEntity): Future[Option[TaxId]] =
-    httpClient.doGet(url(s"/entity-resolver/${recipient.regime}/${recipient.identifier.value}")).map { response =>
-      response.status match {
-        case Status.OK => response.json.asOpt[TaxId]
-        case _         => None
-      }
-
+  def getTaxId(recipient: TaxEntity): Future[Option[TaxId]] = {
+    val allowedRegimes = Set(Regime.itsa, Regime.paye, Regime.sa)
+    if (allowedRegimes.contains(recipient.regime)) {
+      httpClient
+        .doGet(url(s"/entity-resolver/${recipient.regime}/${recipient.identifier.value}"))
+        .map(response => {
+          response.status match {
+            case Status.OK => response.json.asOpt[TaxId]
+            case _         => None
+          }
+        })
+    } else {
+      Future.successful(None)
     }
+  }
 
 }
