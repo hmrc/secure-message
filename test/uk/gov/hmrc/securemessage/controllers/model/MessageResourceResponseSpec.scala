@@ -28,11 +28,11 @@ class MessageResourceResponseSpec extends PlaySpec {
       val letterFromDb = Resources.readJson("model/core/full-db-letter.json").as[Letter]
       MessageResourceResponse.from(letterFromDb).renderUrl.service mustBe ("secure-message")
     }
-    "should update renderUrl service name for 'two-way-message'" in {
+    "should not update renderUrl service name for 'two-way-message'" in {
       val letterFromDb = Resources.readJson("model/core/full-db-letter-two-way-message.json").as[Letter]
       MessageResourceResponse.from(letterFromDb).renderUrl.service mustBe ("two-way-message")
     }
-    "should update renderUrl service name as 'sa-message-renderer' " in {
+    "should not update renderUrl service name for 'sa-message-renderer' " in {
       val letterFromDb = Resources.readJson("model/core/full-db-letter-sa-message-renderer.json").as[Letter]
       MessageResourceResponse.from(letterFromDb).renderUrl.service mustBe ("sa-message-renderer")
     }
