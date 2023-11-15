@@ -1,0 +1,57 @@
+{
+  "_id": {
+    "$oid": "609a5bd50100006c1800272d"
+  },
+  "subject": "Test have subjects11",
+  "validFrom": "2021-04-26",
+  "hash": "LfK755SXhY2rlc9kL50ohJZ2dvRzZGjU74kjcdJMAcY=",
+  "alertQueue": "DEFAULT",
+  "alertFrom": "2021-04-26",
+  "status": "succeeded",
+  "content": "<h2>Test content</h2>",
+  "statutory": false,
+  "lastUpdated" : {
+    "$date": {
+      "$numberLong": "1620728789509"
+    }
+  },
+  "recipient": {
+    "regime": "cds",
+    "identifier": {
+      "name": "HMRC-CUS-ORG",
+      "value": "GB1234567890"
+    },
+    "email": "test@test.com"
+  },
+  "renderUrl": {
+    "service": "two-way-message",
+    "url": "/messages/6086dc1f4700009fed2f5745/content"
+  },
+  "externalRef": {
+    "id": "1234567891234567892",
+    "source": "mdtp"
+  },
+  "alertDetails": {
+    "templateId": "cds_ddi_setup_dcs_alert",
+    "recipientName": {
+      "title": "Dr",
+      "forename": "Bruce",
+      "secondForename": "Hulk",
+      "surname": "Banner",
+      "honours": "Green",
+      "line1": "Line1"
+    }
+  },
+  "alerts": {
+    "emailAddress": "test@test.com",
+    "success": true
+  },
+  "readTime": {
+    "$date": {
+      "$numberLong": "1620728789509"
+    }
+  },
+  "tags": {
+    "notificationType": "Direct Debit"
+  }
+}
