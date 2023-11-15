@@ -70,7 +70,11 @@ object MessageResourceResponse extends RestFormats {
     ServiceUrl(appName, s"$uri/${msg._id}/read-time ")
 
   def from(letter: Letter): MessageResourceResponse = {
-    val id = letter._id.toString
+    val id: String = letter._id.toString
+    val renderUrl: RenderUrl = letter.renderUrl.service match {
+      case "message" => RenderUrl("secure-message", s"/secure-messaging/messages/$id/content")
+      case _         => letter.renderUrl
+    }
     MessageResourceResponse(
       id,
       letter.subject,
@@ -79,7 +83,7 @@ object MessageResourceResponse extends RestFormats {
       letter.readTime.toRight(readTimeUrl(letter, "secure-message", "/secure-messaging/messages")),
       letter.contentParameters,
       letter.rescindment.isDefined,
-      ServiceUrl.fromRenderUrl(RenderUrl("secure-message", s"/secure-messaging/messages/$id/content"))
+      ServiceUrl.fromRenderUrl(renderUrl)
     )
   }
 
