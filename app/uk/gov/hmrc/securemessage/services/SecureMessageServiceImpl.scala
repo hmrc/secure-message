@@ -31,7 +31,7 @@ import uk.gov.hmrc.domain.TaxIds.TaxIdWithName
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.securemessage._
-import uk.gov.hmrc.securemessage.connectors.{ ChannelPreferencesConnector, EISConnector, EmailConnector }
+import uk.gov.hmrc.securemessage.connectors.{ ChannelPreferencesConnector, EISConnector, EmailConnector, MessageConnector }
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.{ ApiConversation, ConversationMetadata }
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage
 import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.ApiLetter
@@ -59,6 +59,7 @@ class SecureMessageServiceImpl @Inject()(
   messageRepository: MessageRepository,
   secureMessageUtil: SecureMessageUtil,
   emailConnector: EmailConnector,
+  messageConnector: MessageConnector,
   channelPrefConnector: ChannelPreferencesConnector,
   eisConnector: EISConnector,
   override val auditConnector: AuditConnector)
@@ -347,7 +348,10 @@ class SecureMessageServiceImpl @Inject()(
       msg <- secureMessageUtil.findById(id)
       result <- msg match {
                  case Some(m) => Future.successful(Some(formatMessageContent(m)))
-                 case None    => Future.successful(None)
+                 case None =>
+                   messageConnector.getContent(id.toString) map { r =>
+                     Some(r.body)
+                   }
                }
     } yield result
 
@@ -355,6 +359,9 @@ class SecureMessageServiceImpl @Inject()(
     id: ObjectId
   )(implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] =
     secureMessageUtil.addReadTime(id)
+
+  def checkAndSetV3MessagesReadTime(id: ObjectId)(implicit ec: ExecutionContext): Future[Result] =
+    messageConnector.setReadtime(id.toString)
 
   private def formatMessageContent(message: SecureMessage)(implicit messages: Messages) =
     if (messages.lang.language == "cy") {
