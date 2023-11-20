@@ -327,7 +327,7 @@ class SecureMessageController @Inject()(
             auditUpdatedMessageFor(message, "Message is Read")
             Future.successful(Ok)
         }
-      case None => Future.successful(NotFound)
+      case None => secureMessageService.checkAndSetV3MessagesReadTime(id)
     }
   }
 }

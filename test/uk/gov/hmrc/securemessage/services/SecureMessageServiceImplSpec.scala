@@ -37,7 +37,7 @@ import uk.gov.hmrc.common.message.model.MessagesCount
 import uk.gov.hmrc.common.message.emailaddress.EmailAddress
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import uk.gov.hmrc.securemessage.connectors.{ ChannelPreferencesConnector, EISConnector, EmailConnector }
+import uk.gov.hmrc.securemessage.connectors.{ ChannelPreferencesConnector, EISConnector, EmailConnector, MessageConnector }
 import uk.gov.hmrc.securemessage.controllers.SecureMessageUtil
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.ConversationMetadata
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage
@@ -580,6 +580,7 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
         mockMessageRepository,
         mockSecureMessageUtil,
         mockEmailConnector,
+        mockMessageConnector,
         mockChannelPreferencesConnector,
         mockEisConnector,
         mockAuditConnector
@@ -676,6 +677,7 @@ trait TestHelpers extends MockitoSugar with UnitTest {
   val identifierWithNoEnrolment: Identifier = Identifier(identifierName, identifierValue90, Some(identifierEnrolment))
   val participant: Participant = Participant(1, ParticipantType.Customer, identifier, None, None, None, None)
   val mockEisConnector: EISConnector = mock[EISConnector]
+  val mockMessageConnector: MessageConnector = mock[MessageConnector]
   val mockAuditConnector: AuditConnector = mock[AuditConnector]
   val mockConversationRepository: ConversationRepository = mock[ConversationRepository]
   val mockMessageRepository: MessageRepository = mock[MessageRepository]
@@ -693,6 +695,7 @@ trait TestHelpers extends MockitoSugar with UnitTest {
       mockMessageRepository,
       mockSecureMessageUtil,
       mockEmailConnector,
+      mockMessageConnector,
       mockChannelPreferencesConnector,
       mockEisConnector,
       mockAuditConnector
