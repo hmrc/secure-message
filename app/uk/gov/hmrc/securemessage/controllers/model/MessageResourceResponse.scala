@@ -80,7 +80,7 @@ object MessageResourceResponse extends RestFormats {
       letter.subject,
       letter.body,
       letter.validFrom,
-      letter.readTime.toRight(readTimeUrl(letter, "secure-message", "/secure-messaging/messages")),
+      letter.readTime.toRight(readTimeUrl(letter, "message", "/messages")),
       letter.contentParameters,
       letter.rescindment.isDefined,
       ServiceUrl.fromRenderUrl(renderUrl)
