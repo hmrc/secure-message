@@ -343,7 +343,7 @@ class SecureMessageServiceImpl @Inject()(
 
   def getContentBy(
     id: ObjectId
-  )(implicit ec: ExecutionContext, messages: Messages): Future[Option[String]] =
+  )(implicit hc: HeaderCarrier, ec: ExecutionContext, messages: Messages): Future[Option[String]] =
     for {
       msg <- secureMessageUtil.findById(id)
       result <- msg match {
@@ -360,7 +360,7 @@ class SecureMessageServiceImpl @Inject()(
   )(implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] =
     secureMessageUtil.addReadTime(id)
 
-  def checkAndSetV3MessagesReadTime(id: ObjectId)(implicit ec: ExecutionContext): Future[Result] =
+  def checkAndSetV3MessagesReadTime(id: ObjectId)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Result] =
     messageConnector.setReadtime(id.toString)
 
   private def formatMessageContent(message: SecureMessage)(implicit messages: Messages) =
