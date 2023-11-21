@@ -674,7 +674,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     val fakeRequest = FakeRequest(GET, routes.SecureMessageController.getContentBy(id).url)
     when(
       mockSecureMessageService
-        .getContentBy(any[ObjectId])(any[ExecutionContext], any[Messages]))
+        .getContentBy(any[ObjectId])(any[HeaderCarrier], any[ExecutionContext], any[Messages]))
       .thenReturn(Future.successful(Some("Message-Content")))
   }
 }
