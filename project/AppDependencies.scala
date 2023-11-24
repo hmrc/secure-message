@@ -42,4 +42,12 @@ object AppDependencies {
     "com.vladsch.flexmark"   %  "flexmark-all"             % "0.36.8"         % "test, it",
     "org.pegdown"            %  "pegdown"                  % "1.6.0"          % "test, it"
   )
+
+  val jettyVersion = "11.0.15"
+
+  val overrides = Seq(
+    "org.eclipse.jetty" % "jetty-http" % jettyVersion,
+    "org.eclipse.jetty" % "jetty-server" % jettyVersion
+  )
+
 }
