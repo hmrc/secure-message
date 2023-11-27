@@ -17,19 +17,19 @@
 package uk.gov.hmrc.securemessage.connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import org.scalatest.concurrent.{ IntegrationPatience, ScalaFutures }
+import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
-import play.api.http.{ HeaderNames, Status }
+import play.api.http.{HeaderNames, Status}
 import play.api.inject._
 import play.api.inject.guice.GuiceApplicationBuilder
-import uk.gov.hmrc.common.message.model.TaxEntity.{ HmceVatdecOrg, HmrcCusOrg, HmrcPodsOrg, HmrcPodsPpOrg, HmrcPptOrg }
+import uk.gov.hmrc.common.message.model.TaxEntity.{HmceVatdecOrg, HmrcCusOrg, HmrcIossOrg, HmrcPodsOrg, HmrcPodsPpOrg, HmrcPptOrg}
 import uk.gov.hmrc.domain._
-import uk.gov.hmrc.http.{ Authorization, HeaderCarrier, UpstreamErrorResponse }
+import uk.gov.hmrc.http.{Authorization, HeaderCarrier, UpstreamErrorResponse}
 import uk.gov.hmrc.mongo.metrix.MetricOrchestrator
-import uk.gov.hmrc.securemessage.services.utils.{ MetricOrchestratorStub, WithWireMock }
+import uk.gov.hmrc.securemessage.services.utils.{MetricOrchestratorStub, WithWireMock}
 
 class AuthIdentifiersConnectorSpec
     extends PlaySpec with GuiceOneAppPerSuite with ScalaFutures with WithWireMock with MockitoSugar
@@ -620,6 +620,41 @@ class AuthIdentifiersConnectorSpec
 
       authConnector.currentEffectiveTaxIdentifiers.futureValue must be(
         Set(HmrcPodsPpOrg("example HMRC-PODSPP-ORG"))
+      )
+    }
+
+    "get all val tax ids for only HMRC-IOSS-ORG enrolment " in new TestCase {
+
+      val responseBody = """
+                           |{
+                           |  "allEnrolments": [
+                           |    {
+                           |      "key": "HMRC-IOSS-ORG",
+                           |      "identifiers": [
+                           |        {
+                           |          "key": "IOSSNumber",
+                           |          "value": "example HMRC-IOSS-ORG"
+                           |        }
+                           |      ],
+                           |      "state": "Activated",
+                           |      "confidenceLevel": 200
+                           |    }
+                           |  ]
+                           |}
+                         """.stripMargin
+
+      givenThat(
+        post(urlEqualTo("/auth/authorise"))
+          .withHeader(HeaderNames.AUTHORIZATION, equalTo(authToken))
+          .willReturn(
+            aResponse()
+              .withStatus(Status.OK)
+              .withBody(responseBody)
+          )
+      )
+
+      authConnector.currentEffectiveTaxIdentifiers.futureValue must be(
+        Set(HmrcIossOrg("example HMRC-IOSS-ORG"))
       )
     }
 
