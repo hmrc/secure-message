@@ -20,7 +20,7 @@ import uk.gov.hmrc.auth.core
 import uk.gov.hmrc.auth.core.AuthProvider.PrivilegedApplication
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.auth.core.{ Nino => _, _ }
-import uk.gov.hmrc.common.message.model.TaxEntity.{ Epaye, HmceVatdecOrg, HmrcCusOrg, HmrcPodsOrg, HmrcPodsPpOrg, HmrcPptOrg }
+import uk.gov.hmrc.common.message.model.TaxEntity.{ Epaye, HmceVatdecOrg, HmrcCusOrg, HmrcIossOrg, HmrcPodsOrg, HmrcPodsPpOrg, HmrcPptOrg }
 import uk.gov.hmrc.domain.TaxIds._
 import uk.gov.hmrc.domain._
 import uk.gov.hmrc.http.HeaderCarrier
@@ -62,6 +62,7 @@ class AuthIdentifiersConnector @Inject()(
       case "HMRC-MTD-IT"     => taxIdValue.map(HmrcMtdItsa.apply)
       case "HMRC-PODS-ORG"   => taxIdValue.map(HmrcPodsOrg.apply)
       case "HMRC-PODSPP-ORG" => taxIdValue.map(HmrcPodsPpOrg.apply)
+      case "HMRC-IOSS-ORG"   => taxIdValue.map(HmrcIossOrg.apply)
       case _                 => None
     }
   }
@@ -92,6 +93,7 @@ class AuthIdentifiersConnector @Inject()(
             case "HMCE-VATDEC-ORG" => Set(taxId, HmrcMtdVat(taxId.value))
             case "HMRC-PODS-ORG"   => Set(taxId, HmrcPodsOrg(taxId.value))
             case "HMRC-PODSPP-ORG" => Set(taxId, HmrcPodsPpOrg(taxId.value))
+            case "HMRC-IOSS-ORG"   => Set(taxId, HmrcIossOrg(taxId.value))
             case "VRN"             => vrnSet(taxId.value)
             case _                 => Set(taxId)
           }
