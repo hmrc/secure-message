@@ -22,7 +22,7 @@ object AppDependencies {
   private val bootstrapVersion = "7.15.0"
 
   val compile = Seq(
-    ehcache,
+    caffeine,
     "uk.gov.hmrc"       %% "bootstrap-backend-play-28" % bootstrapVersion,
     "uk.gov.hmrc"       %% "dc-message-library"        % "0.38.0",
     "org.webjars"       %  "swagger-ui"                % "3.50.0",
