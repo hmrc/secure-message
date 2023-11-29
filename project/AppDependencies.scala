@@ -19,7 +19,7 @@ import sbt._
 
 object AppDependencies {
 
-  private val bootstrapVersion = "8.0.0"
+  private val bootstrapVersion = "7.15.0"
 
   val compile = Seq(
     caffeine,
