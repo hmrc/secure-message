@@ -52,7 +52,6 @@ class EmailAlertService @Inject()(
 ) extends AuditAlerts with Logging {
 
   lazy val baseUrl = servicesConfig.baseUrl("secure-message")
-  lazy val alertUrl = (id: String) => Some(s"$baseUrl${routes.SecureMessageController.sendAlert(id).url}")
 
   implicit val headerCarrier = HeaderCarrier()
 
@@ -147,7 +146,7 @@ class EmailAlertService @Inject()(
         taxIdentifiers(taxId, Map(message.recipient.identifier.name -> message.recipient.identifier.value)),
       auditData = message.auditData,
       eventUrl = None,
-      onSendUrl = alertUrl(message._id.toString),
+      onSendUrl = None,
       alertQueue = message.alertQueue,
       emailSource = None,
       tags = Tags(
