@@ -31,7 +31,7 @@ import uk.gov.hmrc.mongo.workitem.ResultStatus
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.securemessage.connectors.{ EmailConnector, EntityResolverConnector, MobilePushNotificationsConnector }
-import uk.gov.hmrc.securemessage.controllers.routes
+
 import uk.gov.hmrc.securemessage.models.v4.{ MobileNotification, SecureMessage }
 import uk.gov.hmrc.securemessage.models.{ EmailRequest, Tags, TaxId }
 import uk.gov.hmrc.securemessage.repository.SecureMessageRepository
