@@ -24,7 +24,8 @@ object AppDependencies {
   val compile = Seq(
     caffeine,
     "uk.gov.hmrc"       %% "bootstrap-backend-play-28" % bootstrapVersion,
-    "uk.gov.hmrc"       %% "dc-message-library"        % "0.38.0",
+    "uk.gov.hmrc"       %% "dc-message-library"        % "0.39.0",
+    "org.webjars"       %  "swagger-ui"                % "3.50.0",
     "com.beachape"      %% "enumeratum-play"           % "1.5.17",
     "com.typesafe.play" %% "play-json-joda"            % "2.9.4",
     "org.typelevel"     %% "cats-core"                 % "2.9.0",
