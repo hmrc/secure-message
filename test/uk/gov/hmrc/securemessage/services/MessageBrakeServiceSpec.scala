@@ -19,7 +19,6 @@ package uk.gov.hmrc.securemessage.services
 import akka.Done
 import com.google.inject.AbstractModule
 import net.codingwell.scalaguice.ScalaModule
-import net.sf.ehcache.Element
 import org.mockito.ArgumentMatchers.{ eq => eqTo }
 import org.mockito.Mockito._
 import org.scalatest.concurrent.{ IntegrationPatience, ScalaFutures }
@@ -212,7 +211,7 @@ class MessageBrakeServiceSpec
 
   class InMemoryCache() extends AsyncCacheApi {
 
-    val cache = scala.collection.mutable.Map[String, Element]()
+    val cache = scala.collection.mutable.Map[String, Any]()
 
     def remove(key: String): Future[Done] = Future {
       cache -= key
@@ -226,20 +225,12 @@ class MessageBrakeServiceSpec
       }
 
     def set(key: String, value: Any, expiration: Duration): Future[Done] = Future {
-      val element = new Element(key, value)
-
-      if (expiration.isFinite) {
-        element.setTimeToLive(expiration.toSeconds.toInt)
-      } else {
-        element.setEternal(true)
-      }
-
-      cache.put(key, element)
+      cache.put(key, value)
       Done
     }
 
     def get[T: ClassTag](key: String): Future[Option[T]] = Future {
-      cache.get(key).map(_.getObjectValue).asInstanceOf[Option[T]]
+      cache.get(key).asInstanceOf[Option[T]]
     }
 
     def removeAll(): Future[Done] = Future {
