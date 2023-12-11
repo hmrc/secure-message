@@ -25,19 +25,22 @@ import org.joda.time.format.DateTimeFormat
 import org.mongodb.scala.bson.ObjectId
 import play.api.i18n.Messages
 import play.api.mvc.{ AnyContent, Request, Result }
-import uk.gov.hmrc.auth.core.Enrolments
+import uk.gov.hmrc.auth.core.{ Enrolment, Enrolments }
 import uk.gov.hmrc.common.message.model.MessagesCount
 import uk.gov.hmrc.domain.TaxIds.TaxIdWithName
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.securemessage._
 import uk.gov.hmrc.securemessage.connectors.{ ChannelPreferencesConnector, EISConnector, EmailConnector, MessageConnector }
+import uk.gov.hmrc.securemessage.controllers.model.MessageType
+import uk.gov.hmrc.securemessage.controllers.model.MessageType.Letter
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.{ ApiConversation, ConversationMetadata }
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage
 import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.ApiLetter
 import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
 import uk.gov.hmrc.securemessage.controllers.{ Auditing, SecureMessageUtil }
+import uk.gov.hmrc.securemessage.handlers.{ MessageBroker, MessageReadRequest }
 import uk.gov.hmrc.securemessage.models._
 import uk.gov.hmrc.securemessage.models.core.Language.{ English, Welsh }
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.Customer.eqCustomer
@@ -62,6 +65,7 @@ class SecureMessageServiceImpl @Inject()(
   messageConnector: MessageConnector,
   channelPrefConnector: ChannelPreferencesConnector,
   eisConnector: EISConnector,
+  messageBroker: MessageBroker,
   override val auditConnector: AuditConnector)
     extends SecureMessageService with Auditing with ImplicitClassesExtensions with OrderingDefinitions {
 
@@ -348,17 +352,31 @@ class SecureMessageServiceImpl @Inject()(
       msg <- secureMessageUtil.findById(id)
       result <- msg match {
                  case Some(m) => Future.successful(Some(formatMessageContent(m)))
-                 case None =>
-                   messageConnector.getContent(id.toString) map { r =>
-                     Some(r.body)
-                   }
+                 case None    => getContentForv3Message(id)
                }
     } yield result
 
-  def setReadTime(
-    id: ObjectId
-  )(implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] =
-    secureMessageUtil.addReadTime(id)
+  def getContentForv3Message(
+    id: ObjectId)(implicit hc: HeaderCarrier, ec: ExecutionContext, messages: Messages): Future[Option[String]] = {
+    implicit val language: Language = English
+    messageBroker.default.getMessage(
+      MessageReadRequest(MessageType.withName(Letter.entryName), Enrolments(Set.empty[Enrolment]), id.toString)) map {
+      case Left(e) =>
+        logger.warn(s"Failed to retrieve message with id: ${id.toString}. Error: ${e.message}")
+        None
+      case Right(letter: ApiLetter) => Some(letter.content)
+      case _ =>
+        logger.warn(s"Failed to retrieve the the content for the message id $id")
+        None
+    }
+  }
+
+  def setReadTime(letter: Letter)(implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] =
+    messageRepository.addReadTime(letter._id)
+
+  def setReadTime(secureMessage: SecureMessage)(
+    implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] =
+    secureMessageUtil.addReadTime(secureMessage._id)
 
   def checkAndSetV3MessagesReadTime(id: ObjectId)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Result] =
     messageConnector.setReadtime(id.toString)
