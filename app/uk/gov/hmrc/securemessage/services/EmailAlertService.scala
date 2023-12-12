@@ -31,7 +31,7 @@ import uk.gov.hmrc.mongo.workitem.ResultStatus
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.securemessage.connectors.{ EmailConnector, EntityResolverConnector, MobilePushNotificationsConnector }
-import uk.gov.hmrc.securemessage.controllers.routes
+
 import uk.gov.hmrc.securemessage.models.v4.{ MobileNotification, SecureMessage }
 import uk.gov.hmrc.securemessage.models.{ EmailRequest, Tags, TaxId }
 import uk.gov.hmrc.securemessage.repository.SecureMessageRepository
@@ -52,7 +52,6 @@ class EmailAlertService @Inject()(
 ) extends AuditAlerts with Logging {
 
   lazy val baseUrl = servicesConfig.baseUrl("secure-message")
-  lazy val alertUrl = (id: String) => Some(s"$baseUrl${routes.SecureMessageController.sendAlert(id).url}")
 
   implicit val headerCarrier = HeaderCarrier()
 
@@ -147,7 +146,7 @@ class EmailAlertService @Inject()(
         taxIdentifiers(taxId, Map(message.recipient.identifier.name -> message.recipient.identifier.value)),
       auditData = message.auditData,
       eventUrl = None,
-      onSendUrl = alertUrl(message._id.toString),
+      onSendUrl = None,
       alertQueue = message.alertQueue,
       emailSource = None,
       tags = Tags(
