@@ -62,7 +62,6 @@ class SecureMessageServiceImpl @Inject()(
   messageRepository: MessageRepository,
   secureMessageUtil: SecureMessageUtil,
   emailConnector: EmailConnector,
-  messageConnector: MessageConnector,
   channelPrefConnector: ChannelPreferencesConnector,
   eisConnector: EISConnector,
   override val authIdentifiersConnector: AuthIdentifiersConnector,
@@ -378,9 +377,6 @@ class SecureMessageServiceImpl @Inject()(
   def setReadTime(secureMessage: SecureMessage)(
     implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] =
     secureMessageUtil.addReadTime(secureMessage._id)
-
-  def checkAndSetV3MessagesReadTime(id: ObjectId)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Result] =
-    messageConnector.setReadtime(id.toString)
 
   private def formatMessageContent(message: SecureMessage)(implicit messages: Messages) =
     if (messages.lang.language == "cy") {
