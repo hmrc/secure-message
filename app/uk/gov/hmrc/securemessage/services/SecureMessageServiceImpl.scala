@@ -20,8 +20,8 @@ import cats.data._
 import cats.implicits._
 import com.google.inject.Inject
 import org.apache.commons.codec.binary.Base64
-import org.joda.time.{ DateTime, LocalDate }
 import org.joda.time.format.DateTimeFormat
+import org.joda.time.{ DateTime, LocalDate }
 import org.mongodb.scala.bson.ObjectId
 import play.api.i18n.Messages
 import play.api.mvc.{ AnyContent, Request, Result }
@@ -31,7 +31,7 @@ import uk.gov.hmrc.domain.TaxIds.TaxIdWithName
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.securemessage._
-import uk.gov.hmrc.securemessage.connectors.{ ChannelPreferencesConnector, EISConnector, EmailConnector, MessageConnector }
+import uk.gov.hmrc.securemessage.connectors._
 import uk.gov.hmrc.securemessage.controllers.model.MessageType
 import uk.gov.hmrc.securemessage.controllers.model.MessageType.Letter
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.{ ApiConversation, ConversationMetadata }
@@ -40,7 +40,7 @@ import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.ApiLetter
 import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
 import uk.gov.hmrc.securemessage.controllers.{ Auditing, SecureMessageUtil }
-import uk.gov.hmrc.securemessage.handlers.{ MessageBroker, MessageReadRequest }
+import uk.gov.hmrc.securemessage.handlers.MessageReadRequest
 import uk.gov.hmrc.securemessage.models._
 import uk.gov.hmrc.securemessage.models.core.Language.{ English, Welsh }
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.Customer.eqCustomer
@@ -65,9 +65,10 @@ class SecureMessageServiceImpl @Inject()(
   messageConnector: MessageConnector,
   channelPrefConnector: ChannelPreferencesConnector,
   eisConnector: EISConnector,
-  messageBroker: MessageBroker,
+  override val authIdentifiersConnector: AuthIdentifiersConnector,
   override val auditConnector: AuditConnector)
-    extends SecureMessageService with Auditing with ImplicitClassesExtensions with OrderingDefinitions {
+    extends SecureMessageService with MessageV3Service with Auditing with ImplicitClassesExtensions
+    with OrderingDefinitions {
 
   def createConversation(conversation: Conversation)(
     implicit hc: HeaderCarrier,
@@ -359,7 +360,7 @@ class SecureMessageServiceImpl @Inject()(
   def getContentForv3Message(
     id: ObjectId)(implicit hc: HeaderCarrier, ec: ExecutionContext, messages: Messages): Future[Option[String]] = {
     implicit val language: Language = English
-    messageBroker.default.getMessage(
+    getMessage(
       MessageReadRequest(MessageType.withName(Letter.entryName), Enrolments(Set.empty[Enrolment]), id.toString)) map {
       case Left(e) =>
         logger.warn(s"Failed to retrieve message with id: ${id.toString}. Error: ${e.message}")
