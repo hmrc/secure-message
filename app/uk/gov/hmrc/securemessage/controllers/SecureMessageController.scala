@@ -25,7 +25,6 @@ import play.api.libs.json._
 import play.api.mvc.{ Action, AnyContent, ControllerComponents, Request, Result }
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
-import uk.gov.hmrc.common.message.model.SendAlertResponse
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
@@ -277,33 +276,6 @@ class SecureMessageController @Inject()(
               InternalServerError(Json.obj("reason" -> s"Unable to create the message: ${e.getMessage}"))
           }
       }
-    }
-  }
-
-  def sendAlert(id: String): Action[AnyContent] = Action.async { _ =>
-    val MessageRead, EmailSent, IsGmc, Send = true
-    val MessageNotRead, EmailNotSent, DontSend = false
-
-    val shouldSendEmailNotification = (result: Boolean) => Ok(Json.toJson(SendAlertResponse(result)))
-
-    val extract = (m: SecureMessage) => {
-      (m.readTime.isDefined, m.alerts.fold(false)(_.success), SecureMessageUtil.isGmc(m))
-    }
-
-    secureMessageService.findSecureMessageById(new ObjectId(id)).map {
-      case Some(message) =>
-        val result = extract(message) match {
-          case (_, _, IsGmc)                     => Send
-          case (MessageNotRead, EmailSent, _)    => Send
-          case (MessageRead, EmailNotSent, _)    => Send
-          case (MessageRead, EmailSent, _)       => Send
-          case (MessageNotRead, EmailNotSent, _) => DontSend
-          case (MessageNotRead, _, _)            => Send
-          case (MessageRead, _, _)               => DontSend
-          case _                                 => Send
-        }
-        shouldSendEmailNotification(result)
-      case None => NotFound
     }
   }
 
