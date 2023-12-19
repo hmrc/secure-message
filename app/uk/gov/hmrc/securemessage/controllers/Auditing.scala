@@ -18,6 +18,7 @@ package uk.gov.hmrc.securemessage.controllers
 
 import org.joda.time.format.ISODateTimeFormat
 import org.joda.time.{ DateTime, DateTimeZone }
+import play.api.Logging
 import uk.gov.hmrc.auth.core.Enrolments
 import uk.gov.hmrc.common.message.emailaddress.EmailAddress
 import uk.gov.hmrc.common.message.model.TaxEntity
@@ -30,13 +31,13 @@ import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.ApiLetter
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
 import uk.gov.hmrc.securemessage.controllers.model.{ ApiMessage, ClientName, MessageResourceResponse, MessageType }
 import uk.gov.hmrc.securemessage.controllers.utils.IdCoder
-import uk.gov.hmrc.securemessage.models.core.{ Conversation, Reference }
+import uk.gov.hmrc.securemessage.models.core.{ Conversation, Letter, Message, Reference }
 import uk.gov.hmrc.securemessage.models.v4.SecureMessage
 import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryMessageRequest }
 
 import scala.concurrent.ExecutionContext
 
-trait Auditing {
+trait Auditing extends Logging {
 
   def auditConnector: AuditConnector
 
@@ -278,6 +279,15 @@ trait Auditing {
     auditConnector.sendExplicitAudit(txnStatus, detail)
   }
 
+  def auditUpdatedMessageFor(message: Message, transactionName: String)(
+    implicit hc: HeaderCarrier,
+    ec: ExecutionContext): Unit =
+    message match {
+      case s: SecureMessage => auditUpdatedMessageFor(s, transactionName)
+      case l: Letter        => auditUpdatedMessageFor(l, transactionName)
+      case _                => logger warn s"Invalid message $message"
+    }
+
   def auditUpdatedMessageFor(m: SecureMessage, transactionName: String)(
     implicit hc: HeaderCarrier,
     ec: ExecutionContext): Unit = {
@@ -289,6 +299,18 @@ trait Auditing {
       "messageType" -> m.messageType) ++
       formId ++
       TaxEntity.forAudit(m.recipient)
+    auditConnector.sendExplicitAudit(transactionName, detail)
+  }
+
+  def auditUpdatedMessageFor(l: Letter, transactionName: String)(
+    implicit hc: HeaderCarrier,
+    ec: ExecutionContext): Unit = {
+    val detail = Map("messageId" -> l._id.toString) ++
+      Map("source"               -> l.externalRef.map(_.source).getOrElse("")) ++
+      Map("templateId"           -> l.alertDetails.templateId) ++
+      l.body.map(_.`type`.map("messageType" -> _).toMap).getOrElse(Map.empty) ++
+      l.body.map(_.form.map("formId"        -> _).toMap).getOrElse(Map.empty) ++
+      Map(l.recipient.identifier.name -> l.recipient.identifier.value)
     auditConnector.sendExplicitAudit(transactionName, detail)
   }
 
