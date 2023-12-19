@@ -35,6 +35,8 @@ class MessageBroker @Inject()(cdsMessageRetriever: CDSMessageRetriever, other: N
     case CDS    => cdsMessageRetriever
     case NonCDS => other
   }
+
+  def default: NonCDSMessageRetriever = other
 }
 
 sealed trait RetrieverType
