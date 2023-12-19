@@ -14,81 +14,40 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.securemessage.handlers
+package uk.gov.hmrc.securemessage.services
 
-import org.bson.types.ObjectId
 import org.joda.time.LocalDate
 import org.joda.time.format.DateTimeFormat
+import org.mongodb.scala.bson.ObjectId
 import play.api.i18n.Messages
-import play.api.libs.json.{ JsValue, Json }
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.securemessage.connectors.AuthIdentifiersConnector
-import uk.gov.hmrc.securemessage.controllers.model.{ ApiMessage, MessageResourceResponse, MessagesResponse }
-import uk.gov.hmrc.securemessage.models.core._
+import uk.gov.hmrc.securemessage.controllers.model.{ ApiMessage, MessageResourceResponse }
+import uk.gov.hmrc.securemessage.handlers.MessageReadRequest
+import uk.gov.hmrc.securemessage.models.core.{ Identifier, Language, Letter }
 import uk.gov.hmrc.securemessage.models.v4.SecureMessage
-import uk.gov.hmrc.securemessage.services.SecureMessageServiceImpl
 import uk.gov.hmrc.securemessage.{ MessageNotFound, SecureMessageError, UserNotAuthorised }
 
-import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.xml.XML
 
-class NonCDSMessageRetriever @Inject()(
-  val authIdentifiersConnector: AuthIdentifiersConnector,
-  secureMessageService: SecureMessageServiceImpl)(implicit ec: ExecutionContext)
-    extends MessageRetriever {
-  def fetch(requestWrapper: MessageRequestWrapper, language: Language)(
-    implicit hc: HeaderCarrier,
-    messages: Messages): Future[JsValue] = {
-    implicit val mf: MessageFilter =
-      requestWrapper.messageFilter.copy(taxIdentifiers = requestWrapper.messageFilter.taxIdentifiers.flatMap { taxId =>
-        taxId match {
-          case "HMRC-MTD-VAT" => List(taxId, "vrn")
-          case _              => List(taxId)
-        }
-      })
-
-    for {
-      authTaxIds <- authIdentifiersConnector.currentEffectiveTaxIdentifiers
-      _          <- Future(logger.warn(s"MessagesController: authTaxIds $authTaxIds"))
-      result <- secureMessageService.getMessagesList(authTaxIds).map { items =>
-                 MessagesResponse.fromMessages(items, language).toConversations
-               }
-    } yield Json.toJson(result)
-  }
-
-  def messageCount(
-    requestWrapper: MessageRequestWrapper)(implicit hc: HeaderCarrier, messages: Messages): Future[JsValue] = {
-    implicit val mf: MessageFilter =
-      requestWrapper.messageFilter.copy(taxIdentifiers = requestWrapper.messageFilter.taxIdentifiers.flatMap { taxId =>
-        taxId match {
-          case "HMRC-MTD-VAT" => List(taxId, "vrn")
-          case _              => List(taxId)
-        }
-      })
-
-    for {
-      authTaxIds <- authIdentifiersConnector.currentEffectiveTaxIdentifiers
-      _          <- Future(logger.warn(s"MessagesController: authTaxIds $authTaxIds"))
-      result <- secureMessageService.getMessagesCount(authTaxIds).map { items =>
-                 MessagesResponse.fromMessagesCount(items).toConversations
-               }
-    } yield Json.toJson(result)
-  }
+trait MessageV3Service {
+  val authIdentifiersConnector: AuthIdentifiersConnector
 
   def getMessage(readRequest: MessageReadRequest)(
     implicit hc: HeaderCarrier,
+    ec: ExecutionContext,
     messages: Messages,
     language: Language): Future[Either[SecureMessageError, ApiMessage]] =
     for {
       taxIds <- authIdentifiersConnector.currentEffectiveTaxIdentifiers
       identifiers = taxIds.map(s => Identifier(s.name, s.value, None))
-      letter     <- secureMessageService.getLetter(new ObjectId(readRequest.messageId))
+      letter     <- getLetter(new ObjectId(readRequest.messageId))
       strideUser <- authIdentifiersConnector.isStrideUser
       v4MessageOrLetter <- if (letter.isDefined) {
                             updateMessageContent(letter)
                           } else {
-                            secureMessageService.getSecureMessage(new ObjectId(readRequest.messageId))
+                            getSecureMessage(new ObjectId(readRequest.messageId))
                           }
       result <- v4MessageOrLetter match {
                  case Some(m: Letter) if identifiers.contains(m.recipient.identifier) || strideUser =>
@@ -129,7 +88,7 @@ class NonCDSMessageRetriever @Inject()(
   def getMessagesContentChain(id: ObjectId)(implicit ec: ExecutionContext, messages: Messages): Future[List[String]] = {
 
     def getMessagesContentChain(id: ObjectId, contentList: List[String]): Future[List[String]] =
-      secureMessageService.getLetter(id).flatMap {
+      getLetter(id).flatMap {
         case None => Future.successful(contentList)
         case Some(letter) =>
           letter.body.flatMap(_.replyTo) match {
@@ -178,26 +137,7 @@ class NonCDSMessageRetriever @Inject()(
       }
     date.toString(formatter)
   }
+  def getLetter(id: ObjectId)(implicit ec: ExecutionContext): Future[Option[Letter]]
 
-  def findAndSetReadTime(id: ObjectId)(
-    implicit ec: ExecutionContext,
-    hc: HeaderCarrier): Future[Either[SecureMessageError, Option[Message]]] =
-    for {
-      taxIds <- authIdentifiersConnector.currentEffectiveTaxIdentifiers
-      identifiers = taxIds.map(s => Identifier(s.name, s.value, None))
-      strideUser <- authIdentifiersConnector.isStrideUser
-      letter     <- secureMessageService.getLetter(id)
-      v3orv4     <- if (letter.isDefined) Future.successful(letter) else secureMessageService.getSecureMessage(id)
-      _ <- v3orv4 match {
-            case Some(l: Letter) if identifiers.contains(l.recipient.identifier) =>
-              secureMessageService.setReadTime(l)
-            case Some(m: SecureMessage) if taxIds.contains(m.recipient.identifier) || strideUser =>
-              secureMessageService.setReadTime(m)
-            case Some(_) =>
-              Future.successful(Left(UserNotAuthorised("Unauthorised for the requested identifiers")))
-            case None =>
-              Future.successful(Left(MessageNotFound(s"Message not found for $id")))
-          }
-    } yield Right(v3orv4)
-
+  def getSecureMessage(id: ObjectId)(implicit ec: ExecutionContext): Future[Option[SecureMessage]]
 }
