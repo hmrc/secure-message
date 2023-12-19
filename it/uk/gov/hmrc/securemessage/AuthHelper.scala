@@ -49,7 +49,7 @@ trait AuthHelper extends ScalaFutures {
        |  "credId": "secure-message-002",
        |  "affinityGroup": "Organisation",
        |  "confidenceLevel": 200,
-       |  "credentialStrength": "none",
+       |  "credentialStrength": "strong",
        |  "enrolments": [
        |      {
        |        "key": "HMRC-CUS-ORG",
