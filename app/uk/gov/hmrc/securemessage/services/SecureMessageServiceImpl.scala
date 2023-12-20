@@ -357,19 +357,17 @@ class SecureMessageServiceImpl @Inject()(
     } yield result
 
   def getContentForv3Message(
-    id: ObjectId)(implicit hc: HeaderCarrier, ec: ExecutionContext, messages: Messages): Future[Option[String]] = {
-    implicit val language: Language = English
+    id: ObjectId)(implicit hc: HeaderCarrier, ec: ExecutionContext, messages: Messages): Future[Option[String]] =
     getMessage(
       MessageReadRequest(MessageType.withName(Letter.entryName), Enrolments(Set.empty[Enrolment]), id.toString)) map {
       case Left(e) =>
         logger.warn(s"Failed to retrieve message with id: ${id.toString}. Error: ${e.message}")
         None
-      case Right(letter: ApiLetter) => Some(letter.content)
+      case Right(letter: Letter) => letter.content
       case _ =>
         logger.warn(s"Failed to retrieve the the content for the message id $id")
         None
     }
-  }
 
   def setReadTime(letter: Letter)(implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] =
     messageRepository.addReadTime(letter._id)
