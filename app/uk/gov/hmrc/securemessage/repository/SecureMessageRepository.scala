@@ -62,6 +62,10 @@ class SecureMessageRepository @Inject()(
           IndexOptions().name("unique-messageHash").unique(true)
         ),
         IndexModel(
+          ascending("externalRef.id", "externalRef.source"),
+          IndexOptions().name("unique-externalRef").unique(true).sparse(true).background(true)
+        ),
+        IndexModel(
           ascending("recipient.identifier.value", "recipient.identifier.name"),
           IndexOptions()
             .name("recipient-tax-id")
@@ -69,7 +73,7 @@ class SecureMessageRepository @Inject()(
             .background(true)),
         IndexModel(ascending("status"), IndexOptions().name("status").unique(false))
       ),
-      replaceIndexes = false,
+      replaceIndexes = true,
       extraCodecs = Seq(
         Codecs.playFormatCodec(uk.gov.hmrc.mongo.play.json.formats.MongoJodaFormats.localDateFormat),
         Codecs.playFormatCodec(SecureMessageMongoFormat.localDateFormat),
