@@ -22,10 +22,8 @@ import org.mongodb.scala.bson.ObjectId
 import play.api.i18n.Messages
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.securemessage.connectors.AuthIdentifiersConnector
-import uk.gov.hmrc.securemessage.controllers.model.{ ApiMessage, MessageResourceResponse }
 import uk.gov.hmrc.securemessage.handlers.MessageReadRequest
-import uk.gov.hmrc.securemessage.models.core.{ Identifier, Language, Letter }
-import uk.gov.hmrc.securemessage.models.v4.SecureMessage
+import uk.gov.hmrc.securemessage.models.core.{ Identifier, Letter, Message }
 import uk.gov.hmrc.securemessage.{ MessageNotFound, SecureMessageError, UserNotAuthorised }
 
 import scala.concurrent.{ ExecutionContext, Future }
@@ -37,23 +35,16 @@ trait MessageV3Service {
   def getMessage(readRequest: MessageReadRequest)(
     implicit hc: HeaderCarrier,
     ec: ExecutionContext,
-    messages: Messages,
-    language: Language): Future[Either[SecureMessageError, ApiMessage]] =
+    messages: Messages): Future[Either[SecureMessageError, Message]] =
     for {
       taxIds <- authIdentifiersConnector.currentEffectiveTaxIdentifiers
       identifiers = taxIds.map(s => Identifier(s.name, s.value, None))
       letter     <- getLetter(new ObjectId(readRequest.messageId))
       strideUser <- authIdentifiersConnector.isStrideUser
-      v4MessageOrLetter <- if (letter.isDefined) {
-                            updateMessageContent(letter)
-                          } else {
-                            getSecureMessage(new ObjectId(readRequest.messageId))
-                          }
-      result <- v4MessageOrLetter match {
+      v3Message  <- if (letter.isDefined) updateMessageContent(letter) else Future.successful(None)
+      result <- v3Message match {
                  case Some(m: Letter) if identifiers.contains(m.recipient.identifier) || strideUser =>
-                   Future.successful(Right(MessageResourceResponse.from(m)))
-                 case Some(m: SecureMessage) if taxIds.contains(m.recipient.identifier) || strideUser =>
-                   Future.successful(Right(MessageResourceResponse.from(m)))
+                   Future.successful(Right(m))
                  case Some(_) =>
                    Future.successful(Left(UserNotAuthorised("Unauthorised for the requested identifiers")))
                  case None =>
@@ -138,6 +129,4 @@ trait MessageV3Service {
     date.toString(formatter)
   }
   def getLetter(id: ObjectId)(implicit ec: ExecutionContext): Future[Option[Letter]]
-
-  def getSecureMessage(id: ObjectId)(implicit ec: ExecutionContext): Future[Option[SecureMessage]]
 }
