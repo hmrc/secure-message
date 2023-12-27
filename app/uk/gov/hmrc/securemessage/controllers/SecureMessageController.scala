@@ -297,7 +297,7 @@ class SecureMessageController @Inject()(
           Future.successful(InternalServerError)
         case Right(Some(message)) =>
           logger.debug(s"Secure Message is Read $id")
-          auditUpdatedMessageFor(message, "Message is Read")
+          auditMessageReadStatus(message)
           Future.successful(Ok)
         case Right(None) => Future.successful(InternalServerError(s"failed to set read time for : $id"))
       }
