@@ -24,6 +24,7 @@ import uk.gov.hmrc.common.message.emailaddress.EmailAddress
 import uk.gov.hmrc.common.message.model.TaxEntity
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
+import uk.gov.hmrc.play.audit.model.{ DataEvent, EventTypes }
 import uk.gov.hmrc.securemessage.SecureMessageError
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.ApiConversation
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage
@@ -35,7 +36,7 @@ import uk.gov.hmrc.securemessage.models.core.{ Conversation, Letter, Message, Re
 import uk.gov.hmrc.securemessage.models.v4.SecureMessage
 import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryMessageRequest }
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ ExecutionContext, Future }
 
 trait Auditing extends Logging {
 
@@ -279,40 +280,42 @@ trait Auditing extends Logging {
     auditConnector.sendExplicitAudit(txnStatus, detail)
   }
 
-  def auditUpdatedMessageFor(message: Message, transactionName: String)(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Unit =
-    message match {
-      case s: SecureMessage => auditUpdatedMessageFor(s, transactionName)
-      case l: Letter        => auditUpdatedMessageFor(l, transactionName)
-      case _                => logger warn s"Invalid message $message"
+  def auditMessageReadStatus(message: Message)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] = {
+    val detailsMap: Map[String, String] = message match {
+      case s: SecureMessage => details(s)
+      case l: Letter        => details(l)
+      case _                => Map.empty
     }
+    auditConnector
+      .sendEvent(
+        DataEvent(
+          auditSource = "secure-message",
+          auditType = EventTypes.Succeeded,
+          tags = Map(letterReadSuccessTxnName),
+          detail = detailsMap
+        ))
+      .map { r =>
+        logger.debug(s"AuditEvent is processed for message read success event with the result $r")
+      }
+  }
 
-  def auditUpdatedMessageFor(m: SecureMessage, transactionName: String)(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Unit = {
-    val formId: Map[String, String] = m.details.map("formId" -> _.formId).toMap
-    val detail: Map[String, String] = Map(
+  private def details(l: Letter): Map[String, String] =
+    Map(
+      "messageId"                 -> l._id.toString,
+      "source"                    -> l.externalRef.map(_.source).getOrElse(""),
+      "templateId"                -> l.alertDetails.templateId,
+      "messageType"               -> l.body.map(_.`type`).map(_.toString).getOrElse(""),
+      "formId"                    -> l.body.map(_.form).map(_.toString).getOrElse(""),
+      l.recipient.identifier.name -> l.recipient.identifier.value
+    )
+
+  private def details(m: SecureMessage): Map[String, String] =
+    Map(
       "messageId"   -> m._id.toString,
       "source"      -> m.externalRef.source,
       "templateId"  -> m.alertDetails.templateId,
-      "messageType" -> m.messageType) ++
-      formId ++
-      TaxEntity.forAudit(m.recipient)
-    auditConnector.sendExplicitAudit(transactionName, detail)
-  }
-
-  def auditUpdatedMessageFor(l: Letter, transactionName: String)(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Unit = {
-    val detail = Map("messageId" -> l._id.toString) ++
-      Map("source"               -> l.externalRef.map(_.source).getOrElse("")) ++
-      Map("templateId"           -> l.alertDetails.templateId) ++
-      l.body.map(_.`type`.map("messageType" -> _).toMap).getOrElse(Map.empty) ++
-      l.body.map(_.form.map("formId"        -> _).toMap).getOrElse(Map.empty) ++
-      Map(l.recipient.identifier.name -> l.recipient.identifier.value)
-    auditConnector.sendExplicitAudit(transactionName, detail)
-  }
+      "messageType" -> m.messageType
+    ) ++ m.details.map("formId" -> _.formId).toMap ++ TaxEntity.forAudit(m.recipient)
 
   private def prettyPrintEnrolments(enrolments: Enrolments): String =
     enrolments.enrolments
