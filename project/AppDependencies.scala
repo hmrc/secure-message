@@ -24,7 +24,7 @@ object AppDependencies {
   val compile = Seq(
     caffeine,
     "uk.gov.hmrc"       %% "bootstrap-backend-play-28" % bootstrapVersion,
-    "uk.gov.hmrc"       %% "dc-message-library"        % "0.40.0",
+    "uk.gov.hmrc"       %% "dc-message-library"        % "0.41.0",
     "org.webjars"       %  "swagger-ui"                % "3.50.0",
     "com.beachape"      %% "enumeratum-play"           % "1.5.17",
     "com.typesafe.play" %% "play-json-joda"            % "2.9.4",
@@ -38,7 +38,7 @@ object AppDependencies {
     "uk.gov.hmrc"          %% "bootstrap-test-play-28"  % bootstrapVersion % "test, it",
     "uk.gov.hmrc.mongo"    %% "hmrc-mongo-test-play-28" % "0.74.0"         % "test, it",
     "org.scalatestplus"    %% "mockito-3-4"             % "3.2.10.0"       % "test, it",
-    "uk.gov.hmrc"          %% "dc-message-library"      % "0.32.0"         % "test, it",
+    "uk.gov.hmrc"          %% "dc-message-library"      % "0.41.0"         % "test, it",
     "com.vladsch.flexmark" % "flexmark-all"             % "0.36.8"         % "test, it",
     "org.pegdown"          % "pegdown"                  % "1.6.0"          % "test, it"
   )
