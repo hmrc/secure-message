@@ -218,7 +218,7 @@ trait LogCapturing {
 
   def withCaptureOfLoggingFrom(logger: LogbackLogger)(body: (=> List[ILoggingEvent]) => Any): Any = {
     val appender = new ListAppender[ILoggingEvent]()
-    appender.setContext(logger.getLoggerContext)
+//    appender.setContext(logger.getLoggerContext)
     appender.start()
     logger.addAppender(appender)
     logger.setLevel(Level.ALL)

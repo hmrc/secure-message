@@ -16,13 +16,13 @@
 
 package uk.gov.hmrc.securemessage.models
 
-import org.joda.time.DateTime
-import play.api.libs.json.{ JodaWrites, JsObject, Json, OWrites, Writes }
+import java.time.Instant
+import play.api.libs.json.{ JsObject, Json, OWrites, Writes }
+import uk.gov.hmrc.securemessage.models.core.DateFormats
 
-final case class RequestCommon(originatingSystem: String, receiptDate: DateTime, acknowledgementReference: String)
+final case class RequestCommon(originatingSystem: String, receiptDate: Instant, acknowledgementReference: String)
 object RequestCommon {
-  val dateFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'"
-  implicit val JodaDateWrites: Writes[org.joda.time.DateTime] = JodaWrites.jodaDateWrites(dateFormat)
+  implicit val instantWrites: Writes[Instant] = DateFormats.formatInstantWrites()
   implicit val requestCommonWrites: OWrites[RequestCommon] = Json.writes[RequestCommon]
 }
 
@@ -38,7 +38,7 @@ object QueryMessageRequest {
 
 final case class QueryMessageWrapper(queryMessageRequest: QueryMessageRequest)
 object QueryMessageWrapper {
-  implicit val queryMessageWrapperWrites = new Writes[QueryMessageWrapper] {
+  implicit val queryMessageWrapperWrites: Writes[QueryMessageWrapper] = new Writes[QueryMessageWrapper] {
     def writes(queryMessageWrapper: QueryMessageWrapper): JsObject = Json.obj(
       "querymessageRequest" -> queryMessageWrapper.queryMessageRequest
     )

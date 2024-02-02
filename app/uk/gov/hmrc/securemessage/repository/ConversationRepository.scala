@@ -16,11 +16,10 @@
 
 package uk.gov.hmrc.securemessage.repository
 
-import org.joda.time.DateTime
+import java.time.Instant
 import org.mongodb.scala.MongoWriteException
 import org.mongodb.scala.bson.ObjectId
 import org.mongodb.scala.model._
-import play.api.libs.json.JodaWrites.{ JodaDateTimeWrites => _ }
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.securemessage._
@@ -106,7 +105,7 @@ class ConversationRepository @Inject()(mongo: MongoComponent)(implicit ec: Execu
       }
   }
 
-  def addReadTime(client: String, conversationId: String, participantId: Int, readTime: DateTime)(
+  def addReadTime(client: String, conversationId: String, participantId: Int, readTime: Instant)(
     implicit ec: ExecutionContext): Future[Either[StoreError, Unit]] = {
     val query = Filters.and(
       Filters.equal("client", client),
@@ -115,7 +114,7 @@ class ConversationRepository @Inject()(mongo: MongoComponent)(implicit ec: Execu
     collection
       .updateOne(
         query,
-        Updates.addToSet("participants.$.readTimes", Codecs.toBson(readTime)(Participant.dateFormat)),
+        Updates.addToSet("participants.$.readTimes", Codecs.toBson(readTime)(Participant.instantFormat)),
         UpdateOptions().upsert(true)
       )
       .toFuture()

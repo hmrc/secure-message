@@ -19,7 +19,7 @@ package uk.gov.hmrc.securemessage.testonly.controllers
 import cats.data.NonEmptyList
 import com.google.inject.Inject
 import org.bson.types.ObjectId
-import org.joda.time.DateTime
+import java.time.Instant
 import play.api.Logging
 import play.api.libs.json.{ JsObject, JsValue, Json }
 import play.api.mvc.{ Action, AnyContent, ControllerComponents }
@@ -85,7 +85,7 @@ class TestOnlyController @Inject()(
         ConversationMessage(
           Some(randomId),
           1,
-          DateTime.now,
+          Instant.now,
           "QmxhaCBibGFoIGJsYWg=",
           None
         )

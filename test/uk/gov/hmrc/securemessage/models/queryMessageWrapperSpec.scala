@@ -16,10 +16,12 @@
 
 package uk.gov.hmrc.securemessage.models
 
-import org.joda.time.format.DateTimeFormat
+import java.time.format.DateTimeFormatter
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json.Json
 import uk.gov.hmrc.securemessage.helpers.Resources
+
+import java.time.{ Instant, ZoneOffset }
 
 class queryMessageWrapperSpec extends PlaySpec {
 
@@ -27,8 +29,8 @@ class queryMessageWrapperSpec extends PlaySpec {
 
     "be successful when generating a valid JSON payload" in {
 
-      val dtf = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")
-      val dt = dtf.parseDateTime("2021-04-01T14:32:48Z")
+      val dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
+      val dt = Instant.parse("2021-04-01T14:32:48Z")
       val queryMessageRequest = QueryMessageWrapper(
         QueryMessageRequest(
           requestCommon = RequestCommon(
@@ -43,7 +45,7 @@ class queryMessageWrapperSpec extends PlaySpec {
 
       val expectedJson = Resources
         .readString("model/eisRequest.json")
-        .replace("{{dateTime}}", dt.toString("yyyy-MM-dd'T'HH:mm:ss'Z'"))
+        .replace("{{dateTime}}", dt.atOffset(ZoneOffset.UTC).format(dtf))
       val generatedJson = Json.prettyPrint(Json.toJson[QueryMessageWrapper](queryMessageRequest))
       generatedJson mustBe expectedJson
     }

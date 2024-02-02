@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.securemessage.controllers.model.cdcm
 
-import org.joda.time.DateTime
-import org.joda.time.format.ISODateTimeFormat
 import org.mongodb.scala.bson.ObjectId
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json._
@@ -25,6 +23,9 @@ import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CdcmConversation
 import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core.Conversation._
 import uk.gov.hmrc.securemessage.models.core.{ Conversation, CustomerEnrolment, Reference }
+
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 
 class CdcmConversationSpec extends PlaySpec {
 
@@ -35,9 +36,9 @@ class CdcmConversationSpec extends PlaySpec {
       val xRequestId = "adsgr24frfvdc829r87rfsdf=="
       val randomId = "6e78776f-48ff-45bd-9da2-926e35519803"
       val reference = Reference("X-Request-ID", xRequestId)
-      val formatter = ISODateTimeFormat.dateTime()
+      val formatter = DateTimeFormatter.ISO_DATE_TIME
       val dateInString = "2020-11-10T15:00:01.000Z"
-      val dateTime = DateTime.parse(dateInString, formatter)
+      val dateTime = ZonedDateTime.parse(dateInString, formatter).toInstant
       val fullConversationRequestJson: JsValue = Resources
         .readJson("model/api/cdcm/write/create-conversation.json")
         .as[JsObject] +

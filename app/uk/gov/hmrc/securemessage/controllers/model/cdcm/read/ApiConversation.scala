@@ -18,7 +18,8 @@ package uk.gov.hmrc.securemessage.controllers.model.cdcm.read
 
 import cats.data.NonEmptyList
 import cats.implicits._
-import org.joda.time.DateTime
+
+import java.time.Instant
 import play.api.libs.json.{ Format, Json, Writes }
 import uk.gov.hmrc.securemessage.controllers.model.ApiMessage
 import uk.gov.hmrc.securemessage.models.core.{ Identifier, _ }
@@ -51,7 +52,7 @@ object ApiConversation {
     for {
       s <- sender
       r <- reader
-    } yield (s.id === r.id)
+    } yield s.id === r.id
 
   private def convertToApiMessage(
     coreConversation: Conversation,
@@ -78,12 +79,12 @@ object ApiConversation {
 
   private def findFirstReaderDetails(
     message: ConversationMessage,
-    coreConversation: Conversation): Option[(DateTime, Int)] = {
-    val messageCreated = message.created.getMillis
+    coreConversation: Conversation): Option[(Instant, Int)] = {
+    val messageCreated = message.created.toEpochMilli
     getReadTimesWithId(coreConversation.participants)
       .filter(_._2 =!= message.senderId)
-      .filter(_._1.getMillis > messageCreated)
-      .sortBy(_._1.getMillis)
+      .filter(_._1.toEpochMilli > messageCreated)
+      .sortBy(_._1.toEpochMilli)
       .headOption
   }
 
@@ -108,7 +109,7 @@ object ApiConversation {
 
   def getReadTimesWithId(
     participants: List[Participant]
-  ): List[(DateTime, Int)] =
+  ): List[(Instant, Int)] =
     participants.flatMap(part =>
       part.readTimes match {
         case Some(times) => times.map(rt => rt -> part.id)

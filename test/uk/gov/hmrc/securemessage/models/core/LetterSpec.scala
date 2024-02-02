@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.securemessage.models.core
 
-import org.joda.time.DateTime
+import java.time.Instant
 import org.mongodb.scala.bson.ObjectId
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json.{ JsError, JsObject, JsSuccess, Json }
@@ -30,8 +30,8 @@ class LetterSpec extends PlaySpec {
       val objectID = new ObjectId()
       val letterJson = Resources.readJson("model/core/letter.json").as[JsObject] +
         ("_id"         -> Json.toJson(objectID)) +
-        ("lastUpdated" -> Json.toJson(DateTime.now())) +
-        ("readTime"    -> Json.toJson(DateTime.now()))
+        ("lastUpdated" -> Json.toJson(Instant.now())) +
+        ("readTime"    -> Json.toJson(Instant.now()))
       val letter = letterJson.validate[Letter].get
       val apiLetter = ApiLetter.fromCore(letter)
       apiLetter.subject mustBe (letter.subject)
@@ -44,8 +44,8 @@ class LetterSpec extends PlaySpec {
       val objectID = new ObjectId()
       val letterJson = Resources.readJson("model/core/letter-missing-fields.json").as[JsObject] +
         ("_id"         -> Json.toJson(objectID)) +
-        ("lastUpdated" -> Json.toJson(DateTime.now())) +
-        ("readTime"    -> Json.toJson(DateTime.now()))
+        ("lastUpdated" -> Json.toJson(Instant.now())) +
+        ("readTime"    -> Json.toJson(Instant.now()))
       letterJson.validate[Letter] match {
         case success: JsSuccess[Letter] =>
           val letter = success.get
@@ -63,7 +63,7 @@ class LetterSpec extends PlaySpec {
       val objectID = new ObjectId()
       val letterJson = Resources.readJson("model/core/letter.json").as[JsObject] +
         ("_id"         -> Json.toJson(objectID)) +
-        ("lastUpdated" -> Json.toJson(DateTime.now()))
+        ("lastUpdated" -> Json.toJson(Instant.now()))
       val letter = letterJson.validate[Letter].get
       val apiLetter = ApiLetter.fromCore(letter)
       apiLetter.subject mustBe (letter.subject)

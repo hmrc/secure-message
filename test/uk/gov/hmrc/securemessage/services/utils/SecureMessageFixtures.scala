@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.securemessage.services.utils
 
-import org.joda.time.LocalDate
+import java.time.LocalDate
 import org.mongodb.scala.bson.ObjectId
 import uk.gov.hmrc.common.message.model._
 import uk.gov.hmrc.domain._
@@ -52,5 +52,5 @@ object SecureMessageFixtures {
       hash = hash
     )
 
-  def testDate(plusDays: Int) = new LocalDate(2013, 6, 1).plusDays(plusDays)
+  def testDate(plusDays: Int) = LocalDate.of(2013, 6, 1).plusDays(plusDays.toLong)
 }

@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.securemessage.controllers.model.cdsf.read
 
-import org.joda.time.{ DateTime, LocalDate }
+import java.time.{ Instant, LocalDate }
 import play.api.libs.json.{ Format, Json }
 import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata
 import uk.gov.hmrc.securemessage.controllers.model.{ ApiFormats, ApiMessage }
@@ -29,11 +29,11 @@ final case class ApiLetter(
   firstReaderInformation: Option[FirstReaderInformation],
   senderInformation: SenderInformation,
   identifier: Identifier,
-  readTime: Option[DateTime] = None, //TODO: why is this always NONE ?
+  readTime: Option[Instant] = None, //TODO: why is this always NONE ?
   tags: Option[Map[String, String]] = None
 ) extends ApiMessage
 
-final case class FirstReaderInformation(name: Option[String], read: DateTime)
+final case class FirstReaderInformation(name: Option[String], read: Instant)
 final case class SenderInformation(name: String, sent: LocalDate)
 
 object ApiLetter extends ApiFormats {

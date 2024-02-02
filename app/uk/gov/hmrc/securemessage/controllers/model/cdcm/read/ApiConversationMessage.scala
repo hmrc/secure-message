@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.securemessage.controllers.model.cdcm.read
 
-import org.joda.time.DateTime
+import java.time.Instant
 import play.api.libs.json.{ Format, Json }
 import uk.gov.hmrc.securemessage.controllers.model.ApiFormats
 
@@ -25,9 +25,9 @@ final case class ApiConversationMessage(
   firstReader: Option[FirstReaderInformation],
   content: String)
 
-final case class SenderInformation(name: Option[String], sent: DateTime, self: Boolean)
+final case class SenderInformation(name: Option[String], sent: Instant, self: Boolean)
 
-final case class FirstReaderInformation(name: Option[String], read: DateTime)
+final case class FirstReaderInformation(name: Option[String], read: Instant)
 
 object ApiConversationMessage extends ApiFormats {
 

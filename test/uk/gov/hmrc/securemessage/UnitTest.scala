@@ -17,20 +17,21 @@
 package uk.gov.hmrc.securemessage
 
 import org.apache.commons.codec.binary.Base64
-import org.joda.time.DateTime
 import uk.gov.hmrc.auth.core.{ Enrolment, EnrolmentIdentifier, Enrolments }
 import uk.gov.hmrc.securemessage.models.core.CustomerEnrolment
 import uk.gov.hmrc.securemessage.utils.DateTimeUtils
+
+import java.time.Instant
 
 /** This will be the base class for all our unit tests, replacing PlaySpec and all extended traits for consistency
   * */
 trait UnitTest {
 
   val zeroTimeProvider: ZeroTimeProvider = new ZeroTimeProvider()
-  val now: DateTime = zeroTimeProvider.now
+  val now: Instant = zeroTimeProvider.now
 
   class ZeroTimeProvider extends DateTimeUtils {
-    override def now: DateTime = new DateTime(0)
+    override def now: Instant = Instant.EPOCH
   }
 
   def authEnrolmentsFrom(customerEnrolments: Set[CustomerEnrolment]): Enrolments =

@@ -20,7 +20,7 @@ import com.mongodb.ReadPreference
 import com.mongodb.client.model.Indexes.ascending
 import com.mongodb.client.model.ReturnDocument
 import org.bson.types.ObjectId
-import org.joda.time.{ DateTime, LocalDate }
+import java.time.{ Instant, LocalDate }
 import org.mongodb.scala.MongoException
 import org.mongodb.scala.bson.{ BsonArray, BsonDocument }
 import org.mongodb.scala.bson.conversions.Bson
@@ -75,9 +75,9 @@ class SecureMessageRepository @Inject()(
       ),
       replaceIndexes = true,
       extraCodecs = Seq(
-        Codecs.playFormatCodec(uk.gov.hmrc.mongo.play.json.formats.MongoJodaFormats.localDateFormat),
+        Codecs.playFormatCodec(uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats.localDateFormat),
         Codecs.playFormatCodec(SecureMessageMongoFormat.localDateFormat),
-        Codecs.playFormatCodec(uk.gov.hmrc.mongo.play.json.formats.MongoJodaFormats.dateTimeFormat),
+        Codecs.playFormatCodec(uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats.instantFormat),
         Codecs.playFormatCodec(uk.gov.hmrc.common.message.model.EmailAlert.alertFormat),
         Codecs.playFormatCodec(uk.gov.hmrc.common.message.model.Regime.format),
         Codecs.playFormatCodec(BrakeBatchDetails.brakeBatchDetailsFormat)
@@ -95,8 +95,8 @@ class SecureMessageRepository @Inject()(
 
   def pullMessageToAlert(): Future[Option[SecureMessage]] = {
 
-    val failedBefore: DateTime = timeSource.now().minusMillis(retryIntervalMillis)
-    val startedProcessingBefore: DateTime = DateTime.now().minusMillis(retryInProgressAfter)
+    val failedBefore: Instant = timeSource.now().minusMillis(retryIntervalMillis.toLong)
+    val startedProcessingBefore: Instant = Instant.now().minusMillis(retryInProgressAfter.toLong)
 
     def pull(query: Bson): Future[Option[SecureMessage]] =
       collection
@@ -224,7 +224,7 @@ class SecureMessageRepository @Inject()(
     implicit ec: ExecutionContext): Future[Either[SecureMessageError, SecureMessage]] = getMessage(id, identifiers)
 
   import SecureMessageMongoFormat.dateTimeFormat
-  def addReadTime(id: ObjectId, readTime: DateTime)(
+  def addReadTime(id: ObjectId, readTime: Instant)(
     implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] =
     collection
       .updateOne(
@@ -247,7 +247,7 @@ class SecureMessageRepository @Inject()(
           Filters
             .equal(
               "issueDate",
-              BsonDocument(f"$$ifNull"                      -> BsonArray(f"$$details.issueDate", Codecs.toBson(new LocalDate(0))))),
+              BsonDocument(f"$$ifNull"                      -> BsonArray(f"$$details.issueDate", Codecs.toBson(Instant.EPOCH)))),
           Filters.equal("batchId", BsonDocument(f"$$ifNull" -> BsonArray(f"$$details.batchId", "Unspecified"))),
           Filters.equal("templateId", f"$$alertDetails.templateId")
         )),
@@ -281,7 +281,7 @@ class SecureMessageRepository @Inject()(
             "details.formId",
             if (brakeBatchApproval.formId.equals("Unspecified")) null else brakeBatchApproval.formId),
           Filters.equal("alertDetails.templateId", brakeBatchApproval.templateId),
-          Filters.equal("details.issueDate", if (brakeBatchApproval.issueDate.equals(new LocalDate(0))) {
+          Filters.equal("details.issueDate", if (brakeBatchApproval.issueDate.equals(Instant.EPOCH)) {
             null
           } else {
             brakeBatchApproval.issueDate.toString
@@ -304,7 +304,7 @@ class SecureMessageRepository @Inject()(
             "details.formId",
             if (brakeBatchApproval.formId.equals("Unspecified")) null else brakeBatchApproval.formId),
           Filters.equal("alertDetails.templateId", brakeBatchApproval.templateId),
-          Filters.equal("details.issueDate", if (brakeBatchApproval.issueDate.equals(new LocalDate(0))) {
+          Filters.equal("details.issueDate", if (brakeBatchApproval.issueDate.equals(Instant.EPOCH)) {
             null
           } else {
             brakeBatchApproval.issueDate.toString
@@ -328,7 +328,7 @@ class SecureMessageRepository @Inject()(
             Filters.equal("details.formId", if (brakeBatch.formId.equals("Unspecified")) null else brakeBatch.formId),
             Filters.equal("alertDetails.templateId", brakeBatch.templateId),
             Filters.equal("details.issueDate", {
-              if (brakeBatch.issueDate.equals(new LocalDate(0))) null else brakeBatch.issueDate.toString
+              if (brakeBatch.issueDate.equals(Instant.EPOCH)) null else brakeBatch.issueDate.toString
             })
           )
         ),

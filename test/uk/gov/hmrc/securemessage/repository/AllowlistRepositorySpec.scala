@@ -52,7 +52,7 @@ class AllowlistRepositorySpec
 
       "persists a allowlist to the database" in new TestCase {
         repo.collection.deleteMany(Filters.empty()).toFuture().futureValue
-        repo.ensureIndexes.futureValue
+        repo.ensureIndexes().futureValue
 
         val result = repo.store(List("TEST3", "TEST4")).futureValue
         result.get.formIdList mustBe List("TEST3", "TEST4")
@@ -68,7 +68,7 @@ class AllowlistRepositorySpec
 
       "return all formIds from the allowlist" in new TestCase {
         repo.collection.deleteMany(Filters.empty()).toFuture().futureValue
-        repo.ensureIndexes.futureValue
+        repo.ensureIndexes().futureValue
 
         repo.store(List("TEST3", "TEST4")).futureValue
 

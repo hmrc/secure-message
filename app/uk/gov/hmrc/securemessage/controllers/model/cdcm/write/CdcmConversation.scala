@@ -17,7 +17,7 @@
 package uk.gov.hmrc.securemessage.controllers.model.cdcm.write
 
 import cats.data.NonEmptyList
-import org.joda.time.DateTime
+import java.time.Instant
 import play.api.libs.json.{ Format, Json, Reads }
 import uk.gov.hmrc.securemessage.controllers.model.common
 import uk.gov.hmrc.securemessage.controllers.model.common.write.Recipient
@@ -41,7 +41,7 @@ final case class CdcmConversation(
   def asConversationWithCreatedDate(
     client: String,
     conversationId: String,
-    created: DateTime,
+    created: Instant,
     randomId: String,
     reference: Option[Reference]): Conversation = {
     val initialMessage = ConversationMessage(Some(randomId), 1, created, message, reference)

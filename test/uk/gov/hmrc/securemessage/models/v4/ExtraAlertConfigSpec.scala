@@ -16,14 +16,14 @@
 
 package uk.gov.hmrc.securemessage.models.v4
 
-import org.joda.time.{ Duration => JodaDuration }
+import java.time.Duration
 import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
 
 class ExtraAlertConfigSpec extends PlaySpec {
 
   "handle empty configuration" in {
-    def config = Configuration.from(
+    def config: Configuration = Configuration.from(
       Map(
         "alertProfile" -> List()
       )
@@ -32,7 +32,7 @@ class ExtraAlertConfigSpec extends PlaySpec {
   }
 
   "handle non-empty configuration" in {
-    def config = Configuration.from(
+    def config: Configuration = Configuration.from(
       Map(
         "alertProfile.0" ->
           Map(
@@ -50,8 +50,8 @@ class ExtraAlertConfigSpec extends PlaySpec {
     )
     ExtraAlertConfig(config) must be(
       List(
-        ExtraAlertConfig("main0", "extra0", new JodaDuration(2 * 24 * 60 * 60 * 1000)),
-        ExtraAlertConfig("main1", "extra1", new JodaDuration(2 * 60 * 60 * 1000))
+        ExtraAlertConfig("main0", "extra0", Duration.ofSeconds(2 * 24 * 60 * 60)),
+        ExtraAlertConfig("main1", "extra1", Duration.ofSeconds(2 * 60 * 60))
       )
     )
   }

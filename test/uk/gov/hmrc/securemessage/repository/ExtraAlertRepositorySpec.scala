@@ -53,7 +53,7 @@ class ExtraAlertRepositorySpec
   "The ExtraAlertRepository" must {
     "allow an alert to be pushed, pulled and marked as done." in new TestCase {
       repo.collection.deleteMany(Filters.empty()).toFuture().futureValue
-      repo.ensureIndexes.futureValue
+      repo.ensureIndexes().futureValue
 
       repo.pushNew(item = alert).futureValue
 
@@ -67,7 +67,7 @@ class ExtraAlertRepositorySpec
 
     "add a duplicate alert to ensure it is not added" in new TestCase {
       repo.collection.deleteMany(Filters.empty()).toFuture().futureValue
-      repo.ensureIndexes.futureValue
+      repo.ensureIndexes().futureValue
 
       repo.pushNew(item = alert).futureValue
 
@@ -77,7 +77,7 @@ class ExtraAlertRepositorySpec
     "allow pushed alert, to be deleted." in new TestCase {
 
       repo.collection.deleteMany(Filters.empty()).toFuture().futureValue
-      repo.ensureIndexes.futureValue
+      repo.ensureIndexes().futureValue
 
       repo.pushNew(item = alert).futureValue
       repo
@@ -105,7 +105,7 @@ class ExtraAlertRepositorySpec
   "The ExtraAlertRepository " must {
     "pull newMessageAlert_P800_D2" in new TestCase {
       repo.collection.deleteMany(Filters.empty()).toFuture().futureValue
-      repo.ensureIndexes.futureValue
+      repo.ensureIndexes().futureValue
 
       val alert1 = ExtraAlert.build(
         MessageFixtures.createTaxEntity(SaUtr("10000001")),
@@ -121,7 +121,7 @@ class ExtraAlertRepositorySpec
 
     "pull newMessageAlert_PA302_D2" in new TestCase {
       repo.collection.deleteMany(Filters.empty()).toFuture().futureValue
-      repo.ensureIndexes.futureValue
+      repo.ensureIndexes().futureValue
 
       val alert1 = ExtraAlert.build(
         MessageFixtures.createTaxEntity(SaUtr("10000001")),

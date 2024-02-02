@@ -19,7 +19,6 @@ package uk.gov.hmrc.securemessage
 import cats.data.NonEmptyList
 import org.apache.commons.codec.binary.Base64
 import org.bson.types.ObjectId
-import org.joda.time.DateTime
 import org.mongodb.scala.model.Filters
 import org.scalatest.concurrent.{ IntegrationPatience, ScalaFutures }
 import org.scalatest.{ BeforeAndAfterEach, SuiteMixin }
