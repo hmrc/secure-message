@@ -17,13 +17,13 @@
 package uk.gov.hmrc.securemessage.controllers.model
 
 import enumeratum.EnumEntry.Lowercase
-import enumeratum.{ Enum, EnumEntry, PlayEnum }
+import enumeratum.{ Enum, EnumEntry, PlayJsonEnum }
 
 import scala.collection.immutable
 
 sealed trait MessageType extends EnumEntry with Lowercase
 
-object MessageType extends Enum[MessageType] with PlayEnum[MessageType] {
+object MessageType extends Enum[MessageType] with PlayJsonEnum[MessageType] {
   val values: immutable.IndexedSeq[MessageType] = findValues
   case object Conversation extends MessageType
   case object Letter extends MessageType

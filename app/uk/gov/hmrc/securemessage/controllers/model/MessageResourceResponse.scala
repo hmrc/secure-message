@@ -16,10 +16,9 @@
 
 package uk.gov.hmrc.securemessage.controllers.model
 
-import org.joda.time.{ DateTime, LocalDate }
+import java.time.{ Instant, LocalDate }
 import play.api.libs.json.{ Writes, _ }
 import uk.gov.hmrc.common.message.model.MessageContentParameters
-import uk.gov.hmrc.http.controllers.RestFormats
 import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata
 import uk.gov.hmrc.securemessage.models.core.{ Details, Language, Letter, Message, RenderUrl }
 import uk.gov.hmrc.securemessage.models.v4.SecureMessage
@@ -38,20 +37,20 @@ final case class MessageResourceResponse(
   subject: String,
   body: Option[Details],
   validFrom: LocalDate,
-  readTime: Either[ServiceUrl, DateTime],
+  readTime: Either[ServiceUrl, Instant],
   contentParameters: Option[MessageContentParameters],
   sentInError: Boolean,
   renderUrl: ServiceUrl
 ) extends ApiMessage
 
-object MessageResourceResponse extends RestFormats {
+object MessageResourceResponse {
 
   import play.api.libs.functional.syntax._
 
-  val readTimeWrites: OWrites[Either[ServiceUrl, DateTime]] = new OWrites[Either[ServiceUrl, DateTime]] {
-    def writes(o: Either[ServiceUrl, DateTime]) = o.fold(
+  val readTimeWrites: OWrites[Either[ServiceUrl, Instant]] = new OWrites[Either[ServiceUrl, Instant]] {
+    def writes(o: Either[ServiceUrl, Instant]) = o.fold(
       (__ \ "markAsReadUrl").write[ServiceUrl].writes,
-      (__ \ "readTime").write[DateTime].writes
+      (__ \ "readTime").write[Instant].writes
     )
   }
 

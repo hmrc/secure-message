@@ -16,9 +16,9 @@
 
 package uk.gov.hmrc.securemessage.models.core
 
-import org.joda.time.DateTime
+import java.time.Instant
 
 trait OrderingDefinitions {
-  val dateTimeAscending: Ordering[DateTime] = Ordering.fromLessThan(_ isBefore _)
-  val dateTimeDescending: Ordering[DateTime] = Ordering.fromLessThan(_ isAfter _)
+  val dateTimeAscending: Ordering[Instant] = Ordering.fromLessThan(_ isBefore _)
+  val dateTimeDescending: Ordering[Instant] = Ordering.fromLessThan(_ isAfter _)
 }

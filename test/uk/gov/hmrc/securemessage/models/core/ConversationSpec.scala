@@ -17,12 +17,15 @@
 package uk.gov.hmrc.securemessage.models.core
 
 import cats.data.NonEmptyList
-import org.joda.time.DateTime
 import org.mongodb.scala.bson.ObjectId
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json.{ JsObject, JsSuccess, JsValue, Json }
 import uk.gov.hmrc.securemessage.helpers.{ ConversationUtil, Resources }
 import uk.gov.hmrc.securemessage.models.core.Conversation._
+import uk.gov.hmrc.securemessage.helpers.DateTimeHelper._
+
+import java.time.format.DateTimeFormatter
+import java.time.{ Instant, ZoneId, ZoneOffset, ZonedDateTime }
 
 class ConversationSpec extends PlaySpec with ConversationTestData with OrderingDefinitions {
 
@@ -70,7 +73,7 @@ class ConversationSpec extends PlaySpec with ConversationTestData with OrderingD
     "be the latest message created date" in {
       val messages = unreadMessagesWith(count = 3).sortBy(_.created)(dateTimeDescending)
       val conversation = conversationWith(messages = messages)
-      conversation.issueDate mustBe dateTime.plusDays(3)
+      conversation.issueDate mustBe plusDays(dateTime, 3)
     }
   }
 
@@ -86,7 +89,7 @@ class ConversationSpec extends PlaySpec with ConversationTestData with OrderingD
     "be the one who sent the last message" in {
       val systemMessages = unreadMessagesWith(count = 2)
       val customer = customerWith()
-      val customerMessage = messageWith(sender = customer, created = dateTime.plusDays(3))
+      val customerMessage = messageWith(sender = customer, created = plusDays(dateTime, 3))
       val conversation = conversationWith(messages = customerMessage :: systemMessages)
       conversation.latestParticipant mustBe Some(customer)
     }
@@ -95,12 +98,14 @@ class ConversationSpec extends PlaySpec with ConversationTestData with OrderingD
 }
 
 trait ConversationTestData {
-  val dateTime: DateTime = DateTime.parse("2020-11-10T15:00:01.000")
+  val dtf: DateTimeFormatter =
+    DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS").withZone(ZoneId.from(ZoneOffset.UTC))
+  val dateTime: Instant = ZonedDateTime.parse("2020-11-10T15:00:01.000", dtf).toInstant
 
   val system: Participant =
     Participant(1, ParticipantType.System, Identifier("system", "value", None), None, None, None, None)
 
-  def customerWith(readTime: DateTime = dateTime): Participant =
+  def customerWith(readTime: Instant = dateTime): Participant =
     Participant(
       2,
       ParticipantType.Customer,
@@ -110,20 +115,20 @@ trait ConversationTestData {
       None,
       Some(List(readTime)))
 
-  def messageWith(sender: Participant = system, created: DateTime = dateTime): ConversationMessage =
+  def messageWith(sender: Participant = system, created: Instant = dateTime): ConversationMessage =
     ConversationMessage(None, sender.id, created, "", None)
 
   def readMessagesWith(
     count: Int,
     sender: Participant = system,
-    dateTime: DateTime = dateTime): List[ConversationMessage] =
-    (1 to count).map(i => messageWith(sender = sender, created = dateTime.minusDays(i))).toList
+    dateTime: Instant = dateTime): List[ConversationMessage] =
+    (1 to count).map(i => messageWith(sender = sender, created = minusDays(dateTime, i))).toList
 
   def unreadMessagesWith(
     count: Int,
     sender: Participant = system,
-    dateTime: DateTime = dateTime): List[ConversationMessage] =
-    (1 to count).map(i => messageWith(sender = sender, created = dateTime.plusDays(i))).toList
+    dateTime: Instant = dateTime): List[ConversationMessage] =
+    (1 to count).map(i => messageWith(sender = sender, created = plusDays(dateTime, i))).toList
 
   def conversationWith(
     reader: Participant = customerWith(),

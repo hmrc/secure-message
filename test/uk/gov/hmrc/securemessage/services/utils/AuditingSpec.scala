@@ -17,8 +17,8 @@
 package uk.gov.hmrc.securemessage.services.utils
 
 import cats.data.NonEmptyList
-import org.joda.time.format.ISODateTimeFormat
-import org.joda.time.{ DateTime, DateTimeZone, LocalDate }
+
+import java.time.{ Instant, LocalDate, ZoneOffset }
 import org.mockito.Mockito.verify
 import org.mongodb.scala.bson.ObjectId
 import org.scalatestplus.mockito.MockitoSugar
@@ -37,6 +37,7 @@ import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
 import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryMessageRequest, RequestCommon, RequestDetail }
 
+import java.time.format.DateTimeFormatter
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -53,7 +54,7 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
   private val reference = Reference("X-Request-ID", xRequestId)
 
   "auditCreateConversation" must {
-    val message = ConversationMessage(Some(randomId), 1, DateTime.now, messageContent, Some(reference))
+    val message = ConversationMessage(Some(randomId), 1, Instant.now, messageContent, Some(reference))
     val alert = Alert("", None)
     val conversation = Conversation(
       new ObjectId(),
@@ -222,9 +223,8 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
   }
 
   "auditReadLetter" must {
-    val zone: DateTimeZone = DateTimeZone.UTC
-    val readTime = DateTime.now.withZone(zone)
-    val isoDtf = ISODateTimeFormat.basicDateTime()
+    val readTime = Instant.now.atOffset(ZoneOffset.UTC)
+    val isoDtf = DateTimeFormatter.ISO_DATE_TIME
     val localDate = LocalDate.now()
     val enrolments = Enrolments(
       Set(
@@ -239,7 +239,7 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
           None,
           SenderInformation("sender", localDate),
           Identifier("id", "value", None),
-          Some(readTime),
+          Some(readTime.toInstant),
           None),
         enrolments
       )
@@ -250,7 +250,7 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
           letterReadSuccessTxnName,
           "id"          -> "value",
           "subject"     -> "subject",
-          "readTime"    -> isoDtf.print(readTime),
+          "readTime"    -> isoDtf.format(readTime.toInstant.atOffset(ZoneOffset.UTC)),
           "messageType" -> "Letter",
           "enrolments"  -> "HMRC-CUS-ORG:EORINumber=GB1234567890"
         )
@@ -265,7 +265,7 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
           None,
           SenderInformation("sender", localDate),
           Identifier("id", "value", None),
-          Some(readTime),
+          Some(readTime.toInstant),
           Some(Map("notificationType" -> "Direct Debit"))
         ),
         enrolments
@@ -277,7 +277,7 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
           letterReadSuccessTxnName,
           "id"               -> "value",
           "subject"          -> "subject",
-          "readTime"         -> isoDtf.print(readTime),
+          "readTime"         -> isoDtf.format(readTime.toInstant.atOffset(ZoneOffset.UTC)),
           "messageType"      -> "Letter",
           "enrolments"       -> "HMRC-CUS-ORG:EORINumber=GB1234567890",
           "notificationType" -> "Direct Debit"
@@ -396,7 +396,7 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
       val _ = auditMessageForwarded(
         "MessageForwardedToCaseworkerSuccess",
         QueryMessageRequest(
-          RequestCommon("dc-secure-message", DateTime.now(), "acknowledgementReference"),
+          RequestCommon("dc-secure-message", Instant.now(), "acknowledgementReference"),
           RequestDetail(xRequestId, conversationId, messageContent)),
         NO_CONTENT
       )
@@ -417,7 +417,7 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
       val _ = auditMessageForwarded(
         "MessageForwardedToCaseworkerFailed",
         QueryMessageRequest(
-          RequestCommon("dc-secure-message", DateTime.now(), "acknowledgementReference"),
+          RequestCommon("dc-secure-message", Instant.now(), "acknowledgementReference"),
           RequestDetail(xRequestId, conversationId, messageContent)),
         INTERNAL_SERVER_ERROR
       )

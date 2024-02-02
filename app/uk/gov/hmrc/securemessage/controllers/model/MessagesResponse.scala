@@ -19,7 +19,6 @@ package uk.gov.hmrc.securemessage.controllers.model
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import uk.gov.hmrc.common.message.model.MessagesCount
-import uk.gov.hmrc.http.controllers.RestFormats
 import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata
 import uk.gov.hmrc.securemessage.models.core.{ Language, Message }
 
@@ -39,7 +38,7 @@ final case class MessagesResponse(items: Option[Seq[MessageMetadata]], count: Me
           case x :: xs if x.replyTo.isEmpty => addCounterAux(xs, result)
           case x :: xs =>
             val (beforeChild, afterChild) = result.span(_.id != x.id)
-            val (beforeParent, afterParent) = afterChild.span(_.id.toString != x.replyTo.get)
+            val (beforeParent, afterParent) = afterChild.span(_.id != x.replyTo.get)
             val parentCount = afterParent.headOption.map(_.counter.getOrElse(1)).getOrElse(0)
             addCounterAux(
               xs,
@@ -67,7 +66,7 @@ final case class MessagesResponse(items: Option[Seq[MessageMetadata]], count: Me
   }
 }
 
-object MessagesResponse extends RestFormats {
+object MessagesResponse {
 
   implicit val messagesResponseWrites: Writes[MessagesResponse] = (
     (__ \ "count").write[MessagesCount] and

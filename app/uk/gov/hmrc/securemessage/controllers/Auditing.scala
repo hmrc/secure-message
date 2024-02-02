@@ -16,8 +16,7 @@
 
 package uk.gov.hmrc.securemessage.controllers
 
-import org.joda.time.format.ISODateTimeFormat
-import org.joda.time.{ DateTime, DateTimeZone }
+import java.time.{ Instant, ZoneOffset }
 import play.api.Logging
 import uk.gov.hmrc.auth.core.Enrolments
 import uk.gov.hmrc.common.message.emailaddress.EmailAddress
@@ -36,13 +35,14 @@ import uk.gov.hmrc.securemessage.models.core.{ Conversation, Letter, Message, Re
 import uk.gov.hmrc.securemessage.models.v4.SecureMessage
 import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryMessageRequest }
 
+import java.time.format.DateTimeFormatter
 import scala.concurrent.{ ExecutionContext, Future }
 
 trait Auditing extends Logging {
 
   def auditConnector: AuditConnector
 
-  protected val isoDtf = ISODateTimeFormat.basicDateTime()
+  protected val isoDtf = DateTimeFormatter.ISO_DATE_TIME
   protected val txnName = "transactionName"
   protected val newConversationTxnName: (String, String) = txnName   -> "Create new query conversation"
   protected val retrieveEmailTxnName: (String, String) = txnName     -> "Retrieve Email Address"
@@ -177,7 +177,7 @@ trait Auditing extends Logging {
   private val letterMessageType = ("messageType", "Letter")
   private val LetterReadSuccess = "LetterReadSuccess"
   private val LetterReadFailed = "LetterReadFailed"
-  private val zone: DateTimeZone = DateTimeZone.UTC
+  private val zone: ZoneOffset = ZoneOffset.UTC
 
   /** TOOD: replace with with the common [[auditMessageRead()]]
     * */
@@ -189,7 +189,7 @@ trait Auditing extends Logging {
         letterReadSuccessTxnName,
         letter.identifier.name -> letter.identifier.value,
         "subject"              -> letter.subject,
-        "readTime"             -> isoDtf.print(letter.readTime.getOrElse(DateTime.now.withZone(zone))),
+        "readTime"             -> isoDtf.format(letter.readTime.getOrElse(Instant.now).atOffset(zone)),
         letterMessageType,
         "enrolments" -> prettyPrintEnrolments(enrolments)
       ),
@@ -205,7 +205,7 @@ trait Auditing extends Logging {
       Map(
         letterReadSuccessTxnName,
         "subject"  -> mr.subject,
-        "readTime" -> isoDtf.print(mr.readTime.getOrElse(DateTime.now.withZone(zone))),
+        "readTime" -> isoDtf.format(mr.readTime.getOrElse(Instant.now.atOffset(zone))),
         letterMessageType,
         "enrolments" -> prettyPrintEnrolments(enrolments)
       ),

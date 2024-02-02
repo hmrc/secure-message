@@ -16,12 +16,13 @@
 
 package uk.gov.hmrc.securemessage.models.core
 
-import org.joda.time.DateTime
-import play.api.libs.json.JodaReads.jodaDateReads
-import play.api.libs.json.JodaWrites.jodaDateWrites
+import java.time.Instant
 import play.api.libs.json.{ Format, Json }
 import uk.gov.hmrc.securemessage.formatter.PlayJsonFormats._
 import uk.gov.hmrc.common.message.emailaddress._
+
+import uk.gov.hmrc.securemessage.models.core.DateFormats.formatInstantReads
+import uk.gov.hmrc.securemessage.models.core.DateFormats.formatInstantWrites
 
 final case class Participant(
   id: Int,
@@ -30,19 +31,16 @@ final case class Participant(
   name: Option[String],
   email: Option[EmailAddress],
   parameters: Option[Map[String, String]],
-  readTimes: Option[List[DateTime]])
+  readTimes: Option[List[Instant]])
     extends OrderingDefinitions {
-  def lastReadTime: Option[DateTime] = readTimes.map(_.max(dateTimeAscending))
+  def lastReadTime: Option[Instant] = readTimes.map(_.max(dateTimeAscending))
 }
 
 object Participant {
-  private val dateFormatString = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
 
-  implicit val dateFormat: Format[DateTime] =
-    Format(jodaDateReads(dateFormatString), jodaDateWrites(dateFormatString))
+  implicit val instantFormat: Format[Instant] = Format(formatInstantReads(), formatInstantWrites())
 
-  implicit val emailAddressFormat: Format[EmailAddress] =
-    Format(emailAddressReads, emailAddressWrites)
+  implicit val emailAddressFormat: Format[EmailAddress] = Format(emailAddressReads, emailAddressWrites)
 
   implicit val participantFormat: Format[Participant] = Json.format[Participant]
 }

@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.securemessage.services
 
-import org.joda.time.LocalDate
-import org.joda.time.format.DateTimeFormat
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import org.mongodb.scala.bson.ObjectId
 import play.api.i18n.Messages
 import uk.gov.hmrc.http.HeaderCarrier
@@ -116,17 +116,17 @@ trait MessageV3Service {
       case None            => localizedFormatter(letter.validFrom)
     }
 
-  private val dateFormatter = DateTimeFormat.forPattern("dd MMMM yyyy")
-  def formatter(date: LocalDate): String = date.toString(dateFormatter)
+  private val dateFormatter = DateTimeFormatter.ofPattern("dd MMMM yyyy")
+  def formatter(date: LocalDate): String = date.format(dateFormatter)
 
   private def localizedFormatter(date: LocalDate)(implicit messages: Messages): String = {
     val formatter =
       if (messages.lang.language == "cy") {
-        DateTimeFormat.forPattern(s"d '${messages(s"month.${date.getMonthOfYear}")}' yyyy")
+        DateTimeFormatter.ofPattern(s"d '${messages(s"month.${date.getMonthValue}")}' yyyy")
       } else {
         dateFormatter
       }
-    date.toString(formatter)
+    date.format(formatter)
   }
   def getLetter(id: ObjectId)(implicit ec: ExecutionContext): Future[Option[Letter]]
 }

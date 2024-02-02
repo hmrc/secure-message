@@ -16,9 +16,8 @@
 
 package uk.gov.hmrc.securemessage.services
 
-import akka.stream.Materializer
-import akka.stream.testkit.NoMaterializer
-import org.joda.time.DateTime
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.testkit.NoMaterializer
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{ never, times, verify, when }
@@ -51,11 +50,16 @@ import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryMessageWrapper, Tag
 import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository }
 import uk.gov.hmrc.securemessage.{ DuplicateConversationError, EmailLookupError, NoReceiverEmailError, SecureMessageError, _ }
 
+import java.time.format.DateTimeFormatter
+import java.time.{ Instant, OffsetDateTime, ZoneId, ZoneOffset }
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ ExecutionContext, Future }
 
 //TODO: move test data and mocks to TextContexts
 class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestHelpers with UnitTest with EitherValues {
+
+  val dtf: DateTimeFormatter =
+    DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS").withZone(ZoneId.from(ZoneOffset.UTC))
 
   "createConversation" must {
 
@@ -146,10 +150,11 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
         "CDCM",
         "D-80542-20201120",
         "MRN: 19GB4S24GC3PPFGVR7",
-        DateTime.parse("2020-11-10T15:00:01.000"),
+        OffsetDateTime.parse("2020-11-10T15:00:01.000", dtf).toInstant,
         Some("CDS Exports Team"),
         unreadMessages = false,
-        1)
+        1
+      )
       result mustBe
         List(metadata)
     }
@@ -172,10 +177,11 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
             "CDCM",
             "D-80542-20201120",
             "MRN: 19GB4S24GC3PPFGVR7",
-            DateTime.parse("2020-11-10T15:00:01.000"),
+            OffsetDateTime.parse("2020-11-10T15:00:01.000", dtf).toInstant,
             Some("CDS Exports Team"),
             unreadMessages = false,
-            1))
+            1
+          ))
     }
 
     "return a list of ConversationMetaData in the order of latest message in the list" in {
@@ -222,26 +228,29 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
             "CDCM",
             "D-80542-20201120",
             "MRN: 19GB4S24GC3PPFGVR7",
-            DateTime.parse("2020-11-10T15:00:00.000"),
+            OffsetDateTime.parse("2020-11-10T15:00:00.000", dtf).toInstant,
             Some("CDS Exports Team"),
             unreadMessages = false,
-            1),
+            1
+          ),
           ConversationMetadata(
             "CDCM",
             "D-80542-20201120",
             "MRN: 19GB4S24GC3PPFGVR7",
-            DateTime.parse("2020-11-09T15:00:00.000"),
+            OffsetDateTime.parse("2020-11-09T15:00:00.000", dtf).toInstant,
             Some("CDS Exports Team"),
             unreadMessages = false,
-            1),
+            1
+          ),
           ConversationMetadata(
             "CDCM",
             "D-80542-20201120",
             "MRN: 19GB4S24GC3PPFGVR7",
-            DateTime.parse("2020-11-08T15:00:00.000"),
+            OffsetDateTime.parse("2020-11-08T15:00:00.000", dtf).toInstant,
             Some("CDS Exports Team"),
             unreadMessages = false,
-            1)
+            1
+          )
         )
     }
   }
@@ -392,7 +401,7 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
         .thenReturn(Set(Enrolment("HMRC-CUS-ORG", Seq(EnrolmentIdentifier("EORINumber", "GB123456789000001")), "")))
       await(service.addCustomerMessage(encodedId, customerMessage, mockEnrolments, randomId, Some(reference))) mustBe Left(
         ParticipantNotFound(
-          "No participant found for client: CDCM, conversationId: 123, indentifiers: Set(Identifier(EORINumber,GB123456789000001,Some(HMRC-CUS-ORG)))"))
+          "No participant found for client: CDCM, conversationId: 123, identifiers: Set(Identifier(EORINumber,GB123456789000001,Some(HMRC-CUS-ORG)))"))
     }
 
     "return ConversationIdNotFound if the conversation ID is not found" in new AddCustomerMessageTestContext(
@@ -434,7 +443,7 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
           caseWorkerMessage("PHA+Q2FuIEkgaGF2ZSBteSB0YXggbW9uZXkgcGxlYXNlPzwvcD4="),
           randomId,
           Some(reference))) mustBe Left(ParticipantNotFound(
-        "No participant found for client: CDCM, conversationId: 123, indentifiers: Set(Identifier(CDCM,D-80542-20201120,None))"))
+        "No participant found for client: CDCM, conversationId: 123, identifiers: Set(Identifier(CDCM,D-80542-20201120,None))"))
     }
 
     "return ConversationIdNotFound if the conversation ID is not found" in new AddCaseworkerMessageTestContent(
@@ -488,7 +497,7 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
     }
 
     "add readTime when there are new messages after last readTime" in new AddReadTimesTestContext {
-      val readTimeStamp = DateTime.parse("2020-11-09T15:00:00.000")
+      val readTimeStamp = OffsetDateTime.parse("2020-11-09T15:00:00.000", dtf).toInstant
       val conversation = ConversationUtil.getFullConversation(
         new ObjectId(),
         "D-80542-20201120",
@@ -507,7 +516,7 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
     }
 
     "add read time when no messages were read" in new AddReadTimesTestContext {
-      val readTimeStamp = DateTime.parse("2020-11-09T15:00:00.000")
+      val readTimeStamp = OffsetDateTime.parse("2020-11-09T15:00:00.000", dtf).toInstant
       val conversation = ConversationUtil.getFullConversation(
         new ObjectId(),
         "D-80542-20201120",
@@ -525,7 +534,7 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
     }
 
     "not add readTime when there are no new messages after last readtime" in new AddReadTimesTestContext {
-      val readTimeStamp = DateTime.parse("2021-11-09T15:00:00.000")
+      val readTimeStamp = OffsetDateTime.parse("2021-11-09T15:00:00.000", dtf).toInstant
       val conversation = ConversationUtil.getFullConversation(
         new ObjectId(),
         "D-80542-20201120",
@@ -560,7 +569,7 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
     when(mockEmailConnector.send(any[EmailRequest])(any[HeaderCarrier])).thenReturn(Future.successful(Right(())))
     val mockChannelPreferencesConnector: ChannelPreferencesConnector = mock[ChannelPreferencesConnector]
     when(
-      mockConversationRepository.addReadTime(any[String], any[String], any[Int], any[DateTime])(any[ExecutionContext]))
+      mockConversationRepository.addReadTime(any[String], any[String], any[Int], any[Instant])(any[ExecutionContext]))
       .thenReturn(Future.successful(Right(())))
     when(
       mockConversationRepository
@@ -601,7 +610,7 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
       mockConversationRepository.getConversation(any[String], any[String], any[Set[Identifier]])(any[ExecutionContext]))
       .thenReturn(Future(getConversationResult))
     when(
-      mockConversationRepository.addReadTime(any[String], any[String], any[Int], any[DateTime])(any[ExecutionContext]))
+      mockConversationRepository.addReadTime(any[String], any[String], any[Int], any[Instant])(any[ExecutionContext]))
       .thenReturn(Future.successful(Right(())))
   }
 
@@ -623,7 +632,7 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
     when(mockConversationRepository.getConversation(any[ObjectId], any[Set[Identifier]])(any[ExecutionContext]))
       .thenReturn(Future(getConversationResult))
     when(
-      mockConversationRepository.addReadTime(any[String], any[String], any[Int], any[DateTime])(any[ExecutionContext]))
+      mockConversationRepository.addReadTime(any[String], any[String], any[Int], any[Instant])(any[ExecutionContext]))
       .thenReturn(Future.successful(Right(())))
   }
 
@@ -631,7 +640,7 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
     when(mockConversationRepository.getConversation(any[ObjectId], any[Set[Identifier]])(any[ExecutionContext]))
       .thenReturn(Future(getConversationResult))
     when(
-      mockConversationRepository.addReadTime(any[String], any[String], any[Int], any[DateTime])(any[ExecutionContext]))
+      mockConversationRepository.addReadTime(any[String], any[String], any[Int], any[Instant])(any[ExecutionContext]))
       .thenReturn(Future.successful(Left(StoreError("Can not store read time", None))))
   }
 
@@ -725,7 +734,7 @@ trait TestHelpers extends MockitoSugar with UnitTest {
     ConversationMessage(
       Some(randomId),
       2,
-      DateTime.now,
+      Instant.now,
       "PHA+Q2FuIEkgaGF2ZSBteSB0YXggbW9uZXkgcGxlYXNlPzwvcD4==",
       Some(reference))
   val customerMessage: CustomerMessage = CustomerMessage("PGRpdj5IZWxsbzwvZGl2Pg==")
