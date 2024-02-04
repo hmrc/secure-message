@@ -29,7 +29,7 @@ class queryMessageWrapperSpec extends PlaySpec {
 
     "be successful when generating a valid JSON payload" in {
 
-      val dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
+      val dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")
       val dt = Instant.parse("2021-04-01T14:32:48Z")
       val queryMessageRequest = QueryMessageWrapper(
         QueryMessageRequest(

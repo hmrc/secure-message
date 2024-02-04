@@ -16,13 +16,20 @@
 
 package uk.gov.hmrc.securemessage.models
 
-import java.time.Instant
-import play.api.libs.json.{ JsObject, Json, OWrites, Writes }
-import uk.gov.hmrc.securemessage.models.core.DateFormats
+import java.time.{ Instant, ZoneId, ZoneOffset }
+import play.api.libs.json.{ JsObject, JsString, Json, OWrites, Writes }
+
+import java.time.format.DateTimeFormatter
 
 final case class RequestCommon(originatingSystem: String, receiptDate: Instant, acknowledgementReference: String)
 object RequestCommon {
-  implicit val instantWrites: Writes[Instant] = DateFormats.formatInstantWrites()
+  implicit val instantWrites: Writes[Instant] = {
+    val df: DateTimeFormatter =
+      DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'").withZone(ZoneId.from(ZoneOffset.UTC))
+    Writes[Instant] { d =>
+      JsString(df.format(d))
+    }
+  }
   implicit val requestCommonWrites: OWrites[RequestCommon] = Json.writes[RequestCommon]
 }
 
