@@ -60,7 +60,7 @@ class AddMessageToConversationISpec extends ISpec {
 
   "A POST request to /secure-messaging/conversation/{client}/{conversationId}/caseworker-message" must {
     "return CREATED when the message is successfully added to the conversation" in new CaseworkerTestCase(
-      "./it/resources/cdcm/caseworker-message.json") {
+      "./it/test/resources/cdcm/caseworker-message.json") {
 
       response.status mustBe CREATED
     }
@@ -71,13 +71,13 @@ class AddMessageToConversationISpec extends ISpec {
         wsClient
           .url(resource(s"/secure-messaging/conversation/$client/$conversationId/caseworker-message"))
           .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
-          .post(new File("./it/resources/cdcm/caseworker-message.json"))
+          .post(new File("./it/test/resources/cdcm/caseworker-message.json"))
           .futureValue
       response.status mustBe NOT_FOUND
       response.body mustBe "\"Error on message with client: Some(CDCM), message id: D-80542-20201120, error message: Conversation not found for identifiers: Set(Identifier(CDCM,D-80542-20201120,None))\""
     }
     "return BAD_REQUEST when invalid message content is supplied" in new CaseworkerTestCase(
-      "./it/resources/cdcm/caseworker-message-invalid-html.json") {
+      "./it/test/resources/cdcm/caseworker-message-invalid-html.json") {
       response.status mustBe BAD_REQUEST
       response.body mustBe "\"Error on message with client: Some(CDCM), message id: D-80542-20201120, error message: Html contains disallowed tags, attributes or protocols within the tags: matt. For allowed elements see class org.jsoup.safety.Safelist.relaxed()\""
     }
@@ -90,7 +90,7 @@ class AddMessageToConversationISpec extends ISpec {
       wsClient
         .url(resource(s"/secure-messaging/conversation/$client/$conversationId"))
         .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
-        .put(new File("./it/resources/cdcm/create-conversation-minimal.json")))
+        .put(new File("./it/test/resources/cdcm/create-conversation-minimal.json")))
     val response: WSResponse =
       wsClient
         .url(resource(s"/secure-messaging/conversation/$client/$conversationId/caseworker-message"))
@@ -106,7 +106,7 @@ class AddMessageToConversationISpec extends ISpec {
       wsClient
         .url(resource(s"/secure-messaging/conversation/$client/$conversationId"))
         .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
-        .put(new File("./it/resources/cdcm/create-conversation-minimal.json")))
+        .put(new File("./it/test/resources/cdcm/create-conversation-minimal.json")))
     val messageId: String =
       wsClient
         .url(resource(s"/secure-messaging/messages?enrolment=HMRC-CUS-ORG%7EEoriNumber%7E$eori"))

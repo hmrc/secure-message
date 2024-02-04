@@ -61,7 +61,7 @@ class GetMessagesISpec extends ISpec {
     wsClient
       .url(resource("/secure-messaging/conversation/CDCM/D-80542-20201120"))
       .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
-      .put(new File("./it/resources/cdcm/create-conversation.json"))
+      .put(new File("./it/test/resources/cdcm/create-conversation.json"))
       .futureValue
       .status mustBe CREATED
   }
