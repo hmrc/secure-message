@@ -33,7 +33,7 @@ class PostCustomerReadTimeISpec extends ISpec {
           wsClient
             .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120/read-time"))
             .withHttpHeaders(buildEoriToken(VALID_EORI), (HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
-            .post(new File("./it/resources/read-time.json"))
+            .post(new File("./it/test/resources/read-time.json"))
             .futureValue
         response.status mustBe CREATED
       }
@@ -45,7 +45,7 @@ class PostCustomerReadTimeISpec extends ISpec {
           wsClient
             .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120/read-time"))
             .withHttpHeaders(buildNonEoriToken, (HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
-            .post(new File("./it/resources/read-time.json"))
+            .post(new File("./it/test/resources/read-time.json"))
             .futureValue
         response.status mustBe BAD_REQUEST
       }
