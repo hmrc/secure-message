@@ -18,7 +18,7 @@ package uk.gov.hmrc.securemessage.services.utils
 
 import cats.data.NonEmptyList
 
-import java.time.{ Instant, LocalDate, ZoneOffset }
+import java.time.{ Instant, LocalDate, ZoneId, ZoneOffset }
 import org.mockito.Mockito.verify
 import org.mongodb.scala.bson.ObjectId
 import org.scalatestplus.mockito.MockitoSugar
@@ -224,7 +224,7 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
 
   "auditReadLetter" must {
     val readTime = Instant.now.atOffset(ZoneOffset.UTC)
-    val isoDtf = DateTimeFormatter.ISO_DATE_TIME
+    val isoDtf = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ").withZone(ZoneId.from(ZoneOffset.UTC))
     val localDate = LocalDate.now()
     val enrolments = Enrolments(
       Set(
