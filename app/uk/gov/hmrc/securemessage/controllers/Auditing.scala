@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.securemessage.controllers
 
-import java.time.{ Instant, ZoneOffset }
+import java.time.{ Instant, ZoneId, ZoneOffset }
 import play.api.Logging
 import uk.gov.hmrc.auth.core.Enrolments
 import uk.gov.hmrc.common.message.emailaddress.EmailAddress
@@ -42,7 +42,7 @@ trait Auditing extends Logging {
 
   def auditConnector: AuditConnector
 
-  protected val isoDtf = DateTimeFormatter.ISO_DATE_TIME
+  protected val isoDtf = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ").withZone(ZoneId.from(ZoneOffset.UTC))
   protected val txnName = "transactionName"
   protected val newConversationTxnName: (String, String) = txnName   -> "Create new query conversation"
   protected val retrieveEmailTxnName: (String, String) = txnName     -> "Retrieve Email Address"
