@@ -16,11 +16,11 @@
 
 package uk.gov.hmrc.securemessage.filters
 
-import com.kenshoo.play.metrics.MetricsFilter
 import javax.inject.{ Inject, Singleton }
 import play.api.http.DefaultHttpFilters
 import play.filters.cors.CORSFilter
 import uk.gov.hmrc.play.bootstrap.filters.{ AuditFilter, CacheControlFilter, LoggingFilter, MDCFilter }
+import uk.gov.hmrc.play.bootstrap.metrics.MetricsFilter
 
 @Singleton
 class MicroserviceFilters @Inject()(

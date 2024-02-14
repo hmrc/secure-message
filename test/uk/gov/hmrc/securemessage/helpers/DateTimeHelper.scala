@@ -14,17 +14,15 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.securemessage.controllers.model
+package uk.gov.hmrc.securemessage.helpers
 
-import java.time.{ Instant, LocalDate }
-import play.api.libs.json.Format
-import uk.gov.hmrc.securemessage.models.core.DateFormats._
+import java.time.Instant
 
-trait ApiFormats {
+object DateTimeHelper {
+  lazy val dayInSeconds: Long = 60 * 60 * 24
 
-  implicit val instantFormat: Format[Instant] = Format(formatInstantReads(), formatInstantWrites())
+  def plusDays(i: Instant, days: Int): Instant = i.plusSeconds(days * dayInSeconds)
 
-  private val dateFormatString = "yyyy-MM-dd"
-  implicit val dateFormat: Format[LocalDate] =
-    Format(formatLocalDateReads(dateFormatString), formatLocalDateWrites(dateFormatString))
+  def minusDays(i: Instant, days: Int): Instant = i.minusSeconds(days * dayInSeconds)
+
 }

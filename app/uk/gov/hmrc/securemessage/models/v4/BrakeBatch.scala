@@ -16,11 +16,9 @@
 
 package uk.gov.hmrc.securemessage.models.v4
 
-import org.joda.time.LocalDate
+import java.time.{ LocalDate, ZoneOffset }
 import play.api.libs.json.{ Json, OFormat }
 import uk.gov.hmrc.securemessage.models.core.Language.{ English, Welsh }
-import play.api.libs.json.JodaWrites._
-import play.api.libs.json.JodaReads._
 
 trait BaseBrakeBatch {
   def batchId: String
@@ -80,7 +78,7 @@ object BrakeBatchMessage {
       welshContent = contentEncoded(welshContent),
       externalRefId = m.externalRef.id,
       messageType = m.messageType,
-      issueDate = m.issueDate.toLocalDate,
+      issueDate = LocalDate.ofInstant(m.issueDate, ZoneOffset.UTC),
       taxIdentifierName = m.recipient.identifier.name
     )
   }

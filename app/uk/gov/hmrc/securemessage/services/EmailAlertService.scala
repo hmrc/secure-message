@@ -16,9 +16,9 @@
 
 package uk.gov.hmrc.securemessage.services
 
-import akka.NotUsed
-import akka.stream.Materializer
-import akka.stream.scaladsl.Source
+import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Source
 import cats.syntax.option.catsSyntaxOptionId
 import play.api.Logging
 import uk.gov.hmrc.common.message.emailaddress.EmailAddress
@@ -53,7 +53,7 @@ class EmailAlertService @Inject()(
 
   lazy val baseUrl = servicesConfig.baseUrl("secure-message")
 
-  implicit val headerCarrier = HeaderCarrier()
+  implicit val headerCarrier: HeaderCarrier = HeaderCarrier()
 
   val initialState = EmailResults()
 
@@ -159,7 +159,7 @@ class EmailAlertService @Inject()(
     taxId match {
       case Some(id) =>
         Map("sautr" -> id.sautr.getOrElse("N/A"), "nino" -> id.nino.getOrElse("N/A")) ++
-          default.filterNot(p => List("sautr", "nino") contains (p._1))
+          default.filterNot(p => List("sautr", "nino") contains p._1)
       case _ => default
     }
 }

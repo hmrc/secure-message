@@ -17,7 +17,7 @@
 package uk.gov.hmrc.securemessage.connectors
 
 import play.api.{ Configuration, Logging }
-import play.api.libs.json.Json
+import play.api.libs.json.{ Json, OFormat }
 import play.mvc.Http.Status
 import uk.gov.hmrc.http.HttpClient
 import uk.gov.hmrc.common.message.model.{ Regime, TaxEntity }
@@ -44,7 +44,7 @@ sealed trait VerifiedEmailAddressResponse extends Product with Serializable {
 case class EmailValidation(email: String) extends VerifiedEmailAddressResponse
 
 object EmailValidation {
-  implicit val format = Json.format[EmailValidation]
+  implicit val format: OFormat[EmailValidation] = Json.format[EmailValidation]
 }
 
 case class VerifiedEmailNotFound(reasonCode: String) extends VerifiedEmailAddressResponse {

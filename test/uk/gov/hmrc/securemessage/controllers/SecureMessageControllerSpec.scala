@@ -16,9 +16,9 @@
 
 package uk.gov.hmrc.securemessage.controllers
 
-import akka.stream.Materializer
-import akka.stream.testkit.NoMaterializer
-import org.joda.time.{ DateTime, LocalDate }
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.testkit.NoMaterializer
+import java.time.{ Instant, LocalDate }
 import org.mockito.ArgumentMatchers.{ any, eq => eqTo }
 import org.mockito.Mockito.{ times, verify, when }
 import org.mongodb.scala.bson.ObjectId
@@ -262,7 +262,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
 
     "return a letter" in new GetMessageByIdTestCase(
       storedLetter = Some(Resources.readJson("model/core/letter.json").as[JsObject] + ("_id" -> Json.toJson(objectID))
-        + ("lastUpdated"                                                                     -> Json.toJson(DateTime.now())))) {
+        + ("lastUpdated"                                                                     -> Json.toJson(Instant.now())))) {
       val response: Future[Result] = controller
         .getMessage(base64Encode(s"${MessageType.Letter.entryName}/$objectID"))
         .apply(FakeRequest("GET", "/"))
@@ -274,7 +274,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     "return a letter when auth enrolments hold multiple identifiers and enrolments " in new GetMessageByIdTestCase(
       storedLetter = Some(
         Resources.readJson("model/core/letter.json").as[JsObject] + ("_id" -> Json.toJson(objectID))
-          + ("lastUpdated"                                                 -> Json.toJson(DateTime.now()))),
+          + ("lastUpdated"                                                 -> Json.toJson(Instant.now()))),
       Set(
         testEnrolment,
         CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB023456800"),
@@ -315,7 +315,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
 
     "return BadRequest(Invalid message type) if messageType is invalid" in new GetMessageByIdTestCase(
       storedLetter = Some(Resources.readJson("model/core/letter.json").as[JsObject] + ("_id" -> Json.toJson(objectID))
-        + ("lastUpdated"                                                                     -> Json.toJson(DateTime.now())))) {
+        + ("lastUpdated"                                                                     -> Json.toJson(Instant.now())))) {
       private val objId: String = objectID.toString
       private val messageType = "SomeRandomType"
       private val rawId: String = base64Encode(s"$messageType/$objId")
@@ -328,7 +328,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
 
     "return BadRequest if decoding cant find id" in new GetMessageByIdTestCase(
       storedLetter = Some(Resources.readJson("model/core/letter.json").as[JsObject] + ("_id" -> Json.toJson(objectID))
-        + ("lastUpdated"                                                                     -> Json.toJson(DateTime.now())))) {
+        + ("lastUpdated"                                                                     -> Json.toJson(Instant.now())))) {
       val response: Future[Result] = controller
         .getMessage(base64Encode("test/63909766af00005fff7e2cb1/test"))
         .apply(FakeRequest("GET", "/"))

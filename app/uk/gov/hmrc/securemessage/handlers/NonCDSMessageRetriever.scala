@@ -17,8 +17,8 @@
 package uk.gov.hmrc.securemessage.handlers
 
 import org.bson.types.ObjectId
-import org.joda.time.LocalDate
-import org.joda.time.format.DateTimeFormat
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import play.api.i18n.Messages
 import play.api.libs.json.{ JsValue, Json }
 import uk.gov.hmrc.http.HeaderCarrier
@@ -166,17 +166,17 @@ class NonCDSMessageRetriever @Inject()(
       case None            => localizedFormatter(letter.validFrom)
     }
 
-  private val dateFormatter = DateTimeFormat.forPattern("dd MMMM yyyy")
-  def formatter(date: LocalDate): String = date.toString(dateFormatter)
+  private val dateFormatter = DateTimeFormatter.ofPattern("dd MMMM yyyy")
+  def formatter(date: LocalDate): String = date.format(dateFormatter)
 
   private def localizedFormatter(date: LocalDate)(implicit messages: Messages): String = {
     val formatter =
       if (messages.lang.language == "cy") {
-        DateTimeFormat.forPattern(s"d '${messages(s"month.${date.getMonthOfYear}")}' yyyy")
+        DateTimeFormatter.ofPattern(s"d '${messages(s"month.${date.getMonthValue}")}' yyyy")
       } else {
         dateFormatter
       }
-    date.toString(formatter)
+    date.format(formatter)
   }
 
   def findAndSetReadTime(id: ObjectId)(

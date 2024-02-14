@@ -19,7 +19,6 @@ package uk.gov.hmrc.securemessage.repository
 import org.bson.types.ObjectId
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model._
-import play.api.libs.json.JodaWrites.{ JodaDateTimeWrites => _ }
 import play.api.libs.json.{ JsObject, Json }
 import uk.gov.hmrc.common.message.model.{ MessagesCount, Regime }
 import uk.gov.hmrc.domain.TaxIds.TaxIdWithName

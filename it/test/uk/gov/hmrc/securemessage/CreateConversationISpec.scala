@@ -34,7 +34,7 @@ class CreateConversationISpec extends ISpec {
         wsClient
           .url(resource("/secure-messaging/conversation/CDCM/D-80542-20201120"))
           .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
-          .put(new File("./it/resources/cdcm/create-conversation.json"))
+          .put(new File("./it/test/resources/cdcm/create-conversation.json"))
           .futureValue
       response.status mustBe CREATED
     }
@@ -44,7 +44,7 @@ class CreateConversationISpec extends ISpec {
         wsClient
           .url(resource("/secure-messaging/conversation/CDCM/D-80542-20201120"))
           .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
-          .put(new File("./it/resources/cdcm/create-conversation-minimal.json"))
+          .put(new File("./it/test/resources/cdcm/create-conversation-minimal.json"))
           .futureValue
       response.status mustBe CREATED
     }
@@ -54,7 +54,7 @@ class CreateConversationISpec extends ISpec {
         wsClient
           .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
           .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
-          .put(new File("./it/resources/cdcm/create-conversation.json"))
+          .put(new File("./it/test/resources/cdcm/create-conversation.json"))
           .futureValue
       response.status mustBe BAD_REQUEST
       response.body must startWith("Unknown value supplied for uk.gov.hmrc.securemessage.controllers.model.ClientName")
@@ -75,12 +75,12 @@ class CreateConversationISpec extends ISpec {
       wsClient
         .url(resource("/secure-messaging/conversation/CDCM/D-80542-20201120"))
         .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
-        .put(new File("./it/resources/cdcm/create-conversation-minimal.json"))
+        .put(new File("./it/test/resources/cdcm/create-conversation-minimal.json"))
         .futureValue
       val response: WSResponse = wsClient
         .url(resource("/secure-messaging/conversation/CDCM/D-80542-20201120"))
         .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
-        .put(new File("./it/resources/cdcm/create-conversation-minimal.json"))
+        .put(new File("./it/test/resources/cdcm/create-conversation-minimal.json"))
         .futureValue
       response.status mustBe CONFLICT
     }
@@ -90,7 +90,7 @@ class CreateConversationISpec extends ISpec {
         wsClient
           .url(resource("/secure-messaging/conversation/CDCM/D-80542-20201120"))
           .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
-          .put(new File("./it/resources/cdcm/conversation-request-invalid-html.json"))
+          .put(new File("./it/test/resources/cdcm/conversation-request-invalid-html.json"))
           .futureValue
       response.status mustBe BAD_REQUEST
       response.body mustBe

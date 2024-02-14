@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.securemessage.services
 
-import akka.Done
+import org.apache.pekko.Done
 import com.google.inject.AbstractModule
 import net.codingwell.scalaguice.ScalaModule
 import org.mockito.ArgumentMatchers.{ eq => eqTo }

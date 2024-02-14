@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.securemessage.repository
 
-import org.joda.time.{ DateTime, LocalDate }
+import java.time.{ Instant, LocalDate }
 import org.mongodb.scala.bson.ObjectId
 import org.mongodb.scala.model.Filters
 import org.scalatest.{ BeforeAndAfterEach, EitherValues }
@@ -36,6 +36,8 @@ import scala.concurrent.Future
 class MessageRepositorySpec
     extends PlaySpec with DefaultPlayMongoRepositorySupport[Letter] with BeforeAndAfterEach with ScalaFutures
     with StaticTestData with EitherValues {
+
+  override def checkTtlIndex: Boolean = false
 
   override lazy val repository = new MessageRepository(mongoComponent)
 
@@ -210,8 +212,8 @@ class MessageRepositorySpec
 }
 
 trait StaticTestData {
-  val lastUpdatedField: (String, JsValue) = "lastUpdated" -> Json.toJson(DateTime.now())
-  val readTimeField: (String, JsValue) = "readTime"       -> Json.toJson(DateTime.now())
+  val lastUpdatedField: (String, JsValue) = "lastUpdated" -> Json.toJson(Instant.now())
+  val readTimeField: (String, JsValue) = "readTime"       -> Json.toJson(Instant.now())
   val timeFields = Seq(lastUpdatedField, readTimeField)
   val lettersWithTimeFields = List(Resources.readJson("model/core/letter.json").add(timeFields))
   val lettersWithoutReadTime = List(Resources.readJson("model/core/letter.json").add(Seq(lastUpdatedField)))

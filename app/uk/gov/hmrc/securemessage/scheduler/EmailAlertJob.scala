@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.securemessage.scheduler
 
-import akka.actor.{ Actor, Timers }
-import akka.stream.Materializer
+import org.apache.pekko.actor.{ Actor, Timers }
+import org.apache.pekko.stream.Materializer
 import play.api.{ Configuration, Logging }
 import play.libs.exception.ExceptionUtils
 import uk.gov.hmrc.mongo.lock.{ LockRepository, LockService }

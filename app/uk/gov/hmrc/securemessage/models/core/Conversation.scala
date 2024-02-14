@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.securemessage.models.core
 import cats.data.NonEmptyList
-import org.joda.time.DateTime
+import java.time.Instant
 import org.mongodb.scala.bson.ObjectId
 import play.api.libs.json.{ Format, Json, OFormat }
 import uk.gov.hmrc.mongo.play.json.formats.MongoFormats
@@ -38,8 +38,8 @@ final case class Conversation(
   alert: Alert)
     extends Message with OrderingDefinitions {
 
-  override def issueDate: DateTime = latestMessage.created
-  override def readTime: Option[DateTime] = None //Used for other message types
+  override def issueDate: Instant = latestMessage.created
+  override def readTime: Option[Instant] = None //Used for other message types
 
   def latestMessage: ConversationMessage = messages.toList.maxBy(_.created)(dateTimeAscending)
 
@@ -51,12 +51,11 @@ final case class Conversation(
   @nowarn("msg=parameter value lastRead in anonymous function is never used") // false positive
   def unreadMessagesFor(reader: Set[Identifier]): List[ConversationMessage] = {
     val maybeParticipant = findParticipant(reader)
-    val maybeLastRead = maybeParticipant.flatMap(_.lastReadTime.orElse(Some(new DateTime(0))))
+    val maybeLastRead = maybeParticipant.flatMap(_.lastReadTime.orElse(Some(Instant.ofEpochMilli(0))))
     for {
       participant <- maybeParticipant.toList
       message     <- messages.toList
-      lastRead    <- maybeLastRead
-      if participant.id != message.senderId && lastRead.isBefore(message.created)
+      lastRead    <- maybeLastRead if participant.id != message.senderId && lastRead.isBefore(message.created)
     } yield message
   }
 
@@ -71,7 +70,7 @@ object Conversation extends NonEmptyListOps {
         case Some(participant) => Right(participant)
         case None =>
           Left(ParticipantNotFound(
-            s"No participant found for client: ${conversation.client}, conversationId: ${conversation.id}, indentifiers: $identifiers"))
+            s"No participant found for client: ${conversation.client}, conversationId: ${conversation.id}, identifiers: $identifiers"))
       }
   }
 }

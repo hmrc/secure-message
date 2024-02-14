@@ -18,8 +18,8 @@ package uk.gov.hmrc.securemessage.controllers
 
 import org.apache.commons.codec.binary.Base64
 import org.bson.types.ObjectId
-import org.joda.time.{ DateTime, DateTimeZone, LocalDate }
-import org.joda.time.format.DateTimeFormat
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document.OutputSettings
 import org.jsoup.safety.{ Safelist => JsouptAllowList }
@@ -68,17 +68,17 @@ object SecureMessageUtil {
       case None            => localizedFormatter(message.validFrom)
     }
 
-  private val dateFormatter = DateTimeFormat.forPattern("dd MMMM yyyy")
-  def formatter(date: LocalDate): String = date.toString(dateFormatter)
+  private val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd MMMM yyyy")
+  def formatter(date: LocalDate): String = date.format(dateFormatter)
 
   private def localizedFormatter(date: LocalDate)(implicit messages: Messages): String = {
     val formatter =
       if (messages.lang.language == "cy") {
-        DateTimeFormat.forPattern(s"d '${messages(s"month.${date.getMonthOfYear}")}' yyyy")
+        DateTimeFormatter.ofPattern(s"d '${messages(s"month.${date.getMonthValue}")}' yyyy")
       } else {
         dateFormatter
       }
-    date.toString(formatter)
+    date.format(formatter)
   }
 
   private def errorResponseWithErrorId(errorMessage: String, responseCode: Int = BAD_REQUEST) =
@@ -506,7 +506,7 @@ class SecureMessageUtil @Inject()(
           Some(s"${iterator.next()}"),
           message.details.map(_.formId)
         )
-        val availableAt: Instant = extraAlertRepository.now().plusMillis(extraAlert.delay.getMillis)
+        val availableAt: Instant = extraAlertRepository.now().plusMillis(extraAlert.delay.toMillis)
         extraAlertRepository
           .pushNew(
             item,
@@ -554,7 +554,7 @@ class SecureMessageUtil @Inject()(
     secureMessageRepository.getSecureMessage(id, identifiers)
 
   def addReadTime(id: ObjectId)(implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] =
-    secureMessageRepository.addReadTime(id, DateTime.now.withZone(DateTimeZone.UTC))
+    secureMessageRepository.addReadTime(id, Instant.now)
 }
 
 case class MessageValidationException(message: String) extends RuntimeException(message)

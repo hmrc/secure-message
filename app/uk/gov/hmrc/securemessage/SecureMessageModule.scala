@@ -18,9 +18,9 @@ package uk.gov.hmrc.securemessage
 
 import com.google.inject.{ AbstractModule, Provides }
 import com.google.inject.name.Named
-import org.joda.time.{ DateTime, DateTimeZone }
+import java.time.Instant
 import play.api.Configuration
-import play.api.libs.concurrent.AkkaGuiceSupport
+import play.api.libs.concurrent.PekkoGuiceSupport
 import uk.gov.hmrc.common.message.model.TimeSource
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.securemessage.scheduler.EmailAlertJob
@@ -30,7 +30,7 @@ import uk.gov.hmrc.securemessage.utils.DateTimeUtils
 import javax.inject.Singleton
 import scala.concurrent.duration.FiniteDuration
 
-class SecureMessageModule extends AbstractModule with AkkaGuiceSupport {
+class SecureMessageModule extends AbstractModule with PekkoGuiceSupport {
 
   override def configure(): Unit = {
     bind(classOf[DateTimeUtils]).to(classOf[TimeProvider])
@@ -41,7 +41,7 @@ class SecureMessageModule extends AbstractModule with AkkaGuiceSupport {
   @Singleton
   @Provides
   def systemTimeSourceProvider(): TimeSource = new TimeSource() {
-    override def now(): DateTime = DateTime.now.withZone(DateTimeZone.UTC)
+    override def now(): Instant = Instant.now
   }
 
   @Provides

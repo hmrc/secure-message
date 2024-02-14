@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.securemessage.controllers.model.cdcm.read
 
-import org.joda.time.DateTime
+import java.time.Instant
 import play.api.i18n.Messages
 import play.api.libs.json.{ Json, OFormat }
 import uk.gov.hmrc.securemessage.controllers.model.ApiFormats
@@ -26,7 +26,7 @@ final case class ConversationMetadata(
   client: String,
   conversationId: String,
   subject: String,
-  issueDate: DateTime,
+  issueDate: Instant,
   senderName: Option[String],
   unreadMessages: Boolean,
   count: Int)
