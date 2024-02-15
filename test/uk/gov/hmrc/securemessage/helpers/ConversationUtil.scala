@@ -17,7 +17,6 @@
 package uk.gov.hmrc.securemessage.helpers
 
 import cats.data.NonEmptyList
-import org.joda.time.DateTime
 import org.mongodb.scala.bson.ObjectId
 import uk.gov.hmrc.common.message.emailaddress.EmailAddress
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CdcmConversation
@@ -26,9 +25,15 @@ import uk.gov.hmrc.securemessage.models.core
 import uk.gov.hmrc.securemessage.models.core.Language.English
 import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, _ }
 
+import java.time.format.DateTimeFormatter
+import java.time.{ Instant, OffsetDateTime, ZoneId, ZoneOffset }
+
 object ConversationUtil {
   val alert: core.Alert = core.Alert("emailTemplateId", Some(Map("param1" -> "value1", "param2" -> "value2")))
   val base64Content: String = "QmxhaCBibGFoIGJsYWg="
+
+  val dtf: DateTimeFormatter =
+    DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS").withZone(ZoneId.from(ZoneOffset.UTC))
 
   def getConversationRequestWithMultipleCustomers: CdcmConversation = {
     val cnv: CdcmConversation = Resources.readJson("model/api/cdcm/write/create-conversation.json").as[CdcmConversation]
@@ -51,7 +56,7 @@ object ConversationUtil {
       )),
     alert: core.Alert = alert,
     messageCreationDate: String = "2020-11-10T15:00:01.000",
-    readTimes: Option[List[DateTime]] = None,
+    readTimes: Option[List[Instant]] = None,
     email: Option[EmailAddress] = None
   ): Conversation =
     Conversation(
@@ -86,7 +91,7 @@ object ConversationUtil {
         ConversationMessage(
           Some("6e78776f-48ff-45bd-9da2-926e35519803"),
           1,
-          new DateTime(messageCreationDate),
+          OffsetDateTime.parse(messageCreationDate, dtf).toInstant,
           base64Content,
           Some(Reference(typeName = "X-Request-ID", value = "adsgr24frfvdc829r87rfsdf=="))
         )
@@ -125,7 +130,7 @@ object ConversationUtil {
         ConversationMessage(
           None,
           1,
-          new DateTime("2020-11-10T15:00:01.000"),
+          OffsetDateTime.parse("2020-11-10T15:00:01.000", dtf).toInstant,
           base64Content,
           None
         )

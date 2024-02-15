@@ -17,7 +17,8 @@
 package uk.gov.hmrc.securemessage.models.v4
 
 import org.apache.commons.codec.binary.Base64
-import org.joda.time.{DateTime, DateTimeZone, LocalDate, LocalTime}
+
+import java.time.{Instant, LocalDate, LocalTime, ZoneOffset, ZonedDateTime}
 import org.mongodb.scala.bson.ObjectId
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
@@ -44,7 +45,7 @@ case class SecureMessage(_id: ObjectId,
                          hash: String,
                          status: ProcessingStatus = ToDo,
                          alerts: Option[EmailAlert] = None,
-                         readTime: Option[DateTime] = None,
+                         readTime: Option[Instant] = None,
                          verificationBrake: Option[Boolean] = None) extends uk.gov.hmrc.securemessage.models.core.Message {
 
   def templateId: String = alertDetails.templateId
@@ -52,7 +53,7 @@ case class SecureMessage(_id: ObjectId,
   def auditData: Map[String, String] = alertDetails.data ++
     Map("messageId" -> _id.toString, recipient.identifier.name -> recipient.identifier.value)
 
-  override def issueDate: DateTime = validFrom.toDateTime(LocalTime.MIDNIGHT, DateTimeZone.UTC)
+  override def issueDate: Instant = ZonedDateTime.of(validFrom.atTime(LocalTime.MIDNIGHT), ZoneOffset.UTC).toInstant
 }
 
 object SecureMessage extends ApiFormats with AlertEmailTemplateMapper {

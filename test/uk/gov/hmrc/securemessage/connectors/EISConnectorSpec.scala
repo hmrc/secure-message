@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.securemessage.connectors
 
-import org.joda.time.DateTime
 import play.api.http.Status.BAD_REQUEST
 import play.api.http.Status.NO_CONTENT
 import org.mockito.ArgumentMatchers.any
@@ -31,6 +30,7 @@ import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.securemessage.models.{ QueryMessageRequest, QueryMessageWrapper, RequestCommon, RequestDetail }
 
+import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -49,7 +49,7 @@ class EISConnectorSpec extends PlaySpec with ScalaFutures with MockitoSugar with
 
       val eisConnector = new EISConnector(httpClient, servicesConfig, auditConnector)
       val result = eisConnector.forwardMessage(
-        QueryMessageWrapper(QueryMessageRequest(RequestCommon("", DateTime.now, ""), RequestDetail("", "", ""))))
+        QueryMessageWrapper(QueryMessageRequest(RequestCommon("", Instant.now, ""), RequestDetail("", "", ""))))
       result.futureValue.toOption.get mustBe ()
     }
     "return error for bad request from eis" in {
@@ -61,7 +61,7 @@ class EISConnectorSpec extends PlaySpec with ScalaFutures with MockitoSugar with
 
       val eisConnector = new EISConnector(httpClient, servicesConfig, auditConnector)
       val result = eisConnector.forwardMessage(
-        QueryMessageWrapper(QueryMessageRequest(RequestCommon("", DateTime.now, ""), RequestDetail("", "", ""))))
+        QueryMessageWrapper(QueryMessageRequest(RequestCommon("", Instant.now, ""), RequestDetail("", "", ""))))
       result.futureValue.left.value.message must include("There was an issue with forwarding the message to EIS")
     }
   }

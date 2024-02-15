@@ -16,9 +16,9 @@
 
 package uk.gov.hmrc.securemessage.controllers
 
-import akka.stream.Materializer
-import akka.stream.testkit.NoMaterializer
-import org.joda.time.LocalDate
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.testkit.NoMaterializer
+import java.time.LocalDate
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when

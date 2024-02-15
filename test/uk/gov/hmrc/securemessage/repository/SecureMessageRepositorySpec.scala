@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.securemessage.repository
 
-import org.joda.time.{ DateTime, LocalDate }
+import java.time.{ Instant, LocalDate }
 import org.mongodb.scala.model.Filters
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
@@ -35,6 +35,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class SecureMessageRepositorySpec
     extends PlaySpec with MockitoSugar with DefaultPlayMongoRepositorySupport[SecureMessage] with BeforeAndAfterEach
     with ScalaFutures {
+
+  override def checkTtlIndex: Boolean = false
 
   override lazy val repository = new SecureMessageRepository(mongoComponent, mock[TimeSource], 30, 30, 30)
 
@@ -63,7 +65,7 @@ class SecureMessageRepositorySpec
       val result: MessagesCount = await(repository.countBy(Set(message.recipient.identifier)))
       result mustBe MessagesCount(1, 1)
 
-      await(repository.save(niMessage.copy(readTime = Some(DateTime.now()), verificationBrake = Some(false))))
+      await(repository.save(niMessage.copy(readTime = Some(Instant.now()), verificationBrake = Some(false))))
       val result1: MessagesCount =
         await(repository.countBy(Set(message.recipient.identifier, niMessage.recipient.identifier)))
       result1 mustBe MessagesCount(2, 1)
@@ -79,7 +81,7 @@ class SecureMessageRepositorySpec
       val result: Count = await(repository.getSecureMessageCount(Set(identifier), None))
       result mustBe Count(1, 1)
 
-      await(repository.save(niMessage.copy(readTime = Some(DateTime.now()), verificationBrake = Some(false))))
+      await(repository.save(niMessage.copy(readTime = Some(Instant.now()), verificationBrake = Some(false))))
       val result1: Count = await(repository.getSecureMessageCount(Set(identifier, niIdentifier), None))
       result1 mustBe Count(2, 1)
     }
@@ -114,7 +116,7 @@ class SecureMessageRepositorySpec
       val niTaxIdWithName = niMessage.recipient.identifier
       val identifier = Identifier("", taxIdWithName.value, Some(taxIdWithName.name))
       val niIdentifier = Identifier("", niTaxIdWithName.value, Some(niTaxIdWithName.name))
-      val readTime = DateTime.now()
+      val readTime = Instant.now()
       await(repository.save(message))
       await(repository.addReadTime(message._id, readTime))
 

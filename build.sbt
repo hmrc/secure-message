@@ -14,9 +14,15 @@
  * limitations under the License.
  */
 
-import uk.gov.hmrc.DefaultBuildSettings.integrationTestSettings
+import play.sbt.PlayImport.PlayKeys
+import sbt.Keys._
+import uk.gov.hmrc.DefaultBuildSettings
 
 val appName = "secure-message"
+
+ThisBuild / majorVersion := 0
+ThisBuild / scalaVersion := "2.13.8"
+
 
 lazy val microservice = Project(appName, file("."))
   .enablePlugins(
@@ -26,8 +32,6 @@ lazy val microservice = Project(appName, file("."))
   )
   .disablePlugins(JUnitXmlReportPlugin)
   .settings(
-    majorVersion := 0,
-    scalaVersion := "2.13.8",
     libraryDependencies ++= AppDependencies.compile ++ AppDependencies.test,
     scalacOptions ++= Seq(
       // Silence unused warnings on Play `routes` files
@@ -36,26 +40,18 @@ lazy val microservice = Project(appName, file("."))
     ),
     routesImport ++= Seq(
       "uk.gov.hmrc.securemessage.controllers.binders._",
-//      "uk.gov.hmrc.securemessage.controllers.SecureMessageController",
       "uk.gov.hmrc.securemessage.controllers.model._",
       "uk.gov.hmrc.securemessage.controllers.model.common._",
       "uk.gov.hmrc.securemessage.models.core.CustomerEnrolment",
       "uk.gov.hmrc.securemessage.models.core.FilterTag"
     )
   )
-  .configs(IntegrationTest)
-  .settings(integrationTestSettings(): _*)
-  .settings(
-    inConfig(IntegrationTest)(
-      scalafmtCoreSettings ++
-        Seq(compile / compileInputs := Def.taskDyn {
-          val task = resolvedScoped.value.scope / scalafmt.key / test
-          val previousInputs = (compile / compileInputs).value
-          task.map(_ => previousInputs)
-        }.value)
-    )
-  )
   .settings(ScoverageSettings())
+
+lazy val it = project
+  .enablePlugins(PlayScala)
+  .dependsOn(microservice % "test->test") // the "test->test" allows reusing test code and test dependencies
+  .settings(DefaultBuildSettings.itSettings())
 
 lazy val compileScalastyle = taskKey[Unit]("compileScalastyle1")
 compileScalastyle := (Compile / scalastyle).toTask("").value
@@ -83,7 +79,7 @@ dependencyUpdatesFailBuild := false
 dependencyUpdatesFilter -= moduleFilter(organization = "uk.gov.hmrc")
 dependencyUpdatesFilter -= moduleFilter(organization = "org.scala-lang")
 dependencyUpdatesFilter -= moduleFilter(organization = "com.github.ghik")
-dependencyUpdatesFilter -= moduleFilter(organization = "com.typesafe.play")
+dependencyUpdatesFilter -= moduleFilter(organization = "org.playframework")
 dependencyUpdatesFilter -= moduleFilter(organization = "org.scalatestplus.play")
 dependencyUpdatesFilter -= moduleFilter(organization = "org.webjars")
 dependencyUpdatesFilter -= moduleFilter(name = "enumeratum-play")

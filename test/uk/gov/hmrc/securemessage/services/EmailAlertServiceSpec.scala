@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.securemessage.services
 
-import akka.actor.typed.ActorSystem
-import akka.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{ times, verify, when }
 import org.mongodb.scala.bson.ObjectId

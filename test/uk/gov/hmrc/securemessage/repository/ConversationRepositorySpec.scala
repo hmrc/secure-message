@@ -17,7 +17,8 @@
 package uk.gov.hmrc.securemessage.repository
 
 import cats.data.NonEmptyList
-import org.joda.time.DateTime
+
+import java.time.Instant
 import org.mongodb.scala.bson.ObjectId
 import org.mongodb.scala.model.Filters
 import org.scalatest.BeforeAndAfterEach
@@ -28,6 +29,7 @@ import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 import uk.gov.hmrc.securemessage.helpers.ConversationUtil
 import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.securemessage.{ MessageNotFound, StoreError }
+import uk.gov.hmrc.securemessage.helpers.DateTimeHelper._
 
 import scala.collection.immutable
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -39,6 +41,8 @@ class ConversationRepositorySpec
     extends PlaySpec with DefaultPlayMongoRepositorySupport[Conversation] with BeforeAndAfterEach with ScalaFutures {
 
   override lazy val repository: ConversationRepository = new ConversationRepository(mongoComponent)
+
+  override def checkTtlIndex: Boolean = false
 
   val conversation1: Conversation =
     ConversationUtil.getFullConversation(new ObjectId(), "123", "HMRC-CUS-ORG", "EORINumber", "GB1234567890")
@@ -238,8 +242,8 @@ class ConversationRepositorySpec
     "increase the message array size" in new TestContext(
       conversations = Seq(conversation)
     ) {
-      val message1: ConversationMessage = ConversationMessage(None, 2, new DateTime(), "test", None)
-      val message2: ConversationMessage = ConversationMessage(None, 3, new DateTime(), "test", None)
+      val message1: ConversationMessage = ConversationMessage(None, 2, Instant.now(), "test", None)
+      val message2: ConversationMessage = ConversationMessage(None, 3, Instant.now(), "test", None)
       await(repository.addMessageToConversation(conversation.client, conversation.id, message1))
       await(repository.addMessageToConversation(conversation.client, conversation.id, message2))
       val updated: Either[MessageNotFound, Conversation] = await(
@@ -260,7 +264,7 @@ class ConversationRepositorySpec
       conversations = Seq(conversation)
     ) {
       val result: Either[StoreError, Unit] =
-        await(repository.addReadTime(conversation.client, conversation.id, 2, DateTime.now))
+        await(repository.addReadTime(conversation.client, conversation.id, 2, Instant.now))
       result mustBe Right(())
     }
   }
@@ -287,7 +291,7 @@ class ConversationRepositorySpec
     "return 2 total messages and 1 unread" in new TestContext(
       conversations = allConversations
     ) {
-      await(repository.addReadTime(conversation1.client, conversation1.id, 2, DateTime.now))
+      await(repository.addReadTime(conversation1.client, conversation1.id, 2, Instant.now))
       val result: Count =
         await(
           repository.getConversationsCount(Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))), None))
@@ -318,14 +322,14 @@ class ConversationRepositorySpec
 
   "Conversation Unread count" should {
     "render 1 if system Message is after participant readTime" in {
-      val systemMessage = ConversationMessage(None, 1, DateTime.now.minusDays(1), "!!!", None)
+      val systemMessage = ConversationMessage(None, 1, minusDays(Instant.now, 1), "!!!", None)
       val systemParticipant =
         Participant(1, ParticipantType.System, Identifier("CDCM", "SMF123456789", None), None, None, None, None)
       val customerParticipant = Participant(
         2,
         ParticipantType.Customer,
         Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")),
-        readTimes = Some(List(DateTime.now().minusDays(2))),
+        readTimes = Some(List(minusDays(Instant.now, 2))),
         name = None,
         email = None,
         parameters = None
@@ -339,14 +343,14 @@ class ConversationRepositorySpec
     }
 
     "render 0 if system Message is before participant readTime" in {
-      val systemMessage = ConversationMessage(None, 1, DateTime.now.minusDays(2), "!!!", None)
+      val systemMessage = ConversationMessage(None, 1, minusDays(Instant.now, 2), "!!!", None)
       val systemParticipant =
         Participant(1, ParticipantType.System, Identifier("CDCM", "SMF123456789", None), None, None, None, None)
       val customerParticipant = Participant(
         2,
         ParticipantType.Customer,
         Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")),
-        readTimes = Some(List(DateTime.now().minusDays(1))),
+        readTimes = Some(List(minusDays(Instant.now, 1))),
         name = None,
         email = None,
         parameters = None
@@ -360,14 +364,14 @@ class ConversationRepositorySpec
     }
 
     "render 0 if customer Message is after participant readTime" in {
-      val customerMessage = ConversationMessage(None, 2, DateTime.now.minusDays(1), "!!!", None)
+      val customerMessage = ConversationMessage(None, 2, minusDays(Instant.now, 1), "!!!", None)
       val systemParticipant =
         Participant(1, ParticipantType.System, Identifier("CDCM", "SMF123456789", None), None, None, None, None)
       val customerParticipant = Participant(
         2,
         ParticipantType.Customer,
         Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")),
-        readTimes = Some(List(DateTime.now().minusDays(2))),
+        readTimes = Some(List(minusDays(Instant.now, 2))),
         name = None,
         email = None,
         parameters = None
@@ -381,14 +385,14 @@ class ConversationRepositorySpec
     }
 
     "render 1 if system Message is after participant readTime with multiple readTimes" in {
-      val systemMessage = ConversationMessage(None, 1, DateTime.now.minusDays(1), "!!!", None)
+      val systemMessage = ConversationMessage(None, 1, minusDays(Instant.now, 1), "!!!", None)
       val systemParticipant =
         Participant(1, ParticipantType.System, Identifier("CDCM", "SMF123456789", None), None, None, None, None)
       val customerParticipant = Participant(
         2,
         ParticipantType.Customer,
         Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")),
-        readTimes = Some(List(DateTime.now().minusDays(2), DateTime.now().minusDays(3))),
+        readTimes = Some(List(minusDays(Instant.now, 2), minusDays(Instant.now, 3))),
         name = None,
         email = None,
         parameters = None
@@ -411,15 +415,15 @@ class ConversationRepositorySpec
   }
 
   class TextContextWithInsert(conversations: Seq[Conversation]) {
-    val systemMessage = ConversationMessage(None, 1, DateTime.now.minusDays(1), "!!!", None)
-    val systemMessageOld = ConversationMessage(None, 1, DateTime.now.minusDays(3), "!!!", None)
+    val systemMessage = ConversationMessage(None, 1, minusDays(Instant.now, 1), "!!!", None)
+    val systemMessageOld = ConversationMessage(None, 1, minusDays(Instant.now, 3), "!!!", None)
     val systemParticipant =
       Participant(1, ParticipantType.System, Identifier("CDCM", "SMF123456789", None), None, None, None, None)
     val customerParticipant = Participant(
       2,
       ParticipantType.Customer,
       Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")),
-      readTimes = Some(List(DateTime.now().minusDays(2))),
+      readTimes = Some(List(minusDays(Instant.now, 2))),
       name = None,
       email = None,
       parameters = None

@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.securemessage.controllers.model.common.read
 
-import org.joda.time.{ DateTime, LocalDate }
+import java.time.{ Instant, LocalDate }
 import play.api.i18n.Messages
 import play.api.libs.json.{ Json, OFormat }
 import uk.gov.hmrc.auth.core.Enrolments
@@ -33,13 +33,13 @@ final case class MessageMetadata(
   messageType: MessageType = MessageType.Letter,
   id: String,
   subject: String,
-  issueDate: DateTime,
+  issueDate: Instant,
   senderName: Option[String] = None,
   unreadMessages: Boolean = false,
   count: Int = 1,
   taxpayerName: Option[RecipientName] = None,
   validFrom: Option[LocalDate] = None,
-  readTime: Option[DateTime] = None,
+  readTime: Option[Instant] = None,
   replyTo: Option[String] = None,
   sentInError: Option[Boolean] = None,
   messageDesc: Option[String] = None,

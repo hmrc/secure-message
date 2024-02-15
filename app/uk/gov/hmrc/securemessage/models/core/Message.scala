@@ -16,11 +16,11 @@
 
 package uk.gov.hmrc.securemessage.models.core
 
-import org.joda.time.DateTime
+import java.time.Instant
 import org.mongodb.scala.bson.ObjectId
 
 trait Message {
-  def issueDate: DateTime
-  def readTime: Option[DateTime]
+  def issueDate: Instant
+  def readTime: Option[Instant]
   val _id: ObjectId
 }

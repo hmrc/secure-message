@@ -16,14 +16,15 @@
 
 package uk.gov.hmrc.securemessage.models.core
 
-import org.joda.time.{ DateTime, DateTimeZone, LocalDate, LocalTime }
+import java.time.{ Instant, LocalDate, ZoneOffset }
 import org.mongodb.scala.bson.ObjectId
-import play.api.libs.json.JodaReads.jodaLocalDateReads
-import play.api.libs.json.JodaWrites.jodaLocalDateWrites
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import uk.gov.hmrc.common.message.model.{ Adviser, MessageContentParameters, Rescindment }
-import uk.gov.hmrc.mongo.play.json.formats.{ MongoFormats, MongoJodaFormats }
+import uk.gov.hmrc.mongo.play.json.formats.{ MongoFormats, MongoJavatimeFormats }
+
+import uk.gov.hmrc.securemessage.models.core.DateFormats.formatLocalDateReads
+import uk.gov.hmrc.securemessage.models.core.DateFormats.formatLocalDateWrites
 
 final case class RecipientName(
   title: Option[String],
@@ -68,7 +69,7 @@ case class EmailAlert(
 )
 
 object EmailAlert {
-  implicit val dateTimeFormat: Format[DateTime] = MongoJodaFormats.dateTimeFormat
+  implicit val dateTimeFormat: Format[Instant] = MongoJavatimeFormats.instantFormat
   implicit val emailAlertFormat: OFormat[EmailAlert] = Json.format[EmailAlert]
 }
 
@@ -82,20 +83,20 @@ final case class Letter(
   status: String,
   content: Option[String] = None,
   statutory: Boolean,
-  lastUpdated: Option[DateTime],
+  lastUpdated: Option[Instant],
   recipient: Recipient,
   renderUrl: RenderUrl,
   externalRef: Option[ExternalReference],
   alertDetails: AlertDetails,
   alerts: Option[EmailAlert] = None,
-  readTime: Option[DateTime],
+  readTime: Option[Instant],
   replyTo: Option[String] = None,
   tags: Option[Map[String, String]] = None,
   rescindment: Option[Rescindment] = None,
   body: Option[Details] = None,
   contentParameters: Option[MessageContentParameters] = None
 ) extends Message {
-  override def issueDate: DateTime = validFrom.toDateTime(LocalTime.MIDNIGHT, DateTimeZone.UTC)
+  override def issueDate: Instant = validFrom.atStartOfDay().toInstant(ZoneOffset.UTC)
 }
 
 object Letter {
@@ -103,11 +104,11 @@ object Letter {
   private val localDateFormatString = "yyyy-MM-dd"
 
   implicit val localDateFormat: Format[LocalDate] =
-    Format(jodaLocalDateReads(localDateFormatString), jodaLocalDateWrites(localDateFormatString))
+    Format(formatLocalDateReads(localDateFormatString), formatLocalDateWrites(localDateFormatString))
 
   implicit val objectIdFormat: Format[ObjectId] = MongoFormats.objectIdFormat
 
-  implicit val isoDateFormat: Format[DateTime] = MongoJodaFormats.dateTimeFormat
+  implicit val isoDateFormat: Format[Instant] = MongoJavatimeFormats.instantFormat
 
   implicit val isoTime: Reads[LocalDate] = (__ \ "validFrom").read[LocalDate]
 
@@ -132,13 +133,13 @@ object Letter {
     (__ \ "status").read[String] ~
     (__ \ "content").readNullable[String] ~
     (__ \ "statutory").read[Boolean].orElse(legacyMessageStatutoryFromForm) ~
-    (__ \ "lastUpdated").readNullable[DateTime] ~
+    (__ \ "lastUpdated").readNullable[Instant] ~
     (__ \ "recipient").read[Recipient] ~
     (__ \ "renderUrl").read[RenderUrl].orElse(legacyRenderUrl) ~
     (__ \ "externalRef").readNullable[ExternalReference] ~
     (__ \ "alertDetails").read[AlertDetails].orElse(legacyDefaultAlertDetails) ~
     (__ \ "alerts").readNullable[EmailAlert] ~
-    (__ \ "readTime").readNullable[DateTime] ~
+    (__ \ "readTime").readNullable[Instant] ~
     (__ \ "replyTo").readNullable[String] ~
     (__ \ "tags").readNullable[Map[String, String]] ~
     (__ \ "rescindment").readNullable[Rescindment] ~
@@ -149,7 +150,7 @@ object Letter {
 
   implicit val letterFormat: OFormat[Letter] = OFormat(letterReads, letterWrites)
 
-  def dateTimeNow: JsValue = Json.toJson(DateTime.now())
+  def dateTimeNow: JsValue = Json.toJson(Instant.now())
 
   def localDateNow: JsValue = Json.toJson(LocalDate.now())
 }
@@ -195,7 +196,7 @@ object Details {
   private val localDateFormatString = "yyyy-MM-dd"
 
   implicit val localDateFormat: Format[LocalDate] =
-    Format(jodaLocalDateReads(localDateFormatString), jodaLocalDateWrites(localDateFormatString))
+    Format(formatLocalDateReads(localDateFormatString), formatLocalDateWrites(localDateFormatString))
 
 //  implicit val isoTime: Reads[LocalDate] = (__ \ "issueDate").read[LocalDate]
   implicit val format: OFormat[Details] = Json.format[Details]

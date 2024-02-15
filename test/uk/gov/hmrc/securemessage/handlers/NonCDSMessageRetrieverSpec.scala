@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.securemessage.handlers
 
-import akka.stream.Materializer
-import akka.stream.testkit.NoMaterializer
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.testkit.NoMaterializer
 import org.mockito.ArgumentMatchers.{ any, eq => eqTo }
 import org.mockito.Mockito.when
 import org.scalatest.concurrent.ScalaFutures

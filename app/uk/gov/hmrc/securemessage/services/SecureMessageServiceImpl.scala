@@ -20,8 +20,9 @@ import cats.data._
 import cats.implicits._
 import com.google.inject.Inject
 import org.apache.commons.codec.binary.Base64
-import org.joda.time.format.DateTimeFormat
-import org.joda.time.{ DateTime, LocalDate }
+
+import java.time.format.DateTimeFormatter
+import java.time.{ Instant, LocalDate, ZoneOffset }
 import org.mongodb.scala.bson.ObjectId
 import play.api.i18n.Messages
 import play.api.mvc.{ AnyContent, Request, Result }
@@ -96,7 +97,7 @@ class SecureMessageServiceImpl @Inject()(
     val identifiers: Set[Identifier] = filteredEnrolments.map(_.asIdentifier)
     conversationRepository.getConversations(identifiers, filters.tags).map {
       _.map(ConversationMetadata.coreToConversationMetadata(_, identifiers)) //TODO: move this to controllers
-        .sortBy(_.issueDate.getMillis)(Ordering[Long].reverse)
+        .sortBy(_.issueDate.toEpochMilli)(Ordering[Long].reverse)
     }
   }
 
@@ -150,7 +151,7 @@ class SecureMessageServiceImpl @Inject()(
     val identifiers = enrolments.map(_.asIdentifier)
     for {
       conversation <- EitherT(conversationRepository.getConversation(id, identifiers))
-      _            <- addReadTime(conversation, identifiers, DateTime.now())
+      _            <- addReadTime(conversation, identifiers, Instant.now())
     } yield ApiConversation.fromCore(conversation, identifiers)
   }.value
 
@@ -198,7 +199,7 @@ class SecureMessageServiceImpl @Inject()(
     hc: HeaderCarrier): Future[Either[SecureMessageError, Unit]] = {
     val senderIdentifier: Identifier = messagesRequest.senderIdentifier(client, conversationId)
     def message(sender: Participant) =
-      ConversationMessage(Some(randomId), sender.id, new DateTime(), messagesRequest.content, maybeReference)
+      ConversationMessage(Some(randomId), sender.id, Instant.now(), messagesRequest.content, maybeReference)
     for {
       _            <- ContentValidator.validate(messagesRequest.content)
       conversation <- EitherT(conversationRepository.getConversation(client, conversationId, Set(senderIdentifier)))
@@ -221,7 +222,7 @@ class SecureMessageServiceImpl @Inject()(
       ConversationMessage(
         Some(randomId),
         sender.id,
-        new DateTime(),
+        Instant.now,
         messagesRequest.content,
         reference
       )
@@ -249,7 +250,7 @@ class SecureMessageServiceImpl @Inject()(
       QueryMessageRequest(
         requestCommon = RequestCommon(
           originatingSystem = "dc-secure-message",
-          receiptDate = DateTime.now(),
+          receiptDate = Instant.now(),
           acknowledgementReference = correlationId
         ),
         requestDetail = messagesRequest.asRequestDetail(requestId, conversationId)
@@ -258,13 +259,13 @@ class SecureMessageServiceImpl @Inject()(
     EitherT(eisConnector.forwardMessage(queryMessageWrapper))
   }
 
-  private[services] def addReadTime(conversation: Conversation, identifiers: Set[Identifier], readTime: DateTime)(
+  private[services] def addReadTime(conversation: Conversation, identifiers: Set[Identifier], readTime: Instant)(
     implicit ec: ExecutionContext): EitherT[Future, SecureMessageError, Unit] = {
 
     def addTime(
       reader: Participant,
       conversation: Conversation,
-      readTime: DateTime): Future[Either[SecureMessageError, Unit]] =
+      readTime: Instant): Future[Either[SecureMessageError, Unit]] =
       reader.lastReadTime match {
         case None =>
           conversationRepository
@@ -397,18 +398,18 @@ class SecureMessageServiceImpl @Inject()(
     }
 
   private def addIssueDate(message: SecureMessage)(implicit messages: Messages): String = {
-    val issueDate = localizedFormatter(message.issueDate.toLocalDate)
+    val issueDate = localizedFormatter(LocalDate.ofInstant(message.issueDate, ZoneOffset.UTC))
     <p class='message_time faded-text--small govuk-body'>{s"${messages("date.text.advisor", issueDate)}"}</p><br/>.mkString
   }
 
   private def localizedFormatter(date: LocalDate)(implicit messages: Messages): String = {
     val formatter =
       if (messages.lang.language == "cy") {
-        DateTimeFormat.forPattern(s"d '${messages(s"month.${date.getMonthOfYear}")}' yyyy")
+        DateTimeFormatter.ofPattern(s"d '${messages(s"month.${date.getMonthValue}")}' yyyy")
       } else {
-        DateTimeFormat.forPattern("dd MMMM yyyy")
+        DateTimeFormatter.ofPattern("dd MMMM yyyy")
       }
-    date.toString(formatter)
+    date.format(formatter)
   }
 
   def decodeBase64String(input: String): String =

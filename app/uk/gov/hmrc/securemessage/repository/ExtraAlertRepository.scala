@@ -17,7 +17,7 @@
 package uk.gov.hmrc.securemessage.repository
 
 import org.bson.types.ObjectId
-import org.joda.time.{ Duration, LocalDate }
+import java.time.{ Duration, LocalDate }
 import org.mongodb.scala.model.{ Filters, Updates }
 import play.api.libs.json.{ Json, OFormat }
 import play.api.{ Configuration, Environment }
@@ -110,9 +110,9 @@ class ExtraAlertRepository @Inject()(
     val extraAlertDelay = extraAlertConfig
       .find(_.mainTemplate == brakeBatchApproval.templateId)
       .map(_.delay)
-      .getOrElse(Duration.millis(0))
-      .getMillis
-    val availableAt = now().plusMillis(extraAlertDelay)
+      .getOrElse(Duration.ofMillis(0))
+      .toMillis
+    val availableAt = now().plusMillis(extraAlertDelay.toLong)
 
     collection
       .updateOne(

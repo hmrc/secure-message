@@ -19,7 +19,6 @@ package uk.gov.hmrc.securemessage
 import cats.data.NonEmptyList
 import org.apache.commons.codec.binary.Base64
 import org.bson.types.ObjectId
-import org.joda.time.DateTime
 import org.mongodb.scala.model.Filters
 import org.scalatest.concurrent.{ IntegrationPatience, ScalaFutures }
 import org.scalatest.{ BeforeAndAfterEach, SuiteMixin }
@@ -36,6 +35,7 @@ import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository }
 
 import java.io.File
+import java.time.Instant
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.Random
 
@@ -60,7 +60,7 @@ trait ISpec
 
   protected def insertConversation(id: ObjectId) = {
     val conversationId = Random.nextInt(1000).toString
-    val messages = NonEmptyList(ConversationMessage(None, 1, DateTime.now, "content", None), List.empty)
+    val messages = NonEmptyList(ConversationMessage(None, 1, Instant.now, "content", None), List.empty)
     val conversation = Conversation(
       id,
       "CDCM",
@@ -97,7 +97,7 @@ trait ISpec
     wsClient
       .url(resource("/secure-messaging/conversation/cdcm/D-80542-20201120"))
       .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
-      .put(new File("./it/resources/cdcm/create-conversation.json"))
+      .put(new File("./it/test/resources/cdcm/create-conversation.json"))
   }
   override def fakeApplication(): Application =
     GuiceApplicationBuilder(environment = Environment.simple(mode = applicationMode.getOrElse(Mode.Test)))

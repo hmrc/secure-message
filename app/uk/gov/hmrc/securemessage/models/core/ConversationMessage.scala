@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.securemessage.models.core
 
-import org.joda.time.DateTime
+import java.time.Instant
 import play.api.libs.json.{ Json, OFormat }
 import uk.gov.hmrc.securemessage.controllers.model.ApiFormats
 
@@ -25,7 +25,7 @@ final case class Reference(typeName: String, value: String)
 final case class ConversationMessage(
   id: Option[String],
   senderId: Int,
-  created: DateTime,
+  created: Instant,
   content: String,
   reference: Option[Reference])
 object ConversationMessage extends ApiFormats {

@@ -16,10 +16,10 @@
 
 package uk.gov.hmrc.securemessage.utils
 
-import org.joda.time._
+import java.time.Instant
 
 trait DateTimeUtils {
-  def now: DateTime = DateTime.now.withZone(DateTimeZone.UTC)
+  def now: Instant = Instant.now
 }
 
 object DateTimeUtils extends DateTimeUtils
