@@ -52,6 +52,7 @@ sealed trait AlertEvent {
         Map(
           "emailTemplateName" -> message.templateId
         )
+          ++ message.details.map("formId"      -> _.formId).toMap
           ++ failureReason.map("failureReason" -> _).toMap
           ++ message.auditData
     )
