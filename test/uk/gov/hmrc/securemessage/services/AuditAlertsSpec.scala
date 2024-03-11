@@ -58,7 +58,8 @@ class AuditAlertsSpec extends PlaySpec {
           Map(
             "emailTemplateName" -> message.alertDetails.templateId,
             "messageId"         -> message._id.toString,
-            "sautr"             -> message.recipient.identifier.toString
+            "sautr"             -> message.recipient.identifier.toString,
+            "formId"            -> "SA300"
           )
         )
       )
@@ -88,7 +89,8 @@ class AuditAlertsSpec extends PlaySpec {
             "emailTemplateName" -> message.alertDetails.templateId,
             "failureReason"     -> failureReason,
             "messageId"         -> message._id.toString,
-            "sautr"             -> message.recipient.identifier.toString
+            "sautr"             -> message.recipient.identifier.toString,
+            "formId"            -> "SA300"
           )
         )
       )
