@@ -126,11 +126,11 @@ class EmailAlertService @Inject()(
       message.recipient.identifier match {
         case Nino(nino) =>
           mobilePushNotificationsConnector.sendNotification(
-            MobileNotification(Nino(nino))
+            MobileNotification(Nino(nino), message.templateId)
           )
         case SaUtr(saUtr) =>
           mobilePushNotificationsConnector.sendNotification(
-            MobileNotification(SaUtr(saUtr))
+            MobileNotification(SaUtr(saUtr), message.templateId)
           )
 
         case _ => Future.successful(())

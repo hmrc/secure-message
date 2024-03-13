@@ -19,7 +19,7 @@ package uk.gov.hmrc.securemessage.models.v4
 import play.api.libs.json._
 import uk.gov.hmrc.domain.TaxIds.TaxIdWithName
 
-case class MobileNotification(identifier: TaxIdWithName)
+case class MobileNotification(identifier: TaxIdWithName, templateId: String)
 
 object MobileNotification {
 
