@@ -39,7 +39,7 @@ class MobilePushNotificationsConnector @Inject()(
       )
       .map(_ => ())
       .recover {
-        case e => logger.warn(
-          s"Error while attempting to send alert to mobile push notification service ${e.getMessage}")
+        case e =>
+          logger.warn(s"Error while attempting to send alert to mobile push notification service ${e.getMessage}")
       }
 }
