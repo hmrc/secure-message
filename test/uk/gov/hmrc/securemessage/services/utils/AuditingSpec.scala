@@ -211,7 +211,7 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
           ))
       )
       verify(auditConnector).sendExplicitAudit(
-        "QueryMessageReadFailed",
+        "TxFailed",
         Map(
           conversationReadTxnName,
           "messageId"   -> "convId",
@@ -245,7 +245,7 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
       )
 
       verify(auditConnector).sendExplicitAudit(
-        "LetterReadSuccess",
+        "TxSucceeded",
         Map(
           letterReadSuccessTxnName,
           "id"          -> "value",
@@ -272,7 +272,7 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
       )
 
       verify(auditConnector).sendExplicitAudit(
-        "LetterReadSuccess",
+        "TxSucceeded",
         Map(
           letterReadSuccessTxnName,
           "id"               -> "value",
@@ -289,7 +289,7 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
       val _ = auditReadLetterFail("someId", enrolments)
 
       verify(auditConnector).sendExplicitAudit(
-        "LetterReadFailed",
+        "TxFailed",
         Map(
           letterReadFailedTxnName,
           "messageId"   -> "someId",
