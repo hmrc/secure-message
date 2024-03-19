@@ -33,6 +33,11 @@ trait AuditAlerts extends Logging {
     }
 }
 
+object EventTypes {
+  val Succeeded = "TxSucceeded"
+  val Failed = "TxFailed"
+}
+
 sealed trait AlertEvent {
 
   def auditEvent: DataEvent
@@ -43,7 +48,7 @@ sealed trait AlertEvent {
     failureReason: Option[String] = None): DataEvent =
     DataEvent(
       auditSource = "secure-message",
-      auditType = failureReason.fold("TxSucceeded")(_ => "TxFailed"),
+      auditType = failureReason.fold(EventTypes.Succeeded)(_ => EventTypes.Failed),
       tags = Map(
         "transactionName"                 -> "Send Email Alert",
         message.recipient.identifier.name -> message.recipient.identifier.value
