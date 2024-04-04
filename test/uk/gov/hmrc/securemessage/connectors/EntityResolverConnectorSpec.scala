@@ -54,7 +54,7 @@ class EntityResolverConnectorSpec
   "getTaxId in connector" must {
     "return a valid taxId information for the given saUtr" in {
       when(
-        mockHttp.GET(any[String], any[Seq[(String, String)]])(
+        mockHttp.GET(any[String], any[Seq[(String, String)]], any[Seq[(String, String)]])(
           any[HttpReads[HttpResponse]],
           any[HeaderCarrier],
           any[ExecutionContext]))
@@ -80,7 +80,7 @@ class EntityResolverConnectorSpec
   "verifiedEmailAddress in connector" must {
     "return a valid email when a preference is found for sautr" in {
       when(
-        mockHttp.GET(any[String], any[Seq[(String, String)]])(
+        mockHttp.GET(any[String], any[Seq[(String, String)]], any[Seq[(String, String)]])(
           any[HttpReads[HttpResponse]],
           any[HeaderCarrier],
           any[ExecutionContext]))
@@ -95,7 +95,7 @@ class EntityResolverConnectorSpec
     "return a valid email when a preference is found for nino" in {
       val nino = GenerateRandom.nino()
       when(
-        mockHttp.GET(any[String], any[Seq[(String, String)]])(
+        mockHttp.GET(any[String], any[Seq[(String, String)]], any[Seq[(String, String)]])(
           any[HttpReads[HttpResponse]],
           any[HeaderCarrier],
           any[ExecutionContext]))
@@ -108,7 +108,7 @@ class EntityResolverConnectorSpec
 
     "return VerifiedEmailNotFoundException when a preference is not found" in {
       when(
-        mockHttp.GET(any[String], any[Seq[(String, String)]])(
+        mockHttp.GET(any[String], any[Seq[(String, String)]], any[Seq[(String, String)]])(
           any[HttpReads[HttpResponse]],
           any[HeaderCarrier],
           any[ExecutionContext]))
@@ -122,7 +122,7 @@ class EntityResolverConnectorSpec
 
     "return a OtherException when status is 5xx" in {
       when(
-        mockHttp.GET(any[String], any[Seq[(String, String)]])(
+        mockHttp.GET(any[String], any[Seq[(String, String)]], any[Seq[(String, String)]])(
           any[HttpReads[HttpResponse]],
           any[HeaderCarrier],
           any[ExecutionContext]))
@@ -135,7 +135,7 @@ class EntityResolverConnectorSpec
 
     "return a OtherException when status is 4xx and is not 404" in {
       when(
-        mockHttp.GET(any[String], any[Seq[(String, String)]])(
+        mockHttp.GET(any[String], any[Seq[(String, String)]], any[Seq[(String, String)]])(
           any[HttpReads[HttpResponse]],
           any[HeaderCarrier],
           any[ExecutionContext]))
