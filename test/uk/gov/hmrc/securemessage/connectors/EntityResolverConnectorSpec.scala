@@ -26,7 +26,7 @@ import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{ JsObject, JsString }
 import uk.gov.hmrc.domain.{ HmrcMtdVat, SaUtr }
-import uk.gov.hmrc.http.{ HeaderCarrier, HttpClient, HttpResponse }
+import uk.gov.hmrc.http.{ HeaderCarrier, HttpClient, HttpReads, HttpResponse }
 import uk.gov.hmrc.mongo.metrix.MetricOrchestrator
 import uk.gov.hmrc.securemessage.models.TaxId
 import uk.gov.hmrc.securemessage.services.utils.{ GenerateRandom, MessageFixtures, MetricOrchestratorStub }
@@ -53,7 +53,11 @@ class EntityResolverConnectorSpec
 
   "getTaxId in connector" must {
     "return a valid taxId information for the given saUtr" in {
-      when(mockHttp.doGet(any[String], any[Seq[(String, String)]])(any[ExecutionContext]))
+      when(
+        mockHttp.GET(any[String], any[Seq[(String, String)]])(
+          any[HttpReads[HttpResponse]],
+          any[HeaderCarrier],
+          any[ExecutionContext]))
         .thenReturn(Future.successful(HttpResponse(
           200,
           s"""{ "_id"  : "entityId",
@@ -75,7 +79,11 @@ class EntityResolverConnectorSpec
 
   "verifiedEmailAddress in connector" must {
     "return a valid email when a preference is found for sautr" in {
-      when(mockHttp.doGet(any[String], any[Seq[(String, String)]])(any[ExecutionContext]))
+      when(
+        mockHttp.GET(any[String], any[Seq[(String, String)]])(
+          any[HttpReads[HttpResponse]],
+          any[HeaderCarrier],
+          any[ExecutionContext]))
         .thenReturn(
           Future.successful(HttpResponse(200, "{\"email\" :  \"an@email.com\"}", Map.empty[String, Seq[String]])))
 
@@ -86,7 +94,11 @@ class EntityResolverConnectorSpec
 
     "return a valid email when a preference is found for nino" in {
       val nino = GenerateRandom.nino()
-      when(mockHttp.doGet(any[String], any[Seq[(String, String)]])(any[ExecutionContext]))
+      when(
+        mockHttp.GET(any[String], any[Seq[(String, String)]])(
+          any[HttpReads[HttpResponse]],
+          any[HeaderCarrier],
+          any[ExecutionContext]))
         .thenReturn(Future.successful(
           HttpResponse(200, JsObject(Seq("email" -> JsString("an@email.com"))), Map.empty[String, Seq[String]])))
       connector.verifiedEmailAddress(MessageFixtures.createTaxEntity(nino)).futureValue mustBe EmailValidation(
@@ -95,7 +107,11 @@ class EntityResolverConnectorSpec
     }
 
     "return VerifiedEmailNotFoundException when a preference is not found" in {
-      when(mockHttp.doGet(any[String], any[Seq[(String, String)]])(any[ExecutionContext]))
+      when(
+        mockHttp.GET(any[String], any[Seq[(String, String)]])(
+          any[HttpReads[HttpResponse]],
+          any[HeaderCarrier],
+          any[ExecutionContext]))
         .thenReturn(Future.successful(
           HttpResponse(404, JsObject(Seq("reason" -> JsString("not found"))), Map.empty[String, Seq[String]])))
 
@@ -105,7 +121,11 @@ class EntityResolverConnectorSpec
     }
 
     "return a OtherException when status is 5xx" in {
-      when(mockHttp.doGet(any[String], any[Seq[(String, String)]])(any[ExecutionContext]))
+      when(
+        mockHttp.GET(any[String], any[Seq[(String, String)]])(
+          any[HttpReads[HttpResponse]],
+          any[HeaderCarrier],
+          any[ExecutionContext]))
         .thenReturn(Future.successful(HttpResponse(504, "", Map.empty[String, Seq[String]])))
 
       val e = connector.verifiedEmailAddress(MessageFixtures.createTaxEntity(SaUtr("someUtr"))).failed.futureValue
@@ -114,7 +134,11 @@ class EntityResolverConnectorSpec
     }
 
     "return a OtherException when status is 4xx and is not 404" in {
-      when(mockHttp.doGet(any[String], any[Seq[(String, String)]])(any[ExecutionContext]))
+      when(
+        mockHttp.GET(any[String], any[Seq[(String, String)]])(
+          any[HttpReads[HttpResponse]],
+          any[HeaderCarrier],
+          any[ExecutionContext]))
         .thenReturn(Future.successful(HttpResponse(403, "", Map.empty[String, Seq[String]])))
 
       val e = connector.verifiedEmailAddress(MessageFixtures.createTaxEntity(SaUtr("someUtr"))).failed.futureValue

@@ -52,7 +52,7 @@ class EmailAlertServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures
         .thenReturn(Future.successful(Some(messageForSA(utr = "7764560597"))))
         .thenReturn(Future.successful(None))
 
-      when(entityResolverConnector.getTaxId(any[TaxEntity])).thenReturn(Future.successful(None))
+      when(entityResolverConnector.getTaxId(any[TaxEntity])(any[HeaderCarrier])).thenReturn(Future.successful(None))
 
       private val result = emailAlertService.sendEmailAlerts().futureValue
 
