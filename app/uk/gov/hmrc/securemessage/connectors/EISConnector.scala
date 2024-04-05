@@ -19,17 +19,19 @@ package uk.gov.hmrc.securemessage.connectors
 import java.time.format.DateTimeFormatter
 import java.time.{ ZoneOffset, ZonedDateTime }
 import play.api.http.HeaderNames.{ ACCEPT, CONTENT_TYPE, DATE }
+
 import javax.inject.{ Inject, Singleton }
 import play.api.http.HeaderNames.AUTHORIZATION
 import play.api.http.MimeTypes
 import play.api.http.Status._
-import uk.gov.hmrc.http.{ HeaderCarrier, HttpClient }
+import uk.gov.hmrc.http.{ HeaderCarrier, HttpClient, HttpResponse }
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.securemessage.EisForwardingError
 import uk.gov.hmrc.securemessage.connectors.utils.CustomHeaders
 import uk.gov.hmrc.securemessage.controllers.Auditing
 import uk.gov.hmrc.securemessage.models.QueryMessageWrapper
+import uk.gov.hmrc.http.HttpReads.Implicits.readRaw
 
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -49,7 +51,7 @@ class EISConnector @Inject()(
   def forwardMessage(queryMessageWrapper: QueryMessageWrapper): Future[Either[EisForwardingError, Unit]] = {
     implicit val hc: HeaderCarrier = HeaderCarrier()
     httpClient
-      .doPut[QueryMessageWrapper](
+      .PUT[QueryMessageWrapper, HttpResponse](
         s"$eisBaseUrl$eisEndpoint",
         queryMessageWrapper,
         Seq(

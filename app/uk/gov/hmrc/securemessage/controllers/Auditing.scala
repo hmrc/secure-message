@@ -32,7 +32,7 @@ import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
 import uk.gov.hmrc.securemessage.controllers.model.{ ApiMessage, ClientName, MessageResourceResponse, MessageType }
 import uk.gov.hmrc.securemessage.controllers.utils.IdCoder
 import uk.gov.hmrc.securemessage.models.core.{ Conversation, Letter, Message, Reference }
-import uk.gov.hmrc.securemessage.models.v4.SecureMessage
+import uk.gov.hmrc.securemessage.models.v4.{ MobileNotification, SecureMessage }
 import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryMessageRequest }
 
 import java.time.format.DateTimeFormatter
@@ -44,15 +44,16 @@ trait Auditing extends Logging {
 
   protected val isoDtf = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ").withZone(ZoneId.from(ZoneOffset.UTC))
   protected val txnName = "transactionName"
-  protected val newConversationTxnName: (String, String) = txnName   -> "Create new query conversation"
-  protected val retrieveEmailTxnName: (String, String) = txnName     -> "Retrieve Email Address"
-  protected val emailSentTxnName: (String, String) = txnName         -> "Email Alert Sent"
-  protected val caseworkerReplyTxnName: (String, String) = txnName   -> "Caseworker reply to query conversation"
-  protected val customerReplyTxnName: (String, String) = txnName     -> "Customer reply to query conversation"
-  protected val conversationReadTxnName: (String, String) = txnName  -> "Message is Read"
-  protected val letterReadSuccessTxnName: (String, String) = txnName -> "Message is Read"
-  protected val letterReadFailedTxnName: (String, String) = txnName  -> "Message not Read"
-  protected val messageForwardedTxnName: (String, String) = txnName  -> "Message forwarded to caseworker"
+  protected val newConversationTxnName: (String, String) = txnName        -> "Create new query conversation"
+  protected val retrieveEmailTxnName: (String, String) = txnName          -> "Retrieve Email Address"
+  protected val emailSentTxnName: (String, String) = txnName              -> "Email Alert Sent"
+  protected val caseworkerReplyTxnName: (String, String) = txnName        -> "Caseworker reply to query conversation"
+  protected val customerReplyTxnName: (String, String) = txnName          -> "Customer reply to query conversation"
+  protected val conversationReadTxnName: (String, String) = txnName       -> "Message is Read"
+  protected val letterReadSuccessTxnName: (String, String) = txnName      -> "Message is Read"
+  protected val letterReadFailedTxnName: (String, String) = txnName       -> "Message not Read"
+  protected val messageForwardedTxnName: (String, String) = txnName       -> "Message forwarded to caseworker"
+  protected val mobilePushNotificationTxnName: (String, String) = txnName -> "Mobile Push Notification"
 
   private val NotificationType = "notificationType"
 
@@ -278,6 +279,23 @@ trait Auditing extends Logging {
     )
     auditConnector.sendExplicitAudit(txnStatus, detail)
   }
+
+  def auditMobilePushNotification(n: MobileNotification, status: String, errorMessage: Option[String] = None)(
+    implicit hc: HeaderCarrier,
+    ec: ExecutionContext): Future[Unit] =
+    auditConnector
+      .sendEvent(
+        DataEvent(
+          auditSource = "secure-message",
+          auditType = errorMessage.fold(EventTypes.Succeeded)(_ => EventTypes.Failed),
+          tags = Map(mobilePushNotificationTxnName),
+          detail = Map("identifier" -> n.identifier.toString, "templateId" -> n.templateId, "status" -> status) ++
+            errorMessage.fold(Map.empty[String, String])(e => Map("error" -> e))
+        )
+      )
+      .map { r =>
+        logger.debug(s"AuditEvent is processed for mobile push notification with the result $r")
+      }
 
   def auditMessageReadStatus(message: Message)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] = {
     val detailsMap: Map[String, String] = message match {
