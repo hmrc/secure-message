@@ -175,7 +175,6 @@ trait Auditing extends Logging {
   }
 
   private val letterMessageType = ("messageType", "Letter")
-  private val LetterReadSuccess = "LetterReadSuccess"
   private val LetterReadFailed = "LetterReadFailed"
   private val zone: ZoneOffset = ZoneOffset.UTC
 
@@ -195,7 +194,7 @@ trait Auditing extends Logging {
       ),
       letter.tags
     )
-    auditConnector.sendExplicitAudit(LetterReadSuccess, detail)
+    auditConnector.sendExplicitAudit(EventTypes.Succeeded, detail)
   }
 
   def auditMessageResourceResponse(mr: MessageResourceResponse, enrolments: Enrolments)(
@@ -211,7 +210,7 @@ trait Auditing extends Logging {
       ),
       None
     )
-    auditConnector.sendExplicitAudit(LetterReadSuccess, detail)
+    auditConnector.sendExplicitAudit(EventTypes.Succeeded, detail)
   }
 
   private val ConversationReadFailed = "QueryMessageReadFailed"
@@ -227,7 +226,7 @@ trait Auditing extends Logging {
       ConversationMessageType,
       "enrolments" -> prettyPrintEnrolments(enrolments)
     )
-    auditConnector.sendExplicitAudit(ConversationReadFailed, detail)
+    auditConnector.sendExplicitAudit(EventTypes.Failed, detail)
   }
 
   /** TOOD: replace with with the common [[auditMessageReadFailed()]]
@@ -241,7 +240,7 @@ trait Auditing extends Logging {
       letterMessageType,
       "enrolments" -> prettyPrintEnrolments(enrolments)
     )
-    auditConnector.sendExplicitAudit(LetterReadFailed, detail)
+    auditConnector.sendExplicitAudit(EventTypes.Failed, detail)
   }
 
   def auditMessageReadFailed(encodedId: String, error: SecureMessageError)(
