@@ -20,6 +20,7 @@ import play.api.Logging
 import uk.gov.hmrc.http.{ HeaderCarrier, HttpClient, HttpResponse }
 import uk.gov.hmrc.securemessage.models.v4.MobileNotification
 import uk.gov.hmrc.http.HttpReads.Implicits._
+import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.securemessage.controllers.Auditing
 
 import javax.inject.{ Inject, Named }
@@ -27,9 +28,9 @@ import scala.concurrent.{ ExecutionContext, Future }
 
 class MobilePushNotificationsConnector @Inject()(
   http: HttpClient,
-  auditing: Auditing,
+  override val auditConnector: AuditConnector,
   @Named("mobile-push-notifications-orchestration-base-url") mobileNotificationsUri: String
-) extends Logging {
+) extends Logging with Auditing {
 
   def sendNotification(
     notification: MobileNotification
@@ -40,12 +41,12 @@ class MobilePushNotificationsConnector @Inject()(
         notification
       )
       .map { r =>
-        auditing.auditMobilePushNotification(notification, r.status.toString)
+        auditMobilePushNotification(notification, r.status.toString)
         ()
       }
       .recover {
         case e =>
-          auditing.auditMobilePushNotification(notification, "internal-error", Some(e.getMessage))
+          auditMobilePushNotification(notification, "internal-error", Some(e.getMessage))
           logger.warn(s"Error while attempting to send alert to mobile push notification service ${e.getMessage}")
       }
 }
