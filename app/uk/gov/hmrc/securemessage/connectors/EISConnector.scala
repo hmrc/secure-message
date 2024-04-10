@@ -30,7 +30,7 @@ import uk.gov.hmrc.securemessage.EisForwardingError
 import uk.gov.hmrc.securemessage.connectors.utils.CustomHeaders
 import uk.gov.hmrc.securemessage.controllers.Auditing
 import uk.gov.hmrc.securemessage.models.QueryMessageWrapper
-
+import uk.gov.hmrc.http.HttpReads.Implicits.readRaw
 import scala.concurrent.{ ExecutionContext, Future }
 
 //TODO: add tests for the connector
@@ -49,7 +49,7 @@ class EISConnector @Inject()(
   def forwardMessage(queryMessageWrapper: QueryMessageWrapper): Future[Either[EisForwardingError, Unit]] = {
     implicit val hc: HeaderCarrier = HeaderCarrier()
     httpClient
-      .doPut[QueryMessageWrapper](
+      .PUT(
         s"$eisBaseUrl$eisEndpoint",
         queryMessageWrapper,
         Seq(

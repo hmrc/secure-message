@@ -19,11 +19,11 @@ package uk.gov.hmrc.securemessage.connectors
 import play.api.{ Configuration, Logging }
 import play.api.libs.json.{ Json, OFormat }
 import play.mvc.Http.Status
-import uk.gov.hmrc.http.HttpClient
+import uk.gov.hmrc.http.{ HeaderCarrier, HttpClient }
 import uk.gov.hmrc.common.message.model.{ Regime, TaxEntity }
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.securemessage.models.TaxId
-
+import uk.gov.hmrc.http.HttpReads.Implicits.readRaw
 import javax.inject.{ Inject, Singleton }
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -67,9 +67,9 @@ class EntityResolverConnector @Inject()(config: Configuration, httpClient: HttpC
 
   def url(path: String): String = s"${baseUrl("entity-resolver")}$path"
 
-  def verifiedEmailAddress(recipient: TaxEntity): Future[VerifiedEmailAddressResponse] =
+  def verifiedEmailAddress(recipient: TaxEntity)(implicit hc: HeaderCarrier): Future[VerifiedEmailAddressResponse] =
     httpClient
-      .doGet(url(s"/portal/preferences/${recipient.regime}/${recipient.identifier.value}/verified-email-address"))
+      .GET(url(s"/portal/preferences/${recipient.regime}/${recipient.identifier.value}/verified-email-address"))
       .map { response =>
         response.status match {
           case Status.OK        => response.json.as[EmailValidation]
@@ -78,11 +78,11 @@ class EntityResolverConnector @Inject()(config: Configuration, httpClient: HttpC
         }
       }
 
-  def getTaxId(recipient: TaxEntity): Future[Option[TaxId]] = {
+  def getTaxId(recipient: TaxEntity)(implicit hc: HeaderCarrier): Future[Option[TaxId]] = {
     val allowedRegimes = Set(Regime.itsa, Regime.paye, Regime.sa)
     if (allowedRegimes.contains(recipient.regime)) {
       httpClient
-        .doGet(url(s"/entity-resolver/${recipient.regime}/${recipient.identifier.value}"))
+        .GET(url(s"/entity-resolver/${recipient.regime}/${recipient.identifier.value}"))
         .map(response => {
           response.status match {
             case Status.OK => response.json.asOpt[TaxId]
