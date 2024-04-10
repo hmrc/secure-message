@@ -43,8 +43,8 @@ class MobilePushNotificationsConnector @Inject()(
       )
       .map { r =>
         val error: Option[String] = r.status match {
-          case Status.OK => None
-          case _         => Some(s"Failed to push the notification. Response:${r.body}")
+          case Status.CREATED => None
+          case _              => Some(s"Failed to push the notification. Response:${r.body}")
         }
         auditMobilePushNotification(notification, r.status.toString, error)
         ()
