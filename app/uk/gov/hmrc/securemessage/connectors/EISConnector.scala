@@ -32,7 +32,6 @@ import uk.gov.hmrc.securemessage.connectors.utils.CustomHeaders
 import uk.gov.hmrc.securemessage.controllers.Auditing
 import uk.gov.hmrc.securemessage.models.QueryMessageWrapper
 import uk.gov.hmrc.http.HttpReads.Implicits.readRaw
-
 import scala.concurrent.{ ExecutionContext, Future }
 
 //TODO: add tests for the connector
