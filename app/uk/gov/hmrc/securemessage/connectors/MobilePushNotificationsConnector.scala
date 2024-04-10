@@ -17,6 +17,7 @@
 package uk.gov.hmrc.securemessage.connectors
 
 import play.api.Logging
+import play.api.http.Status
 import uk.gov.hmrc.http.{ HeaderCarrier, HttpClient, HttpResponse }
 import uk.gov.hmrc.securemessage.models.v4.MobileNotification
 import uk.gov.hmrc.http.HttpReads.Implicits._
@@ -41,7 +42,11 @@ class MobilePushNotificationsConnector @Inject()(
         notification
       )
       .map { r =>
-        auditMobilePushNotification(notification, r.status.toString)
+        val error: Option[String] = r.status match {
+          case Status.OK => None
+          case _         => Some(s"Failed to push the notification. Response:${r.body}")
+        }
+        auditMobilePushNotification(notification, r.status.toString, error)
         ()
       }
       .recover {
