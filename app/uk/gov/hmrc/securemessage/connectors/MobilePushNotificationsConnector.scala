@@ -17,17 +17,21 @@
 package uk.gov.hmrc.securemessage.connectors
 
 import play.api.Logging
+import play.api.http.Status
 import uk.gov.hmrc.http.{ HeaderCarrier, HttpClient, HttpResponse }
 import uk.gov.hmrc.securemessage.models.v4.MobileNotification
 import uk.gov.hmrc.http.HttpReads.Implicits._
+import uk.gov.hmrc.play.audit.http.connector.AuditConnector
+import uk.gov.hmrc.securemessage.controllers.Auditing
 
 import javax.inject.{ Inject, Named }
 import scala.concurrent.{ ExecutionContext, Future }
 
 class MobilePushNotificationsConnector @Inject()(
   http: HttpClient,
+  override val auditConnector: AuditConnector,
   @Named("mobile-push-notifications-orchestration-base-url") mobileNotificationsUri: String
-) extends Logging {
+) extends Logging with Auditing {
 
   def sendNotification(
     notification: MobileNotification
@@ -37,11 +41,17 @@ class MobilePushNotificationsConnector @Inject()(
         s"$mobileNotificationsUri/send-push-notification/secure-message",
         notification
       )
-      .map(_ => ())
+      .map { r =>
+        val error: Option[String] = r.status match {
+          case Status.CREATED => None
+          case _              => Some(s"Failed to push the notification. Response:${r.body}")
+        }
+        auditMobilePushNotification(notification, r.status.toString, error)
+        ()
+      }
       .recover {
-        case _ =>
-          logger.warn(
-            "Error while attempting to send alert to mobile push notification service"
-          )
+        case e =>
+          auditMobilePushNotification(notification, "internal-error", Some(e.getMessage))
+          logger.warn(s"Error while attempting to send alert to mobile push notification service ${e.getMessage}")
       }
 }
