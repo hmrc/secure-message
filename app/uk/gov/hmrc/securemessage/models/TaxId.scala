@@ -26,8 +26,8 @@ object TaxId {
     val taxIdReads: Reads[TaxId] = ((__ \ "_id").read[String] and
       (__ \ "sautr").readNullable[String] and
       (__ \ "nino").readNullable[String] and
-      (__ \ "HMRC-MTD-IT").readNullable[String])(
-      (_id, sautr, nino, hmrcMtdItsa) => TaxId(_id, sautr, nino, hmrcMtdItsa)
+      (__ \ "HMRC-MTD-IT").readNullable[String])((_id, sautr, nino, hmrcMtdItsa) =>
+      TaxId(_id, sautr, nino, hmrcMtdItsa)
     )
     Format(taxIdReads, Json.writes[TaxId])
   }

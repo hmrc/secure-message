@@ -66,7 +66,7 @@ trait ISpec
       "CDCM",
       conversationId,
       ConversationStatus.Open,
-      Some(Map(("mrn" -> "DMS7324874993"), ("notificationType" -> "CDS-EXPORTS"))),
+      Some(Map("mrn" -> "DMS7324874993", "notificationType" -> "CDS-EXPORTS")),
       "subject",
       Language.English,
       List(
@@ -77,7 +77,8 @@ trait ISpec
           Some("CDS Exports Team"),
           None,
           None,
-          None),
+          None
+        ),
         Participant(
           2,
           ParticipantType.Customer,
@@ -85,7 +86,8 @@ trait ISpec
           None,
           None,
           None,
-          None),
+          None
+        )
       ),
       messages,
       Alert("1", None)
@@ -107,7 +109,8 @@ trait ISpec
     Map(
       "metrics.jvm"                  -> false,
       "play.cache.bindCaches"        -> Seq("controller-cache", "document-cache"),
-      "play.cache.createBoundCaches" -> false)
+      "play.cache.createBoundCaches" -> false
+    )
 
   def base64Encode(path: String): String = Base64.encodeBase64String(path.getBytes("UTF-8"))
 

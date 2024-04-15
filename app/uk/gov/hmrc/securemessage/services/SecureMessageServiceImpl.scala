@@ -38,7 +38,7 @@ import uk.gov.hmrc.securemessage.controllers.model.MessageType.Letter
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.{ ApiConversation, ConversationMetadata }
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage
 import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.ApiLetter
-import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata
+import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata._
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
 import uk.gov.hmrc.securemessage.controllers.{ Auditing, SecureMessageUtil }
 import uk.gov.hmrc.securemessage.handlers.MessageReadRequest
@@ -54,11 +54,10 @@ import uk.gov.hmrc.securemessage.services.utils.ContentValidator
 import java.util.UUID
 import javax.inject.Singleton
 import scala.concurrent.{ ExecutionContext, Future }
-import scala.xml.XML
 
 //TODO: refactor service to only accept core model classes as params
 @Singleton
-class SecureMessageServiceImpl @Inject()(
+class SecureMessageServiceImpl @Inject() (
   conversationRepository: ConversationRepository,
   messageRepository: MessageRepository,
   secureMessageUtil: SecureMessageUtil,
@@ -66,13 +65,13 @@ class SecureMessageServiceImpl @Inject()(
   channelPrefConnector: ChannelPreferencesConnector,
   eisConnector: EISConnector,
   override val authIdentifiersConnector: AuthIdentifiersConnector,
-  override val auditConnector: AuditConnector)
-    extends SecureMessageService with MessageV3Service with Auditing with ImplicitClassesExtensions
+  override val auditConnector: AuditConnector
+) extends SecureMessageService with MessageV3Service with Auditing with ImplicitClassesExtensions
     with OrderingDefinitions {
 
-  def createConversation(conversation: Conversation)(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] = {
+  def createConversation(
+    conversation: Conversation
+  )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] = {
     for {
       _            <- ContentValidator.validate(conversation.messages.head.content)
       participants <- addMissingEmails(conversation.participants)
@@ -81,28 +80,29 @@ class SecureMessageServiceImpl @Inject()(
     } yield ()
   }.value
 
-  def createSecureMessage(secureMessage: SecureMessage)(
-    implicit request: Request[AnyContent],
-    hc: HeaderCarrier,
-    ec: ExecutionContext): Future[Result] =
+  def createSecureMessage(
+    secureMessage: SecureMessage
+  )(implicit request: Request[AnyContent], hc: HeaderCarrier, ec: ExecutionContext): Future[Result] =
     secureMessageUtil.validateAndCreateMessage(secureMessage)
 
   def findSecureMessageById(id: ObjectId): Future[Option[SecureMessage]] =
     secureMessageUtil.findById(id)
 
-  def getConversations(authEnrolments: Enrolments, filters: Filters)(
-    implicit ec: ExecutionContext,
-    messages: Messages): Future[List[ConversationMetadata]] = {
+  def getConversations(authEnrolments: Enrolments, filters: Filters)(implicit
+    ec: ExecutionContext,
+    messages: Messages
+  ): Future[List[ConversationMetadata]] = {
     val filteredEnrolments = authEnrolments.filter(filters.enrolmentKeysFilter, filters.enrolmentsFilter)
     val identifiers: Set[Identifier] = filteredEnrolments.map(_.asIdentifier)
     conversationRepository.getConversations(identifiers, filters.tags).map {
-      _.map(ConversationMetadata.coreToConversationMetadata(_, identifiers)) //TODO: move this to controllers
+      _.map(ConversationMetadata.coreToConversationMetadata(_, identifiers)) // TODO: move this to controllers
         .sortBy(_.issueDate.toEpochMilli)(Ordering[Long].reverse)
     }
   }
 
-  def getMessages(authEnrolments: Enrolments, filters: Filters)(
-    implicit ec: ExecutionContext): Future[List[Message]] = {
+  def getMessages(authEnrolments: Enrolments, filters: Filters)(implicit
+    ec: ExecutionContext
+  ): Future[List[Message]] = {
     val filteredEnrolments = authEnrolments.filter(filters.enrolmentKeysFilter, filters.enrolmentsFilter)
     val identifiers: Set[Identifier] = filteredEnrolments.map(_.asIdentifier)
     for {
@@ -112,42 +112,43 @@ class SecureMessageServiceImpl @Inject()(
     } yield (conversations ++ letters ++ v4Messages).sortBy(_.issueDate)(dateTimeDescending)
   }
 
-  def getMessagesList(authTaxIds: Set[TaxIdWithName])(
-    implicit ec: ExecutionContext,
-    hc: HeaderCarrier,
-    messageFilter: MessageFilter): Future[List[Message]] =
+  def getMessagesList(
+    authTaxIds: Set[TaxIdWithName]
+  )(implicit ec: ExecutionContext, hc: HeaderCarrier, messageFilter: MessageFilter): Future[List[Message]] =
     for {
       v3Messages <- messageRepository.findBy(authTaxIds)
       v4Messages <- secureMessageUtil.findBy(authTaxIds)
     } yield v3Messages ++ v4Messages
 
-  def getMessagesCount(authTaxIds: Set[TaxIdWithName])(
-    implicit ec: ExecutionContext,
-    hc: HeaderCarrier,
-    messageFilter: MessageFilter): Future[MessagesCount] =
+  def getMessagesCount(
+    authTaxIds: Set[TaxIdWithName]
+  )(implicit ec: ExecutionContext, hc: HeaderCarrier, messageFilter: MessageFilter): Future[MessagesCount] =
     for {
       v3MessagesCount <- messageRepository.countBy(authTaxIds)
       v4MessagesCount <- secureMessageUtil.countBy(authTaxIds)
-    } yield
-      MessagesCount(v3MessagesCount.total + v4MessagesCount.total, v3MessagesCount.unread + v4MessagesCount.unread)
+    } yield MessagesCount(
+      v3MessagesCount.total + v4MessagesCount.total,
+      v3MessagesCount.unread + v4MessagesCount.unread
+    )
 
-  def getMessagesCount(authEnrolments: Enrolments, filters: Filters)(
-    implicit ec: ExecutionContext): Future[MessagesCount] = {
+  def getMessagesCount(authEnrolments: Enrolments, filters: Filters)(implicit
+    ec: ExecutionContext
+  ): Future[MessagesCount] = {
     val filteredEnrolments = authEnrolments.filter(filters.enrolmentKeysFilter, filters.enrolmentsFilter)
     val identifiers: Set[Identifier] = filteredEnrolments.map(_.asIdentifier)
     for {
       conversationsCount <- conversationRepository.getConversationsCount(identifiers, filters.tags)
       lettersCount       <- messageRepository.getLettersCount(identifiers, filters.tags)
       v4MessagesCount    <- secureMessageUtil.getSecureMessageCount(identifiers, filters.tags)
-    } yield
-      MessagesCount(
-        total = conversationsCount.total + lettersCount.total + v4MessagesCount.total,
-        unread = conversationsCount.unread + lettersCount.unread + v4MessagesCount.unread
-      )
+    } yield MessagesCount(
+      total = conversationsCount.total + lettersCount.total + v4MessagesCount.total,
+      unread = conversationsCount.unread + lettersCount.unread + v4MessagesCount.unread
+    )
   }
 
-  def getConversation(id: ObjectId, enrolments: Set[CustomerEnrolment])(
-    implicit ec: ExecutionContext): Future[Either[SecureMessageError, ApiConversation]] = {
+  def getConversation(id: ObjectId, enrolments: Set[CustomerEnrolment])(implicit
+    ec: ExecutionContext
+  ): Future[Either[SecureMessageError, ApiConversation]] = {
     val identifiers = enrolments.map(_.asIdentifier)
     for {
       conversation <- EitherT(conversationRepository.getConversation(id, identifiers))
@@ -155,8 +156,9 @@ class SecureMessageServiceImpl @Inject()(
     } yield ApiConversation.fromCore(conversation, identifiers)
   }.value
 
-  def getLetter(id: ObjectId, enrolments: Set[CustomerEnrolment])(
-    implicit ec: ExecutionContext): Future[Either[SecureMessageError, ApiLetter]] = {
+  def getLetter(id: ObjectId, enrolments: Set[CustomerEnrolment])(implicit
+    ec: ExecutionContext
+  ): Future[Either[SecureMessageError, ApiLetter]] = {
     val identifiers = enrolments.map(_.asIdentifier)
     for {
       letter <- EitherT(messageRepository.getLetter(id, identifiers))
@@ -164,9 +166,10 @@ class SecureMessageServiceImpl @Inject()(
     } yield ApiLetter.fromCore(letter)
   }.value
 
-  def getSecureMessage(id: ObjectId, enrolments: Set[CustomerEnrolment])(
-    implicit ec: ExecutionContext,
-    language: Language): Future[Either[SecureMessageError, ApiLetter]] = {
+  def getSecureMessage(id: ObjectId, enrolments: Set[CustomerEnrolment])(implicit
+    ec: ExecutionContext,
+    language: Language
+  ): Future[Either[SecureMessageError, ApiLetter]] = {
     val identifiers = enrolments.map(_.asIdentifier)
     for {
       secureMessage <- EitherT(secureMessageUtil.getMessage(id, identifiers))
@@ -194,9 +197,8 @@ class SecureMessageServiceImpl @Inject()(
     conversationId: String,
     messagesRequest: CaseworkerMessage,
     randomId: String,
-    maybeReference: Option[Reference])(
-    implicit ec: ExecutionContext,
-    hc: HeaderCarrier): Future[Either[SecureMessageError, Unit]] = {
+    maybeReference: Option[Reference]
+  )(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[SecureMessageError, Unit]] = {
     val senderIdentifier: Identifier = messagesRequest.senderIdentifier(client, conversationId)
     def message(sender: Participant) =
       ConversationMessage(Some(randomId), sender.id, Instant.now(), messagesRequest.content, maybeReference)
@@ -215,9 +217,8 @@ class SecureMessageServiceImpl @Inject()(
     messagesRequest: CustomerMessage,
     enrolments: Enrolments,
     randomId: String,
-    reference: Option[Reference])(
-    implicit ec: ExecutionContext,
-    request: Request[_]): Future[Either[SecureMessageError, Unit]] = {
+    reference: Option[Reference]
+  )(implicit ec: ExecutionContext, request: Request[_]): Future[Either[SecureMessageError, Unit]] = {
     def message(sender: Participant) =
       ConversationMessage(
         Some(randomId),
@@ -232,13 +233,15 @@ class SecureMessageServiceImpl @Inject()(
       sender       <- EitherT(Future(conversation.participantWith(identifiers)))
       _            <- forwardMessage(conversation.id, messagesRequest, randomId)
       _ <- EitherT(
-            conversationRepository
-              .addMessageToConversation(conversation.client, conversation.id, message(sender)))
+             conversationRepository
+               .addMessageToConversation(conversation.client, conversation.id, message(sender))
+           )
     } yield ()
   }.value
 
-  private def forwardMessage(conversationId: String, messagesRequest: CustomerMessage, requestId: String)(
-    implicit request: Request[_]): EitherT[Future, SecureMessageError, Unit] = {
+  private def forwardMessage(conversationId: String, messagesRequest: CustomerMessage, requestId: String)(implicit
+    request: Request[_]
+  ): EitherT[Future, SecureMessageError, Unit] = {
     val ACKNOWLEDGEMENT_REFERENCE_MAX_LENGTH = 32
     val randomId = UUID.randomUUID().toString
     val correlationId = request.headers
@@ -254,18 +257,21 @@ class SecureMessageServiceImpl @Inject()(
           acknowledgementReference = correlationId
         ),
         requestDetail = messagesRequest.asRequestDetail(requestId, conversationId)
-      ))
+      )
+    )
 
     EitherT(eisConnector.forwardMessage(queryMessageWrapper))
   }
 
   private[services] def addReadTime(conversation: Conversation, identifiers: Set[Identifier], readTime: Instant)(
-    implicit ec: ExecutionContext): EitherT[Future, SecureMessageError, Unit] = {
+    implicit ec: ExecutionContext
+  ): EitherT[Future, SecureMessageError, Unit] = {
 
     def addTime(
       reader: Participant,
       conversation: Conversation,
-      readTime: Instant): Future[Either[SecureMessageError, Unit]] =
+      readTime: Instant
+    ): Future[Either[SecureMessageError, Unit]] =
       reader.lastReadTime match {
         case None =>
           conversationRepository
@@ -282,35 +288,39 @@ class SecureMessageServiceImpl @Inject()(
     } yield ()
   }
 
-  private def addMissingEmails(participants: List[Participant])(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): EitherT[Future, SecureMessageError, GroupedParticipants] = {
+  private def addMissingEmails(
+    participants: List[Participant]
+  )(implicit hc: HeaderCarrier, ec: ExecutionContext): EitherT[Future, SecureMessageError, GroupedParticipants] = {
     val (customers, systems) = participants.partition(_.participantType === PCustomer)
     val (noEmailCustomers, emailCustomers) = customers.partition(_.email.isEmpty)
     val result = for {
       customersWithEmail <- lookupEmail(noEmailCustomers)
       success = customersWithEmail.collect { case Right(v) => v }
-      failure = customersWithEmail.collect { case Left(v)  => v }
+      failure = customersWithEmail.collect { case Left(v) => v }
     } yield GroupedParticipants(systems, CustomerParticipants(emailCustomers ++ success, failure))
     EitherT.right[SecureMessageError](result)
   }
 
-  private def lookupEmail(noEmailCustomers: List[Participant])(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Future[List[Either[CustomerEmailError, Participant]]] =
-    Future.sequence(noEmailCustomers.map(customerParticipant =>
-      channelPrefConnector.getEmailForEnrolment(customerParticipant.identifier).map {
-        case Right(email) =>
-          val _ = auditRetrieveEmail(Some(email))
-          Right(customerParticipant.copy(email = Some(email)))
-        case Left(elr) =>
-          val _ = auditRetrieveEmail(None)
-          Left(CustomerEmailError(customerParticipant, elr))
-    }))
+  private def lookupEmail(
+    noEmailCustomers: List[Participant]
+  )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[List[Either[CustomerEmailError, Participant]]] =
+    Future.sequence(
+      noEmailCustomers.map(customerParticipant =>
+        channelPrefConnector.getEmailForEnrolment(customerParticipant.identifier).map {
+          case Right(email) =>
+            val _ = auditRetrieveEmail(Some(email))
+            Right(customerParticipant.copy(email = Some(email)))
+          case Left(elr) =>
+            val _ = auditRetrieveEmail(None)
+            Left(CustomerEmailError(customerParticipant, elr))
+        }
+      )
+    )
 
-  private def sendAlert(receivers: CustomerParticipants, alert: core.Alert)(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): EitherT[Future, SecureMessageError, Unit] = {
+  private def sendAlert(receivers: CustomerParticipants, alert: core.Alert)(implicit
+    hc: HeaderCarrier,
+    ec: ExecutionContext
+  ): EitherT[Future, SecureMessageError, Unit] = {
 
     val enrolments = receivers.success.map(_.identifier).headOption.flatMap { identifier =>
       identifier.enrolment match {
@@ -328,8 +338,9 @@ class SecureMessageServiceImpl @Inject()(
     } yield ()
   }
 
-  private def validateEmailReceivers(emailReceivers: CustomerParticipants)(errorCondition: => Boolean)(
-    implicit ec: ExecutionContext): EitherT[Future, SecureMessageError, Unit] =
+  private def validateEmailReceivers(
+    emailReceivers: CustomerParticipants
+  )(errorCondition: => Boolean)(implicit ec: ExecutionContext): EitherT[Future, SecureMessageError, Unit] =
     EitherT.fromEither[Future](
       Either.cond(
         !errorCondition,
@@ -352,15 +363,17 @@ class SecureMessageServiceImpl @Inject()(
     for {
       msg <- secureMessageUtil.findById(id)
       result <- msg match {
-                 case Some(m) => Future.successful(Some(formatMessageContent(m)))
-                 case None    => getContentForv3Message(id)
-               }
+                  case Some(m) => Future.successful(Some(formatMessageContent(m)))
+                  case None    => getContentForv3Message(id)
+                }
     } yield result
 
   def getContentForv3Message(
-    id: ObjectId)(implicit hc: HeaderCarrier, ec: ExecutionContext, messages: Messages): Future[Option[String]] =
+    id: ObjectId
+  )(implicit hc: HeaderCarrier, ec: ExecutionContext, messages: Messages): Future[Option[String]] =
     getMessage(
-      MessageReadRequest(MessageType.withName(Letter.entryName), Enrolments(Set.empty[Enrolment]), id.toString)) map {
+      MessageReadRequest(MessageType.withName(Letter.entryName), Enrolments(Set.empty[Enrolment]), id.toString)
+    ) map {
       case Left(e) =>
         logger.warn(s"Failed to retrieve message with id: ${id.toString}. Error: ${e.message}")
         None
@@ -373,18 +386,19 @@ class SecureMessageServiceImpl @Inject()(
   def setReadTime(letter: Letter)(implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] =
     messageRepository.addReadTime(letter._id)
 
-  def setReadTime(secureMessage: SecureMessage)(
-    implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] =
+  def setReadTime(secureMessage: SecureMessage)(implicit
+    ec: ExecutionContext
+  ): Future[Either[SecureMessageError, Unit]] =
     secureMessageUtil.addReadTime(secureMessage._id)
 
   private def formatMessageContent(message: SecureMessage)(implicit messages: Messages) =
     if (messages.lang.language == "cy") {
-      val welshContent: Option[Content] = MessageMetadata.contentForLanguage(Welsh, message.content)
+      val welshContent: Option[Content] = contentForLanguage(Welsh, message.content)
       val welshBody = welshContent.map(_.body).getOrElse("")
       val welshSubject = welshContent.map(_.subject).getOrElse("")
       formatSubject(welshSubject, isWelshSubject = true) ++ addIssueDate(message) ++ decodeBase64String(welshBody)
     } else {
-      val englishContent: Option[Content] = MessageMetadata.contentForLanguage(English, message.content)
+      val englishContent: Option[Content] = contentForLanguage(English, message.content)
       val body = englishContent.map(_.body).getOrElse("")
       val subject = englishContent.map(_.subject).getOrElse("")
       formatSubject(subject, isWelshSubject = false) ++ addIssueDate(message) ++ decodeBase64String(body)
@@ -392,14 +406,14 @@ class SecureMessageServiceImpl @Inject()(
 
   private def formatSubject(messageSubject: String, isWelshSubject: Boolean): String =
     if (isWelshSubject) {
-      <h1 lang="cy" class="govuk-heading-xl">{XML.loadString("<root>" + messageSubject + "</root>").child}</h1>.mkString
+      s""" <h1 lang="cy" class="govuk-heading-xl">{XML.loadString("<root>"$messageSubject"</root>").child}</h1>"""
     } else {
-      <h1 lang="en" class="govuk-heading-xl">{XML.loadString("<root>" + messageSubject + "</root>").child}</h1>.mkString
+      s"""<h1 lang="en" class="govuk-heading-xl">{XML.loadString("<root>"$messageSubject"</root>").child}</h1>"""
     }
 
   private def addIssueDate(message: SecureMessage)(implicit messages: Messages): String = {
     val issueDate = localizedFormatter(LocalDate.ofInstant(message.issueDate, ZoneOffset.UTC))
-    <p class='message_time faded-text--small govuk-body'>{s"${messages("date.text.advisor", issueDate)}"}</p><br/>.mkString
+    s"""<p class='message_time faded-text--small govuk-body'>${messages("date.text.advisor", issueDate)}</p><br/>"""
   }
 
   private def localizedFormatter(date: LocalDate)(implicit messages: Messages): String = {

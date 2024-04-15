@@ -73,7 +73,8 @@ class SecureMessageUtilSpec extends PlaySpec with ScalaFutures with MockitoSugar
       val message: SecureMessage = Resources.readJson("model/core/v4/valid_SAUTR_message.json").as[SecureMessage]
       val updatedAlertDetails = message.alertDetails.copy(recipientName = taxpayerName)
       testUtil.addTaxpayerNameToMessageIfRequired(message).futureValue mustBe message.copy(
-        alertDetails = updatedAlertDetails)
+        alertDetails = updatedAlertDetails
+      )
     }
 
     "not get the tax-payer name when the tax identifier is nino" in {

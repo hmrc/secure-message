@@ -36,12 +36,15 @@ class queryMessageWrapperSpec extends PlaySpec {
           requestCommon = RequestCommon(
             originatingSystem = "dc-secure-message",
             receiptDate = dt,
-            acknowledgementReference = "acknowledgementReference"),
+            acknowledgementReference = "acknowledgementReference"
+          ),
           requestDetail = RequestDetail(
             id = "govuk-tax-random-unique-id",
             conversationId = "D-26675-20210401",
-            message = "dGhpcyBpcyBhIHRlc3Q=")
-        ))
+            message = "dGhpcyBpcyBhIHRlc3Q="
+          )
+        )
+      )
 
       val expectedJson = Resources
         .readString("model/eisRequest.json")

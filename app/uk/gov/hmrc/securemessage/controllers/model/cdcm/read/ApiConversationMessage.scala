@@ -23,7 +23,8 @@ import uk.gov.hmrc.securemessage.controllers.model.ApiFormats
 final case class ApiConversationMessage(
   senderInformation: Option[SenderInformation],
   firstReader: Option[FirstReaderInformation],
-  content: String)
+  content: String
+)
 
 final case class SenderInformation(name: Option[String], sent: Instant, self: Boolean)
 

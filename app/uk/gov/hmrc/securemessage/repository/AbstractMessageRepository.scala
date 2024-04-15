@@ -38,21 +38,23 @@ abstract class AbstractMessageRepository[A: ClassTag](
   domainFormat: Format[A],
   indexes: immutable.Seq[IndexModel],
   replaceIndexes: Boolean,
-  extraCodecs: immutable.Seq[Codec[_]] = immutable.Seq.empty)(implicit ec: ExecutionContext)
+  extraCodecs: immutable.Seq[Codec[_]] = immutable.Seq.empty
+)(implicit ec: ExecutionContext)
     extends PlayMongoRepository[A](
       mongo,
       collectionName,
       domainFormat,
       indexes,
       replaceIndexes = replaceIndexes,
-      extraCodecs = extraCodecs) {
+      extraCodecs = extraCodecs
+    ) {
 
   implicit val format: OFormat[A] = domainFormat.asInstanceOf[OFormat[A]]
   val logger = Logger(getClass)
 
   protected def messagesQuerySelector(identifiers: Set[Identifier], tags: Option[List[FilterTag]]): Bson =
     (identifiers, tags) match {
-      case (identifiers, _) if identifiers.isEmpty => //TODO: move this case to service
+      case (identifiers, _) if identifiers.isEmpty => // TODO: move this case to service
         Filters.empty()
       case (identifiers, None) =>
         identifierQuery(identifiers)
@@ -67,8 +69,9 @@ abstract class AbstractMessageRepository[A: ClassTag](
         Filters.empty()
     }
 
-  protected def getMessages(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
-    implicit ec: ExecutionContext): Future[List[A]] = {
+  protected def getMessages(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(implicit
+    ec: ExecutionContext
+  ): Future[List[A]] = {
     val querySelector = messagesQuerySelector(identifiers, tags)
     if (querySelector != Filters.empty()) {
       collection
@@ -81,8 +84,9 @@ abstract class AbstractMessageRepository[A: ClassTag](
     }
   }
 
-  protected def getMessagesCount(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
-    implicit ec: ExecutionContext): Future[Count] = {
+  protected def getMessagesCount(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(implicit
+    ec: ExecutionContext
+  ): Future[Count] = {
     val querySelector = messagesQuerySelector(identifiers, tags)
     val totalCount: Future[Int] = {
       val querySelector = messagesQuerySelector(identifiers, tags)
@@ -116,7 +120,8 @@ abstract class AbstractMessageRepository[A: ClassTag](
     if (conversation.asInstanceOf[Conversation].unreadMessagesFor(identifier).isEmpty) 0 else 1
 
   private[repository] def getConversationsUnreadCount(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
-    implicit ec: ExecutionContext): Future[Int] =
+    implicit ec: ExecutionContext
+  ): Future[Int] =
     getMessages(identifiers, tags).map { conversations =>
       conversations.foldMap(c => conversationRead(c, identifiers))
     }
@@ -132,8 +137,9 @@ abstract class AbstractMessageRepository[A: ClassTag](
       Future(0)
     }
 
-  protected def getMessage(id: ObjectId, identifiers: Set[Identifier])(
-    implicit ec: ExecutionContext): Future[Either[SecureMessageError, A]] = {
+  protected def getMessage(id: ObjectId, identifiers: Set[Identifier])(implicit
+    ec: ExecutionContext
+  ): Future[Either[SecureMessageError, A]] = {
     val query = identifierQuery(identifiers)
     collection
       .find(
@@ -150,19 +156,18 @@ abstract class AbstractMessageRepository[A: ClassTag](
           logger.debug(identifiers.toString())
           Left(MessageNotFound(s"${classTag[A].runtimeClass.getSimpleName} not found for identifiers: $identifiers"))
       })
-      .recoverWith {
-        case exception =>
-          Future.successful(Left(MessageNotFound(exception.getMessage)))
+      .recoverWith { case exception =>
+        Future.successful(Left(MessageNotFound(exception.getMessage)))
       }
   }
 
   protected def identifierQuery(identifiers: Set[Identifier]): Bson = {
-    val listOfFilters = identifiers.foldLeft(List.empty[Bson])(
-      (l, i) =>
-        l :+
-          findByIdentifierQuery(i)
-            .map(q => Filters.equal(q._1, q._2))
-            .fold(Filters.empty())((nameFilter, valueFilter) => Filters.and(nameFilter, valueFilter)))
+    val listOfFilters = identifiers.foldLeft(List.empty[Bson])((l, i) =>
+      l :+
+        findByIdentifierQuery(i)
+          .map(q => Filters.equal(q._1, q._2))
+          .fold(Filters.empty())((nameFilter, valueFilter) => Filters.and(nameFilter, valueFilter))
+    )
     if (listOfFilters.isEmpty) {
       Filters.empty()
     } else if (listOfFilters.size > 1) {

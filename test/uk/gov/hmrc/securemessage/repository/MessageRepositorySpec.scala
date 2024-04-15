@@ -72,7 +72,8 @@ class MessageRepositorySpec
     }
 
     "not be returned for a participating enrolment with different Enrolment" in new TestContext(
-      coreLetters = List(Resources.readJson("model/core/letterWithOutHmrcCusOrg.json").add(timeFields))) {
+      coreLetters = List(Resources.readJson("model/core/letterWithOutHmrcCusOrg.json").add(timeFields))
+    ) {
       val result: Either[SecureMessageError, Letter] = await(repository.getLetter(objectID, identifiers))
 
       result.left.value.message mustBe "Letter not found for identifiers: Set(Identifier(EORINumber,GB1234567890,Some(HMRC-CUS-ORG)))"
@@ -84,7 +85,8 @@ class MessageRepositorySpec
       val result: Either[SecureMessageError, Letter] =
         await(repository.getLetter(objectID, Set(Identifier("EORINumber", "GB1234567891", Some("HMRC-CUS-ORG")))))
       result.left.value mustBe MessageNotFound(
-        "Letter not found for identifiers: Set(Identifier(EORINumber,GB1234567891,Some(HMRC-CUS-ORG)))")
+        "Letter not found for identifiers: Set(Identifier(EORINumber,GB1234567891,Some(HMRC-CUS-ORG)))"
+      )
     }
   }
 
@@ -94,7 +96,8 @@ class MessageRepositorySpec
       val result: Either[SecureMessageError, Letter] =
         await(
           repository
-            .getLetter(objectID, Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")))))
+            .getLetter(objectID, Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))))
+        )
       result.toOption.get.readTime must not be empty
     }
     "not update readTime if it already exists" in new TestContext() {
@@ -102,7 +105,8 @@ class MessageRepositorySpec
       val result: Either[SecureMessageError, Letter] =
         await(
           repository
-            .getLetter(objectID, Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")))))
+            .getLetter(objectID, Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))))
+        )
       result.toOption.get.readTime mustBe letters.head.readTime
     }
   }
@@ -168,7 +172,8 @@ class MessageRepositorySpec
       result.futureValue mustBe Count(1, 0)
     }
     "return Count when no readTime is recorded for matching identifier enrolment and value" in new TestContext(
-      lettersWithoutReadTime) {
+      lettersWithoutReadTime
+    ) {
       val result = repository.getLettersCount(identifiers, None)
       result.futureValue mustBe Count(1, 1)
     }

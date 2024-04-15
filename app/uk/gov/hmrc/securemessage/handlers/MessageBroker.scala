@@ -24,7 +24,7 @@ import uk.gov.hmrc.securemessage.controllers.utils.{ QueryStringValidationSucces
 import javax.inject.{ Inject, Singleton }
 
 @Singleton
-class MessageBroker @Inject()(cdsMessageRetriever: CDSMessageRetriever, other: NonCDSMessageRetriever) {
+class MessageBroker @Inject() (cdsMessageRetriever: CDSMessageRetriever, other: NonCDSMessageRetriever) {
   def messageRetriever(queryResult: QueryStringValidationSuccess): MessageRetriever =
     messageRetriever(queryResult match {
       case ValidCDSQueryParameters => CDS

@@ -29,7 +29,7 @@ import javax.inject.{ Inject, Singleton }
 import scala.concurrent.{ ExecutionContext, Future }
 
 @Singleton
-class ConversationRepository @Inject()(mongo: MongoComponent)(implicit ec: ExecutionContext)
+class ConversationRepository @Inject() (mongo: MongoComponent)(implicit ec: ExecutionContext)
     extends AbstractMessageRepository[Conversation](
       "conversation",
       mongo,
@@ -40,14 +40,17 @@ class ConversationRepository @Inject()(mongo: MongoComponent)(implicit ec: Execu
           IndexOptions()
             .name("unique-conversation")
             .unique(true)
-            .sparse(true))),
+            .sparse(true)
+        )
+      ),
       replaceIndexes = false
     ) {
 
   private val DuplicateKey = 11000
 
-  def insertIfUnique(conversation: Conversation)(
-    implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] =
+  def insertIfUnique(
+    conversation: Conversation
+  )(implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] =
     collection
       .insertOne(conversation)
       .toFuture()
@@ -61,15 +64,18 @@ class ConversationRepository @Inject()(mongo: MongoComponent)(implicit ec: Execu
           Future.successful(Left(StoreError(errMsg, Some(e))))
       }
 
-  def getConversations(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
-    implicit ec: ExecutionContext): Future[List[Conversation]] = getMessages(identifiers, tags)
+  def getConversations(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(implicit
+    ec: ExecutionContext
+  ): Future[List[Conversation]] = getMessages(identifiers, tags)
 
-  def getConversationsCount(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
-    implicit ec: ExecutionContext): Future[Count] =
+  def getConversationsCount(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(implicit
+    ec: ExecutionContext
+  ): Future[Count] =
     getMessagesCount(identifiers, tags)
 
-  def getConversation(client: String, conversationId: String, identifiers: Set[Identifier])(
-    implicit ec: ExecutionContext): Future[Either[MessageNotFound, Conversation]] = {
+  def getConversation(client: String, conversationId: String, identifiers: Set[Identifier])(implicit
+    ec: ExecutionContext
+  ): Future[Either[MessageNotFound, Conversation]] = {
     val query = identifierQuery(identifiers)
     collection
       .find(
@@ -82,35 +88,37 @@ class ConversationRepository @Inject()(mongo: MongoComponent)(implicit ec: Execu
         case Some(m) => Right(m)
         case None    => Left(MessageNotFound(s"Conversation not found for identifiers: $identifiers"))
       })
-      .recoverWith {
-        case exception =>
-          Future.successful(Left(MessageNotFound(exception.getMessage)))
+      .recoverWith { case exception =>
+        Future.successful(Left(MessageNotFound(exception.getMessage)))
       }
   }
 
-  def getConversation(id: ObjectId, identifiers: Set[Identifier])(
-    implicit ec: ExecutionContext): Future[Either[SecureMessageError, Conversation]] = getMessage(id, identifiers)
+  def getConversation(id: ObjectId, identifiers: Set[Identifier])(implicit
+    ec: ExecutionContext
+  ): Future[Either[SecureMessageError, Conversation]] = getMessage(id, identifiers)
 
-  def addMessageToConversation(client: String, conversationId: String, message: ConversationMessage)(
-    implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] = {
+  def addMessageToConversation(client: String, conversationId: String, message: ConversationMessage)(implicit
+    ec: ExecutionContext
+  ): Future[Either[SecureMessageError, Unit]] = {
     val query =
       Filters.and(Filters.equal("client", client), Filters.equal("id", conversationId))
     collection
       .updateOne(query, Updates.addToSet("messages", Codecs.toBson(message)))
       .toFuture()
       .map(_ => Right(()))
-      .recover {
-        case e =>
-          Left(StoreError(s"Message not created for $client and $conversationId. error: ${e.getMessage}", None))
+      .recover { case e =>
+        Left(StoreError(s"Message not created for $client and $conversationId. error: ${e.getMessage}", None))
       }
   }
 
-  def addReadTime(client: String, conversationId: String, participantId: Int, readTime: Instant)(
-    implicit ec: ExecutionContext): Future[Either[StoreError, Unit]] = {
+  def addReadTime(client: String, conversationId: String, participantId: Int, readTime: Instant)(implicit
+    ec: ExecutionContext
+  ): Future[Either[StoreError, Unit]] = {
     val query = Filters.and(
       Filters.equal("client", client),
       Filters.equal("id", conversationId),
-      Filters.equal("participants.id", participantId))
+      Filters.equal("participants.id", participantId)
+    )
     collection
       .updateOne(
         query,

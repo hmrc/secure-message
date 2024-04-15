@@ -29,7 +29,7 @@ final case class ApiLetter(
   firstReaderInformation: Option[FirstReaderInformation],
   senderInformation: SenderInformation,
   identifier: Identifier,
-  readTime: Option[Instant] = None, //TODO: why is this always NONE ?
+  readTime: Option[Instant] = None, // TODO: why is this always NONE ?
   tags: Option[Map[String, String]] = None
 ) extends ApiMessage
 

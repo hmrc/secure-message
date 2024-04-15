@@ -33,13 +33,15 @@ import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.xml.XML
 
-class NonCDSMessageRetriever @Inject()(
+class NonCDSMessageRetriever @Inject() (
   val authIdentifiersConnector: AuthIdentifiersConnector,
-  secureMessageService: SecureMessageServiceImpl)(implicit ec: ExecutionContext)
+  secureMessageService: SecureMessageServiceImpl
+)(implicit ec: ExecutionContext)
     extends MessageRetriever {
-  def fetch(requestWrapper: MessageRequestWrapper, language: Language)(
-    implicit hc: HeaderCarrier,
-    messages: Messages): Future[JsValue] = {
+  def fetch(requestWrapper: MessageRequestWrapper, language: Language)(implicit
+    hc: HeaderCarrier,
+    messages: Messages
+  ): Future[JsValue] = {
     implicit val mf: MessageFilter =
       requestWrapper.messageFilter.copy(taxIdentifiers = requestWrapper.messageFilter.taxIdentifiers.flatMap { taxId =>
         taxId match {
@@ -52,13 +54,14 @@ class NonCDSMessageRetriever @Inject()(
       authTaxIds <- authIdentifiersConnector.currentEffectiveTaxIdentifiers
       _          <- Future(logger.warn(s"MessagesController: authTaxIds $authTaxIds"))
       result <- secureMessageService.getMessagesList(authTaxIds).map { items =>
-                 MessagesResponse.fromMessages(items, language).toConversations
-               }
+                  MessagesResponse.fromMessages(items, language).toConversations
+                }
     } yield Json.toJson(result)
   }
 
   def messageCount(
-    requestWrapper: MessageRequestWrapper)(implicit hc: HeaderCarrier, messages: Messages): Future[JsValue] = {
+    requestWrapper: MessageRequestWrapper
+  )(implicit hc: HeaderCarrier, messages: Messages): Future[JsValue] = {
     implicit val mf: MessageFilter =
       requestWrapper.messageFilter.copy(taxIdentifiers = requestWrapper.messageFilter.taxIdentifiers.flatMap { taxId =>
         taxId match {
@@ -71,40 +74,42 @@ class NonCDSMessageRetriever @Inject()(
       authTaxIds <- authIdentifiersConnector.currentEffectiveTaxIdentifiers
       _          <- Future(logger.warn(s"MessagesController: authTaxIds $authTaxIds"))
       result <- secureMessageService.getMessagesCount(authTaxIds).map { items =>
-                 MessagesResponse.fromMessagesCount(items).toConversations
-               }
+                  MessagesResponse.fromMessagesCount(items).toConversations
+                }
     } yield Json.toJson(result)
   }
 
-  def getMessage(readRequest: MessageReadRequest)(
-    implicit hc: HeaderCarrier,
+  def getMessage(readRequest: MessageReadRequest)(implicit
+    hc: HeaderCarrier,
     messages: Messages,
-    language: Language): Future[Either[SecureMessageError, ApiMessage]] =
+    language: Language
+  ): Future[Either[SecureMessageError, ApiMessage]] =
     for {
       taxIds <- authIdentifiersConnector.currentEffectiveTaxIdentifiers
       identifiers = taxIds.map(s => Identifier(s.name, s.value, None))
       letter     <- secureMessageService.getLetter(new ObjectId(readRequest.messageId))
       strideUser <- authIdentifiersConnector.isStrideUser
       v4MessageOrLetter <- if (letter.isDefined) {
-                            updateMessageContent(letter)
-                          } else {
-                            secureMessageService.getSecureMessage(new ObjectId(readRequest.messageId))
-                          }
+                             updateMessageContent(letter)
+                           } else {
+                             secureMessageService.getSecureMessage(new ObjectId(readRequest.messageId))
+                           }
       result <- v4MessageOrLetter match {
-                 case Some(m: Letter) if identifiers.contains(m.recipient.identifier) || strideUser =>
-                   Future.successful(Right(MessageResourceResponse.from(m)))
-                 case Some(m: SecureMessage) if taxIds.contains(m.recipient.identifier) || strideUser =>
-                   Future.successful(Right(MessageResourceResponse.from(m)))
-                 case Some(_) =>
-                   Future.successful(Left(UserNotAuthorised("Unauthorised for the requested identifiers")))
-                 case None =>
-                   Future.successful(Left(MessageNotFound(s"Message not found for ${readRequest.messageId}")))
-               }
+                  case Some(m: Letter) if identifiers.contains(m.recipient.identifier) || strideUser =>
+                    Future.successful(Right(MessageResourceResponse.from(m)))
+                  case Some(m: SecureMessage) if taxIds.contains(m.recipient.identifier) || strideUser =>
+                    Future.successful(Right(MessageResourceResponse.from(m)))
+                  case Some(_) =>
+                    Future.successful(Left(UserNotAuthorised("Unauthorised for the requested identifiers")))
+                  case None =>
+                    Future.successful(Left(MessageNotFound(s"Message not found for ${readRequest.messageId}")))
+                }
     } yield result
 
   // updates the message content with the content from all the messages in the chain (if there is one)
   def updateMessageContent(
-    letter: Option[Letter])(implicit ec: ExecutionContext, messages: Messages): Future[Option[Letter]] =
+    letter: Option[Letter]
+  )(implicit ec: ExecutionContext, messages: Messages): Future[Option[Letter]] =
     letter match {
       case Some(m) =>
         getContentChainString(letter, m._id).flatMap { content =>
@@ -113,10 +118,10 @@ class NonCDSMessageRetriever @Inject()(
       case None => Future(None)
     }
 
-  def getContentChainString(letter: Option[Letter], id: ObjectId)(
-    implicit
+  def getContentChainString(letter: Option[Letter], id: ObjectId)(implicit
     ec: ExecutionContext,
-    messages: Messages): Future[String] =
+    messages: Messages
+  ): Future[String] =
     letter match {
       case Some(msg) =>
         msg.body.flatMap(_.replyTo) match {
@@ -145,9 +150,12 @@ class NonCDSMessageRetriever @Inject()(
   }
 
   def formatMessageContent(letter: Letter)(implicit messages: Messages): String =
-    formatSubject(letter.subject, letter.body.flatMap(_.form.map(_.toUpperCase)).fold(false)(_.endsWith("_CY"))) ++ addIssueDate(
-      letter) ++ letter.content.getOrElse("")
+    formatSubject(
+      letter.subject,
+      letter.body.flatMap(_.form.map(_.toUpperCase)).fold(false)(_.endsWith("_CY"))
+    ) ++ addIssueDate(letter) ++ letter.content.getOrElse("")
 
+  // format: off
   private def formatSubject(messageSubject: String, isWelshSubject: Boolean): String =
     if (isWelshSubject) {
       <h1 lang="cy" class="govuk-heading-xl">{XML.loadString("<root>" + messageSubject + "</root>").child}</h1>.mkString
@@ -159,7 +167,7 @@ class NonCDSMessageRetriever @Inject()(
     val issueDate = localizedExtractMessageDate(letter)
     <p class='message_time faded-text--small govuk-body'>{s"${messages("date.text.advisor", issueDate)}"}</p><br/>.mkString
   }
-
+  // format: on
   def localizedExtractMessageDate(letter: Letter)(implicit messages: Messages): String =
     letter.body.flatMap(_.issueDate) match {
       case Some(issueDate) => localizedFormatter(issueDate)
@@ -179,9 +187,9 @@ class NonCDSMessageRetriever @Inject()(
     date.format(formatter)
   }
 
-  def findAndSetReadTime(id: ObjectId)(
-    implicit ec: ExecutionContext,
-    hc: HeaderCarrier): Future[Either[SecureMessageError, Option[Message]]] =
+  def findAndSetReadTime(
+    id: ObjectId
+  )(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[SecureMessageError, Option[Message]]] =
     for {
       taxIds <- authIdentifiersConnector.currentEffectiveTaxIdentifiers
       identifiers = taxIds.map(s => Identifier(s.name, s.value, None))
@@ -189,15 +197,15 @@ class NonCDSMessageRetriever @Inject()(
       letter     <- secureMessageService.getLetter(id)
       v3orv4     <- if (letter.isDefined) Future.successful(letter) else secureMessageService.getSecureMessage(id)
       _ <- v3orv4 match {
-            case Some(l: Letter) if identifiers.contains(l.recipient.identifier) =>
-              secureMessageService.setReadTime(l)
-            case Some(m: SecureMessage) if taxIds.contains(m.recipient.identifier) || strideUser =>
-              secureMessageService.setReadTime(m)
-            case Some(_) =>
-              Future.successful(Left(UserNotAuthorised("Unauthorised for the requested identifiers")))
-            case None =>
-              Future.successful(Left(MessageNotFound(s"Message not found for $id")))
-          }
+             case Some(l: Letter) if identifiers.contains(l.recipient.identifier) =>
+               secureMessageService.setReadTime(l)
+             case Some(m: SecureMessage) if taxIds.contains(m.recipient.identifier) || strideUser =>
+               secureMessageService.setReadTime(m)
+             case Some(_) =>
+               Future.successful(Left(UserNotAuthorised("Unauthorised for the requested identifiers")))
+             case None =>
+               Future.successful(Left(MessageNotFound(s"Message not found for $id")))
+           }
     } yield Right(v3orv4)
 
 }

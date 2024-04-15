@@ -31,8 +31,8 @@ final case class Participant(
   name: Option[String],
   email: Option[EmailAddress],
   parameters: Option[Map[String, String]],
-  readTimes: Option[List[Instant]])
-    extends OrderingDefinitions {
+  readTimes: Option[List[Instant]]
+) extends OrderingDefinitions {
   def lastReadTime: Option[Instant] = readTimes.map(_.max(dateTimeAscending))
 }
 

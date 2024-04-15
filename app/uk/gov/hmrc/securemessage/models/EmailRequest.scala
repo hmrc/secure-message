@@ -30,7 +30,8 @@ final case class EmailRequest(
   eventUrl: Option[String] = None,
   onSendUrl: Option[String] = None,
   alertQueue: Option[String] = None,
-  emailSource: Option[String] = None)
+  emailSource: Option[String] = None
+)
 
 object EmailRequest {
 

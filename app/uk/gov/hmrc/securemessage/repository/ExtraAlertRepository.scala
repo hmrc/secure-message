@@ -34,7 +34,7 @@ import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ ExecutionContext, Future }
 
 @Singleton
-class ExtraAlertRepository @Inject()(
+class ExtraAlertRepository @Inject() (
   val environment: Environment,
   val configuration: Configuration,
   mongo: MongoComponent
@@ -58,46 +58,46 @@ class ExtraAlertRepository @Inject()(
 
   def pullMessageToAlert(): Future[Option[Alertable]] =
     pullOutstanding(failedBefore = now().minusMillis(retryIntervalMillis.toLong), availableBefore = now())
-      .map(_.flatMap {
-        case WorkItem(workItemId, _, _, _, _, _, alert) =>
-          Option(new Alertable {
-            def alertParams: Map[String, String] = alert.alertDetails.data
+      .map(_.flatMap { case WorkItem(workItemId, _, _, _, _, _, alert) =>
+        Option(new Alertable {
+          def alertParams: Map[String, String] = alert.alertDetails.data
 
-            def auditData: Map[String, String] = Map(
-              "alertId"                              -> id.toString,
-              alert.messageRecipient.identifier.name -> alert.messageRecipient.identifier.value,
-              "messageId"                            -> alert.reference
-            )
+          def auditData: Map[String, String] = Map(
+            "alertId"                              -> id.toString,
+            alert.messageRecipient.identifier.name -> alert.messageRecipient.identifier.value,
+            "messageId"                            -> alert.reference
+          )
 
-            def statutory: Boolean = false
+          def statutory: Boolean = false
 
-            def alertTemplateName: String = alert.emailTemplateId
+          def alertTemplateName: String = alert.emailTemplateId
 
-            def taxPayerName: Option[TaxpayerName] = alert.alertDetails.recipientName
+          def taxPayerName: Option[TaxpayerName] = alert.alertDetails.recipientName
 
-            def id = new ObjectId(workItemId.toString)
+          def id = new ObjectId(workItemId.toString)
 
-            def externalRef: Option[ExternalRef] = alert.externalRef
+          def externalRef: Option[ExternalRef] = alert.externalRef
 
-            def recipient = alert.messageRecipient
+          def recipient = alert.messageRecipient
 
-            def hardCopyAuditData: Map[String, String] =
-              throw new UnsupportedOperationException("No hard copy requests for extra alerts")
+          def hardCopyAuditData: Map[String, String] =
+            throw new UnsupportedOperationException("No hard copy requests for extra alerts")
 
-            def validFrom: LocalDate =
-              throw new UnsupportedOperationException("validFrom not supported in extra alerts")
+          def validFrom: LocalDate =
+            throw new UnsupportedOperationException("validFrom not supported in extra alerts")
 
-            def alertQueue: Option[String] = None
+          def alertQueue: Option[String] = None
 
-            def source: Option[String] = None
-          })
+          def source: Option[String] = None
+        })
       })
 
-  lazy val retryIntervalMillis = {
+  lazy val retryIntervalMillis =
     configuration
       .getOptional[FiniteDuration](s"messages.retryFailedAfter")
       .getOrElse(throw new RuntimeException(s"messages.retryFailedAfter not specified"))
-  }.toMillis.toInt
+      .toMillis
+      .toInt
 
   def alertCompleted(id: ObjectId, status: ProcessingStatus): Future[Boolean] =
     markAs(id, status)
@@ -120,7 +120,8 @@ class ExtraAlertRepository @Inject()(
           Filters.equal("status", Deferred.name),
           Filters.equal(
             "item.formId",
-            if (brakeBatchApproval.formId.equals("Unspecified")) null else brakeBatchApproval.formId),
+            if (brakeBatchApproval.formId.equals("Unspecified")) null else brakeBatchApproval.formId
+          ),
           Filters.equal("item.alertDetails.templateId", s"${brakeBatchApproval.templateId}_D2")
         ),
         Updates.combine(Updates.set("status", ToDo.name), Updates.set("availableAt", availableAt))
@@ -136,10 +137,9 @@ class ExtraAlertRepository @Inject()(
           Filters.equal("status", Deferred.name),
           Filters.equal(
             "item.formId",
-            if (brakeBatchApproval.formId.equals("Unspecified")) null else brakeBatchApproval.formId),
-          Filters.equal("item.alertDetails.templateId", {
-            s"${brakeBatchApproval.templateId}_D2"
-          })
+            if (brakeBatchApproval.formId.equals("Unspecified")) null else brakeBatchApproval.formId
+          ),
+          Filters.equal("item.alertDetails.templateId", s"${brakeBatchApproval.templateId}_D2")
         ),
         Updates.set("status", Cancelled.name)
       )
@@ -180,7 +180,8 @@ object ExtraAlert {
       alertDetails,
       externalRef,
       extraReference,
-      formId)
+      formId
+    )
 
   import uk.gov.hmrc.mongo.play.json.formats.MongoFormats.Implicits.objectIdFormat
   import MongoTaxIdentifierFormats._

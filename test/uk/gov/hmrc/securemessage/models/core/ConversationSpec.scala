@@ -32,11 +32,12 @@ class ConversationSpec extends PlaySpec with ConversationTestData with OrderingD
   "Validating a conversation" must {
     val objectID = new ObjectId()
     "be successful when optional fields are present" in {
-      val conversationJson = Resources.readJson("model/core/conversation.json").as[JsObject] + ("_id" -> Json.toJson(
-        objectID))
+      val conversationJson =
+        Resources.readJson("model/core/conversation.json").as[JsObject] + ("_id" -> Json.toJson(objectID))
       conversationJson.validate[Conversation] mustBe JsSuccess(
         ConversationUtil
-          .getFullConversation(objectID, "D-80542-20201120", "HMRC-CUS-ORG", "EORINumber", "GB1234567890"))
+          .getFullConversation(objectID, "D-80542-20201120", "HMRC-CUS-ORG", "EORINumber", "GB1234567890")
+      )
     }
 
     "be successful when optional fields are not present" in {
@@ -44,7 +45,8 @@ class ConversationSpec extends PlaySpec with ConversationTestData with OrderingD
         .readJson("model/core/conversation-minimal.json")
         .as[JsObject] + ("_id" -> Json.toJson(objectID))
       conversationJson.validate[Conversation] mustBe JsSuccess(
-        ConversationUtil.getMinimalConversation("D-80542-20201120", objectID))
+        ConversationUtil.getMinimalConversation("D-80542-20201120", objectID)
+      )
     }
   }
 
@@ -113,7 +115,8 @@ trait ConversationTestData {
       None,
       None,
       None,
-      Some(List(readTime)))
+      Some(List(readTime))
+    )
 
   def messageWith(sender: Participant = system, created: Instant = dateTime): ConversationMessage =
     ConversationMessage(None, sender.id, created, "", None)
@@ -121,19 +124,22 @@ trait ConversationTestData {
   def readMessagesWith(
     count: Int,
     sender: Participant = system,
-    dateTime: Instant = dateTime): List[ConversationMessage] =
+    dateTime: Instant = dateTime
+  ): List[ConversationMessage] =
     (1 to count).map(i => messageWith(sender = sender, created = minusDays(dateTime, i))).toList
 
   def unreadMessagesWith(
     count: Int,
     sender: Participant = system,
-    dateTime: Instant = dateTime): List[ConversationMessage] =
+    dateTime: Instant = dateTime
+  ): List[ConversationMessage] =
     (1 to count).map(i => messageWith(sender = sender, created = plusDays(dateTime, i))).toList
 
   def conversationWith(
     reader: Participant = customerWith(),
     sender: Participant = system,
-    messages: List[ConversationMessage] = List(messageWith())): Conversation =
+    messages: List[ConversationMessage] = List(messageWith())
+  ): Conversation =
     Conversation(
       new ObjectId(),
       "",

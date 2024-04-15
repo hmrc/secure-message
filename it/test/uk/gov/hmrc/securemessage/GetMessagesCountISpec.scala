@@ -36,7 +36,7 @@ class GetMessagesCountISpec extends ISpec {
           .get()
           .futureValue
 
-      response.status mustBe (200)
+      response.status mustBe 200
       response.body must be("""{"total":1,"unread":1}""")
     }
 
@@ -49,7 +49,7 @@ class GetMessagesCountISpec extends ISpec {
         .withHttpHeaders(buildEoriToken(VALID_EORI))
         .get()
         .futureValue
-        .status mustBe (200)
+        .status mustBe 200
 
       val response =
         wsClient
@@ -58,7 +58,7 @@ class GetMessagesCountISpec extends ISpec {
           .get()
           .futureValue
 
-      response.status mustBe (200)
+      response.status mustBe 200
       response.body must be("""{"total":1,"unread":0}""")
     }
   }

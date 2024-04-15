@@ -49,20 +49,26 @@ class ImplicitClassesExtensionsTest
 
       "return just 'customerEnrolments' filtered auth enrolments when enrolmentKeys filter is empty" in {
         allAuthEnrolments
-          .filter(enrolmentKeys = Set(), customerEnrolments = eoriEnrolments) must contain theSameElementsAs eoriEnrolments
+          .filter(
+            enrolmentKeys = Set(),
+            customerEnrolments = eoriEnrolments
+          ) must contain theSameElementsAs eoriEnrolments
       }
 
       "return just 'enrolmentKey' filtered auth enrolments when customerEnrolments filter is empty" in {
         allAuthEnrolments
-          .filter(enrolmentKeys = Set(saUtrEnrolment.key), customerEnrolments = Set()) must contain theSameElementsAs Set(
-          saUtrEnrolment)
+          .filter(
+            enrolmentKeys = Set(saUtrEnrolment.key),
+            customerEnrolments = Set()
+          ) must contain theSameElementsAs Set(saUtrEnrolment)
       }
 
       "combine the filtering results when all case insensitive matched filters are non empty" in {
         authEnrolments(uppercase(allEnrolments))
           .filter(
             enrolmentKeys = Set(saUtrEnrolment.key.toLowerCase),
-            customerEnrolments = lowercase(Set(ctUtrEnrolment))) must contain theSameElementsAs utrEnrolments
+            customerEnrolments = lowercase(Set(ctUtrEnrolment))
+          ) must contain theSameElementsAs utrEnrolments
       }
     }
   }

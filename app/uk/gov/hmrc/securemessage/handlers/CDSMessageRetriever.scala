@@ -33,13 +33,14 @@ import uk.gov.hmrc.securemessage.services.SecureMessageServiceImpl
 import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
 
-class CDSMessageRetriever @Inject()(val authConnector: AuthConnector, secureMessageService: SecureMessageServiceImpl)(
-  implicit ec: ExecutionContext)
-    extends MessageRetriever with AuthorisedFunctions {
+class CDSMessageRetriever @Inject() (val authConnector: AuthConnector, secureMessageService: SecureMessageServiceImpl)(
+  implicit ec: ExecutionContext
+) extends MessageRetriever with AuthorisedFunctions {
 
-  def fetch(requestWrapper: MessageRequestWrapper, language: Language)(
-    implicit hc: HeaderCarrier,
-    messages: Messages): Future[JsValue] =
+  def fetch(requestWrapper: MessageRequestWrapper, language: Language)(implicit
+    hc: HeaderCarrier,
+    messages: Messages
+  ): Future[JsValue] =
     authorised()
       .retrieve(Retrievals.allEnrolments) { authEnrolments =>
         val filters = Filters(requestWrapper.enrolmentKeys, requestWrapper.customerEnrolments, requestWrapper.tags)
@@ -53,7 +54,8 @@ class CDSMessageRetriever @Inject()(val authConnector: AuthConnector, secureMess
       }
 
   def messageCount(
-    requestWrapper: MessageRequestWrapper)(implicit hc: HeaderCarrier, messages: Messages): Future[JsValue] =
+    requestWrapper: MessageRequestWrapper
+  )(implicit hc: HeaderCarrier, messages: Messages): Future[JsValue] =
     authorised()
       .retrieve(Retrievals.allEnrolments) { authEnrolments =>
         val filters = Filters(requestWrapper.enrolmentKeys, requestWrapper.customerEnrolments, requestWrapper.tags)
@@ -64,10 +66,11 @@ class CDSMessageRetriever @Inject()(val authConnector: AuthConnector, secureMess
           }
       }
 
-  def getMessage(readRequest: MessageReadRequest)(
-    implicit hc: HeaderCarrier,
+  def getMessage(readRequest: MessageReadRequest)(implicit
+    hc: HeaderCarrier,
     messages: Messages,
-    language: Language): Future[Either[SecureMessageError, ApiMessage]] =
+    language: Language
+  ): Future[Either[SecureMessageError, ApiMessage]] =
     readRequest.messageType match {
       case Conversation =>
         secureMessageService
@@ -75,15 +78,16 @@ class CDSMessageRetriever @Inject()(val authConnector: AuthConnector, secureMess
       case Letter =>
         for {
           letter <- secureMessageService
-                     .getLetter(new ObjectId(readRequest.messageId), readRequest.authEnrolments.asCustomerEnrolments)
+                      .getLetter(new ObjectId(readRequest.messageId), readRequest.authEnrolments.asCustomerEnrolments)
           secureMessage <- if (letter.isLeft) {
-                            secureMessageService
-                              .getSecureMessage(
-                                new ObjectId(readRequest.messageId),
-                                readRequest.authEnrolments.asCustomerEnrolments)
-                          } else {
-                            Future.successful(letter)
-                          }
+                             secureMessageService
+                               .getSecureMessage(
+                                 new ObjectId(readRequest.messageId),
+                                 readRequest.authEnrolments.asCustomerEnrolments
+                               )
+                           } else {
+                             Future.successful(letter)
+                           }
         } yield secureMessage
     }
 }

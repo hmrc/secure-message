@@ -23,7 +23,10 @@ class CdcmTagsTest extends AnyWordSpec with Matchers {
 
   "CdcmTags" must {
     "not allow empty mrn" in {
-      the[IllegalArgumentException] thrownBy (CdcmTags("", CdcmNotificationType.CDSExports)) must have message "requirement failed: empty mrn not allowed"
+      the[IllegalArgumentException] thrownBy (CdcmTags(
+        "",
+        CdcmNotificationType.CDSExports
+      )) must have message "requirement failed: empty mrn not allowed"
     }
     "allow non empty mrn" in {
       CdcmTags("someMrn", CdcmNotificationType.CDSExports) mustBe a[CdcmTags]

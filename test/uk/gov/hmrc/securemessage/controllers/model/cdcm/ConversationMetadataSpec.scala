@@ -29,7 +29,8 @@ import uk.gov.hmrc.securemessage.models.core._
 class ConversationMetadataSpec extends PlaySpec {
 
   implicit val messages: Messages = stubMessages(
-    stubMessagesApi(Map("default" -> Map("conversation.inbox.default.system.sender" -> "system"))))
+    stubMessagesApi(Map("default" -> Map("conversation.inbox.default.system.sender" -> "system")))
+  )
   val objectID = new ObjectId()
   "ConversationMetadata" must {
     "Convert core conversation to conversation metadata and then serialise into JSON" in {

@@ -35,15 +35,15 @@ class AuditAlertsSpec extends PlaySpec {
     implicit val hc: HeaderCarrier = new HeaderCarrier
 
     "audit alert succeeded " in new AuditAlerterTest {
-      //given
+      // given
       val message: SecureMessage = SecureMessageFixtures.messageForSA(utr)
       val email = "me@me.com"
       val alertSucceeded: AlertSucceeded = AlertSucceeded(message, email)
 
-      //when
+      // when
       auditAlert(alertSucceeded)
 
-      //then
+      // then
       event must have(
         Symbol("auditSource")("secure-message"),
         Symbol("auditType")("TxSucceeded"),
@@ -66,15 +66,15 @@ class AuditAlertsSpec extends PlaySpec {
     }
 
     "audit alert failed " in new AuditAlerterTest {
-      //given
+      // given
       val message: SecureMessage = SecureMessageFixtures.messageForSA(utr)
       private val failureReason = "email not verified for unknown reason"
       val alertFailed: AlertFailed = AlertFailed(message, failureReason)
 
-      //when
+      // when
       auditAlert(alertFailed)
 
-      //then
+      // then
       event must have(
         Symbol("auditSource")("secure-message"),
         Symbol("auditType")("TxFailed"),
@@ -106,7 +106,8 @@ class AuditAlertsSpec extends PlaySpec {
 
     class FakeAuditConnector extends AuditConnector {
       override def sendEvent(
-        dataEvent: DataEvent)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[AuditResult] = {
+        dataEvent: DataEvent
+      )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[AuditResult] = {
         event = dataEvent
         Future.successful(AuditResult.Success)
       }

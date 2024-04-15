@@ -32,14 +32,16 @@ class AddMessageToConversationISpec extends ISpec {
   "A POST request to /secure-messaging/conversation/{client}/{conversationId}/customer-message" must {
     "return CREATED when the message is successfully added to the conversation" in new CustomerTestCase(
       VALID_EORI,
-      "D-80542-20201110") {
+      "D-80542-20201110"
+    ) {
 
       response.body mustBe s""""Created customer message for encodedId: $messageId""""
       response.status mustBe CREATED
     }
     "return NOT FOUND when the conversation ID is not recognised" in new CustomerTestCase(
       VALID_EORI,
-      "D-80542-20201121") {
+      "D-80542-20201121"
+    ) {
       val actualRresponse =
         wsClient
           .url(resource(s"/secure-messaging/messages/$nonExistingEncodedId/customer-message"))
@@ -52,7 +54,8 @@ class AddMessageToConversationISpec extends ISpec {
 
     "return NOT_FOUND when the customer is not a participant" in new CustomerTestCase(
       "GB1234567891",
-      "D-80542-20201122") {
+      "D-80542-20201122"
+    ) {
       response.status mustBe NOT_FOUND
       response.body mustBe s""""Error on message with client: None, message id: $nonExistingEncodedId, error message: Conversation not found for identifiers: Set(Identifier(EORINumber,GB1234567891,Some(HMRC-CUS-ORG)))""""
     }
@@ -60,7 +63,8 @@ class AddMessageToConversationISpec extends ISpec {
 
   "A POST request to /secure-messaging/conversation/{client}/{conversationId}/caseworker-message" must {
     "return CREATED when the message is successfully added to the conversation" in new CaseworkerTestCase(
-      "./it/test/resources/cdcm/caseworker-message.json") {
+      "./it/test/resources/cdcm/caseworker-message.json"
+    ) {
 
       response.status mustBe CREATED
     }
@@ -77,7 +81,8 @@ class AddMessageToConversationISpec extends ISpec {
       response.body mustBe "\"Error on message with client: Some(CDCM), message id: D-80542-20201120, error message: Conversation not found for identifiers: Set(Identifier(CDCM,D-80542-20201120,None))\""
     }
     "return BAD_REQUEST when invalid message content is supplied" in new CaseworkerTestCase(
-      "./it/test/resources/cdcm/caseworker-message-invalid-html.json") {
+      "./it/test/resources/cdcm/caseworker-message-invalid-html.json"
+    ) {
       response.status mustBe BAD_REQUEST
       response.body mustBe "\"Error on message with client: Some(CDCM), message id: D-80542-20201120, error message: Html contains disallowed tags, attributes or protocols within the tags: matt. For allowed elements see class org.jsoup.safety.Safelist.relaxed()\""
     }
@@ -90,7 +95,8 @@ class AddMessageToConversationISpec extends ISpec {
       wsClient
         .url(resource(s"/secure-messaging/conversation/$client/$conversationId"))
         .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
-        .put(new File("./it/test/resources/cdcm/create-conversation-minimal.json")))
+        .put(new File("./it/test/resources/cdcm/create-conversation-minimal.json"))
+    )
     val response: WSResponse =
       wsClient
         .url(resource(s"/secure-messaging/conversation/$client/$conversationId/caseworker-message"))
@@ -106,7 +112,8 @@ class AddMessageToConversationISpec extends ISpec {
       wsClient
         .url(resource(s"/secure-messaging/conversation/$client/$conversationId"))
         .withHttpHeaders((HeaderNames.CONTENT_TYPE, ContentTypes.JSON))
-        .put(new File("./it/test/resources/cdcm/create-conversation-minimal.json")))
+        .put(new File("./it/test/resources/cdcm/create-conversation-minimal.json"))
+    )
     val messageId: String =
       wsClient
         .url(resource(s"/secure-messaging/messages?enrolment=HMRC-CUS-ORG%7EEoriNumber%7E$eori"))

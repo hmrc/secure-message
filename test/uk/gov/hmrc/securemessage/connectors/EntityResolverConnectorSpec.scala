@@ -57,14 +57,20 @@ class EntityResolverConnectorSpec
         mockHttp.GET(any[String], any[Seq[(String, String)]], any[Seq[(String, String)]])(
           any[HttpReads[HttpResponse]],
           any[HeaderCarrier],
-          any[ExecutionContext]))
-        .thenReturn(Future.successful(HttpResponse(
-          200,
-          s"""{ "_id"  : "entityId",
-             |"sautr" :  "1234567890",
-             |"nino"  :  "SJ12345678A"}""".stripMargin,
-          Map.empty[String, Seq[String]]
-        )))
+          any[ExecutionContext]
+        )
+      )
+        .thenReturn(
+          Future.successful(
+            HttpResponse(
+              200,
+              s"""{ "_id"  : "entityId",
+                 |"sautr" :  "1234567890",
+                 |"nino"  :  "SJ12345678A"}""".stripMargin,
+              Map.empty[String, Seq[String]]
+            )
+          )
+        )
 
       connector
         .getTaxId(MessageFixtures.createTaxEntity(SaUtr("someUtr")))
@@ -83,9 +89,12 @@ class EntityResolverConnectorSpec
         mockHttp.GET(any[String], any[Seq[(String, String)]], any[Seq[(String, String)]])(
           any[HttpReads[HttpResponse]],
           any[HeaderCarrier],
-          any[ExecutionContext]))
+          any[ExecutionContext]
+        )
+      )
         .thenReturn(
-          Future.successful(HttpResponse(200, "{\"email\" :  \"an@email.com\"}", Map.empty[String, Seq[String]])))
+          Future.successful(HttpResponse(200, "{\"email\" :  \"an@email.com\"}", Map.empty[String, Seq[String]]))
+        )
 
       connector
         .verifiedEmailAddress(MessageFixtures.createTaxEntity(SaUtr("someUtr")))
@@ -98,9 +107,14 @@ class EntityResolverConnectorSpec
         mockHttp.GET(any[String], any[Seq[(String, String)]], any[Seq[(String, String)]])(
           any[HttpReads[HttpResponse]],
           any[HeaderCarrier],
-          any[ExecutionContext]))
-        .thenReturn(Future.successful(
-          HttpResponse(200, JsObject(Seq("email" -> JsString("an@email.com"))), Map.empty[String, Seq[String]])))
+          any[ExecutionContext]
+        )
+      )
+        .thenReturn(
+          Future.successful(
+            HttpResponse(200, JsObject(Seq("email" -> JsString("an@email.com"))), Map.empty[String, Seq[String]])
+          )
+        )
       connector.verifiedEmailAddress(MessageFixtures.createTaxEntity(nino)).futureValue mustBe EmailValidation(
         "an@email.com"
       )
@@ -111,9 +125,14 @@ class EntityResolverConnectorSpec
         mockHttp.GET(any[String], any[Seq[(String, String)]], any[Seq[(String, String)]])(
           any[HttpReads[HttpResponse]],
           any[HeaderCarrier],
-          any[ExecutionContext]))
-        .thenReturn(Future.successful(
-          HttpResponse(404, JsObject(Seq("reason" -> JsString("not found"))), Map.empty[String, Seq[String]])))
+          any[ExecutionContext]
+        )
+      )
+        .thenReturn(
+          Future.successful(
+            HttpResponse(404, JsObject(Seq("reason" -> JsString("not found"))), Map.empty[String, Seq[String]])
+          )
+        )
 
       connector
         .verifiedEmailAddress(MessageFixtures.createTaxEntity(SaUtr("someUtr")))
@@ -125,7 +144,9 @@ class EntityResolverConnectorSpec
         mockHttp.GET(any[String], any[Seq[(String, String)]], any[Seq[(String, String)]])(
           any[HttpReads[HttpResponse]],
           any[HeaderCarrier],
-          any[ExecutionContext]))
+          any[ExecutionContext]
+        )
+      )
         .thenReturn(Future.successful(HttpResponse(504, "", Map.empty[String, Seq[String]])))
 
       val e = connector.verifiedEmailAddress(MessageFixtures.createTaxEntity(SaUtr("someUtr"))).failed.futureValue
@@ -138,7 +159,9 @@ class EntityResolverConnectorSpec
         mockHttp.GET(any[String], any[Seq[(String, String)]], any[Seq[(String, String)]])(
           any[HttpReads[HttpResponse]],
           any[HeaderCarrier],
-          any[ExecutionContext]))
+          any[ExecutionContext]
+        )
+      )
         .thenReturn(Future.successful(HttpResponse(403, "", Map.empty[String, Seq[String]])))
 
       val e = connector.verifiedEmailAddress(MessageFixtures.createTaxEntity(SaUtr("someUtr"))).failed.futureValue

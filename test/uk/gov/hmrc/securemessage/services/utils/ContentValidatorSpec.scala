@@ -52,7 +52,8 @@ class ContentValidatorSpec extends PlaySpec with EitherValues {
 
     "return left for disallowed html" in new TestContext {
       await(ContentValidator.validate(validDisallowedHtml.asBase64).value).left.value.message must startWith(
-        disallowedErrorMessage)
+        disallowedErrorMessage
+      )
     }
   }
 
@@ -135,7 +136,7 @@ class ContentValidatorSpec extends PlaySpec with EitherValues {
   }
 
   class TestContext {
-    //for more html examples see https://www.w3schools.com/html/html_examples.asp
+    // for more html examples see https://www.w3schools.com/html/html_examples.asp
     val plainText = "some plain text"
     val validDisallowedHtml: String = Resources.readString("service/ContentValidator/validDisallowed.html.txt")
     val invalidHtml: String = Resources.readString("service/ContentValidator/invalid.html.txt")

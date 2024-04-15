@@ -26,8 +26,8 @@ trait NonEmptyListOps {
       .of[List[T]]
       .collect(
         JsonValidationError("expected a NonEmptyList but got an empty list")
-      ) {
-        case head :: tail => NonEmptyList(head, tail)
+      ) { case head :: tail =>
+        NonEmptyList(head, tail)
       }
 
   implicit def nonEmptyListWrites[T: Writes]: Writes[NonEmptyList[T]] =

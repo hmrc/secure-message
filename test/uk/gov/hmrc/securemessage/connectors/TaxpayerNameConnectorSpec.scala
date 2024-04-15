@@ -199,7 +199,9 @@ class TaxpayerNameConnectorSpec
       mockHttp.GET[NameFromHods](any[String], any[Seq[(String, String)]], any[Seq[(String, String)]])(
         any[HttpReads[NameFromHods]],
         any[HeaderCarrier],
-        any[ExecutionContext]))
+        any[ExecutionContext]
+      )
+    )
       .thenReturn(nameResponse)
 
     connector

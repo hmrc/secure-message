@@ -25,7 +25,7 @@ import javax.inject.Inject
 import scala.concurrent.duration._
 import scala.concurrent.{ ExecutionContext, Future }
 
-class MessageBrakeService @Inject()(allowlistRepository: AllowlistRepository, cache: AsyncCacheApi) {
+class MessageBrakeService @Inject() (allowlistRepository: AllowlistRepository, cache: AsyncCacheApi) {
 
   def getOrInitialiseCachedAllowlist()(implicit ec: ExecutionContext): Future[Option[Allowlist]] =
     cache.getOrElseUpdate[Option[Allowlist]]("brake-gmc-allowlist", 1.minute) {

@@ -29,12 +29,14 @@ final case class ConversationMetadata(
   issueDate: Instant,
   senderName: Option[String],
   unreadMessages: Boolean,
-  count: Int)
+  count: Int
+)
 
 object ConversationMetadata extends ApiFormats {
 
-  def coreToConversationMetadata(coreConversation: Conversation, reader: Set[Identifier])(
-    implicit messages: Messages): ConversationMetadata =
+  def coreToConversationMetadata(coreConversation: Conversation, reader: Set[Identifier])(implicit
+    messages: Messages
+  ): ConversationMetadata =
     ConversationMetadata(
       coreConversation.client,
       coreConversation.id,

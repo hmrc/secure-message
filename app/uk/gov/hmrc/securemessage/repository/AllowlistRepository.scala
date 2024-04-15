@@ -27,7 +27,7 @@ import javax.inject.{ Inject, Singleton }
 import scala.concurrent.{ ExecutionContext, Future }
 
 @Singleton
-class AllowlistRepository @Inject()(mongo: MongoComponent)(implicit executionContext: ExecutionContext)
+class AllowlistRepository @Inject() (mongo: MongoComponent)(implicit executionContext: ExecutionContext)
     extends PlayMongoRepository[Allowlist](
       mongo,
       "brake-gmc-allowlist",
@@ -39,7 +39,8 @@ class AllowlistRepository @Inject()(mongo: MongoComponent)(implicit executionCon
       .findOneAndUpdate(
         Filters.empty(),
         update = set("formIdList", allowlist),
-        FindOneAndUpdateOptions().upsert(true).returnDocument(AFTER))
+        FindOneAndUpdateOptions().upsert(true).returnDocument(AFTER)
+      )
       .toFuture()
       .map(Option(_))
 

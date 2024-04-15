@@ -28,10 +28,11 @@ import scala.concurrent.{ ExecutionContext, Future }
 import scala.concurrent.duration.{ Duration, FiniteDuration, HOURS, MILLISECONDS }
 
 @Singleton
-class EmailAlertJob @Inject()(
+class EmailAlertJob @Inject() (
   val configuration: Configuration,
   lockRepository: LockRepository,
-  emailAlerter: EmailAlertService)(implicit ec: ExecutionContext, mat: Materializer)
+  emailAlerter: EmailAlertService
+)(implicit ec: ExecutionContext, mat: Materializer)
     extends Actor with Timers with SchedulingConfig with Logging {
 
   override val name: String = "EmailAlertJob"
@@ -50,11 +51,10 @@ class EmailAlertJob @Inject()(
     super.preStart()
   }
 
-  override def receive: Receive = {
-    case StartProcess =>
-      logger.warn(s"$name Start processing secure messages to send email requests")
-      processSecureMessages()
-      logger.warn(s"$name Stop processing secure messages to send email requests")
+  override def receive: Receive = { case StartProcess =>
+    logger.warn(s"$name Start processing secure messages to send email requests")
+    processSecureMessages()
+    logger.warn(s"$name Stop processing secure messages to send email requests")
   }
 
   def processSecureMessages(): Future[Result] =
@@ -66,8 +66,8 @@ class EmailAlertJob @Inject()(
           case EmailResults(sent, requeued) =>
             s"$name: Succeeded - $sent, Will be retried - $requeued"
         }
-        .recover {
-          case e: Exception => s"$name Error processing Alerts ${ExceptionUtils.getStackTrace(e)}"
+        .recover { case e: Exception =>
+          s"$name Error processing Alerts ${ExceptionUtils.getStackTrace(e)}"
         }
     } map { msg =>
       val msgStr = msg.getOrElse(s"$name cannot acquire mongo lock, not running")

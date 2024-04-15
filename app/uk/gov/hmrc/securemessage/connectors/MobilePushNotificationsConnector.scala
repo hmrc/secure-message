@@ -27,7 +27,7 @@ import uk.gov.hmrc.securemessage.controllers.Auditing
 import javax.inject.{ Inject, Named }
 import scala.concurrent.{ ExecutionContext, Future }
 
-class MobilePushNotificationsConnector @Inject()(
+class MobilePushNotificationsConnector @Inject() (
   http: HttpClient,
   override val auditConnector: AuditConnector,
   @Named("mobile-push-notifications-orchestration-base-url") mobileNotificationsUri: String
@@ -49,9 +49,8 @@ class MobilePushNotificationsConnector @Inject()(
         auditMobilePushNotification(notification, r.status.toString, error)
         ()
       }
-      .recover {
-        case e =>
-          auditMobilePushNotification(notification, "internal-error", Some(e.getMessage))
-          logger.warn(s"Error while attempting to send alert to mobile push notification service ${e.getMessage}")
+      .recover { case e =>
+        auditMobilePushNotification(notification, "internal-error", Some(e.getMessage))
+        logger.warn(s"Error while attempting to send alert to mobile push notification service ${e.getMessage}")
       }
 }

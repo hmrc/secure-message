@@ -32,19 +32,18 @@ import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success, Try }
 
 @Singleton
-class ChannelPreferencesConnector @Inject()(config: Configuration, httpClient: HttpClient)(
-  implicit ec: ExecutionContext)
-    extends ServicesConfig(config) with Logging {
+class ChannelPreferencesConnector @Inject() (config: Configuration, httpClient: HttpClient)(implicit
+  ec: ExecutionContext
+) extends ServicesConfig(config) with Logging {
 
   def getEmailForEnrolment(id: Identifier)(implicit hc: HeaderCarrier): Future[Either[EmailLookupError, EmailAddress]] =
     httpClient
       .GET[HttpResponse](
-        url =
-          s"${baseUrl("channel-preferences")}/channel-preferences/preferences/" +
-            s"enrolments/${id.enrolment.getOrElse("")}/" +
-            s"identifier-keys/${id.name}/" +
-            s"identifier-values/${id.value}/" +
-            s"channels/email"
+        url = s"${baseUrl("channel-preferences")}/channel-preferences/preferences/" +
+          s"enrolments/${id.enrolment.getOrElse("")}/" +
+          s"identifier-keys/${id.name}/" +
+          s"identifier-values/${id.value}/" +
+          s"channels/email"
       )
       .map { resp =>
         resp.status match {

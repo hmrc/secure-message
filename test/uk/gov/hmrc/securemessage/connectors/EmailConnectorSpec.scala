@@ -44,7 +44,8 @@ class EmailConnectorSpec extends PlaySpec with ScalaFutures with MockitoSugar wi
           any[Writes[EmailRequest]],
           any[HttpReads[HttpResponse]],
           any[HeaderCarrier],
-          any[ExecutionContext])
+          any[ExecutionContext]
+        )
       ).thenReturn(Future.successful(HttpResponse(202, "")))
 
       val emailConnector = new EmailConnector(httpClient, servicesConfig, auditConnector)
@@ -61,7 +62,8 @@ class EmailConnectorSpec extends PlaySpec with ScalaFutures with MockitoSugar wi
           any[Writes[EmailRequest]],
           any[HttpReads[HttpResponse]],
           any[HeaderCarrier],
-          any[ExecutionContext])
+          any[ExecutionContext]
+        )
       ).thenReturn(Future.successful(HttpResponse(404, "")))
 
       val emailConnector = new EmailConnector(httpClient, servicesConfig, auditConnector)

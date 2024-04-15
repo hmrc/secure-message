@@ -71,7 +71,7 @@ class ExtraAlertRepositorySpec
 
       repo.pushNew(item = alert).futureValue
 
-      //repo.pushNew(item = alert).failed.futureValue
+      // repo.pushNew(item = alert).failed.futureValue
     }
 
     "allow pushed alert, to be deleted." in new TestCase {
@@ -83,12 +83,14 @@ class ExtraAlertRepositorySpec
       repo
         .pushNew(
           item = alert.copy(reference = "foo", extraReference = Some("template1")),
-          Instant.now().plusMillis(60000))
+          Instant.now().plusMillis(60000)
+        )
         .futureValue
       repo
         .pushNew(
           item = alert.copy(reference = "foo", extraReference = Some("template2")),
-          Instant.now().plusMillis(120000))
+          Instant.now().plusMillis(120000)
+        )
         .futureValue
 
       val alertable = repo.pullMessageToAlert().futureValue.get

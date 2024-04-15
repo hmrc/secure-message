@@ -87,7 +87,7 @@ object SecureMessageUtil {
   private val NotificationType = "notificationType"
 }
 @Singleton
-class SecureMessageUtil @Inject()(
+class SecureMessageUtil @Inject() (
   @Named("app-name") appName: String,
   entityResolverConnector: EntityResolverConnector,
   taxpayerNameConnector: TaxpayerNameConnector,
@@ -96,7 +96,8 @@ class SecureMessageUtil @Inject()(
   statsMetricRepository: StatsMetricRepository,
   messageBrakeService: MessageBrakeService,
   auditConnector: AuditConnector,
-  configuration: Configuration)(implicit ec: ExecutionContext)
+  configuration: Configuration
+)(implicit ec: ExecutionContext)
     extends Logging {
   import SecureMessageUtil._
 
@@ -113,11 +114,12 @@ class SecureMessageUtil @Inject()(
     .toList
 
   def validateAndCreateMessage(
-    message: SecureMessage)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Result] =
+    message: SecureMessage
+  )(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Result] =
     isValidSecureMessage(message) match {
       case Success(_) if message.recipient.email.isEmpty => checkPreferencesAndCreateMessage(message)
       case Success(_)                                    => cleanUpAndCreateMessage(message)
-      case Failure(exception)                            => Future.successful(errorResponseWithErrorId(exception.getMessage))
+      case Failure(exception) => Future.successful(errorResponseWithErrorId(exception.getMessage))
     }
 
   def isValidSecureMessage(message: SecureMessage): Try[SecureMessage] =
@@ -134,11 +136,10 @@ class SecureMessageUtil @Inject()(
     } yield message
 
   def checkValidContent(message: SecureMessage): Try[SecureMessage] = {
-    for (content <- message.content) {
+    for (content <- message.content)
       if (!Base64.isBase64(content.body)) {
         Failure(MessageValidationException("Content Body: Invalid content"))
       }
-    }
     Success(message)
   }
 
@@ -147,12 +148,12 @@ class SecureMessageUtil @Inject()(
       Failure(new IllegalArgumentException("sourceData: invalid source data provided"))
     case Some(data) if data.trim.nonEmpty || Base64.isBase64(data) => Success(message)
     case None if !isGmc(message)                                   => Success(message)
-    case _                                                         => Failure(MessageValidationException("Invalid Message"))
+    case _ => Failure(MessageValidationException("Invalid Message"))
   }
 
   def checkDetailsIsPresent(message: SecureMessage): Try[SecureMessage] = message match {
     case m if !isGmc(m) || m.details.exists(_.formId.nonEmpty) => Success(m)
-    case _                                                     => Failure(MessageValidationException("details: details not provided where it is required"))
+    case _ => Failure(MessageValidationException("details: details not provided where it is required"))
   }
 
   def checkEmptyEmailAddress(message: SecureMessage): Try[SecureMessage] =
@@ -180,8 +181,8 @@ class SecureMessageUtil @Inject()(
 
   def checkInvalidEmailAddress(message: SecureMessage): Try[SecureMessage] = message.recipient.email match {
     case Some(email) if EmailAddress.isValid(email) => Success(message)
-    case Some(_)                                    => Failure(MessageValidationException("email: invalid email address provided"))
-    case None                                       => Success(message)
+    case Some(_) => Failure(MessageValidationException("email: invalid email address provided"))
+    case None    => Success(message)
   }
 
   def checkEmailAbsentIfInvalidTaxId(message: SecureMessage): Try[SecureMessage] = message.recipient.email match {
@@ -203,22 +204,25 @@ class SecureMessageUtil @Inject()(
         "HMCE-VATDEC-ORG",
         "HMRC-CUS-ORG",
         "HMRC-PPT-ORG",
-        "HMRC-MTD-IT")
+        "HMRC-MTD-IT"
+      )
     taxIdentifiers.contains(taxId)
   }
 
   def checkValidAlertQueue(message: SecureMessage): Try[SecureMessage] = message.alertQueue match {
     case Some(alertQueue) if AlertQueueTypes.alertQueueTypes.contains(alertQueue) => Success(message)
-    case Some(_)                                                                  => Failure(MessageValidationException("Invalid alert queue submitted"))
-    case _                                                                        => Success(message)
+    case Some(_) => Failure(MessageValidationException("Invalid alert queue submitted"))
+    case _       => Success(message)
   }
 
   def checkPreferencesAndCreateMessage(
-    message: SecureMessage)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Result] = {
+    message: SecureMessage
+  )(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Result] = {
 
     val TAXPAYER_NOTFOUND = errorResponseWithErrorId(
       "The backend has rejected the message due to not being able to verify the email address.",
-      NOT_FOUND)
+      NOT_FOUND
+    )
     entityResolverConnector
       .verifiedEmailAddress(message.recipient)
       .flatMap { resp =>
@@ -233,23 +237,22 @@ class SecureMessageUtil @Inject()(
             cleanUpAndCreateMessage(message.copy(emailAddress = email, alertDetails = updatedAlertDetails))
         }
       }
-      .recover {
-        case _ => TAXPAYER_NOTFOUND
+      .recover { case _ =>
+        TAXPAYER_NOTFOUND
       }
   }
 
   def cleanUpAndCreateMessage(
-    message: SecureMessage)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Result] =
-    cleanupContent(message).flatMap(m => createMessage(m)).recoverWith {
-      case e: Throwable => Future.successful(errorResponseWithErrorId(e.getMessage))
+    message: SecureMessage
+  )(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Result] =
+    cleanupContent(message).flatMap(m => createMessage(m)).recoverWith { case e: Throwable =>
+      Future.successful(errorResponseWithErrorId(e.getMessage))
     }
 
   def cleanupContent(message: SecureMessage): Future[SecureMessage] = {
     val updateContent = for {
       content <- message.content
-    } yield {
-      cleanUpSubjectAndBody(content)
-    }
+    } yield cleanUpSubjectAndBody(content)
     Try(updateContent) match {
       case Success(contentList) => Future.successful(message.copy(content = contentList))
       case Failure(exception)   => Future.failed(exception)
@@ -264,7 +267,9 @@ class SecureMessageUtil @Inject()(
           List(
             AllowedTagAndAttributes("details"),
             AllowedTagAndAttributes("summary"),
-            AllowedTagAndAttributes("section", List("lang")))) match {
+            AllowedTagAndAttributes("section", List("lang"))
+          )
+        ) match {
           case Success(cleanContent) =>
             content.copy(subject = cleanSubject, body = cleanContent)
           case Failure(e) => throw e
@@ -278,7 +283,7 @@ class SecureMessageUtil @Inject()(
     Try(Jsoup.clean(dirtyHtml, "", relaxedAllowlistWithClassAttributes(extraAllowedTags), settings))
   }
 
-  //scalastyle:off
+  // scalastyle:off
   private def relaxedAllowlistWithClassAttributes(extraTags: List[AllowedTagAndAttributes]): JsouptAllowList = {
     // We want to allow "class" for all allowed tags.  Unfortunately there is no way to do
     // getTags() on a Allowlist, so I have copied the list of tags from the Allowlist.relaxed()
@@ -327,7 +332,7 @@ class SecureMessageUtil @Inject()(
       "u",
       "ul"
     )
-    //scalastyle:on
+    // scalastyle:on
 
     val allTagsAndAttributes = allTags.map(t => AllowedTagAndAttributes(t))
 
@@ -339,20 +344,22 @@ class SecureMessageUtil @Inject()(
   }
 
   private def createMessage(
-    message: SecureMessage)(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Result] =
+    message: SecureMessage
+  )(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Result] =
     for {
       messageWithVerificationBrake <- checkAndUpdateMessageBrake(message)
       messageWithCleanAlertQueue   <- ignoreAlertQueueIfGmcAndSa(messageWithVerificationBrake)
       messageWithTaxpayerName      <- addTaxpayerNameToMessageIfRequired(messageWithCleanAlertQueue)
       isUnique                     <- secureMessageRepository.save(messageWithTaxpayerName)
-    } yield {
+    } yield
       if (isUnique) {
         val messageId = message._id.toString
         auditCreateMessageFor(EventTypes.Succeeded, messageWithTaxpayerName, "Message Created")
         statsMetricRepository
           .incrementCreated(
             messageWithTaxpayerName.recipient.identifier.name,
-            messageWithTaxpayerName.details.map(_.formId).getOrElse("NoForm"))
+            messageWithTaxpayerName.details.map(_.formId).getOrElse("NoForm")
+          )
 
         addExtraAlerts(messageWithTaxpayerName)
         Created(Json.obj("id" -> messageId))
@@ -363,13 +370,13 @@ class SecureMessageUtil @Inject()(
         auditCreateMessageFor(EventTypes.Failed, messageWithTaxpayerName, "Message Duplicated")
         errorResponseWithErrorId(
           "The backend has rejected the message due to duplicated message content or external reference ID.",
-          CONFLICT)
+          CONFLICT
+        )
 
       }
-    }
 
-  def auditCreateMessageFor(auditType: String, m: SecureMessage, transactionName: String)(
-    implicit hc: HeaderCarrier,
+  def auditCreateMessageFor(auditType: String, m: SecureMessage, transactionName: String)(implicit
+    hc: HeaderCarrier,
     request: Request[AnyContent]
   ): Future[Unit] = {
 
@@ -437,8 +444,8 @@ class SecureMessageUtil @Inject()(
       v <- m.get(key)
     } yield (key, v)) toMap
 
-  def auditCreateMessageForFailure(transactionName: String)(
-    implicit hc: HeaderCarrier,
+  def auditCreateMessageForFailure(transactionName: String)(implicit
+    hc: HeaderCarrier,
     request: Request[JsValue]
   ): Future[Unit] =
     auditConnector
@@ -478,7 +485,8 @@ class SecureMessageUtil @Inject()(
         taxpayerNameConnector
           .taxpayerName(SaUtr(message.recipient.identifier.value))
           .flatMap(name =>
-            Future.successful(message.copy(alertDetails = message.alertDetails.copy(recipientName = name))))
+            Future.successful(message.copy(alertDetails = message.alertDetails.copy(recipientName = name)))
+          )
       case None =>
         Future.successful(message.copy(alertDetails = message.alertDetails.copy(recipientName = None)))
     }
@@ -531,26 +539,29 @@ class SecureMessageUtil @Inject()(
       Future.successful(message)
     }
 
-  def countBy(authTaxIds: Set[TaxIdWithName])(
-    implicit messageFilter: MessageFilter
+  def countBy(authTaxIds: Set[TaxIdWithName])(implicit
+    messageFilter: MessageFilter
   ): Future[MessagesCount] = secureMessageRepository.countBy(authTaxIds)
 
-  def getSecureMessageCount(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
-    implicit ec: ExecutionContext): Future[Count] = secureMessageRepository.getSecureMessageCount(identifiers, tags)
+  def getSecureMessageCount(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(implicit
+    ec: ExecutionContext
+  ): Future[Count] = secureMessageRepository.getSecureMessageCount(identifiers, tags)
 
   def findById(id: ObjectId): Future[Option[SecureMessage]] = secureMessageRepository.findById(id)
 
-  def findBy(authTaxIds: Set[TaxIdWithName])(
-    implicit messageFilter: MessageFilter,
+  def findBy(authTaxIds: Set[TaxIdWithName])(implicit
+    messageFilter: MessageFilter,
     ec: ExecutionContext
   ): Future[List[SecureMessage]] = secureMessageRepository.findBy(authTaxIds)
 
-  def getMessages(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
-    implicit ec: ExecutionContext): Future[List[SecureMessage]] =
+  def getMessages(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(implicit
+    ec: ExecutionContext
+  ): Future[List[SecureMessage]] =
     secureMessageRepository.getSecureMessages(identifiers, tags)
 
-  def getMessage(id: ObjectId, identifiers: Set[Identifier])(
-    implicit ec: ExecutionContext): Future[Either[SecureMessageError, SecureMessage]] =
+  def getMessage(id: ObjectId, identifiers: Set[Identifier])(implicit
+    ec: ExecutionContext
+  ): Future[Either[SecureMessageError, SecureMessage]] =
     secureMessageRepository.getSecureMessage(id, identifiers)
 
   def addReadTime(id: ObjectId)(implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] =

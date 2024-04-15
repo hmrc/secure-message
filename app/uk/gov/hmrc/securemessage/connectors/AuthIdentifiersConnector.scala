@@ -29,7 +29,7 @@ import javax.inject.{ Inject, Singleton }
 import scala.concurrent.{ ExecutionContext, Future }
 
 @Singleton
-class AuthIdentifiersConnector @Inject()(
+class AuthIdentifiersConnector @Inject() (
   val authConnector: core.AuthConnector
 )(implicit ec: ExecutionContext)
     extends AuthorisedFunctions {
@@ -38,8 +38,8 @@ class AuthIdentifiersConnector @Inject()(
     enrolment.identifiers match {
       case Seq(identifier) => Some(identifier.value)
       case Seq(
-          EnrolmentIdentifier("TaxOfficeNumber", officeNum),
-          EnrolmentIdentifier("TaxOfficeReference", officeRef)
+            EnrolmentIdentifier("TaxOfficeNumber", officeNum),
+            EnrolmentIdentifier("TaxOfficeReference", officeRef)
           ) =>
         Some(officeNum + officeRef)
       case _ => None
@@ -80,14 +80,14 @@ class AuthIdentifiersConnector @Inject()(
       .retrieve(Retrievals.allEnrolments) { enrolments =>
         Future.successful(collectEnrolments(enrolments))
       }
-      .recoverWith {
-        case _: AuthorisationException => Future.successful(Set.empty)
+      .recoverWith { case _: AuthorisationException =>
+        Future.successful(Set.empty)
       }
 
   def currentEffectiveTaxIdentifiers(implicit hc: HeaderCarrier): Future[Set[TaxIdWithName]] =
     currentTaxIdentifiers(hc).map { taxIds =>
       taxIds
-        .flatMap(taxId => {
+        .flatMap { taxId =>
           taxId.name.toUpperCase match {
             case "HMRC-MTD-VAT"    => Set(taxId, HmceVatdecOrg(taxId.value)) ++ vrnSet(taxId.value)
             case "HMCE-VATDEC-ORG" => Set(taxId, HmrcMtdVat(taxId.value))
@@ -97,11 +97,11 @@ class AuthIdentifiersConnector @Inject()(
             case "VRN"             => vrnSet(taxId.value)
             case _                 => Set(taxId)
           }
-        })
+        }
     }
 
   def isStrideUser(implicit hc: HeaderCarrier): Future[Boolean] =
-    authorised(AuthProviders(PrivilegedApplication)) { Future.successful(true) }.recoverWith {
+    authorised(AuthProviders(PrivilegedApplication))(Future.successful(true)).recoverWith {
       case _: AuthorisationException => Future.successful(false)
     }
 }

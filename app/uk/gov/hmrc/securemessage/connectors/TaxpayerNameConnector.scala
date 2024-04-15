@@ -28,7 +28,7 @@ import javax.inject.{ Inject, Singleton }
 import scala.concurrent.{ ExecutionContext, Future }
 
 @Singleton
-class TaxpayerNameConnector @Inject()(
+class TaxpayerNameConnector @Inject() (
   http: HttpClient,
   servicesConfig: ServicesConfig
 )(implicit ec: ExecutionContext)

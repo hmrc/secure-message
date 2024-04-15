@@ -32,16 +32,17 @@ object ExtraAlertConfig {
 
     val secondsMap: Map[String, Long] =
       Map("H" -> 1000 * 60 * 60, "D" -> 1000 * 60 * 60 * 24, "M" -> 1000 * 60 * 60 * 24 * 30, "m" -> 1000, "s" -> 1000)
-    val delay = try {
-      val pattern = "([0-9]+)(H|D|M|m|s)".r
-      m.getOrElse("delay", throw new RuntimeException("delay is missing")).toString match {
-        case pattern(u, c) => Duration.ofMillis(u.toLong * secondsMap(c))
-        case _             => throw new RuntimeException("can not read alertProfile")
+    val delay =
+      try {
+        val pattern = "([0-9]+)(H|D|M|m|s)".r
+        m.getOrElse("delay", throw new RuntimeException("delay is missing")).toString match {
+          case pattern(u, c) => Duration.ofMillis(u.toLong * secondsMap(c))
+          case _             => throw new RuntimeException("can not read alertProfile")
+        }
+      } catch {
+        case m: MatchError            => throw new RuntimeException(s"invalid duration unit format $m")
+        case m: NumberFormatException => throw new RuntimeException(s"duration is not an integer $m")
       }
-    } catch {
-      case m: MatchError            => throw new RuntimeException(s"invalid duration unit format $m")
-      case m: NumberFormatException => throw new RuntimeException(s"duration is not an integer $m")
-    }
     ExtraAlertConfig(mainTemplate, extraTemplate, delay)
   }
 

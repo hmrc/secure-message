@@ -36,10 +36,11 @@ import scala.concurrent.{ ExecutionContext, Future }
 
 //TODO: add tests for the connector
 @Singleton
-class EISConnector @Inject()(
+class EISConnector @Inject() (
   httpClient: HttpClient,
   servicesConfig: ServicesConfig,
-  override val auditConnector: AuditConnector)(implicit ec: ExecutionContext)
+  override val auditConnector: AuditConnector
+)(implicit ec: ExecutionContext)
     extends Auditing {
 
   private val eisBaseUrl = servicesConfig.baseUrl("eis")
@@ -69,13 +70,19 @@ class EISConnector @Inject()(
             val _ = auditMessageForwarded(
               "MessageForwardedToCaseworkerSuccess",
               queryMessageWrapper.queryMessageRequest,
-              NO_CONTENT)
+              NO_CONTENT
+            )
             Future.successful(Right(()))
           case code =>
             val _ =
               auditMessageForwarded("MessageForwardedToCaseworkerFailed", queryMessageWrapper.queryMessageRequest, code)
-            Future.successful(Left(EisForwardingError(
-              s"There was an issue with forwarding the message to EIS, response code is: $code, response body is: ${response.body}")))
+            Future.successful(
+              Left(
+                EisForwardingError(
+                  s"There was an issue with forwarding the message to EIS, response code is: $code, response body is: ${response.body}"
+                )
+              )
+            )
         }
       }
   }

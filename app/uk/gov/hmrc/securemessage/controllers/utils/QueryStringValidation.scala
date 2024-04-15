@@ -23,7 +23,8 @@ case object ValidNonCDSQueryParameters extends QueryStringValidationSuccess
 class InvalidQueryStringException(message: String) extends Exception(message) {}
 final case class InvalidQueryParameterException(invalidParams: List[String])
     extends InvalidQueryStringException(
-      s"Invalid query parameter(s) found: [${invalidParams.sorted.toSet.mkString(", ")}]") {}
+      s"Invalid query parameter(s) found: [${invalidParams.sorted.toSet.mkString(", ")}]"
+    ) {}
 
 trait QueryStringValidation {
 
@@ -31,7 +32,8 @@ trait QueryStringValidation {
   val validNonCdsQueryParams = List("taxIdentifiers", "regimes", "lang")
 
   protected def validateQueryParameters(
-    queryString: Map[String, Seq[String]]): Either[InvalidQueryStringException, QueryStringValidationSuccess] = {
+    queryString: Map[String, Seq[String]]
+  ): Either[InvalidQueryStringException, QueryStringValidationSuccess] = {
     val cdsParams = queryString.keys.toList diff validCdsQueryParams
     val nonCdsParams = queryString.keys.toList diff validNonCdsQueryParams
     (cdsParams, nonCdsParams) match {

@@ -56,7 +56,7 @@ class AdminControllerSpec extends PlaySpec with ScalaFutures with MockitoSugar {
       val response = controller.getGMCBrakeBatches()(fakeRequest)
       status(response) mustBe OK
       contentAsJson(response) mustBe Json.parse(s"""[{"batchId":"batchId","formId":"formId","issueDate":"${LocalDate
-        .now()}","templateId":"templateId","count":1}]""")
+          .now()}","templateId":"templateId","count":1}]""")
     }
 
     "accept brake batch" in {
@@ -119,7 +119,8 @@ class AdminControllerSpec extends PlaySpec with ScalaFutures with MockitoSugar {
       val response = controller.randomBrakeBatchMessage()(fakeRequest)
       status(response) mustBe OK
       contentAsJson(response) mustBe Json.parse(
-        """{"subject":"Reminder to file a Self Assessment return","welshSubject":"Nodyn atgoffa i ffeilio ffurflen Hunanasesiad","content":"Message content - 4254101384174917141","welshContent":"Cynnwys - 4254101384174917141","externalRefId":"abcd1234","messageType":"sdAlertMessage","issueDate":"2020-05-04","taxIdentifierName":"HMRC-OBTDS-ORG"}""")
+        """{"subject":"Reminder to file a Self Assessment return","welshSubject":"Nodyn atgoffa i ffeilio ffurflen Hunanasesiad","content":"Message content - 4254101384174917141","welshContent":"Cynnwys - 4254101384174917141","externalRefId":"abcd1234","messageType":"sdAlertMessage","issueDate":"2020-05-04","taxIdentifierName":"HMRC-OBTDS-ORG"}"""
+      )
     }
   }
 }

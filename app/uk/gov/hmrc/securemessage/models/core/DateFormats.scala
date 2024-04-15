@@ -31,7 +31,7 @@ object DateFormats {
         case JsString(s) =>
           parseDate(corrector(s)) match {
             case Some(d) => JsSuccess(d)
-            case _       => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.java date.format", pattern))))
+            case _ => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.java date.format", pattern))))
           }
         case _ => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.date"))))
       }

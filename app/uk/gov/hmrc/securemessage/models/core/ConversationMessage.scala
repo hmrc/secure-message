@@ -27,7 +27,8 @@ final case class ConversationMessage(
   senderId: Int,
   created: Instant,
   content: String,
-  reference: Option[Reference])
+  reference: Option[Reference]
+)
 object ConversationMessage extends ApiFormats {
 
   implicit val referencesFormat: OFormat[Reference] =

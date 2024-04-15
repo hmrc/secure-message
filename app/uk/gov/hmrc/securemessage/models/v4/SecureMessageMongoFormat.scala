@@ -29,38 +29,37 @@ import play.api.libs.functional.syntax._
 
 object SecureMessageMongoFormat {
 
-  //ProcessingStatus
+  // ProcessingStatus
   implicit val format: Format[ProcessingStatus] = ProcessingStatus.format
 
-  //LocalDate
+  // LocalDate
   implicit val localDateFormat: Format[LocalDate] = MongoJavatimeFormats.localDateFormat
-  //ObjectId
+  // ObjectId
   implicit val objectIdFormat: Format[ObjectId] = MongoFormats.objectIdFormat
 
   implicit val dateTimeFormat: Format[Instant] = MongoJavatimeFormats.instantFormat
   implicit val emailAlertFormat: OFormat[EmailAlert] = Json.format[EmailAlert]
 
   val taxIdentifierReads: Reads[TaxIdWithName] =
-    ((__ \ "name").read[String] and (__ \ "value").read[String]).tupled.flatMap[TaxIdWithName] {
-      case (name, value) =>
-        (TaxIds.defaultSerialisableIds :+ SerialisableTaxId("EMPREF", Epaye.apply)
-          :+ SerialisableTaxId("HMCE-VATDEC-ORG", HmceVatdecOrg.apply)
-          :+ SerialisableTaxId("HMRC-CUS-ORG", HmrcCusOrg.apply)
-          :+ SerialisableTaxId("HMRC-IOSS-ORG", HmrcIossOrg.apply)
-          :+ SerialisableTaxId("ETMPREGISTRATIONNUMBER", HmrcPptOrg.apply)
-          :+ SerialisableTaxId("PSAID", HmrcPodsOrg.apply)
-          :+ SerialisableTaxId("PSPID", HmrcPodsPpOrg.apply))
-          .find(_.taxIdName == name)
-          .map { _.build(value) } match {
-          case Some(taxIdWithName) =>
-            Reads[TaxIdWithName] { _ =>
-              JsSuccess(taxIdWithName)
-            }
-          case None =>
-            Reads[TaxIdWithName] { _ =>
-              JsError(s"could not determine tax id with name = $name and value = $value")
-            }
-        }
+    ((__ \ "name").read[String] and (__ \ "value").read[String]).tupled.flatMap[TaxIdWithName] { case (name, value) =>
+      (TaxIds.defaultSerialisableIds :+ SerialisableTaxId("EMPREF", Epaye.apply)
+        :+ SerialisableTaxId("HMCE-VATDEC-ORG", HmceVatdecOrg.apply)
+        :+ SerialisableTaxId("HMRC-CUS-ORG", HmrcCusOrg.apply)
+        :+ SerialisableTaxId("HMRC-IOSS-ORG", HmrcIossOrg.apply)
+        :+ SerialisableTaxId("ETMPREGISTRATIONNUMBER", HmrcPptOrg.apply)
+        :+ SerialisableTaxId("PSAID", HmrcPodsOrg.apply)
+        :+ SerialisableTaxId("PSPID", HmrcPodsPpOrg.apply))
+        .find(_.taxIdName == name)
+        .map(_.build(value)) match {
+        case Some(taxIdWithName) =>
+          Reads[TaxIdWithName] { _ =>
+            JsSuccess(taxIdWithName)
+          }
+        case None =>
+          Reads[TaxIdWithName] { _ =>
+            JsError(s"could not determine tax id with name = $name and value = $value")
+          }
+      }
     }
 
   val taxIdentifierWrites = Writes[TaxIdWithName] { taxId =>
@@ -69,6 +68,6 @@ object SecureMessageMongoFormat {
 
   implicit val mongoTaxIdentifierFormat: Format[TaxIdWithName] =
     Format(taxIdentifierReads, taxIdentifierWrites)
-  //SecureMessage
+  // SecureMessage
   implicit val mongoMessageFormat: OFormat[SecureMessage] = Json.format[SecureMessage]
 }

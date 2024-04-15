@@ -36,45 +36,47 @@ import scala.concurrent.{ ExecutionContext, Future }
 
 trait SecureMessageService {
 
-  def createConversation(conversation: Conversation)(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Future[Either[SecureMessageError, Unit]]
+  def createConversation(
+    conversation: Conversation
+  )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Either[SecureMessageError, Unit]]
 
-  def createSecureMessage(secureMessage: SecureMessage)(
-    implicit request: Request[AnyContent],
-    hc: HeaderCarrier,
-    ec: ExecutionContext): Future[Result]
+  def createSecureMessage(
+    secureMessage: SecureMessage
+  )(implicit request: Request[AnyContent], hc: HeaderCarrier, ec: ExecutionContext): Future[Result]
 
-  def getConversations(authEnrolments: Enrolments, filters: Filters)(
-    implicit ec: ExecutionContext,
-    messages: Messages): Future[List[ConversationMetadata]]
+  def getConversations(authEnrolments: Enrolments, filters: Filters)(implicit
+    ec: ExecutionContext,
+    messages: Messages
+  ): Future[List[ConversationMetadata]]
 
   def getMessages(authEnrolments: Enrolments, filters: Filters)(implicit ec: ExecutionContext): Future[List[CDSMessage]]
 
-  def getMessagesList(authTaxIds: Set[TaxIdWithName])(
-    implicit ec: ExecutionContext,
-    hc: HeaderCarrier,
-    messageFilter: MessageFilter): Future[List[Message]]
+  def getMessagesList(
+    authTaxIds: Set[TaxIdWithName]
+  )(implicit ec: ExecutionContext, hc: HeaderCarrier, messageFilter: MessageFilter): Future[List[Message]]
 
-  def getMessagesCount(authEnrolments: Enrolments, filters: Filters)(
-    implicit ec: ExecutionContext): Future[MessagesCount]
+  def getMessagesCount(authEnrolments: Enrolments, filters: Filters)(implicit
+    ec: ExecutionContext
+  ): Future[MessagesCount]
 
-  def getMessagesCount(authTaxIds: Set[TaxIdWithName])(
-    implicit ec: ExecutionContext,
-    hc: HeaderCarrier,
-    messageFilter: MessageFilter): Future[MessagesCount]
+  def getMessagesCount(
+    authTaxIds: Set[TaxIdWithName]
+  )(implicit ec: ExecutionContext, hc: HeaderCarrier, messageFilter: MessageFilter): Future[MessagesCount]
 
-  def getConversation(id: ObjectId, enrolments: Set[CustomerEnrolment])(
-    implicit ec: ExecutionContext): Future[Either[SecureMessageError, ApiConversation]]
+  def getConversation(id: ObjectId, enrolments: Set[CustomerEnrolment])(implicit
+    ec: ExecutionContext
+  ): Future[Either[SecureMessageError, ApiConversation]]
 
-  def getLetter(id: ObjectId, enrolments: Set[CustomerEnrolment])(
-    implicit ec: ExecutionContext): Future[Either[SecureMessageError, ApiLetter]]
+  def getLetter(id: ObjectId, enrolments: Set[CustomerEnrolment])(implicit
+    ec: ExecutionContext
+  ): Future[Either[SecureMessageError, ApiLetter]]
 
   def getLetter(id: ObjectId)(implicit ec: ExecutionContext): Future[Option[Letter]]
 
-  def getSecureMessage(id: ObjectId, enrolments: Set[CustomerEnrolment])(
-    implicit ec: ExecutionContext,
-    language: Language): Future[Either[SecureMessageError, ApiLetter]]
+  def getSecureMessage(id: ObjectId, enrolments: Set[CustomerEnrolment])(implicit
+    ec: ExecutionContext,
+    language: Language
+  ): Future[Either[SecureMessageError, ApiLetter]]
 
   def getSecureMessage(id: ObjectId)(implicit ec: ExecutionContext): Future[Option[SecureMessage]]
 
@@ -83,16 +85,14 @@ trait SecureMessageService {
     conversationId: String,
     messagesRequest: CaseworkerMessage,
     randomId: String,
-    maybeReference: Option[Reference])(
-    implicit ec: ExecutionContext,
-    hc: HeaderCarrier): Future[Either[SecureMessageError, Unit]]
+    maybeReference: Option[Reference]
+  )(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[SecureMessageError, Unit]]
 
   def addCustomerMessage(
     id: String,
     messagesRequest: CustomerMessage,
     enrolments: Enrolments,
     randomId: String,
-    reference: Option[Reference])(
-    implicit ec: ExecutionContext,
-    request: Request[_]): Future[Either[SecureMessageError, Unit]]
+    reference: Option[Reference]
+  )(implicit ec: ExecutionContext, request: Request[_]): Future[Either[SecureMessageError, Unit]]
 }
