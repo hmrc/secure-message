@@ -32,7 +32,8 @@ final case class RecipientName(
   secondForename: Option[String],
   surname: Option[String],
   honours: Option[String],
-  line1: Option[String])
+  line1: Option[String]
+)
 
 object RecipientName {
   implicit val recipientNameFormat: OFormat[RecipientName] = Json.format[RecipientName]

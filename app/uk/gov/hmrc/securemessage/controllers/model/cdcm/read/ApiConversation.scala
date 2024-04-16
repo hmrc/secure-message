@@ -57,7 +57,8 @@ object ApiConversation {
   private def convertToApiMessage(
     coreConversation: Conversation,
     message: ConversationMessage,
-    identifiers: Set[Identifier]): ApiConversationMessage = {
+    identifiers: Set[Identifier]
+  ): ApiConversationMessage = {
     val senderPossibly: Option[Participant] = findParticipantViaId(coreConversation, message.senderId)
     val readerPossibly: Option[Participant] = findParticipantViaIdentifiers(coreConversation, identifiers)
     val firstReaderPossibly = firstReaderInformation(coreConversation, message)
@@ -70,7 +71,8 @@ object ApiConversation {
         ApiConversationMessage(
           Some(SenderInformation(sender.name, message.created, self)),
           firstReaderPossibly,
-          message.content)
+          message.content
+        )
       case (Some(sender), _, _) =>
         ApiConversationMessage(Some(SenderInformation(sender.name, message.created, self)), None, message.content)
       case (_, _, _) => ApiConversationMessage(None, None, message.content)
@@ -79,7 +81,8 @@ object ApiConversation {
 
   private def findFirstReaderDetails(
     message: ConversationMessage,
-    coreConversation: Conversation): Option[(Instant, Int)] = {
+    coreConversation: Conversation
+  ): Option[(Instant, Int)] = {
     val messageCreated = message.created.toEpochMilli
     getReadTimesWithId(coreConversation.participants)
       .filter(_._2 =!= message.senderId)
@@ -90,7 +93,8 @@ object ApiConversation {
 
   private def firstReaderInformation(
     coreConversation: Conversation,
-    message: ConversationMessage): Option[FirstReaderInformation] =
+    message: ConversationMessage
+  ): Option[FirstReaderInformation] =
     findFirstReaderDetails(message, coreConversation).flatMap { details =>
       findParticipantViaId(coreConversation, details._2).map { participantDetails =>
         FirstReaderInformation(participantDetails.name, details._1)
@@ -103,7 +107,8 @@ object ApiConversation {
 
   private def findParticipantViaIdentifiers(
     coreConversation: Conversation,
-    identifiers: Set[Identifier]): Option[Participant] =
+    identifiers: Set[Identifier]
+  ): Option[Participant] =
     coreConversation.participants
       .find(p => identifiers.contains(p.identifier))
 
@@ -114,7 +119,8 @@ object ApiConversation {
       part.readTimes match {
         case Some(times) => times.map(rt => rt -> part.id)
         case _           => List()
-    })
+      }
+    )
 
   implicit val languageWrites: Writes[Language] = Language.languageWrites
   implicit val conversationFormat: Format[ApiConversation] =

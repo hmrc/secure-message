@@ -25,7 +25,7 @@ import uk.gov.hmrc.play.bootstrap.backend.http.JsonErrorHandler
 import javax.inject.Inject
 import scala.concurrent.Future
 
-class ErrorHandler @Inject()(jsonErrorHandler: JsonErrorHandler) extends HttpErrorHandler {
+class ErrorHandler @Inject() (jsonErrorHandler: JsonErrorHandler) extends HttpErrorHandler {
   override def onClientError(request: RequestHeader, statusCode: Int, message: String): Future[Result] =
     statusCode match {
       case BAD_REQUEST =>

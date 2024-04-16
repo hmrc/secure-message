@@ -56,7 +56,8 @@ class ConversationRepositorySpec
       "IR-SA",
       "UTR",
       "123456789",
-      Some(Map("sourceId" -> "self-assessment")))
+      Some(Map("sourceId" -> "self-assessment"))
+    )
   val conversation4: Conversation =
     ConversationUtil
       .getFullConversation(new ObjectId(), "456", "IR-CT", "UTR", "345678901", Some(Map("caseId" -> "CT-11345")))
@@ -65,7 +66,7 @@ class ConversationRepositorySpec
   override def beforeEach(): Unit =
     await(repository.collection.deleteMany(Filters.empty()).toFuture().map(_ => ()))
 
-  //TODO: group test by their function name
+  // TODO: group test by their function name
   "A full conversation" should {
     "be inserted into the repository successfully" in new TestContext(
       conversations = Seq()
@@ -104,7 +105,8 @@ class ConversationRepositorySpec
     ) {
       val result: immutable.Seq[Conversation] = await(
         repository
-          .getConversations(Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))), Some(List())))
+          .getConversations(Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))), Some(List()))
+      )
       result.map(_.id) must contain theSameElementsAs List("234", "123")
     }
 
@@ -115,8 +117,11 @@ class ConversationRepositorySpec
         repository.getConversations(
           Set(
             Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")),
-            Identifier("UTR", "123456789", Some("IR-SA"))),
-          None))
+            Identifier("UTR", "123456789", Some("IR-SA"))
+          ),
+          None
+        )
+      )
       result.map(_.id) must contain theSameElementsAs List("345", "234", "123")
     }
 
@@ -127,8 +132,11 @@ class ConversationRepositorySpec
         repository.getConversations(
           Set(
             Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")),
-            Identifier("UTR", "123456789", Some("IR-SA"))),
-          Some(List())))
+            Identifier("UTR", "123456789", Some("IR-SA"))
+          ),
+          Some(List())
+        )
+      )
       result.map(_.id) must contain theSameElementsAs List("345", "234", "123")
     }
 
@@ -147,7 +155,9 @@ class ConversationRepositorySpec
         repository
           .getConversations(
             Set.empty,
-            Some(List(FilterTag("sourceId", "self-assessment"), FilterTag("caseId", "CT-11345")))))
+            Some(List(FilterTag("sourceId", "self-assessment"), FilterTag("caseId", "CT-11345")))
+          )
+      )
       result mustBe Nil
     }
 
@@ -157,7 +167,9 @@ class ConversationRepositorySpec
       val result: immutable.Seq[Conversation] = await(
         repository.getConversations(
           Set(Identifier("UTR", "345678901", Some("IR-CT"))),
-          Some(List(FilterTag("sourceId", "self-assessment")))))
+          Some(List(FilterTag("sourceId", "self-assessment")))
+        )
+      )
       result mustBe Nil
     }
 
@@ -167,7 +179,9 @@ class ConversationRepositorySpec
       val result: immutable.Seq[Conversation] = await(
         repository.getConversations(
           Set(Identifier("UTR", "123456789", Some("IR-SA"))),
-          Some(List(FilterTag("sourceId", "self-assessment")))))
+          Some(List(FilterTag("sourceId", "self-assessment")))
+        )
+      )
       result.map(_.id) mustBe Seq("345")
     }
 
@@ -179,10 +193,11 @@ class ConversationRepositorySpec
           Set(
             Identifier("UTR", "123456789", Some("IR-SA")),
             Identifier("UTR", "345678901", Some("IR-CT")),
-            Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")),
+            Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))
           ),
           Some(List(FilterTag("caseId", "CT-11345")))
-        ))
+        )
+      )
       result.map(_.id) mustBe Seq("456")
     }
 
@@ -192,7 +207,9 @@ class ConversationRepositorySpec
       val result: immutable.Seq[Conversation] = await(
         repository.getConversations(
           Set(Identifier("UTR", "123456789", Some("IR-SA"))),
-          Some(List(FilterTag("sourceId", "self-assessment"), FilterTag("caseId", "CT-11345")))))
+          Some(List(FilterTag("sourceId", "self-assessment"), FilterTag("caseId", "CT-11345")))
+        )
+      )
       result.map(_.id) mustBe Seq("345")
     }
 
@@ -206,7 +223,8 @@ class ConversationRepositorySpec
             Identifier("UTR", "345678901", Some("IR-CT"))
           ),
           Some(List(FilterTag("sourceId", "self-assessment"), FilterTag("caseId", "CT-11345")))
-        ))
+        )
+      )
       result.map(_.id) must contain theSameElementsAs List("456", "345")
     }
   }
@@ -219,7 +237,8 @@ class ConversationRepositorySpec
       val result: Either[MessageNotFound, Conversation] =
         await(
           repository
-            .getConversation(conversation.client, conversation.id, conversation.participants.map(_.identifier).toSet))
+            .getConversation(conversation.client, conversation.id, conversation.participants.map(_.identifier).toSet)
+        )
       result.toOption.get mustBe conversation
     }
   }
@@ -251,7 +270,9 @@ class ConversationRepositorySpec
           .getConversation(
             conversation.client,
             conversation.id,
-            Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")))))
+            Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")))
+          )
+      )
       val result: Conversation = updated.toOption.get
       result.messages.size mustBe 3
     }
@@ -275,7 +296,8 @@ class ConversationRepositorySpec
     ) {
       val result: Count =
         await(
-          repository.getConversationsCount(Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))), None))
+          repository.getConversationsCount(Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))), None)
+        )
       result must be(Count(total = 0, unread = 0))
     }
 
@@ -284,7 +306,8 @@ class ConversationRepositorySpec
     ) {
       val result: Count =
         await(
-          repository.getConversationsCount(Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))), None))
+          repository.getConversationsCount(Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))), None)
+        )
       result must be(Count(total = 2, unread = 2))
     }
 
@@ -294,7 +317,8 @@ class ConversationRepositorySpec
       await(repository.addReadTime(conversation1.client, conversation1.id, 2, Instant.now))
       val result: Count =
         await(
-          repository.getConversationsCount(Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))), None))
+          repository.getConversationsCount(Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))), None)
+        )
       result must be(Count(total = 2, unread = 1))
     }
   }
@@ -305,7 +329,8 @@ class ConversationRepositorySpec
       val result =
         await(
           repository
-            .getConversation(conversation._id, conversation.participants.map(_.identifier).toSet))
+            .getConversation(conversation._id, conversation.participants.map(_.identifier).toSet)
+        )
       result.toOption.get mustBe conversation
     }
 
@@ -405,10 +430,13 @@ class ConversationRepositorySpec
       result mustBe 1
     }
 
-    "count unread only for old messages" in new TextContextWithInsert(Seq(conversation1, conversation2, conversation3)) {
+    "count unread only for old messages" in new TextContextWithInsert(
+      Seq(conversation1, conversation2, conversation3)
+    ) {
       val result = await(
         repository
-          .getConversationsUnreadCount(Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))), None))
+          .getConversationsUnreadCount(Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))), None)
+      )
       result mustBe 2
     }
 

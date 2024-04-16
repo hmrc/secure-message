@@ -34,7 +34,7 @@ object StatsCount {
 }
 
 @Singleton
-class StatsMetricRepository @Inject()(
+class StatsMetricRepository @Inject() (
   mongo: MongoComponent
 )(implicit ec: ExecutionContext)
     extends PlayMongoRepository[StatsCount](
@@ -53,13 +53,14 @@ class StatsMetricRepository @Inject()(
       )
       .toFuture()
       .map(
-        _.flatMap(metric => Map(s"${metric.name}.total" -> metric.total, s"${metric.name}.count" -> metric.count)).toMap)
+        _.flatMap(metric => Map(s"${metric.name}.total" -> metric.total, s"${metric.name}.count" -> metric.count)).toMap
+      )
 
   def incrementReads(taxIdName: String, form: String)(implicit ec: ExecutionContext): Future[Unit] =
     increment(s"stats.$taxIdName.$form.read", 1)
 
-  def incrementUpdate(taxIdName: String, form: String, metricNameSuffix: String)(
-    implicit ec: ExecutionContext
+  def incrementUpdate(taxIdName: String, form: String, metricNameSuffix: String)(implicit
+    ec: ExecutionContext
   ): Future[Unit] =
     increment(s"stats.$taxIdName.$form.$metricNameSuffix", 1)
 

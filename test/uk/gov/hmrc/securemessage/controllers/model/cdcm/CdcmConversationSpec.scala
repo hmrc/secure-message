@@ -65,7 +65,8 @@ class CdcmConversationSpec extends PlaySpec {
   "CustomerEnrolment request model" should {
     "parse a URL parameter for enrolment into its 3 part constituents" in {
       CustomerEnrolment.parse("HMRC-CUS-ORG~EoriNumber~GB1234567") mustEqual Right(
-        CustomerEnrolment("HMRC-CUS-ORG", "EoriNumber", "GB1234567"))
+        CustomerEnrolment("HMRC-CUS-ORG", "EoriNumber", "GB1234567")
+      )
     }
 
     "return an error for an incorrect URL enrolment parameter" in {

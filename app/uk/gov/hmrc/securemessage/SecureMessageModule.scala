@@ -55,28 +55,31 @@ class SecureMessageModule extends AbstractModule with PekkoGuiceSupport {
   @Provides
   @Named("retryFailedAfter")
   @Singleton
-  def mongoRetryFailedAfter(configuration: Configuration): Int = {
+  def mongoRetryFailedAfter(configuration: Configuration): Int =
     configuration
       .getOptional[FiniteDuration]("mongodb.retryFailedAfter")
       .getOrElse(throw new RuntimeException("mongodb.retryFailedAfter not found in config"))
-  }.toMillis.toInt
+      .toMillis
+      .toInt
 
   @Provides
   @Named("retryInProgressAfter")
   @Singleton
-  def mongoRetryInProgressAfter(configuration: Configuration): Int = {
+  def mongoRetryInProgressAfter(configuration: Configuration): Int =
     configuration
       .getOptional[FiniteDuration]("mongodb.retryInProgressAfter")
       .getOrElse(throw new RuntimeException("mongodb.retryInProgressAfter not found in config"))
-  }.toMillis.toInt
+      .toMillis
+      .toInt
   @Provides
   @Named("queryMaxTimeMs")
   @Singleton
-  def queryMaxTimeMs(configuration: Configuration): Int = {
+  def queryMaxTimeMs(configuration: Configuration): Int =
     configuration
       .getOptional[FiniteDuration]("mongodb.queryMaxTimeMs")
       .getOrElse(throw new RuntimeException("mongodb.queryMaxTimeMs not found in config"))
-  }.toMillis.toInt
+      .toMillis
+      .toInt
 
   @Provides
   @Named("invalid-template-ids-push-notifications")

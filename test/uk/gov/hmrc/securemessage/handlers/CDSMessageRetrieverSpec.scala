@@ -73,30 +73,37 @@ class CDSMessageRetrieverSpec extends PlaySpec with MockitoSugar with UnitTest {
 
     val conversations: List[Conversation] = storedConversations.map(_.as[Conversation])
     val conversationsMetadata: List[MessageMetadata] = List(
-      Resources.readJson("model/core/full-db-conversation-metadata.json").as[MessageMetadata])
+      Resources.readJson("model/core/full-db-conversation-metadata.json").as[MessageMetadata]
+    )
     val letters: List[Letter] = storedLetters.map(_.as[Letter])
     val lettersMetadata: List[MessageMetadata] = List(
-      Resources.readJson("model/core/full-db-letter-metadata.json").as[MessageMetadata])
+      Resources.readJson("model/core/full-db-letter-metadata.json").as[MessageMetadata]
+    )
     val messages: List[Message] = conversations ++ letters
     val messagesMetadata: List[MessageMetadata] = conversationsMetadata ++ lettersMetadata
     when(
       mockSecureMessageService
         .getMessages(
           eqTo(authEnrolmentsFrom(authEnrolments)),
-          eqTo(Filters(None, Some(customerEnrolments.toList), None)))(any[ExecutionContext]))
+          eqTo(Filters(None, Some(customerEnrolments.toList), None))
+        )(any[ExecutionContext])
+    )
       .thenReturn(Future.successful(messages))
 
     when(
       mockSecureMessageService.getMessagesCount(
         eqTo(authEnrolmentsFrom(authEnrolments)),
-        eqTo(Filters(None, Some(customerEnrolments.toList), None)))(any[ExecutionContext]))
+        eqTo(Filters(None, Some(customerEnrolments.toList), None))
+      )(any[ExecutionContext])
+    )
       .thenReturn(Future.successful(MessagesCount(1, 1)))
 
     val enrolments: Enrolments = authEnrolmentsFrom(authEnrolments)
 
     when(
       mockAuthConnector
-        .authorise(any[Predicate], any[Retrieval[Enrolments]])(any[HeaderCarrier], any[ExecutionContext]))
+        .authorise(any[Predicate], any[Retrieval[Enrolments]])(any[HeaderCarrier], any[ExecutionContext])
+    )
       .thenReturn(Future.successful(enrolments))
   }
 }

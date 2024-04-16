@@ -36,8 +36,9 @@ object ContentValidator {
   type Html = String
   private val decoder: Base64.Decoder = Base64.getDecoder
 
-  def validate(content: EncodedBase64)(
-    implicit executionContext: ExecutionContext): EitherT[Future, InvalidContent, String] = {
+  def validate(
+    content: EncodedBase64
+  )(implicit executionContext: ExecutionContext): EitherT[Future, InvalidContent, String] = {
     val result = for {
       nonEmptyContent <- validateNotEmpty(content)
       decodedBase64   <- decodeBase64(nonEmptyContent)
@@ -81,7 +82,9 @@ object ContentValidator {
       Left(
         InvalidContent(
           s"Html contains disallowed tags, attributes or protocols within the tags: $disallowedElements. " +
-            s"For allowed elements see ${whitelist.getClass}.relaxed()"))
+            s"For allowed elements see ${whitelist.getClass}.relaxed()"
+        )
+      )
     } else {
       Right(Jsoup.clean(content, whitelist))
     }

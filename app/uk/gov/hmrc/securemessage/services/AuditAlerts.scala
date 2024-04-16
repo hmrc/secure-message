@@ -45,7 +45,8 @@ sealed trait AlertEvent {
   def auditAlertEvent(
     message: SecureMessage,
     emailAddress: Option[String],
-    failureReason: Option[String] = None): DataEvent =
+    failureReason: Option[String] = None
+  ): DataEvent =
     DataEvent(
       auditSource = "secure-message",
       auditType = failureReason.fold(EventTypes.Succeeded)(_ => EventTypes.Failed),
@@ -53,13 +54,12 @@ sealed trait AlertEvent {
         "transactionName"                 -> "Send Email Alert",
         message.recipient.identifier.name -> message.recipient.identifier.value
       ) ++ emailAddress.map("emailAddress" -> _).toMap,
-      detail =
-        Map(
-          "emailTemplateName" -> message.templateId
-        )
-          ++ message.details.map("formId"      -> _.formId).toMap
-          ++ failureReason.map("failureReason" -> _).toMap
-          ++ message.auditData
+      detail = Map(
+        "emailTemplateName" -> message.templateId
+      )
+        ++ message.details.map("formId" -> _.formId).toMap
+        ++ failureReason.map("failureReason" -> _).toMap
+        ++ message.auditData
     )
 }
 

@@ -46,13 +46,14 @@ import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success, Try }
 
-class SecureMessageController @Inject()(
+class SecureMessageController @Inject() (
   cc: ControllerComponents,
   val authConnector: AuthConnector,
   override val auditConnector: AuditConnector,
   secureMessageService: SecureMessageServiceImpl,
   messageBroker: MessageBroker,
-  dataTimeUtils: DateTimeUtils)(implicit ec: ExecutionContext)
+  dataTimeUtils: DateTimeUtils
+)(implicit ec: ExecutionContext)
     extends BackendController(cc) with AuthorisedFunctions with QueryStringValidation with I18nSupport
     with ErrorHandling with Auditing with Logging with ImplicitClassesExtensions with MessageSchemaValidator {
 
@@ -67,7 +68,8 @@ class SecureMessageController @Inject()(
             conversationId,
             dataTimeUtils.now,
             randomId,
-            maybeReference)
+            maybeReference
+          )
         val res = secureMessageService
           .createConversation(conversation)
           .map {
@@ -79,7 +81,8 @@ class SecureMessageController @Inject()(
                 conversation,
                 "Conversation Created",
                 randomId,
-                maybeReference)
+                maybeReference
+              )
               handleErrors(conversation.id, error, Some(ClientName.withName(conversation.client)))
           }
         auditCreateConversation(
@@ -87,7 +90,8 @@ class SecureMessageController @Inject()(
           conversation,
           "Conversation Created",
           randomId,
-          maybeReference)
+          maybeReference
+        )
         res
       }
   }
@@ -103,7 +107,8 @@ class SecureMessageController @Inject()(
             conversationId,
             caseworkerMessageRequest,
             randomId,
-            maybeReference)
+            maybeReference
+          )
           .map {
             case Right(_) =>
               val _ = auditCaseworkerReply(
@@ -112,7 +117,8 @@ class SecureMessageController @Inject()(
                 conversationId,
                 caseworkerMessageRequest,
                 randomId,
-                maybeReference)
+                maybeReference
+              )
               Created(Json.toJson(s"Created case worker message for client $client and conversationId $conversationId"))
             case Left(error) =>
               val _ = auditCaseworkerReply(
@@ -121,7 +127,8 @@ class SecureMessageController @Inject()(
                 conversationId,
                 caseworkerMessageRequest,
                 randomId,
-                maybeReference)
+                maybeReference
+              )
               handleErrors(conversationId, error, Some(client))
           }
       }
@@ -135,7 +142,8 @@ class SecureMessageController @Inject()(
       enrolments       <- EitherT(getEnrolments())
       message          <- EitherT(Future.successful(parseAs[CustomerMessage]()))
       _ <- EitherT(
-            secureMessageService.addCustomerMessage(messageTypeAndId._2, message, enrolments, randomId, maybeReference))
+             secureMessageService.addCustomerMessage(messageTypeAndId._2, message, enrolments, randomId, maybeReference)
+           )
     } yield message
 
     message.value map {
@@ -166,14 +174,15 @@ class SecureMessageController @Inject()(
     handleErrors(encodedId, secureMessageError)
   }
 
-  private def parseAs[T]()(
-    implicit request: Request[JsValue],
+  private def parseAs[T]()(implicit
+    request: Request[JsValue],
     m: Manifest[T],
-    reads: Reads[T]): Either[InvalidRequest, T] =
+    reads: Reads[T]
+  ): Either[InvalidRequest, T] =
     Try(request.body.validate[T]) match {
       case Success(JsSuccess(payload, _)) => Right(payload)
-      case Success(JsError(errs))         => Left(InvalidRequest(s"Invalid ${m.runtimeClass.getSimpleName} payload: $errs"))
-      case Failure(e)                     => Left(InvalidRequest(s"Could not parse body due to ${e.getMessage}", Some(e)))
+      case Success(JsError(errs)) => Left(InvalidRequest(s"Invalid ${m.runtimeClass.getSimpleName} payload: $errs"))
+      case Failure(e)             => Left(InvalidRequest(s"Could not parse body due to ${e.getMessage}", Some(e)))
     }
 
   def getMessages(
@@ -181,21 +190,20 @@ class SecureMessageController @Inject()(
     enrolment: Option[List[CustomerEnrolment]],
     tag: Option[List[FilterTag]],
     messageFilter: Option[MessageFilter] = None,
-    language: Option[Language] = None): Action[AnyContent] =
+    language: Option[Language] = None
+  ): Action[AnyContent] =
     Action.async { implicit request =>
-      {
-        logger.warn(s"getMessages for the language $language")
-        val requestWrapper =
-          MessageRequestWrapper(enrolmentKey, enrolment, tag, messageFilter.getOrElse(new MessageFilter()))
-        logger.warn(s"Request Wrapper = $requestWrapper")
-        validateQueryParameters(request.queryString) match {
-          case Left(e) =>
-            logger.warn(s"Invalid Request ${request.queryString}")
-            Future.successful(BadRequest(Json.toJson(e.getMessage)))
-          case Right(value) =>
-            logger.warn(s"Valid Request $value - Params: ${request.queryString}")
-            messageBroker.messageRetriever(value).fetch(requestWrapper, language.getOrElse(English)).map(Ok(_))
-        }
+      logger.warn(s"getMessages for the language $language")
+      val requestWrapper =
+        MessageRequestWrapper(enrolmentKey, enrolment, tag, messageFilter.getOrElse(new MessageFilter()))
+      logger.warn(s"Request Wrapper = $requestWrapper")
+      validateQueryParameters(request.queryString) match {
+        case Left(e) =>
+          logger.warn(s"Invalid Request ${request.queryString}")
+          Future.successful(BadRequest(Json.toJson(e.getMessage)))
+        case Right(value) =>
+          logger.warn(s"Valid Request $value - Params: ${request.queryString}")
+          messageBroker.messageRetriever(value).fetch(requestWrapper, language.getOrElse(English)).map(Ok(_))
       }
     }
 
@@ -203,7 +211,8 @@ class SecureMessageController @Inject()(
     enrolmentKeys: Option[List[String]],
     customerEnrolments: Option[List[CustomerEnrolment]],
     tags: Option[List[FilterTag]],
-    messageFilter: Option[MessageFilter] = None): Action[AnyContent] =
+    messageFilter: Option[MessageFilter] = None
+  ): Action[AnyContent] =
     Action.async { implicit request =>
       val requestWrapper =
         MessageRequestWrapper(enrolmentKeys, customerEnrolments, tags, messageFilter.getOrElse(new MessageFilter()))
@@ -224,9 +233,10 @@ class SecureMessageController @Inject()(
         messageRequestTuple <- EitherT(Future.successful(IdCoder.decodeId(encodedId)))
         enrolments          <- EitherT(getEnrolments())
         message <- EitherT(
-                    messageBroker
-                      .messageRetriever(messageRequestTuple._3)
-                      .getMessage(MessageReadRequest(messageRequestTuple._1, enrolments, messageRequestTuple._2)))
+                     messageBroker
+                       .messageRetriever(messageRequestTuple._3)
+                       .getMessage(MessageReadRequest(messageRequestTuple._1, enrolments, messageRequestTuple._2))
+                   )
       } yield (message, enrolments)
       message.value map {
         case Right((msg, enrolments)) =>

@@ -35,7 +35,7 @@ object SecureMessageFixtures {
     hash: String = "someHashValue",
     alertTemplateId: String = "templateId",
     recipientName: Option[TaxpayerName] = None,
-    externalRef: ExternalRef = ExternalRef("2342342341", "gmc"),
+    externalRef: ExternalRef = ExternalRef("2342342341", "gmc")
   ) =
     SecureMessage(
       _id = new ObjectId,

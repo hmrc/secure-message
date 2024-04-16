@@ -41,7 +41,9 @@ object ConversationUtil {
       recipients = Recipient(
         Customer(
           CustomerEnrolment("HMRC-CUS-ORG", "EORINumber", "GB1234567890")
-        )) :: cnv.recipients)
+        )
+      ) :: cnv.recipients
+    )
   }
   def getFullConversation(
     objectId: ObjectId = new ObjectId(),
@@ -53,7 +55,8 @@ object ConversationUtil {
       Map(
         "mrn"              -> "DMS7324874993",
         "notificationType" -> "CDS-EXPORTS"
-      )),
+      )
+    ),
     alert: core.Alert = alert,
     messageCreationDate: String = "2020-11-10T15:00:01.000",
     readTimes: Option[List[Instant]] = None,
@@ -116,15 +119,17 @@ object ConversationUtil {
           Some("CDS Exports Team"),
           None,
           None,
-          None),
+          None
+        ),
         Participant(
           2,
-          ParticipantType.Customer, //GB1234567890
+          ParticipantType.Customer, // GB1234567890
           Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")),
           None,
           None,
           None,
-          None)
+          None
+        )
       ),
       NonEmptyList.one(
         ConversationMessage(

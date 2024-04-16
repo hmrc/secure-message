@@ -30,10 +30,11 @@ import uk.gov.hmrc.securemessage.models.EmailRequest.emailRequestWrites
 import scala.concurrent.{ ExecutionContext, Future }
 
 @Singleton
-class EmailConnector @Inject()(
+class EmailConnector @Inject() (
   httpClient: HttpClient,
   servicesConfig: ServicesConfig,
-  override val auditConnector: AuditConnector)(implicit ec: ExecutionContext)
+  override val auditConnector: AuditConnector
+)(implicit ec: ExecutionContext)
     extends Auditing {
 
   private val emailBaseUrl = servicesConfig.baseUrl("email")

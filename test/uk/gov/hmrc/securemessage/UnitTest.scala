@@ -24,7 +24,7 @@ import uk.gov.hmrc.securemessage.utils.DateTimeUtils
 import java.time.Instant
 
 /** This will be the base class for all our unit tests, replacing PlaySpec and all extended traits for consistency
-  * */
+  */
 trait UnitTest {
 
   val zeroTimeProvider: ZeroTimeProvider = new ZeroTimeProvider()
@@ -36,13 +36,14 @@ trait UnitTest {
 
   def authEnrolmentsFrom(customerEnrolments: Set[CustomerEnrolment]): Enrolments =
     Enrolments(
-      customerEnrolments.map(
-        enrolment =>
-          Enrolment(
-            key = enrolment.key,
-            identifiers = Seq(EnrolmentIdentifier(enrolment.name, enrolment.value)),
-            state = "",
-            None))
+      customerEnrolments.map(enrolment =>
+        Enrolment(
+          key = enrolment.key,
+          identifiers = Seq(EnrolmentIdentifier(enrolment.name, enrolment.value)),
+          state = "",
+          None
+        )
+      )
     )
 
   def base64Encode(path: String): String = Base64.encodeBase64String(path.getBytes("UTF-8"))

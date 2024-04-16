@@ -20,4 +20,5 @@ case class MessageRequestWrapper(
   enrolmentKeys: Option[List[String]],
   customerEnrolments: Option[List[CustomerEnrolment]],
   tags: Option[List[FilterTag]],
-  messageFilter: MessageFilter = new MessageFilter())
+  messageFilter: MessageFilter = new MessageFilter()
+)

@@ -19,16 +19,15 @@ package uk.gov.hmrc.securemessage.models.core
 import play.api.libs.json.{ Json, Reads }
 
 /** [[CustomerEnrolment]] along with [[SystemIdentifier]] are identifiers, probably should make part of common model
-  * */
+  */
 final case class CustomerEnrolment(key: String, name: String, value: String) {
   def asIdentifier: Identifier = Identifier(name, value, Some(key))
   def upper: CustomerEnrolment = CustomerEnrolment(key.toUpperCase, name.toUpperCase, value.toUpperCase)
 }
 
 object CustomerEnrolment {
-  implicit val enrolmentReads: Reads[CustomerEnrolment] = {
+  implicit val enrolmentReads: Reads[CustomerEnrolment] =
     Json.reads[CustomerEnrolment]
-  }
 
   def parse(enrolmentString: String): Either[String, CustomerEnrolment] = {
     val enrolment = enrolmentString.split('~')

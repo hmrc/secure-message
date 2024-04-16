@@ -91,3 +91,11 @@ Compile / doc / sources := Seq.empty
 //TODO make bellow work and rename resources/service/ContentValidation/*html.txt to html
 Test / resourceDirectory := baseDirectory.value / "test" / "resources"
 Test / resources / excludeFilter := HiddenFileFilter || "*.html"
+
+Test / test := (Test / test)
+  .dependsOn(scalafmtCheckAll)
+  .value
+
+it / test := (it / Test / test)
+  .dependsOn(scalafmtCheckAll, it/scalafmtCheckAll)
+  .value

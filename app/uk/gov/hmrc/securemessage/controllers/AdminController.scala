@@ -26,7 +26,7 @@ import javax.inject.{ Inject, Singleton }
 import scala.concurrent.ExecutionContext
 
 @Singleton
-class AdminController @Inject()(
+class AdminController @Inject() (
   instances: Instances,
   cc: ControllerComponents
 )(implicit ec: ExecutionContext)

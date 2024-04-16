@@ -21,9 +21,8 @@ import play.api.libs.json.{ Json, Reads }
 final case class FilterTag(key: String, value: String)
 
 object FilterTag {
-  implicit val tagReads: Reads[FilterTag] = {
+  implicit val tagReads: Reads[FilterTag] =
     Json.reads[FilterTag]
-  }
 
   def parse(tagString: String): Either[String, FilterTag] = {
     val tag = tagString.split('~')

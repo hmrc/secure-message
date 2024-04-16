@@ -18,7 +18,7 @@ package uk.gov.hmrc.securemessage.models.v4
 
 import org.apache.commons.codec.binary.Base64
 
-import java.time.{Instant, LocalDate, LocalTime, ZoneOffset, ZonedDateTime}
+import java.time.{ Instant, LocalDate, LocalTime, ZoneOffset, ZonedDateTime }
 import org.mongodb.scala.bson.ObjectId
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
@@ -31,22 +31,24 @@ import uk.gov.hmrc.securemessage.models.core.Language.English
 
 import java.security.MessageDigest
 
-case class SecureMessage(_id: ObjectId,
-                         externalRef: ExternalRef,
-                         recipient: TaxEntity,
-                         tags: Option[Map[String, String]] = None,
-                         messageType: String,
-                         validFrom: LocalDate,
-                         content: List[Content],
-                         alertDetails: AlertDetails,
-                         alertQueue: Option[String],
-                         details: Option[MessageDetails],
-                         emailAddress: String,
-                         hash: String,
-                         status: ProcessingStatus = ToDo,
-                         alerts: Option[EmailAlert] = None,
-                         readTime: Option[Instant] = None,
-                         verificationBrake: Option[Boolean] = None) extends uk.gov.hmrc.securemessage.models.core.Message {
+case class SecureMessage(
+  _id: ObjectId,
+  externalRef: ExternalRef,
+  recipient: TaxEntity,
+  tags: Option[Map[String, String]] = None,
+  messageType: String,
+  validFrom: LocalDate,
+  content: List[Content],
+  alertDetails: AlertDetails,
+  alertQueue: Option[String],
+  details: Option[MessageDetails],
+  emailAddress: String,
+  hash: String,
+  status: ProcessingStatus = ToDo,
+  alerts: Option[EmailAlert] = None,
+  readTime: Option[Instant] = None,
+  verificationBrake: Option[Boolean] = None
+) extends uk.gov.hmrc.securemessage.models.core.Message {
 
   def templateId: String = alertDetails.templateId
 
@@ -68,18 +70,26 @@ object SecureMessage extends ApiFormats with AlertEmailTemplateMapper {
       (__ \ "alertQueue").readNullable[String] and
       (__ \ "details").readNullable[MessageDetails] and
       Reads[Option[Map[String, String]]](jsValue =>
-        ( __ \ "alertDetails" \ "data").asSingleJson(jsValue) match {
-          case JsDefined(value) => value.validate[Map[String, String]].map(Some.apply).
-            orElse(JsError("sourceData: invalid source data provided"))
-          case _ => JsSuccess(None)}) and
+        (__ \ "alertDetails" \ "data").asSingleJson(jsValue) match {
+          case JsDefined(value) =>
+            value
+              .validate[Map[String, String]]
+              .map(Some.apply)
+              .orElse(JsError("sourceData: invalid source data provided"))
+          case _ => JsSuccess(None)
+        }
+      ) and
       Reads[Option[Map[String, String]]](jsValue =>
-        ( __ \ "tags").asSingleJson(jsValue) match {
-          case JsDefined(value) => value.validate[Map[String, String]]
-            .map(Some.apply)
-            .orElse(JsError("tags : invalid data provided"))
-          case _ => JsSuccess(None)})) {
+        (__ \ "tags").asSingleJson(jsValue) match {
+          case JsDefined(value) =>
+            value
+              .validate[Map[String, String]]
+              .map(Some.apply)
+              .orElse(JsError("tags : invalid data provided"))
+          case _ => JsSuccess(None)
+        }
+      )) {
       (externalRef, recipient, messageType, lang, vf, content, alertQueue, messageDetails, alertDetailsData, tags) =>
-
         val issueDate = messageDetails.flatMap(_.issueDate).getOrElse(LocalDate.now)
         val validFrom = vf.filter(_.isAfter(issueDate)).getOrElse(issueDate)
 
@@ -107,9 +117,10 @@ object SecureMessage extends ApiFormats with AlertEmailTemplateMapper {
           messageDetails.flatMap(_.waitTime).fold[Map[String, String]](Map.empty)(v => Map("waitTime" -> v))
 
         val data = email ++ responseTime ++ Map(
-          "date" -> validFrom.toString,
+          "date"     -> validFrom.toString,
           "language" -> subjectLang.entryName,
-          "subject" -> subject) ++
+          "subject"  -> subject
+        ) ++
           alertDetailsData.getOrElse(Map())
 
         val templateId = messageDetails
@@ -130,8 +141,9 @@ object SecureMessage extends ApiFormats with AlertEmailTemplateMapper {
           AlertDetails(templateId, recipientName, data),
           alertQueue,
           messageDetails,
-          email.getOrElse("email",""),
-          hash)
+          email.getOrElse("email", ""),
+          hash
+        )
     }
 
 }

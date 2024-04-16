@@ -46,12 +46,13 @@ import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.control.NonFatal
 
 @Singleton
-class SecureMessageRepository @Inject()(
+class SecureMessageRepository @Inject() (
   mongo: MongoComponent,
   val timeSource: TimeSource,
   @Named("retryFailedAfter") retryIntervalMillis: Int,
   @Named("retryInProgressAfter") retryInProgressAfter: Int,
-  @Named("queryMaxTimeMs") queryMaxTimeMs: Int)(implicit ec: ExecutionContext)
+  @Named("queryMaxTimeMs") queryMaxTimeMs: Int
+)(implicit ec: ExecutionContext)
     extends AbstractMessageRepository[SecureMessage](
       "secure-message",
       mongo,
@@ -70,7 +71,8 @@ class SecureMessageRepository @Inject()(
           IndexOptions()
             .name("recipient-tax-id")
             .unique(false)
-            .background(true)),
+            .background(true)
+        ),
         IndexModel(ascending("status"), IndexOptions().name("status").unique(false))
       ),
       replaceIndexes = true,
@@ -166,19 +168,21 @@ class SecureMessageRepository @Inject()(
         )
     }
 
-  def getSecureMessageCount(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
-    implicit ec: ExecutionContext): Future[Count] =
+  def getSecureMessageCount(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(implicit
+    ec: ExecutionContext
+  ): Future[Count] =
     getMessagesCount(identifiers, tags)
 
   override def readyForViewingQuery: Bson = {
     import SecureMessageMongoFormat.localDateFormat
     Filters.and(
       Filters.lte("validFrom", Codecs.toBson(LocalDate.now())),
-      Filters.nor(Filters.equal("verificationBrake", true)))
+      Filters.nor(Filters.equal("verificationBrake", true))
+    )
   }
 
-  def findBy(authTaxIds: Set[TaxIdWithName])(
-    implicit messageFilter: MessageFilter,
+  def findBy(authTaxIds: Set[TaxIdWithName])(implicit
+    messageFilter: MessageFilter,
     ec: ExecutionContext
   ): Future[List[SecureMessage]] =
     taxIdRegimeSelector(authTaxIds)
@@ -192,40 +196,42 @@ class SecureMessageRepository @Inject()(
           .toFuture()
           .map(_.toList)
       }
-      .recoverWith {
-        case NonFatal(e) =>
-          logger.error(s"Error processing the query ${e.getMessage}")
-          Future.successful(List())
+      .recoverWith { case NonFatal(e) =>
+        logger.error(s"Error processing the query ${e.getMessage}")
+        Future.successful(List())
       }
 
-  def countBy(authTaxIds: Set[TaxIdWithName])(
-    implicit messageFilter: MessageFilter,
+  def countBy(authTaxIds: Set[TaxIdWithName])(implicit
+    messageFilter: MessageFilter,
     ec: ExecutionContext
   ): Future[MessagesCount] =
     taxIdRegimeSelector(authTaxIds)
       .map(Filters.and(_, readyForViewingQuery))
-      .fold(Future.successful(MessagesCount(0, 0)))(query => {
+      .fold(Future.successful(MessagesCount(0, 0))) { query =>
         logger.debug(s"SecureMessageCountQuery $query")
         for {
           unreadCount <- collection
-                        // scalastyle:off null
-                          .countDocuments(Filters.and(query, Filters.equal("readTime", null)))
-                          // scalastyle:on null
-                          .toFuture()
+                           // scalastyle:off null
+                           .countDocuments(Filters.and(query, Filters.equal("readTime", null)))
+                           // scalastyle:on null
+                           .toFuture()
           totalCount <- collection.countDocuments(query).toFuture()
         } yield MessagesCount(totalCount.toInt, unreadCount.toInt)
-      })
+      }
 
-  def getSecureMessages(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
-    implicit ec: ExecutionContext): Future[List[SecureMessage]] =
+  def getSecureMessages(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(implicit
+    ec: ExecutionContext
+  ): Future[List[SecureMessage]] =
     getMessages(identifiers, tags)
 
-  def getSecureMessage(id: ObjectId, identifiers: Set[Identifier])(
-    implicit ec: ExecutionContext): Future[Either[SecureMessageError, SecureMessage]] = getMessage(id, identifiers)
+  def getSecureMessage(id: ObjectId, identifiers: Set[Identifier])(implicit
+    ec: ExecutionContext
+  ): Future[Either[SecureMessageError, SecureMessage]] = getMessage(id, identifiers)
 
   import SecureMessageMongoFormat.dateTimeFormat
-  def addReadTime(id: ObjectId, readTime: Instant)(
-    implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] =
+  def addReadTime(id: ObjectId, readTime: Instant)(implicit
+    ec: ExecutionContext
+  ): Future[Either[SecureMessageError, Unit]] =
     collection
       .updateOne(
         filter = Filters.and(Filters.equal("_id", id), Filters.exists("readTime", exists = false)),
@@ -233,37 +239,43 @@ class SecureMessageRepository @Inject()(
       )
       .toFuture()
       .map(_ => Right(()))
-      .recoverWith {
-        case error => Future.successful(Left(StoreError(error.getMessage, None)))
+      .recoverWith { case error =>
+        Future.successful(Left(StoreError(error.getMessage, None)))
       }
 
   def pullBrakeBatchDetails(): Future[List[BrakeBatchDetails]] = {
     import org.mongodb.scala.model.Aggregates._
     collection
-      .aggregate[BrakeBatchDetails](List(
-        `match`(Filters.and(Filters.equal("status", Deferred.name), Filters.equal("verificationBrake", true))),
-        project(Projections.fields(
-          Filters.equal("formId", BsonDocument(f"$$ifNull" -> BsonArray(f"$$details.formId", "Unspecified"))),
-          Filters
-            .equal(
-              "issueDate",
-              BsonDocument(f"$$ifNull"                      -> BsonArray(f"$$details.issueDate", Codecs.toBson(Instant.EPOCH)))),
-          Filters.equal("batchId", BsonDocument(f"$$ifNull" -> BsonArray(f"$$details.batchId", "Unspecified"))),
-          Filters.equal("templateId", f"$$alertDetails.templateId")
-        )),
-        group(
-          BsonDocument(
-            "batchId"    -> f"$$batchId",
-            "formId"     -> f"$$formId",
-            "issueDate"  -> f"$$issueDate",
-            "templateId" -> f"$$templateId"),
-          Accumulators.first("formId", f"$$formId"),
-          Accumulators.first("batchId", f"$$batchId"),
-          Accumulators.first("issueDate", f"$$issueDate"),
-          Accumulators.first("templateId", f"$$templateId"),
-          Accumulators.sum("count", 1)
+      .aggregate[BrakeBatchDetails](
+        List(
+          `match`(Filters.and(Filters.equal("status", Deferred.name), Filters.equal("verificationBrake", true))),
+          project(
+            Projections.fields(
+              Filters.equal("formId", BsonDocument(f"$$ifNull" -> BsonArray(f"$$details.formId", "Unspecified"))),
+              Filters
+                .equal(
+                  "issueDate",
+                  BsonDocument(f"$$ifNull" -> BsonArray(f"$$details.issueDate", Codecs.toBson(Instant.EPOCH)))
+                ),
+              Filters.equal("batchId", BsonDocument(f"$$ifNull" -> BsonArray(f"$$details.batchId", "Unspecified"))),
+              Filters.equal("templateId", f"$$alertDetails.templateId")
+            )
+          ),
+          group(
+            BsonDocument(
+              "batchId"    -> f"$$batchId",
+              "formId"     -> f"$$formId",
+              "issueDate"  -> f"$$issueDate",
+              "templateId" -> f"$$templateId"
+            ),
+            Accumulators.first("formId", f"$$formId"),
+            Accumulators.first("batchId", f"$$batchId"),
+            Accumulators.first("issueDate", f"$$issueDate"),
+            Accumulators.first("templateId", f"$$templateId"),
+            Accumulators.sum("count", 1)
+          )
         )
-      ))
+      )
       .collect()
       .toFuture()
       .map(_.toList)
@@ -276,16 +288,21 @@ class SecureMessageRepository @Inject()(
           Filters.equal("status", Deferred.name),
           Filters.equal(
             "details.batchId",
-            if (brakeBatchApproval.batchId.equals("Unspecified")) null else brakeBatchApproval.batchId),
+            if (brakeBatchApproval.batchId.equals("Unspecified")) null else brakeBatchApproval.batchId
+          ),
           Filters.equal(
             "details.formId",
-            if (brakeBatchApproval.formId.equals("Unspecified")) null else brakeBatchApproval.formId),
+            if (brakeBatchApproval.formId.equals("Unspecified")) null else brakeBatchApproval.formId
+          ),
           Filters.equal("alertDetails.templateId", brakeBatchApproval.templateId),
-          Filters.equal("details.issueDate", if (brakeBatchApproval.issueDate.equals(Instant.EPOCH)) {
-            null
-          } else {
-            brakeBatchApproval.issueDate.toString
-          })
+          Filters.equal(
+            "details.issueDate",
+            if (brakeBatchApproval.issueDate.equals(Instant.EPOCH)) {
+              null
+            } else {
+              brakeBatchApproval.issueDate.toString
+            }
+          )
         ),
         Updates.combine(Updates.set("status", ToDo.name), Updates.set("verificationBrake", false))
       )
@@ -299,16 +316,21 @@ class SecureMessageRepository @Inject()(
           Filters.equal("status", Deferred.name),
           Filters.equal(
             "details.batchId",
-            if (brakeBatchApproval.batchId.equals("Unspecified")) null else brakeBatchApproval.batchId),
+            if (brakeBatchApproval.batchId.equals("Unspecified")) null else brakeBatchApproval.batchId
+          ),
           Filters.equal(
             "details.formId",
-            if (brakeBatchApproval.formId.equals("Unspecified")) null else brakeBatchApproval.formId),
+            if (brakeBatchApproval.formId.equals("Unspecified")) null else brakeBatchApproval.formId
+          ),
           Filters.equal("alertDetails.templateId", brakeBatchApproval.templateId),
-          Filters.equal("details.issueDate", if (brakeBatchApproval.issueDate.equals(Instant.EPOCH)) {
-            null
-          } else {
-            brakeBatchApproval.issueDate.toString
-          })
+          Filters.equal(
+            "details.issueDate",
+            if (brakeBatchApproval.issueDate.equals(Instant.EPOCH)) {
+              null
+            } else {
+              brakeBatchApproval.issueDate.toString
+            }
+          )
         ),
         set("status", Cancelled.name)
       )
@@ -319,21 +341,24 @@ class SecureMessageRepository @Inject()(
     brakeBatch: BrakeBatch
   ): Future[Option[BrakeBatchMessage]] =
     collection
-      .aggregate[SecureMessage](List(
-        `match`(
-          Filters.and(
-            Filters.equal("status", Deferred.name),
-            Filters
-              .equal("details.batchId", if (brakeBatch.batchId.equals("Unspecified")) null else brakeBatch.batchId),
-            Filters.equal("details.formId", if (brakeBatch.formId.equals("Unspecified")) null else brakeBatch.formId),
-            Filters.equal("alertDetails.templateId", brakeBatch.templateId),
-            Filters.equal("details.issueDate", {
-              if (brakeBatch.issueDate.equals(Instant.EPOCH)) null else brakeBatch.issueDate.toString
-            })
-          )
-        ),
-        sample(1)
-      ))
+      .aggregate[SecureMessage](
+        List(
+          `match`(
+            Filters.and(
+              Filters.equal("status", Deferred.name),
+              Filters
+                .equal("details.batchId", if (brakeBatch.batchId.equals("Unspecified")) null else brakeBatch.batchId),
+              Filters.equal("details.formId", if (brakeBatch.formId.equals("Unspecified")) null else brakeBatch.formId),
+              Filters.equal("alertDetails.templateId", brakeBatch.templateId),
+              Filters.equal(
+                "details.issueDate",
+                if (brakeBatch.issueDate.equals(Instant.EPOCH)) null else brakeBatch.issueDate.toString
+              )
+            )
+          ),
+          sample(1)
+        )
+      )
       .collect()
       .toFuture()
       .map(_.headOption.map(x => BrakeBatchMessage(x)))

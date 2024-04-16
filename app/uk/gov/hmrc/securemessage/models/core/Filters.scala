@@ -19,7 +19,8 @@ package uk.gov.hmrc.securemessage.models.core
 case class Filters(
   enrolmentKeys: Option[List[String]],
   customerEnrolments: Option[List[CustomerEnrolment]],
-  tags: Option[List[FilterTag]]) {
+  tags: Option[List[FilterTag]]
+) {
   def enrolmentKeysFilter: Set[String] = enrolmentKeys.toSet.flatten
   def enrolmentsFilter: Set[CustomerEnrolment] = customerEnrolments.toSet.flatten
 }

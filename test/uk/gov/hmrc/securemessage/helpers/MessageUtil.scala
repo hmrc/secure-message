@@ -25,7 +25,8 @@ object MessageUtil {
     subject: String,
     content: String,
     validFrom: LocalDate = LocalDate.now(),
-    readTime: Instant = Instant.now()): Letter = Letter(
+    readTime: Instant = Instant.now()
+  ): Letter = Letter(
     new ObjectId(),
     subject,
     validFrom,

@@ -22,7 +22,9 @@ class QueryStringValidationSpec extends PlaySpec with QueryStringValidation {
 
   "InvalidQueryParameterException class" must {
     "return an InvalidQueryStringException exception with a formatted error text when provided with a list of invalid parameters" in {
-      InvalidQueryParameterException(List("a", "b", "c")).getMessage mustBe "Invalid query parameter(s) found: [a, b, c]"
+      InvalidQueryParameterException(
+        List("a", "b", "c")
+      ).getMessage mustBe "Invalid query parameter(s) found: [a, b, c]"
     }
   }
 

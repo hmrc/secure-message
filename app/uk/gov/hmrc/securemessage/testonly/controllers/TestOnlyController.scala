@@ -32,10 +32,11 @@ import org.mongodb.scala.model.Filters.equal
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext
-class TestOnlyController @Inject()(
+class TestOnlyController @Inject() (
   cc: ControllerComponents,
   conversationRepository: ConversationRepository,
-  messageRepository: MessageRepository)(implicit ec: ExecutionContext)
+  messageRepository: MessageRepository
+)(implicit ec: ExecutionContext)
     extends BackendController(cc) with Logging {
 
   def deleteConversation(id: String): Action[AnyContent] = Action.async { _ =>
@@ -99,5 +100,6 @@ class TestOnlyController @Inject()(
     Action.async(_ =>
       messageRepository.collection.deleteOne(equal("_id", new ObjectId(id))).toFuture().map { _ =>
         Ok(s"message $id deleted successfully")
-    })
+      }
+    )
 }

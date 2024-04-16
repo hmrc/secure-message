@@ -35,11 +35,11 @@ final case class Conversation(
   language: Language,
   participants: List[Participant],
   messages: NonEmptyList[ConversationMessage],
-  alert: Alert)
-    extends Message with OrderingDefinitions {
+  alert: Alert
+) extends Message with OrderingDefinitions {
 
   override def issueDate: Instant = latestMessage.created
-  override def readTime: Option[Instant] = None //Used for other message types
+  override def readTime: Option[Instant] = None // Used for other message types
 
   def latestMessage: ConversationMessage = messages.toList.maxBy(_.created)(dateTimeAscending)
 
@@ -69,8 +69,11 @@ object Conversation extends NonEmptyListOps {
       conversation.findParticipant(identifiers) match {
         case Some(participant) => Right(participant)
         case None =>
-          Left(ParticipantNotFound(
-            s"No participant found for client: ${conversation.client}, conversationId: ${conversation.id}, identifiers: $identifiers"))
+          Left(
+            ParticipantNotFound(
+              s"No participant found for client: ${conversation.client}, conversationId: ${conversation.id}, identifiers: $identifiers"
+            )
+          )
       }
   }
 }

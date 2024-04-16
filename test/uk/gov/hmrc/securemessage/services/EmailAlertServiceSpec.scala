@@ -56,7 +56,7 @@ class EmailAlertServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures
 
       private val result = emailAlertService.sendEmailAlerts().futureValue
 
-      //noinspection RedundantDefaultArgument
+      // noinspection RedundantDefaultArgument
       result mustBe EmailResults(sent = 3, requeued = 0)
 
       verify(emailConnector, times(3)).send(any[EmailRequest])(any[HeaderCarrier])
@@ -100,7 +100,8 @@ class EmailAlertServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures
       .thenReturn(Future.successful(true))
     when(
       mobilePushNotificationsConnector
-        .sendNotification(any[MobileNotification])(any[HeaderCarrier], any[ExecutionContext]))
+        .sendNotification(any[MobileNotification])(any[HeaderCarrier], any[ExecutionContext])
+    )
       .thenReturn(Future.successful(()))
 
     val emailAlertService = new EmailAlertService(

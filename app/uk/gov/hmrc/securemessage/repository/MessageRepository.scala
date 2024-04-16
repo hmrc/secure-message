@@ -32,7 +32,7 @@ import javax.inject.Inject
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ ExecutionContext, Future }
 
-class MessageRepository @Inject()(mongo: MongoComponent)(implicit ec: ExecutionContext)
+class MessageRepository @Inject() (mongo: MongoComponent)(implicit ec: ExecutionContext)
     extends AbstractMessageRepository[Letter](
       "message",
       mongo,
@@ -50,16 +50,19 @@ class MessageRepository @Inject()(mongo: MongoComponent)(implicit ec: ExecutionC
     }
   }
 
-  def getLetters(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
-    implicit ec: ExecutionContext): Future[List[Letter]] =
+  def getLetters(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(implicit
+    ec: ExecutionContext
+  ): Future[List[Letter]] =
     getMessages(identifiers, tags)
 
-  def getLettersCount(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(
-    implicit ec: ExecutionContext): Future[Count] =
+  def getLettersCount(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(implicit
+    ec: ExecutionContext
+  ): Future[Count] =
     getMessagesCount(identifiers, tags)
 
-  def getLetter(id: ObjectId, identifiers: Set[Identifier])(
-    implicit ec: ExecutionContext): Future[Either[SecureMessageError, Letter]] = getMessage(id, identifiers)
+  def getLetter(id: ObjectId, identifiers: Set[Identifier])(implicit
+    ec: ExecutionContext
+  ): Future[Either[SecureMessageError, Letter]] = getMessage(id, identifiers)
 
   def addReadTime(id: ObjectId)(implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] =
     collection
@@ -69,8 +72,8 @@ class MessageRepository @Inject()(mongo: MongoComponent)(implicit ec: ExecutionC
       )
       .toFuture()
       .map(_ => Right(()))
-      .recoverWith {
-        case error => Future.successful(Left(StoreError(error.getMessage, None)))
+      .recoverWith { case error =>
+        Future.successful(Left(StoreError(error.getMessage, None)))
       }
 
   override protected def findByIdentifierQuery(identifier: Identifier): Seq[(String, String)] =
@@ -87,8 +90,8 @@ class MessageRepository @Inject()(mongo: MongoComponent)(implicit ec: ExecutionC
         )
     }
 
-  def findBy(authTaxIds: Set[TaxIdWithName])(
-    implicit messageFilter: MessageFilter,
+  def findBy(authTaxIds: Set[TaxIdWithName])(implicit
+    messageFilter: MessageFilter,
     ec: ExecutionContext
   ): Future[List[Letter]] =
     taxIdRegimeSelector(authTaxIds)
@@ -110,20 +113,21 @@ class MessageRepository @Inject()(mongo: MongoComponent)(implicit ec: ExecutionC
           Future.successful(List())
       }
 
-  def countBy(authTaxIds: Set[TaxIdWithName])(
-    implicit messageFilter: MessageFilter
+  def countBy(authTaxIds: Set[TaxIdWithName])(implicit
+    messageFilter: MessageFilter
   ): Future[MessagesCount] =
     taxIdRegimeSelector(authTaxIds)
       .map(Filters.and(_, readyForViewingQuery, rescindedExcludedQuery))
       .fold(Future.successful(MessagesCount(0, 0)))(query =>
         for {
           unreadCount <- collection
-                        // scalastyle:off null
-                          .countDocuments(Filters.and(query, Filters.equal("readTime", null)))
-                          // scalastyle:on null
-                          .toFuture()
+                           // scalastyle:off null
+                           .countDocuments(Filters.and(query, Filters.equal("readTime", null)))
+                           // scalastyle:on null
+                           .toFuture()
           totalCount <- collection.countDocuments(query).toFuture()
-        } yield MessagesCount(totalCount.toInt, unreadCount.toInt))
+        } yield MessagesCount(totalCount.toInt, unreadCount.toInt)
+      )
 
 }
 
@@ -144,8 +148,10 @@ trait MessageSelector {
 
     val regimesJsonArr: Option[Seq[Bson]] = Option(messageFilter.regimes)
       .filter(_.nonEmpty)
-      .map(_.map((regime: Regime.Value) => Filters.equal("recipient.regime", Codecs.toBson(regime)))
-        .foldLeft(Seq.empty[Bson])((acc, e) => acc.+:(e)))
+      .map(
+        _.map((regime: Regime.Value) => Filters.equal("recipient.regime", Codecs.toBson(regime)))
+          .foldLeft(Seq.empty[Bson])((acc, e) => acc.+:(e))
+      )
 
     val taxIdNames: Seq[String] =
       if (messageFilter.taxIdentifiers.isEmpty && messageFilter.regimes.isEmpty) {
@@ -160,18 +166,21 @@ trait MessageSelector {
           Seq(
             Filters.and(
               Filters.equal("recipient.identifier.name", authTaxId.name),
-              Filters.equal("recipient.identifier.value", authTaxId.value)))
-        } else {
-          regimesJsonArr.fold(Seq[Bson]())(
-            ar =>
-              Seq[Bson](
-                Filters.and(
-                  Filters.equal("recipient.identifier.value", authTaxId.value),
-                  Filters.equal("recipient.identifier.name", authTaxId.name),
-                  Filters.or(ar: _*)
-                ))
+              Filters.equal("recipient.identifier.value", authTaxId.value)
+            )
           )
-      })
+        } else {
+          regimesJsonArr.fold(Seq[Bson]())(ar =>
+            Seq[Bson](
+              Filters.and(
+                Filters.equal("recipient.identifier.value", authTaxId.value),
+                Filters.equal("recipient.identifier.name", authTaxId.name),
+                Filters.or(ar: _*)
+              )
+            )
+          )
+        }
+      )
       .foldLeft[Option[List[Bson]]](None) {
         case (None, e)    => Some(List(e))
         case (Some(a), e) => Some(a.+:(e))

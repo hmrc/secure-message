@@ -62,7 +62,7 @@ case class OtherException(message: String) extends Exception(message)
 case class CallFailedException(message: String) extends Exception(message)
 
 @Singleton
-class EntityResolverConnector @Inject()(config: Configuration, httpClient: HttpClient)(implicit ec: ExecutionContext)
+class EntityResolverConnector @Inject() (config: Configuration, httpClient: HttpClient)(implicit ec: ExecutionContext)
     extends ServicesConfig(config) with Logging {
 
   def url(path: String): String = s"${baseUrl("entity-resolver")}$path"
@@ -83,12 +83,12 @@ class EntityResolverConnector @Inject()(config: Configuration, httpClient: HttpC
     if (allowedRegimes.contains(recipient.regime)) {
       httpClient
         .GET(url(s"/entity-resolver/${recipient.regime}/${recipient.identifier.value}"))
-        .map(response => {
+        .map { response =>
           response.status match {
             case Status.OK => response.json.asOpt[TaxId]
             case _         => None
           }
-        })
+        }
     } else {
       Future.successful(None)
     }

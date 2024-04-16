@@ -76,7 +76,8 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
         conversation,
         responseMessage,
         randomId,
-        Some(reference))
+        Some(reference)
+      )
       verify(auditConnector).sendExplicitAudit(
         "CreateQueryConversationSuccess",
         Map[String, String](
@@ -99,7 +100,8 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
         conversation,
         responseMessage,
         randomId,
-        Some(reference))
+        Some(reference)
+      )
       verify(auditConnector).sendExplicitAudit(
         "CreateNewQueryConversationFailed",
         Map[String, String](
@@ -145,7 +147,8 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
         conversationId,
         message,
         randomId,
-        Some(reference))
+        Some(reference)
+      )
       verify(auditConnector).sendExplicitAudit(
         "CaseWorkerReplyToConversationSuccess",
         Map(
@@ -154,7 +157,8 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
           "messageId"    -> conversationId,
           "content"      -> messageContent,
           "id"           -> randomId,
-          "X-request-ID" -> xRequestId)
+          "X-request-ID" -> xRequestId
+        )
       )
     }
 
@@ -165,7 +169,8 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
         conversationId,
         message,
         randomId,
-        Some(reference))
+        Some(reference)
+      )
       verify(auditConnector).sendExplicitAudit(
         "CaseWorkerReplyToConversationFailed",
         Map(
@@ -174,7 +179,8 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
           "messageId"    -> conversationId,
           "content"      -> messageContent,
           "id"           -> randomId,
-          "X-request-ID" -> xRequestId)
+          "X-request-ID" -> xRequestId
+        )
       )
     }
   }
@@ -188,7 +194,8 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
         Enrolments(
           Set(
             Enrolment("HMRC-CUS-ORG", Seq(EnrolmentIdentifier("EORINumber", "GB1234567890")), "")
-          ))
+          )
+        )
       )
       verify(auditConnector).sendExplicitAudit(
         "QueryMessageReadSuccess",
@@ -208,7 +215,8 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
         Enrolments(
           Set(
             Enrolment("HMRC-CUS-ORG", Seq(EnrolmentIdentifier("EORINumber", "GB1234567890")), "")
-          ))
+          )
+        )
       )
       verify(auditConnector).sendExplicitAudit(
         "TxFailed",
@@ -229,7 +237,8 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
     val enrolments = Enrolments(
       Set(
         Enrolment("HMRC-CUS-ORG", Seq(EnrolmentIdentifier("EORINumber", "GB1234567890")), "")
-      ))
+      )
+    )
 
     "send correct audit details when letter is read" in {
       val _ = auditReadLetter(
@@ -240,7 +249,8 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
           SenderInformation("sender", localDate),
           Identifier("id", "value", None),
           Some(readTime.toInstant),
-          None),
+          None
+        ),
         enrolments
       )
 
@@ -310,7 +320,8 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
           conversationId,
           Some(CustomerMessage(messageContent)),
           randomId,
-          Some(reference))
+          Some(reference)
+        )
       verify(auditConnector).sendExplicitAudit(
         "CustomerReplyToConversationSuccess",
         Map(
@@ -318,7 +329,8 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
           "encodedId"    -> conversationId,
           "content"      -> messageContent,
           "id"           -> randomId,
-          "X-request-ID" -> xRequestId)
+          "X-request-ID" -> xRequestId
+        )
       )
     }
 
@@ -329,7 +341,8 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
           conversationId,
           Some(CustomerMessage(messageContent)),
           randomId,
-          Some(reference))
+          Some(reference)
+        )
       verify(auditConnector).sendExplicitAudit(
         "CustomerReplyToConversationFailed",
         Map(
@@ -337,7 +350,8 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
           "encodedId"    -> conversationId,
           "content"      -> messageContent,
           "id"           -> randomId,
-          "X-request-ID" -> xRequestId)
+          "X-request-ID" -> xRequestId
+        )
       )
     }
   }
@@ -354,8 +368,10 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
           List(EmailAddress(emailAddress)),
           templateId,
           Map("firstName" -> "Joe", "lastName" -> "Bloggs"),
-          None),
-        ACCEPTED)
+          None
+        ),
+        ACCEPTED
+      )
       verify(auditConnector).sendExplicitAudit(
         EventTypes.Succeeded,
         Map(
@@ -363,7 +379,8 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
           "templateId"        -> templateId,
           "sentTo"            -> emailAddress,
           "parameters"        -> "firstName:Joe|lastName:Bloggs",
-          "emailResponseCode" -> "202")
+          "emailResponseCode" -> "202"
+        )
       )
     }
 
@@ -374,8 +391,10 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
           List(EmailAddress(emailAddress)),
           templateId,
           Map("firstName" -> "Joe", "lastName" -> "Bloggs"),
-          None),
-        ACCEPTED)
+          None
+        ),
+        ACCEPTED
+      )
       verify(auditConnector).sendExplicitAudit(
         EventTypes.Failed,
         Map(
@@ -383,7 +402,8 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
           "templateId"        -> templateId,
           "sentTo"            -> emailAddress,
           "parameters"        -> "firstName:Joe|lastName:Bloggs",
-          "emailResponseCode" -> "202")
+          "emailResponseCode" -> "202"
+        )
       )
     }
   }
@@ -397,7 +417,8 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
         "MessageForwardedToCaseworkerSuccess",
         QueryMessageRequest(
           RequestCommon("dc-secure-message", Instant.now(), "acknowledgementReference"),
-          RequestDetail(xRequestId, conversationId, messageContent)),
+          RequestDetail(xRequestId, conversationId, messageContent)
+        ),
         NO_CONTENT
       )
       verify(auditConnector).sendExplicitAudit(
@@ -418,7 +439,8 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
         "MessageForwardedToCaseworkerFailed",
         QueryMessageRequest(
           RequestCommon("dc-secure-message", Instant.now(), "acknowledgementReference"),
-          RequestDetail(xRequestId, conversationId, messageContent)),
+          RequestDetail(xRequestId, conversationId, messageContent)
+        ),
         INTERNAL_SERVER_ERROR
       )
       verify(auditConnector).sendExplicitAudit(

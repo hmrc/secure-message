@@ -59,7 +59,8 @@ trait Auditing extends Logging {
 
   private def detailWithNotificationType(
     detail: Map[String, String],
-    tags: Option[Map[String, String]]): Map[String, String] =
+    tags: Option[Map[String, String]]
+  ): Map[String, String] =
     detail ++ (for {
       m <- tags
       v <- m.get(NotificationType)
@@ -70,7 +71,8 @@ trait Auditing extends Logging {
     conversation: Conversation,
     responseMessage: String,
     id: String,
-    maybeReference: Option[Reference])(implicit hc: HeaderCarrier, ec: ExecutionContext): Unit = {
+    maybeReference: Option[Reference]
+  )(implicit hc: HeaderCarrier, ec: ExecutionContext): Unit = {
     val detail = detailWithNotificationType(
       Map(
         newConversationTxnName,
@@ -96,9 +98,10 @@ trait Auditing extends Logging {
         auditConnector.sendExplicitAudit("EmailExistsOrVerifiedFailed", Map(retrieveEmailTxnName))
     }
 
-  def auditEmailSent(txnStatus: String, emailRequest: EmailRequest, emailResponseCode: Int)(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Unit = {
+  def auditEmailSent(txnStatus: String, emailRequest: EmailRequest, emailResponseCode: Int)(implicit
+    hc: HeaderCarrier,
+    ec: ExecutionContext
+  ): Unit = {
     val details = Map(
       emailSentTxnName,
       "templateId"        -> emailRequest.templateId,
@@ -115,7 +118,8 @@ trait Auditing extends Logging {
     conversationId: String,
     cwm: CaseworkerMessage,
     id: String,
-    maybeReference: Option[Reference])(implicit hc: HeaderCarrier, ec: ExecutionContext): Unit = {
+    maybeReference: Option[Reference]
+  )(implicit hc: HeaderCarrier, ec: ExecutionContext): Unit = {
     val detail = Map(
       caseworkerReplyTxnName,
       "client"       -> client.entryName,
@@ -132,7 +136,8 @@ trait Auditing extends Logging {
     encodedId: String,
     customerMessage: Option[CustomerMessage],
     id: String,
-    maybeReference: Option[Reference])(implicit hc: HeaderCarrier, ec: ExecutionContext): Unit = {
+    maybeReference: Option[Reference]
+  )(implicit hc: HeaderCarrier, ec: ExecutionContext): Unit = {
     val detail =
       Map(
         customerReplyTxnName,
@@ -145,10 +150,11 @@ trait Auditing extends Logging {
   }
 
   /** TOOD: combine in this function [[auditConversationRead()]] && [[auditReadLetter()]]
-    * */
-  def auditMessageRead(apiMessage: ApiMessage, enrolments: Enrolments)(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Unit =
+    */
+  def auditMessageRead(apiMessage: ApiMessage, enrolments: Enrolments)(implicit
+    hc: HeaderCarrier,
+    ec: ExecutionContext
+  ): Unit =
     apiMessage match {
       case l: ApiLetter => auditReadLetter(l, enrolments)
       case c: ApiConversation =>
@@ -161,10 +167,11 @@ trait Auditing extends Logging {
   private val ConversationMessageType = ("messageType", "Conversation")
 
   /** TODO: replace with with the common [[auditMessageRead()]]
-    * */
-  def auditConversationRead(client: Option[ClientName], conversationId: String, enrolments: Enrolments)(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Unit = {
+    */
+  def auditConversationRead(client: Option[ClientName], conversationId: String, enrolments: Enrolments)(implicit
+    hc: HeaderCarrier,
+    ec: ExecutionContext
+  ): Unit = {
     val detail = Map(
       conversationReadTxnName,
       "client"    -> client.fold("")(_.entryName),
@@ -180,10 +187,11 @@ trait Auditing extends Logging {
   private val zone: ZoneOffset = ZoneOffset.UTC
 
   /** TOOD: replace with with the common [[auditMessageRead()]]
-    * */
-  def auditReadLetter(letter: ApiLetter, enrolments: Enrolments)(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Unit = {
+    */
+  def auditReadLetter(letter: ApiLetter, enrolments: Enrolments)(implicit
+    hc: HeaderCarrier,
+    ec: ExecutionContext
+  ): Unit = {
     val detail = detailWithNotificationType(
       Map(
         letterReadSuccessTxnName,
@@ -198,9 +206,10 @@ trait Auditing extends Logging {
     auditConnector.sendExplicitAudit(EventTypes.Succeeded, detail)
   }
 
-  def auditMessageResourceResponse(mr: MessageResourceResponse, enrolments: Enrolments)(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Unit = {
+  def auditMessageResourceResponse(mr: MessageResourceResponse, enrolments: Enrolments)(implicit
+    hc: HeaderCarrier,
+    ec: ExecutionContext
+  ): Unit = {
     val detail = detailWithNotificationType(
       Map(
         letterReadSuccessTxnName,
@@ -217,10 +226,11 @@ trait Auditing extends Logging {
   private val ConversationReadFailed = "QueryMessageReadFailed"
 
   /** TOOD: replace with with the common [[auditMessageReadFailed()]]
-    * */
-  def auditConversationReadFailed(id: String, enrolments: Enrolments)(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Unit = {
+    */
+  def auditConversationReadFailed(id: String, enrolments: Enrolments)(implicit
+    hc: HeaderCarrier,
+    ec: ExecutionContext
+  ): Unit = {
     val detail = Map(
       conversationReadTxnName,
       "messageId" -> id,
@@ -231,10 +241,11 @@ trait Auditing extends Logging {
   }
 
   /** TOOD: replace with with the common [[auditMessageReadFailed()]]
-    * */
-  def auditReadLetterFail(id: String, enrolments: Enrolments)(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Unit = {
+    */
+  def auditReadLetterFail(id: String, enrolments: Enrolments)(implicit
+    hc: HeaderCarrier,
+    ec: ExecutionContext
+  ): Unit = {
     val detail = Map(
       letterReadFailedTxnName,
       "messageId" -> id,
@@ -244,9 +255,10 @@ trait Auditing extends Logging {
     auditConnector.sendExplicitAudit(EventTypes.Failed, detail)
   }
 
-  def auditMessageReadFailed(encodedId: String, error: SecureMessageError)(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Unit = {
+  def auditMessageReadFailed(encodedId: String, error: SecureMessageError)(implicit
+    hc: HeaderCarrier,
+    ec: ExecutionContext
+  ): Unit = {
     val (messageType, decodedId, txName, queryMessage) = IdCoder.decodeId(encodedId) match {
       case Right((messageType, decodedId, _)) =>
         messageType match {
@@ -266,9 +278,10 @@ trait Auditing extends Logging {
     auditConnector.sendExplicitAudit(queryMessage, detail)
   }
 
-  def auditMessageForwarded(txnStatus: String, qrw: QueryMessageRequest, eisResponseCode: Int)(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Unit = {
+  def auditMessageForwarded(txnStatus: String, qrw: QueryMessageRequest, eisResponseCode: Int)(implicit
+    hc: HeaderCarrier,
+    ec: ExecutionContext
+  ): Unit = {
     val detail = Map(
       txnName                    -> "Message forwarded to caseworker",
       "eisResponseCode"          -> eisResponseCode.toString,
@@ -280,9 +293,10 @@ trait Auditing extends Logging {
     auditConnector.sendExplicitAudit(txnStatus, detail)
   }
 
-  def auditMobilePushNotification(n: MobileNotification, status: String, errorMessage: Option[String] = None)(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext): Future[Unit] =
+  def auditMobilePushNotification(n: MobileNotification, status: String, errorMessage: Option[String] = None)(implicit
+    hc: HeaderCarrier,
+    ec: ExecutionContext
+  ): Future[Unit] =
     auditConnector
       .sendEvent(
         DataEvent(
@@ -310,7 +324,8 @@ trait Auditing extends Logging {
           auditType = EventTypes.Succeeded,
           tags = Map(letterReadSuccessTxnName),
           detail = detailsMap
-        ))
+        )
+      )
       .map { r =>
         logger.debug(s"AuditEvent is processed for message read success event with the result $r")
       }

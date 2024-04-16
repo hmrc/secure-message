@@ -125,18 +125,21 @@ class NonCDSMessageRetrieverSpec extends PlaySpec with MockitoSugar with UnitTes
         |    "notificationType": "Direct Debit"
         |  }
         |}
-        |""".stripMargin)
+        |""".stripMargin
+    )
 
     val messageFilter: MessageFilter = MessageFilter(List("nino"))
 
     when(
       mockSecureMessageService
-        .getMessagesList(eqTo(authTaxIds))(any[ExecutionContext], any[HeaderCarrier], eqTo(messageFilter)))
+        .getMessagesList(eqTo(authTaxIds))(any[ExecutionContext], any[HeaderCarrier], eqTo(messageFilter))
+    )
       .thenReturn(Future.successful(letters))
 
     when(
       mockSecureMessageService
-        .getMessagesCount(eqTo(authTaxIds))(any[ExecutionContext], any[HeaderCarrier], eqTo(messageFilter)))
+        .getMessagesCount(eqTo(authTaxIds))(any[ExecutionContext], any[HeaderCarrier], eqTo(messageFilter))
+    )
       .thenReturn(Future.successful(MessagesCount(1, 1)))
 
     when(mockAuthConnector.currentEffectiveTaxIdentifiers(any[HeaderCarrier])).thenReturn(Future.successful(authTaxIds))

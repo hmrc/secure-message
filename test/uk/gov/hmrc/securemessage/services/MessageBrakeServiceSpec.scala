@@ -151,7 +151,8 @@ class MessageBrakeServiceSpec
         result.get.formIdList mustBe List("TEST10", "TEST11", "TEST12")
 
         cache.get[Allowlist]("brake-gmc-allowlist").futureValue.get mustBe Some(
-          Allowlist(List("TEST10", "TEST11", "TEST12")))
+          Allowlist(List("TEST10", "TEST11", "TEST12"))
+        )
       }
 
       "add a form id to a non-existing collection must update the cache and the database with an uppercased default version" in new TestCase {
@@ -184,7 +185,8 @@ class MessageBrakeServiceSpec
         result.get.formIdList mustBe List("TEST10", "TEST11", "TEST12")
 
         cache.get[Allowlist]("brake-gmc-allowlist").futureValue.get mustBe Some(
-          Allowlist(List("TEST10", "TEST11", "TEST12")))
+          Allowlist(List("TEST10", "TEST11", "TEST12"))
+        )
       }
 
       "remove a form id from a non-existing collection must update the cache and the database with the default version" in new TestCase {

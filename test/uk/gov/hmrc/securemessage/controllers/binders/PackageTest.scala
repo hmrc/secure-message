@@ -70,20 +70,23 @@ class PackageTest extends PlaySpec {
     "bind map with all paremeters present" in {
       testBinder.bind(
         "key",
-        Map("taxIdentifiers" -> Seq("foo", "bar"), "regimes" -> Seq("fhdds"), "countOnly" -> Seq("true"))) must be(
-        Some(Right(MessageFilter(List("foo", "bar"), List(Regime.fhdds)))))
+        Map("taxIdentifiers" -> Seq("foo", "bar"), "regimes" -> Seq("fhdds"), "countOnly" -> Seq("true"))
+      ) must be(Some(Right(MessageFilter(List("foo", "bar"), List(Regime.fhdds)))))
     }
     "bind  with missing countOnly" in {
       testBinder.bind("key", Map("taxIdentifiers" -> Seq("foo", "bar"), "regimes" -> Seq("fhdds"))) must be(
-        Some(Right(MessageFilter(List("foo", "bar"), List(Regime.fhdds)))))
+        Some(Right(MessageFilter(List("foo", "bar"), List(Regime.fhdds))))
+      )
     }
     "bind  with missing taxIdentifiers " in {
       testBinder.bind("key", Map("regimes" -> Seq("fhdds"), "countOnly" -> Seq("true"))) must be(
-        Some(Right(MessageFilter(List(), List(Regime.fhdds)))))
+        Some(Right(MessageFilter(List(), List(Regime.fhdds))))
+      )
     }
     "bind  with missing regimes" in {
       testBinder.bind("key", Map("taxIdentifiers" -> List("foo", "bar"), "countOnly" -> Seq("true"))) must be(
-        Some(Right(MessageFilter(List("foo", "bar"), List()))))
+        Some(Right(MessageFilter(List("foo", "bar"), List())))
+      )
     }
 
     "bind with wrong regime" in {

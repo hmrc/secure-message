@@ -33,7 +33,7 @@ class GetMessagesISpec extends ISpec {
           .get()
           .futureValue
 
-      response.status mustBe (200)
+      response.status mustBe 200
       response.body must include("""senderName":"CDS Exports Team""")
       response.body must include(""""count":1""")
       response.body must include(""""subject":"D-80542-20201120"""")
@@ -50,7 +50,7 @@ class GetMessagesISpec extends ISpec {
           .get()
           .futureValue
 
-      response.status mustBe (200)
+      response.status mustBe 200
       response.body must include("""senderName":"CDS Exports Team""")
       response.body must include(""""count":1""")
       response.body must include(""""subject":"D-80542-20201120"""")

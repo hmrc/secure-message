@@ -132,8 +132,8 @@ class SecureMessageRepositorySpec
       val details = message.details.map(_.copy(issueDate = Some(LocalDate.now())))
       val brakeMessage =
         message.copy(status = Succeeded, verificationBrake = Some(true), details = details)
-      (repository.save(brakeMessage)).futureValue
-      val batch = (repository.pullBrakeBatchDetails()).futureValue
+      repository.save(brakeMessage).futureValue
+      val batch = repository.pullBrakeBatchDetails().futureValue
       batch must be(List.empty)
     }
 
@@ -145,35 +145,37 @@ class SecureMessageRepositorySpec
       val message3 = message.copy(status = Deferred, verificationBrake = Some(true), details = details)
       val message4 = message.copy(status = Succeeded, verificationBrake = Some(true))
 
-      (repository.save(message1)).futureValue
-      (repository.save(message2)).futureValue
-      (repository.save(message3)).futureValue
-      (repository.save(message4)).futureValue
+      repository.save(message1).futureValue
+      repository.save(message2).futureValue
+      repository.save(message3).futureValue
+      repository.save(message4).futureValue
 
-      val batches = (repository.pullBrakeBatchDetails()).futureValue
+      val batches = repository.pullBrakeBatchDetails().futureValue
 
       batches must contain only (BrakeBatchDetails(
         "1234567",
         "SA300",
         LocalDate.parse("2017-02-13"),
         "newMessageAlert_SA300",
-        1))
+        1
+      ))
     }
 
     "return batches if its just 1 message without any grouping" in {
 
       val message1 = message.copy(status = Deferred, verificationBrake = Some(true))
 
-      (repository.save(message1)).futureValue
+      repository.save(message1).futureValue
 
-      val batches = (repository.pullBrakeBatchDetails()).futureValue
+      val batches = repository.pullBrakeBatchDetails().futureValue
 
       batches must contain only (BrakeBatchDetails(
         "1234567",
         "SA300",
         LocalDate.parse("2017-02-13"),
         "newMessageAlert_SA300",
-        1))
+        1
+      ))
     }
 
     "return batch with group by same message with status deferred" in {
@@ -182,18 +184,19 @@ class SecureMessageRepositorySpec
       val message2 = message.copy(status = Deferred, verificationBrake = Some(true))
       val message3 = message.copy(status = Succeeded, verificationBrake = Some(true))
 
-      (repository.save(message1)).futureValue
-      (repository.save(message2)).futureValue
-      (repository.save(message3)).futureValue
+      repository.save(message1).futureValue
+      repository.save(message2).futureValue
+      repository.save(message3).futureValue
 
-      val batches = (repository.pullBrakeBatchDetails()).futureValue
+      val batches = repository.pullBrakeBatchDetails().futureValue
 
       batches must contain only (BrakeBatchDetails(
         "1234567",
         "SA300",
         LocalDate.parse("2017-02-13"),
         "newMessageAlert_SA300",
-        1))
+        1
+      ))
     }
   }
 
@@ -203,27 +206,27 @@ class SecureMessageRepositorySpec
       val testMessage: SecureMessage = message.copy(status = Succeeded, verificationBrake = Some(true))
       val issueDate = message.details.flatMap(_.issueDate).getOrElse(LocalDate.now())
 
-      (repository.save(testMessage)).futureValue
+      repository.save(testMessage).futureValue
 
       val brakeBatch: BrakeBatchApproval =
         BrakeBatchApproval("1234567", "SA300", issueDate, "newMessageAlert_SA300", "")
 
-      (repository.brakeBatchAccepted(brakeBatch)).futureValue must be(false)
+      repository.brakeBatchAccepted(brakeBatch).futureValue must be(false)
 
-      (repository.collection.find().toFuture()).futureValue mustBe List(testMessage)
+      repository.collection.find().toFuture().futureValue mustBe List(testMessage)
     }
 
     "update 1 message if in batch" in {
       val testMessage: SecureMessage = message.copy(status = Deferred, verificationBrake = Some(true))
       val updated_message = testMessage.copy(status = ToDo, verificationBrake = Some(false))
       val issueDate = message.details.flatMap(_.issueDate).getOrElse(LocalDate.now())
-      (repository.save(testMessage)).futureValue
+      repository.save(testMessage).futureValue
 
       val brakeBatch: BrakeBatchApproval =
         BrakeBatchApproval("1234567", "SA300", issueDate, "newMessageAlert_SA300", "")
-      (repository.brakeBatchAccepted(brakeBatch)).futureValue must be(true)
+      repository.brakeBatchAccepted(brakeBatch).futureValue must be(true)
 
-      (repository.findById(message._id)).futureValue mustBe Some(updated_message)
+      repository.findById(message._id).futureValue mustBe Some(updated_message)
     }
 
     "update 2 messages if in batch" in {
@@ -232,15 +235,15 @@ class SecureMessageRepositorySpec
       val updated_message1 = message1.copy(status = ToDo, verificationBrake = Some(false))
       val updated_message2 = message2.copy(status = ToDo, verificationBrake = Some(false))
       val issueDate = message.details.flatMap(_.issueDate).getOrElse(LocalDate.now())
-      (repository.save(message1)).futureValue
-      (repository.save(message2)).futureValue
+      repository.save(message1).futureValue
+      repository.save(message2).futureValue
 
       val brakeBatch: BrakeBatchApproval =
         BrakeBatchApproval("1234567", "SA300", issueDate, "newMessageAlert_SA300", "")
-      (repository.brakeBatchAccepted(brakeBatch)).futureValue must be(true)
+      repository.brakeBatchAccepted(brakeBatch).futureValue must be(true)
 
-      (repository.findById(message1._id)).futureValue mustBe Some(updated_message1)
-      (repository.findById(message2._id)).futureValue mustBe Some(updated_message2)
+      repository.findById(message1._id).futureValue mustBe Some(updated_message1)
+      repository.findById(message2._id).futureValue mustBe Some(updated_message2)
     }
   }
 
@@ -249,14 +252,14 @@ class SecureMessageRepositorySpec
     "not update \"non-batch\" messages" in {
       val issueDate = message.details.flatMap(_.issueDate).getOrElse(LocalDate.now())
       val message1 = message.copy(status = Succeeded, verificationBrake = Some(true))
-      (repository.save(message1)).futureValue
+      repository.save(message1).futureValue
 
       val brakeBatch = BrakeBatchApproval("1234567", "SA300", issueDate, "newMessageAlert_SA300", "")
-      (repository.brakeBatchRejected(brakeBatch)).futureValue must be(false)
+      repository.brakeBatchRejected(brakeBatch).futureValue must be(false)
 
-      (repository.collection.find(Filters.equal("_id", message._id)).toFuture().futureValue mustBe List(
+      repository.collection.find(Filters.equal("_id", message._id)).toFuture().futureValue mustBe List(
         message1
-      ))
+      )
 
     }
   }
@@ -267,9 +270,9 @@ class SecureMessageRepositorySpec
       val message1 = message.copy(status = Succeeded, verificationBrake = Some(true))
       val issueDate = message.details.flatMap(_.issueDate).getOrElse(LocalDate.now())
       val brakeBatch = BrakeBatch("1234567", "SA300", issueDate, "newMessageAlert_SA300")
-      (repository.save(message1)).futureValue
+      repository.save(message1).futureValue
 
-      (repository.brakeBatchMessageRandom(brakeBatch)).futureValue must be(None)
+      repository.brakeBatchMessageRandom(brakeBatch).futureValue must be(None)
     }
 
     "return a random message if it exists in a requested batch" in {
@@ -277,8 +280,8 @@ class SecureMessageRepositorySpec
       val message1 = message.copy(status = Deferred, verificationBrake = Some(true))
       val message2 = message.copy(status = Deferred, verificationBrake = Some(true))
 
-      (repository.save(message1)).futureValue
-      (repository.save(message2)).futureValue
+      repository.save(message1).futureValue
+      repository.save(message2).futureValue
 
       val issueDate = message.details.flatMap(_.issueDate).getOrElse(LocalDate.now())
 

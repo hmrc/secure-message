@@ -27,15 +27,13 @@ import uk.gov.hmrc.securemessage.models.core.{ Identifier, Letter, Message }
 import uk.gov.hmrc.securemessage.{ MessageNotFound, SecureMessageError, UserNotAuthorised }
 
 import scala.concurrent.{ ExecutionContext, Future }
-import scala.xml.XML
 
 trait MessageV3Service {
   val authIdentifiersConnector: AuthIdentifiersConnector
 
-  def getMessage(readRequest: MessageReadRequest)(
-    implicit hc: HeaderCarrier,
-    ec: ExecutionContext,
-    messages: Messages): Future[Either[SecureMessageError, Message]] =
+  def getMessage(
+    readRequest: MessageReadRequest
+  )(implicit hc: HeaderCarrier, ec: ExecutionContext, messages: Messages): Future[Either[SecureMessageError, Message]] =
     for {
       taxIds <- authIdentifiersConnector.currentEffectiveTaxIdentifiers
       identifiers = taxIds.map(s => Identifier(s.name, s.value, None))
@@ -43,18 +41,19 @@ trait MessageV3Service {
       strideUser <- authIdentifiersConnector.isStrideUser
       v3Message  <- if (letter.isDefined) updateMessageContent(letter) else Future.successful(None)
       result <- v3Message match {
-                 case Some(m: Letter) if identifiers.contains(m.recipient.identifier) || strideUser =>
-                   Future.successful(Right(m))
-                 case Some(_) =>
-                   Future.successful(Left(UserNotAuthorised("Unauthorised for the requested identifiers")))
-                 case None =>
-                   Future.successful(Left(MessageNotFound(s"Message not found for ${readRequest.messageId}")))
-               }
+                  case Some(m: Letter) if identifiers.contains(m.recipient.identifier) || strideUser =>
+                    Future.successful(Right(m))
+                  case Some(_) =>
+                    Future.successful(Left(UserNotAuthorised("Unauthorised for the requested identifiers")))
+                  case None =>
+                    Future.successful(Left(MessageNotFound(s"Message not found for ${readRequest.messageId}")))
+                }
     } yield result
 
   // updates the message content with the content from all the messages in the chain (if there is one)
   def updateMessageContent(
-    letter: Option[Letter])(implicit ec: ExecutionContext, messages: Messages): Future[Option[Letter]] =
+    letter: Option[Letter]
+  )(implicit ec: ExecutionContext, messages: Messages): Future[Option[Letter]] =
     letter match {
       case Some(m) =>
         getContentChainString(letter, m._id).flatMap { content =>
@@ -63,10 +62,10 @@ trait MessageV3Service {
       case None => Future(None)
     }
 
-  def getContentChainString(letter: Option[Letter], id: ObjectId)(
-    implicit
+  def getContentChainString(letter: Option[Letter], id: ObjectId)(implicit
     ec: ExecutionContext,
-    messages: Messages): Future[String] =
+    messages: Messages
+  ): Future[String] =
     letter match {
       case Some(msg) =>
         msg.body.flatMap(_.replyTo) match {
@@ -95,19 +94,21 @@ trait MessageV3Service {
   }
 
   def formatMessageContent(letter: Letter)(implicit messages: Messages): String =
-    formatSubject(letter.subject, letter.body.flatMap(_.form.map(_.toUpperCase)).fold(false)(_.endsWith("_CY"))) ++ addIssueDate(
-      letter) ++ letter.content.getOrElse("")
+    formatSubject(
+      letter.subject,
+      letter.body.flatMap(_.form.map(_.toUpperCase)).fold(false)(_.endsWith("_CY"))
+    ) ++ addIssueDate(letter) ++ letter.content.getOrElse("")
 
   private def formatSubject(messageSubject: String, isWelshSubject: Boolean): String =
     if (isWelshSubject) {
-      <h1 lang="cy" class="govuk-heading-xl">{XML.loadString("<root>" + messageSubject + "</root>").child}</h1>.mkString
+      s"""<h1 lang="cy" class="govuk-heading-xl">{XML.loadString("<root>"$messageSubject"</root>").child}</h1>"""
     } else {
-      <h1 lang="en" class="govuk-heading-xl">{XML.loadString("<root>" + messageSubject + "</root>").child}</h1>.mkString
+      s"""<h1 lang="en" class="govuk-heading-xl">{XML.loadString("<root>"$messageSubject"</root>").child}</h1>"""
     }
 
   def addIssueDate(letter: Letter)(implicit messages: Messages): String = {
     val issueDate = localizedExtractMessageDate(letter)
-    <p class='message_time faded-text--small govuk-body'>{s"${messages("date.text.advisor", issueDate)}"}</p><br/>.mkString
+    s"""<p class='message_time faded-text--small govuk-body'>${messages("date.text.advisor", issueDate)}</p><br/>"""
   }
 
   def localizedExtractMessageDate(letter: Letter)(implicit messages: Messages): String =

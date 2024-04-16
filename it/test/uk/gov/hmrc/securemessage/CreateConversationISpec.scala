@@ -95,8 +95,8 @@ class CreateConversationISpec extends ISpec {
       response.status mustBe BAD_REQUEST
       response.body mustBe
         "\"Error on message with client: Some(CDCM), message id: D-80542-20201120, " +
-          "error message: Html contains disallowed tags, " +
-          "attributes or protocols within the tags: matt. For allowed elements see class org.jsoup.safety.Safelist.relaxed()\""
+        "error message: Html contains disallowed tags, " +
+        "attributes or protocols within the tags: matt. For allowed elements see class org.jsoup.safety.Safelist.relaxed()\""
     }
   }
 

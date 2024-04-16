@@ -48,7 +48,8 @@ class ChannelPreferencesConnectorSpec extends PlaySpec with ScalaFutures with Mo
       when(mockHttpResponse.body).thenReturn(validEmailVerification)
       Await.result(
         connector.getEmailForEnrolment(Identifier("EORINumber", "eoriid", Some("HMRC-CUS-ORG"))),
-        Duration.Inf) mustBe Right(EmailAddress("some@email.com"))
+        Duration.Inf
+      ) mustBe Right(EmailAddress("some@email.com"))
     }
     "return FAILED_DEPENDENCY if the json does not have a valid email address" in new TestCase {
       private val connector = new ChannelPreferencesConnector(configuration, mockHttpClient)
@@ -93,7 +94,9 @@ class ChannelPreferencesConnectorSpec extends PlaySpec with ScalaFutures with Mo
         .GET[HttpResponse](any[String], any[Seq[(String, String)]], any[Seq[(String, String)]])(
           any[uk.gov.hmrc.http.HttpReads[uk.gov.hmrc.http.HttpResponse]],
           any[uk.gov.hmrc.http.HeaderCarrier],
-          any[scala.concurrent.ExecutionContext]))
+          any[scala.concurrent.ExecutionContext]
+        )
+    )
       .thenReturn(Future.successful(mockHttpResponse))
     when(mockHttpResponse.status).thenReturn(OK)
   }

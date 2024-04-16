@@ -19,7 +19,7 @@ package uk.gov.hmrc.securemessage.repository
 import javax.inject.{ Inject, Singleton }
 
 @Singleton
-class Instances @Inject()(
+class Instances @Inject() (
   val messageRepository: SecureMessageRepository,
   val extraAlertRepository: ExtraAlertRepository,
   val statsMetricRepository: StatsMetricRepository

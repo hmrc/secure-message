@@ -29,11 +29,12 @@ object IdCoder {
   type DecodedId = String
 
   private[controllers] def decodeId(
-    encodedId: EncodedId): Either[SecureMessageError, (MessageType, DecodedId, RetrieverType)] = {
+    encodedId: EncodedId
+  ): Either[SecureMessageError, (MessageType, DecodedId, RetrieverType)] = {
     val decodedString = new String(Base64.decodeBase64(encodedId.getBytes(StandardCharsets.UTF_8)))
     def isMessageType(messageType: EncodedId) = MessageType.withNameOption(messageType).isDefined
     decodedString.split("/").toList match {
-      case messageType :: id :: _ if (isMessageType(messageType) && id.trim.nonEmpty) =>
+      case messageType :: id :: _ if isMessageType(messageType) && id.trim.nonEmpty =>
         Right((MessageType.withName(messageType), id, CDS))
       case l: List[String] if l.size == 1 =>
         Right((MessageType.withName(Letter.entryName), l.head, NonCDS))

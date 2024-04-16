@@ -41,7 +41,7 @@ import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.Success
 
 @Singleton
-class EmailAlertService @Inject()(
+class EmailAlertService @Inject() (
   val secureMessageRepository: SecureMessageRepository,
   val emailConnector: EmailConnector,
   val entityResolverConnector: EntityResolverConnector,
@@ -71,19 +71,18 @@ class EmailAlertService @Inject()(
   def pullItem(): Future[Option[SecureMessage]] =
     secureMessageRepository.pullMessageToAlert()
 
-  def processItem(state: EmailResults, message: SecureMessage)(
-    implicit ec: ExecutionContext
+  def processItem(state: EmailResults, message: SecureMessage)(implicit
+    ec: ExecutionContext
   ): Future[EmailResults] =
     sendAlert(state, message)
-      .recoverWith {
-        case e: Exception =>
-          logger.info(s"Failed to send $message", e)
-          updateAlertAndAudit(
-            message = message,
-            status = PermanentlyFailed,
-            e.getMessage,
-            state.incrementRequeued
-          )
+      .recoverWith { case e: Exception =>
+        logger.info(s"Failed to send $message", e)
+        updateAlertAndAudit(
+          message = message,
+          status = PermanentlyFailed,
+          e.getMessage,
+          state.incrementRequeued
+        )
       }
 
   def sendAlert(results: EmailResults, message: SecureMessage)(implicit ec: ExecutionContext): Future[EmailResults] = {
@@ -98,19 +97,17 @@ class EmailAlertService @Inject()(
           status = Succeeded
         )
       }
-    } yield {
-      results.incrementSent
-    }
-  } andThen {
-    case Success(_) =>
-      sendMobileNotification(message, invalidTemplateIdsForPushNotifications)
+    } yield results.incrementSent
+  } andThen { case Success(_) =>
+    sendMobileNotification(message, invalidTemplateIdsForPushNotifications)
   }
 
   private def updateAlertAndAudit(
     message: SecureMessage,
     status: ResultStatus,
     failureReason: String,
-    results: EmailResults)(implicit ec: ExecutionContext): Future[EmailResults] =
+    results: EmailResults
+  )(implicit ec: ExecutionContext): Future[EmailResults] =
     secureMessageRepository
       .alertCompleted(message._id, status, EmailAlert.failure(failureReason))
       .map(_ => results)
@@ -152,7 +149,8 @@ class EmailAlertService @Inject()(
       tags = Tags(
         message.externalRef.id.some,
         message.externalRef.source.some,
-        getEnrolments(message.recipient).main.some).some
+        getEnrolments(message.recipient).main.some
+      ).some
     )
 
   private def taxIdentifiers(taxId: Option[TaxId], default: Map[String, String]): Map[String, String] =

@@ -25,9 +25,9 @@ import uk.gov.hmrc.securemessage.models.core
 import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, _ }
 import uk.gov.hmrc.securemessage.utils.DateTimeUtils
 
-/**
-  * @param tags metadata sent to the UI
-  * */
+/** @param tags
+  *   metadata sent to the UI
+  */
 final case class CdcmConversation(
   sender: CdcmSender,
   recipients: List[Recipient],
@@ -35,18 +35,19 @@ final case class CdcmConversation(
   tags: CdcmTags,
   subject: String,
   message: String,
-  language: Option[String])
-    extends DateTimeUtils {
+  language: Option[String]
+) extends DateTimeUtils {
 
   def asConversationWithCreatedDate(
     client: String,
     conversationId: String,
     created: Instant,
     randomId: String,
-    reference: Option[Reference]): Conversation = {
+    reference: Option[Reference]
+  ): Conversation = {
     val initialMessage = ConversationMessage(Some(randomId), 1, created, message, reference)
-    val initialParticipants = getSenderParticipant(client, conversationId, sender.system) :: getRecipientParticipants(
-      recipients)
+    val initialParticipants =
+      getSenderParticipant(client, conversationId, sender.system) :: getRecipientParticipants(recipients)
     Conversation(
       client = client,
       id = conversationId,
