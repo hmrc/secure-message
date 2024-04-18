@@ -38,7 +38,7 @@ import uk.gov.hmrc.securemessage.controllers.model.MessageType.Letter
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.{ ApiConversation, ConversationMetadata }
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage
 import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.ApiLetter
-import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata._
+import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
 import uk.gov.hmrc.securemessage.controllers.{ Auditing, SecureMessageUtil }
 import uk.gov.hmrc.securemessage.handlers.MessageReadRequest
@@ -54,6 +54,7 @@ import uk.gov.hmrc.securemessage.services.utils.ContentValidator
 import java.util.UUID
 import javax.inject.Singleton
 import scala.concurrent.{ ExecutionContext, Future }
+import scala.xml.XML
 
 //TODO: refactor service to only accept core model classes as params
 @Singleton
@@ -393,29 +394,29 @@ class SecureMessageServiceImpl @Inject() (
 
   private def formatMessageContent(message: SecureMessage)(implicit messages: Messages) =
     if (messages.lang.language == "cy") {
-      val welshContent: Option[Content] = contentForLanguage(Welsh, message.content)
+      val welshContent: Option[Content] = MessageMetadata.contentForLanguage(Welsh, message.content)
       val welshBody = welshContent.map(_.body).getOrElse("")
       val welshSubject = welshContent.map(_.subject).getOrElse("")
       formatSubject(welshSubject, isWelshSubject = true) ++ addIssueDate(message) ++ decodeBase64String(welshBody)
     } else {
-      val englishContent: Option[Content] = contentForLanguage(English, message.content)
+      val englishContent: Option[Content] = MessageMetadata.contentForLanguage(English, message.content)
       val body = englishContent.map(_.body).getOrElse("")
       val subject = englishContent.map(_.subject).getOrElse("")
       formatSubject(subject, isWelshSubject = false) ++ addIssueDate(message) ++ decodeBase64String(body)
     }
-
+  // format: off
   private def formatSubject(messageSubject: String, isWelshSubject: Boolean): String =
     if (isWelshSubject) {
-      s""" <h1 lang="cy" class="govuk-heading-xl">{XML.loadString("<root>"$messageSubject"</root>").child}</h1>"""
+      <h1 lang="cy" class="govuk-heading-xl">{XML.loadString("<root>" + messageSubject + "</root>").child}</h1>.mkString
     } else {
-      s"""<h1 lang="en" class="govuk-heading-xl">{XML.loadString("<root>"$messageSubject"</root>").child}</h1>"""
+      <h1 lang="en" class="govuk-heading-xl">{XML.loadString("<root>" + messageSubject + "</root>").child}</h1>.mkString
     }
 
   private def addIssueDate(message: SecureMessage)(implicit messages: Messages): String = {
     val issueDate = localizedFormatter(LocalDate.ofInstant(message.issueDate, ZoneOffset.UTC))
-    s"""<p class='message_time faded-text--small govuk-body'>${messages("date.text.advisor", issueDate)}</p><br/>"""
+    <p class='message_time faded-text--small govuk-body'>{s"${messages("date.text.advisor", issueDate)}"}</p><br/>.mkString
   }
-
+  // format: on
   private def localizedFormatter(date: LocalDate)(implicit messages: Messages): String = {
     val formatter =
       if (messages.lang.language == "cy") {
