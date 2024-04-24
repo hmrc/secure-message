@@ -27,6 +27,7 @@ import uk.gov.hmrc.securemessage.models.core.{ Identifier, Letter, Message }
 import uk.gov.hmrc.securemessage.{ MessageNotFound, SecureMessageError, UserNotAuthorised }
 
 import scala.concurrent.{ ExecutionContext, Future }
+import scala.xml.XML
 
 trait MessageV3Service {
   val authIdentifiersConnector: AuthIdentifiersConnector
@@ -99,18 +100,19 @@ trait MessageV3Service {
       letter.body.flatMap(_.form.map(_.toUpperCase)).fold(false)(_.endsWith("_CY"))
     ) ++ addIssueDate(letter) ++ letter.content.getOrElse("")
 
+  // format: off
   private def formatSubject(messageSubject: String, isWelshSubject: Boolean): String =
     if (isWelshSubject) {
-      s"""<h1 lang="cy" class="govuk-heading-xl">{XML.loadString("<root>"$messageSubject"</root>").child}</h1>"""
+      <h1 lang="cy" class="govuk-heading-xl">{XML.loadString("<root>" + messageSubject + "</root>").child}</h1>.mkString
     } else {
-      s"""<h1 lang="en" class="govuk-heading-xl">{XML.loadString("<root>"$messageSubject"</root>").child}</h1>"""
+      <h1 lang="en" class="govuk-heading-xl">{XML.loadString("<root>" + messageSubject + "</root>").child}</h1>.mkString
     }
 
   def addIssueDate(letter: Letter)(implicit messages: Messages): String = {
     val issueDate = localizedExtractMessageDate(letter)
-    s"""<p class='message_time faded-text--small govuk-body'>${messages("date.text.advisor", issueDate)}</p><br/>"""
+    <p class='message_time faded-text--small govuk-body'>{s"${messages("date.text.advisor", issueDate)}"}</p><br/>.mkString
   }
-
+  // format: on
   def localizedExtractMessageDate(letter: Letter)(implicit messages: Messages): String =
     letter.body.flatMap(_.issueDate) match {
       case Some(issueDate) => localizedFormatter(issueDate)
