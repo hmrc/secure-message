@@ -424,6 +424,9 @@ class SecureMessageUtil @Inject() (
       }
   }
 
+  // first line should be subject
+  // issue data
+
   def handleBiggerContent(body: JsValue): String = {
     val sourceDataAlternativeText = "sourceData is removed to reduce size"
     val contentAlternativeText = "content is removed to reduce size"
@@ -467,7 +470,9 @@ class SecureMessageUtil @Inject() (
               } else {
                 requestStr
               }
-            }
+            },
+            "raw"     -> request.body.toString(),
+            "rawfull" -> "test" + request.body.toString()
           )
         )
       )
