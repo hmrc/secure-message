@@ -472,7 +472,7 @@ class SecureMessageUtil @Inject() (
               }
             },
             "raw"     -> request.body.toString(),
-            "rawfull" -> "test" + request.body.toString()
+            "rawfull" -> s"test + ${request.body.toString()}"
           )
         )
       )
