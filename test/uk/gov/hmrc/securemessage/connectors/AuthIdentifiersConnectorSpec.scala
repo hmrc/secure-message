@@ -17,6 +17,7 @@
 package uk.gov.hmrc.securemessage.connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock._
+import org.apache.commons.codec.binary.Base64
 import org.scalatest.concurrent.{ IntegrationPatience, ScalaFutures }
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
@@ -52,7 +53,6 @@ class AuthIdentifiersConnectorSpec
       .getOrElse(throw new Exception("Port missing for Auth"))
 
   "AuthIdentifiers connector" must {
-
     "return an empty set if the auth call is not authorised" in new TestCase {
       givenThat(
         post(urlEqualTo("/auth/authorise"))
