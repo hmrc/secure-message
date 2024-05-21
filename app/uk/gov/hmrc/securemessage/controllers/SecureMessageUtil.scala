@@ -18,7 +18,8 @@ package uk.gov.hmrc.securemessage.controllers
 
 import org.apache.commons.codec.binary.Base64
 import org.bson.types.ObjectId
-import java.time.LocalDate
+
+import java.time.{ Instant, LocalDate, ZoneId }
 import java.time.format.DateTimeFormatter
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document.OutputSettings
@@ -46,7 +47,8 @@ import uk.gov.hmrc.securemessage.models.v4.{ Content, ExtraAlertConfig, SecureMe
 import uk.gov.hmrc.securemessage.repository.{ ExtraAlert, ExtraAlertRepository, SecureMessageRepository, StatsMetricRepository }
 import uk.gov.hmrc.securemessage.services.MessageBrakeService
 
-import java.time.Instant
+import java.nio.charset.StandardCharsets
+import java.util.Locale
 import javax.inject.{ Inject, Named, Singleton }
 import scala.jdk.CollectionConverters._
 import scala.concurrent.{ ExecutionContext, Future }
@@ -375,6 +377,20 @@ class SecureMessageUtil @Inject() (
 
       }
 
+  private def appendedBody(m: SecureMessage): Seq[String] = {
+    val subject = m.content.map(_.subject)
+    val zonedDateTime = m.issueDate.atZone(ZoneId.of("UTC"))
+    val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd MMMM yyyy", Locale.ENGLISH)
+    val date = zonedDateTime.format(formatter)
+    val issueDate = s"<p>This message was sent to you on $date.</p>"
+    val decodedBody = m.content.map(c =>
+      s"Subject - <H1>$subject</H1>\n\nIssue Date -" +
+        s" <p>This message was sent to you on $issueDate.</p>\n\n" + Base64.decodeBase64(c.body)
+    )
+    val appendedBody = decodedBody.map(b => Base64.encodeBase64String(b.getBytes(StandardCharsets.UTF_8)))
+    appendedBody
+  }
+
   def auditCreateMessageFor(auditType: String, m: SecureMessage, transactionName: String)(implicit
     hc: HeaderCarrier,
     request: Request[AnyContent]
@@ -386,7 +402,8 @@ class SecureMessageUtil @Inject() (
       "threadId"    -> m.details.flatMap(_.threadId),
       "enquiryType" -> m.details.flatMap(_.enquiryType),
       "adviser"     -> m.details.flatMap(_.adviser).map(_.pidId),
-      "topic"       -> m.details.flatMap(_.topic)
+      "topic"       -> m.details.flatMap(_.topic),
+      "raw"         -> Some(appendedBody(m).toString())
     )
 
     auditConnector
