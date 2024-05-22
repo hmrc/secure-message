@@ -377,13 +377,14 @@ class SecureMessageUtil @Inject() (
 
       }
 
-  private def appendedBody(m: SecureMessage): Seq[String] = {
-    val subject = m.content.find(c => c.lang == Language.English).map(_.subject).getOrElse("")
+  private def appendedBody(m: SecureMessage): Option[String] = {
+    val englishContent = m.content.find(c => c.lang == Language.English)
+    val subject = englishContent.map(_.subject).getOrElse("This will never happen, subject cannot be empty")
     val zonedDateTime = m.issueDate.atZone(ZoneId.of("UTC"))
     val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd MMMM yyyy", Locale.ENGLISH)
     val date = zonedDateTime.format(formatter)
     val issueDate = s"<p>This message was sent to you on $date.</p>"
-    val decodedBody = m.content.map(c =>
+    val decodedBody = englishContent.map(c =>
       s"Subject - <H1>$subject</H1>\n\n" +
         s"Issue Date - $issueDate\n\n" +
         Base64.decodeBase64(c.body)
@@ -404,7 +405,7 @@ class SecureMessageUtil @Inject() (
       "enquiryType" -> m.details.flatMap(_.enquiryType),
       "adviser"     -> m.details.flatMap(_.adviser).map(_.pidId),
       "topic"       -> m.details.flatMap(_.topic),
-      "raw"         -> Some(appendedBody(m).toString())
+      "raw"         -> Some(appendedBody(m))
     )
 
     auditConnector
@@ -417,6 +418,7 @@ class SecureMessageUtil @Inject() (
             "messageId"                 -> m._id.toString,
             "formId"                    -> m.details.map(_.formId).getOrElse(""),
             "messageType"               -> m.messageType,
+            "messageContent"            -> appendedBody(m).getOrElse(""),
             m.recipient.identifier.name -> m.recipient.identifier.value,
             "originalRequest" -> {
               val requestStr = Json.stringify(request.body.asJson.getOrElse(JsArray(Array.empty[JsValue])))
