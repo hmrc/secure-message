@@ -378,6 +378,10 @@ class SecureMessageUtil @Inject() (
       }
 
   private def appendedBody(m: SecureMessage): Option[String] = {
+    def encode(string: String) = Base64.encodeBase64String(string.getBytes("UTF-8"))
+
+    def decode(string: String) = new String(Base64.decodeBase64(string.getBytes("UTF-8")))
+
     val englishContent = m.content.find(c => c.lang == Language.English)
     val subject = englishContent.map(_.subject).getOrElse("This will never happen, subject cannot be empty")
     val zonedDateTime = m.issueDate.atZone(ZoneId.of("UTC"))
@@ -387,9 +391,9 @@ class SecureMessageUtil @Inject() (
     val decodedBody = englishContent.map(c =>
       s"Subject - <H1>$subject</H1>\n\n" +
         s"Issue Date - $issueDate\n\n" +
-        Base64.decodeBase64(c.body)
+        decode(c.body)
     )
-    val appendedBody = decodedBody.map(b => Base64.encodeBase64String(b.getBytes(StandardCharsets.UTF_8)))
+    val appendedBody = decodedBody.map(b => encode(b))
     appendedBody
   }
 
