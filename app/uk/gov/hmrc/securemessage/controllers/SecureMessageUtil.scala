@@ -404,8 +404,7 @@ class SecureMessageUtil @Inject() (
       "threadId"    -> m.details.flatMap(_.threadId),
       "enquiryType" -> m.details.flatMap(_.enquiryType),
       "adviser"     -> m.details.flatMap(_.adviser).map(_.pidId),
-      "topic"       -> m.details.flatMap(_.topic),
-      "raw"         -> Some(appendedBody(m))
+      "topic"       -> m.details.flatMap(_.topic)
     )
 
     auditConnector
