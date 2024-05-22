@@ -42,7 +42,7 @@ import uk.gov.hmrc.play.audit.http.connector.{ AuditConnector, AuditResult }
 import uk.gov.hmrc.play.audit.model.{ DataEvent, EventTypes }
 import uk.gov.hmrc.securemessage.SecureMessageError
 import uk.gov.hmrc.securemessage.connectors.{ EmailValidation, EntityResolverConnector, TaxpayerNameConnector }
-import uk.gov.hmrc.securemessage.models.core.{ Count, FilterTag, Identifier, MessageFilter }
+import uk.gov.hmrc.securemessage.models.core.{ Count, FilterTag, Identifier, Language, MessageFilter }
 import uk.gov.hmrc.securemessage.models.v4.{ Content, ExtraAlertConfig, SecureMessage }
 import uk.gov.hmrc.securemessage.repository.{ ExtraAlert, ExtraAlertRepository, SecureMessageRepository, StatsMetricRepository }
 import uk.gov.hmrc.securemessage.services.MessageBrakeService
@@ -378,14 +378,15 @@ class SecureMessageUtil @Inject() (
       }
 
   private def appendedBody(m: SecureMessage): Seq[String] = {
-    val subject = m.content.map(_.subject)
+    val subject = m.content.find(c => c.lang == Language.English).map(_.subject).getOrElse("")
     val zonedDateTime = m.issueDate.atZone(ZoneId.of("UTC"))
     val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd MMMM yyyy", Locale.ENGLISH)
     val date = zonedDateTime.format(formatter)
     val issueDate = s"<p>This message was sent to you on $date.</p>"
     val decodedBody = m.content.map(c =>
-      s"Subject - <H1>$subject</H1>\n\nIssue Date -" +
-        s" <p>This message was sent to you on $issueDate.</p>\n\n" + Base64.decodeBase64(c.body)
+      s"Subject - <H1>$subject</H1>\n\n" +
+        s"Issue Date - $issueDate\n\n" +
+        Base64.decodeBase64(c.body)
     )
     val appendedBody = decodedBody.map(b => Base64.encodeBase64String(b.getBytes(StandardCharsets.UTF_8)))
     appendedBody
