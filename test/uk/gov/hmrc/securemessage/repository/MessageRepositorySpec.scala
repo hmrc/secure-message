@@ -19,7 +19,7 @@ package uk.gov.hmrc.securemessage.repository
 import java.time.{ Instant, LocalDate }
 import org.mongodb.scala.bson.ObjectId
 import org.mongodb.scala.model.Filters
-import org.scalatest.{ BeforeAndAfterEach, EitherValues }
+import org.scalatest.EitherValues
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json.{ JsObject, JsValue, Json }
@@ -34,27 +34,24 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class MessageRepositorySpec
-    extends PlaySpec with DefaultPlayMongoRepositorySupport[Letter] with BeforeAndAfterEach with ScalaFutures
-    with StaticTestData with EitherValues {
+    extends PlaySpec with DefaultPlayMongoRepositorySupport[Letter] with ScalaFutures with StaticTestData
+    with EitherValues {
 
   override def checkTtlIndex: Boolean = false
 
   override lazy val repository = new MessageRepository(mongoComponent)
 
-  override def beforeEach(): Unit =
-    await(repository.collection.deleteMany(Filters.empty()).toFuture().map(_ => ()))
-
   "A letter" should {
     "be returned for a participating enrolment" in new TestContext() {
       val result: Either[SecureMessageError, Letter] =
         await(repository.getLetter(objectID, identifiers))
-      result mustBe Right(letters.head)
+      result mustBe Right(letter)
     }
 
     "be returned for a participating enrolment with no name" in new TestContext() {
       val result: Either[SecureMessageError, Letter] =
         await(repository.getLetter(objectID, Set(Identifier("", "GB1234567890", Some("HMRC-CUS-ORG")))))
-      result.toOption.get mustBe letters.head
+      result.toOption.get mustBe letter
     }
 
     "be returned for a participating enrolment without readTime timestamp" in new TestContext(
@@ -72,7 +69,7 @@ class MessageRepositorySpec
     }
 
     "not be returned for a participating enrolment with different Enrolment" in new TestContext(
-      coreLetters = List(Resources.readJson("model/core/letterWithOutHmrcCusOrg.json").add(timeFields))
+      coreLetters = Resources.readJson("model/core/letterWithOutHmrcCusOrg.json").add(timeFields)
     ) {
       val result: Either[SecureMessageError, Letter] = await(repository.getLetter(objectID, identifiers))
 
@@ -80,7 +77,7 @@ class MessageRepositorySpec
     }
 
     "not be returned if the enrolment is not a recipient" in new TestContext(
-      coreLetters = List(Resources.readJson("model/core/letter.json").add(Seq(lastUpdatedField)))
+      coreLetters = Resources.readJson("model/core/letter.json").add(Seq(lastUpdatedField))
     ) {
       val result: Either[SecureMessageError, Letter] =
         await(repository.getLetter(objectID, Set(Identifier("EORINumber", "GB1234567891", Some("HMRC-CUS-ORG")))))
@@ -107,7 +104,7 @@ class MessageRepositorySpec
           repository
             .getLetter(objectID, Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))))
         )
-      result.toOption.get.readTime mustBe letters.head.readTime
+      result.toOption.get.readTime mustBe letter.readTime
     }
   }
 
@@ -133,7 +130,7 @@ class MessageRepositorySpec
   "getLetters" should {
     "return the letters for matching identifier enrolment and value " in new TestContext() {
       val result: Future[List[Letter]] = repository.getLetters(identifiers, None)
-      result.futureValue mustBe letters
+      result.futureValue mustBe List(letter)
     }
     "return an empty list if no identifier enrolment passed" in new TestContext() {
       val result: Future[List[Letter]] = repository.getLetters(Set.empty, None)
@@ -152,12 +149,12 @@ class MessageRepositorySpec
     "return letters ignoring identifier name matches" in new TestContext() {
       val result: Future[List[Letter]] =
         repository.getLetters(identifiers.map(i => i.copy(name = "non-existing")), None)
-      result.futureValue mustBe letters
+      result.futureValue mustBe List(letter)
     }
     "return letters matching tags" in new TestContext() {
       val result: Future[List[Letter]] =
         repository.getLetters(identifiers, Some(List(FilterTag("notificationType", "Direct Debit"))))
-      result.futureValue mustBe letters
+      result.futureValue mustBe List(letter)
     }
     "not return an empty list for non matching tags" in new TestContext() {
       val result: Future[List[Letter]] =
@@ -207,11 +204,11 @@ class MessageRepositorySpec
     }
   }
 
-  class TestContext(coreLetters: List[JsValue] = lettersWithTimeFields) {
-    val objectID: ObjectId = new ObjectId()
-    val letters: List[Letter] = coreLetters.map(_.add(Seq("_id" -> Json.toJson(objectID))).as[Letter])
-    letters.map(letter => repository.collection.insertOne(letter).toFuture().futureValue)
-    def createLetter: Letter = letters.head.copy(_id = new ObjectId())
+  class TestContext(coreLetters: JsValue = lettersWithTimeFields, val objectID: ObjectId = new ObjectId()) {
+    val letter: Letter = coreLetters.add(Seq("_id" -> Json.toJson(objectID))).as[Letter]
+    repository.collection.deleteMany(Filters.empty()).toFuture().futureValue
+    repository.collection.insertOne(letter).toFuture().futureValue
+    def createLetter: Letter = letter.copy(_id = new ObjectId())
   }
 
 }
@@ -220,8 +217,8 @@ trait StaticTestData {
   val lastUpdatedField: (String, JsValue) = "lastUpdated" -> Json.toJson(Instant.now())
   val readTimeField: (String, JsValue) = "readTime"       -> Json.toJson(Instant.now())
   val timeFields = Seq(lastUpdatedField, readTimeField)
-  val lettersWithTimeFields = List(Resources.readJson("model/core/letter.json").add(timeFields))
-  val lettersWithoutReadTime = List(Resources.readJson("model/core/letter.json").add(Seq(lastUpdatedField)))
+  val lettersWithTimeFields = Resources.readJson("model/core/letter.json").add(timeFields)
+  val lettersWithoutReadTime = Resources.readJson("model/core/letter.json").add(Seq(lastUpdatedField))
   val identifiers: Set[Identifier] = Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG")))
 
   implicit class JsonLetterExtensions(letter: JsValue) {
