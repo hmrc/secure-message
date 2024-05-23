@@ -440,6 +440,12 @@ class ConversationRepositorySpec
       result mustBe 2
     }
 
+    "indexes" must {
+      "match the expected number on ensureIndex" in {
+        repository.collection.listIndexes().toFuture().futureValue must have size 5
+      }
+    }
+
   }
 
   class TextContextWithInsert(conversations: Seq[Conversation]) {
