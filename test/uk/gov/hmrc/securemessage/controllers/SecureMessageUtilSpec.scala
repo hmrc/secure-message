@@ -16,7 +16,8 @@
 
 package uk.gov.hmrc.securemessage.controllers
 
-import org.mockito.ArgumentMatchers.{ any, eq => meq }
+import org.apache.commons.codec.binary.Base64
+import org.mockito.ArgumentMatchers.{ any, eq => meq, intThat }
 import org.mockito.Mockito.{ reset, verifyNoInteractions, when }
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
@@ -29,6 +30,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.securemessage.connectors.{ EntityResolverConnector, TaxpayerNameConnector }
 import uk.gov.hmrc.securemessage.helpers.Resources
+import uk.gov.hmrc.securemessage.models.core.Language
 import uk.gov.hmrc.securemessage.models.v4.SecureMessage
 import uk.gov.hmrc.securemessage.repository.{ ExtraAlertRepository, SecureMessageRepository, StatsMetricRepository }
 import uk.gov.hmrc.securemessage.services.MessageBrakeService
@@ -88,6 +90,17 @@ class SecureMessageUtilSpec extends PlaySpec with ScalaFutures with MockitoSugar
       val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
       testUtil.addTaxpayerNameToMessageIfRequired(message).futureValue mustBe message
       verifyNoInteractions(taxpayerNameConnector)
+    }
+  }
+
+  "buildAuditMessageContent function" must {
+    "include subject and issue data to message body" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val content = testUtil.buildAuditMessageContent(message).get
+      val decoded = new String(Base64.decodeBase64(content.getBytes("UTF-8")))
+
+      decoded must include("Reminder to file a Self Assessment return")
+      decoded must include("This message was sent to you on")
     }
   }
 

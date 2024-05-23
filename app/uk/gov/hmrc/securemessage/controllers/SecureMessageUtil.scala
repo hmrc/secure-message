@@ -18,7 +18,7 @@ package uk.gov.hmrc.securemessage.controllers
 
 import org.apache.commons.codec.binary.Base64
 import org.bson.types.ObjectId
-import java.time.LocalDate
+import java.time.{ Instant, LocalDate, ZoneId, ZonedDateTime }
 import java.time.format.DateTimeFormatter
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document.OutputSettings
@@ -41,12 +41,12 @@ import uk.gov.hmrc.play.audit.http.connector.{ AuditConnector, AuditResult }
 import uk.gov.hmrc.play.audit.model.{ DataEvent, EventTypes }
 import uk.gov.hmrc.securemessage.SecureMessageError
 import uk.gov.hmrc.securemessage.connectors.{ EmailValidation, EntityResolverConnector, TaxpayerNameConnector }
-import uk.gov.hmrc.securemessage.models.core.{ Count, FilterTag, Identifier, MessageFilter }
+import uk.gov.hmrc.securemessage.models.core.{ Count, FilterTag, Identifier, Language, MessageFilter }
 import uk.gov.hmrc.securemessage.models.v4.{ Content, ExtraAlertConfig, SecureMessage }
 import uk.gov.hmrc.securemessage.repository.{ ExtraAlert, ExtraAlertRepository, SecureMessageRepository, StatsMetricRepository }
 import uk.gov.hmrc.securemessage.services.MessageBrakeService
-
-import java.time.Instant
+import java.nio.charset.StandardCharsets
+import java.util.Locale
 import javax.inject.{ Inject, Named, Singleton }
 import scala.jdk.CollectionConverters._
 import scala.concurrent.{ ExecutionContext, Future }
@@ -85,6 +85,16 @@ object SecureMessageUtil {
     errorResponseResult(errorMessage, responseCode, showErrorID = true)
 
   private val NotificationType = "notificationType"
+
+  private def encodeBase64(input: String): String = Base64.encodeBase64String(input.getBytes("UTF-8"))
+
+  private def decodeBase64(input: String): String = new String(Base64.decodeBase64(input.getBytes("UTF-8")))
+
+  private def formatIssueDate(issueDate: ZonedDateTime): String = {
+    val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd MMMM yyyy", Locale.ENGLISH)
+    issueDate.format(formatter)
+  }
+
 }
 @Singleton
 class SecureMessageUtil @Inject() (
@@ -375,6 +385,16 @@ class SecureMessageUtil @Inject() (
 
       }
 
+  private[controllers] def buildAuditMessageContent(m: SecureMessage): Option[String] =
+    m.content.find(_.lang == Language.English).map { englishContent =>
+      val subject = englishContent.subject
+      val issueDate =
+        s"<p>This message was sent to you on ${formatIssueDate(m.issueDate.atZone(ZoneId.of("UTC")))}.</p>"
+      val decodedBody = decodeBase64(englishContent.body)
+      val messageBody = s"<H1>$subject</H1>\n\n$issueDate$decodedBody"
+      encodeBase64(messageBody)
+    }
+
   def auditCreateMessageFor(auditType: String, m: SecureMessage, transactionName: String)(implicit
     hc: HeaderCarrier,
     request: Request[AnyContent]
@@ -399,6 +419,7 @@ class SecureMessageUtil @Inject() (
             "messageId"                 -> m._id.toString,
             "formId"                    -> m.details.map(_.formId).getOrElse(""),
             "messageType"               -> m.messageType,
+            "messageContent"            -> buildAuditMessageContent(m).getOrElse(""),
             m.recipient.identifier.name -> m.recipient.identifier.value,
             "originalRequest" -> {
               val requestStr = Json.stringify(request.body.asJson.getOrElse(JsArray(Array.empty[JsValue])))
