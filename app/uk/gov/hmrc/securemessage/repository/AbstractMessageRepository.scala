@@ -80,7 +80,7 @@ abstract class AbstractMessageRepository[A: ClassTag](
         .toFuture()
         .map(_.toList)
     } else {
-      Future(List())
+      Future.successful(List.empty[A])
     }
   }
 
@@ -92,12 +92,11 @@ abstract class AbstractMessageRepository[A: ClassTag](
       val querySelector = messagesQuerySelector(identifiers, tags)
       if (querySelector != Filters.empty()) {
         collection
-          .find(querySelector)
-          .sort(Filters.equal("_id", -1))
+          .countDocuments(querySelector)
           .toFuture()
-          .map(_.toList.size)
+          .map(_.toInt)
       } else {
-        Future(0)
+        Future.successful(0)
       }
     }
     val unreadCount: Future[Int] = totalCount.flatMap { total =>
@@ -129,12 +128,11 @@ abstract class AbstractMessageRepository[A: ClassTag](
   private def getMessageUnreadCount(baseQuery: Bson)(implicit ec: ExecutionContext) =
     if (baseQuery != Filters.empty()) {
       collection
-        .find(Filters.and(baseQuery, Filters.exists("readTime", exists = false)))
-        .sort(Filters.equal("_id", -1))
+        .countDocuments(Filters.and(baseQuery, Filters.exists("readTime", exists = false)))
         .toFuture()
-        .map(_.toList.size)
+        .map(_.toInt)
     } else {
-      Future(0)
+      Future.successful(0)
     }
 
   protected def getMessage(id: ObjectId, identifiers: Set[Identifier])(implicit

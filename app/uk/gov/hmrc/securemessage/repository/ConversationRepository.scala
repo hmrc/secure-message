@@ -41,6 +41,31 @@ class ConversationRepository @Inject() (mongo: MongoComponent)(implicit ec: Exec
             .name("unique-conversation")
             .unique(true)
             .sparse(true)
+        ),
+        IndexModel(
+          Indexes.ascending("participants.identifier.name", "participants.identifier.value"),
+          IndexOptions()
+            .name("participants-identifier-1")
+            .unique(false)
+            .background(true)
+        ),
+        IndexModel(
+          Indexes.ascending(
+            "participants.identifier.name",
+            "participants.identifier.value",
+            "participants.identifier.enrolment"
+          ),
+          IndexOptions()
+            .name("participants-identifier-2")
+            .unique(false)
+            .background(true)
+        ),
+        IndexModel(
+          Indexes.ascending("tags.notificationType"),
+          IndexOptions()
+            .name("tags-notificationType")
+            .unique(false)
+            .background(true)
         )
       ),
       replaceIndexes = false
