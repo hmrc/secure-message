@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.securemessage.repository
 
+import com.mongodb.client.model.Indexes.ascending
 import org.bson.types.ObjectId
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model._
@@ -37,7 +38,15 @@ class MessageRepository @Inject() (mongo: MongoComponent)(implicit ec: Execution
       "message",
       mongo,
       Letter.letterFormat,
-      Seq.empty[IndexModel],
+      Seq(
+        IndexModel(
+          ascending("recipient.identifier.value", "recipient.identifier.name"),
+          IndexOptions()
+            .name("recipient-tax-id-v2")
+            .unique(false)
+            .background(true)
+        )
+      ),
       replaceIndexes = false
     ) with MessageSelector {
 
