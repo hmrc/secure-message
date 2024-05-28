@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.securemessage.repository
 
-import com.mongodb.client.model.Indexes.ascending
+import com.mongodb.client.model.Indexes.{ ascending, descending }
 import org.bson.types.ObjectId
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model._
@@ -40,9 +40,54 @@ class MessageRepository @Inject() (mongo: MongoComponent)(implicit ec: Execution
       Letter.letterFormat,
       Seq(
         IndexModel(
+          ascending("hash"),
+          IndexOptions().name("unique-messageHash").unique(true)
+        ),
+        IndexModel(
+          ascending("externalRef.id", "externalRef.source"),
+          IndexOptions()
+            .name("unique-externalRef")
+            .unique(true)
+            .sparse(true)
+            .background(true)
+        ),
+        IndexModel(ascending("alertFrom"), IndexOptions().unique(false)),
+        IndexModel(
+          ascending("status", "alertFrom"),
+          IndexOptions().name("status-alertFrom-v1").unique(false).background(true)
+        ),
+        IndexModel(ascending("status"), IndexOptions().name("status").unique(false)),
+        IndexModel(
           ascending("recipient.identifier.value", "recipient.identifier.name"),
           IndexOptions()
             .name("recipient-tax-id-v2")
+            .unique(false)
+            .background(true)
+        ),
+        IndexModel(
+          ascending("recipient.regime"),
+          IndexOptions().name("recipient-regime-id-v2").unique(false).background(true)
+        ),
+        IndexModel(ascending("body.threadId"), IndexOptions().unique(false).background(true)),
+        IndexModel(ascending("body.envelopId"), IndexOptions().unique(false).background(true)),
+        IndexModel(
+          descending("status", "lastUpdated"),
+          IndexOptions()
+            .name("status-lastupdated-id-v1")
+            .unique(false)
+            .background(true)
+        ),
+        IndexModel(
+          descending("validFrom", "verificationBrake"),
+          IndexOptions()
+            .name("validFrom-verificationBrake-v1")
+            .unique(false)
+            .background(true)
+        ),
+        IndexModel(
+          descending("rescindment.ref"),
+          IndexOptions()
+            .name("rescindment-ref-v1")
             .unique(false)
             .background(true)
         )
