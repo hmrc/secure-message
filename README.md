@@ -1,22 +1,6 @@
 # secure-message
 Micro-service responsible for providing a secure communication channel between HMRC and it's customers.
  
-## API
-
-An OpenAPI 3.0 schema is available for the endpoints on this service which can be explored via a Swagger UI. The schema and UI URLs are as follows:
-
-**Development**
-- Schema: https://www.development.tax.service.gov.uk/secure-messaging/api/schema.json
-- Swagger UI: https://www.development.tax.service.gov.uk/secure-messaging/docs/swagger-ui/index.html?url=/secure-messaging/api/schema.json
-
-**QA**
-- Schema: https://www.qa.tax.service.gov.uk/secure-messaging/api/schema.json
-- Swagger UI: https://www.qa.tax.service.gov.uk/secure-messaging/docs/swagger-ui/index.html?url=/secure-messaging/api/schema.json
-
-**Staging**
-- Schema: https://www.staging.tax.service.gov.uk/secure-messaging/api/schema.json
-- Swagger UI: https://www.staging.tax.service.gov.uk/secure-messaging/docs/swagger-ui/index.html?url=/secure-messaging/api/schema.json
-
 ## Run the project locally
 
 Ensure you have service-manager python environment setup:
@@ -54,15 +38,6 @@ You can use the following commands to start/stop the required services.
 `sm2 --start DC_SECURE_MESSAGE_IT`
 
 `sbt it:test`
-
-## Swagger schema
-
-Available locally here: http://localhost:9051/assets/schema.json
-
-## Swagger-UI
-
-Available locally here: http://localhost:9051/docs/swagger-ui/index.html?url=/assets/schema.json
-
 ## Sample data
 
 ```json
@@ -105,10 +80,6 @@ Available locally here: http://localhost:9051/docs/swagger-ui/index.html?url=/as
 ```
 
 For more examples of resources which can be inserted in your local mongo database `secure-message`, collection `conversation`, can be found [here](test/resources/model/core)
-
-Alternatively you can create messages locally by using this swagger endpoint:
-
-http://localhost:9051/docs/swagger-ui/index.html?url=/assets/schema.json#/app/createConversation
 
 ## API
 

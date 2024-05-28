@@ -27,8 +27,7 @@ ThisBuild / scalaVersion := "2.13.12"
 lazy val microservice = Project(appName, file("."))
   .enablePlugins(
     play.sbt.PlayScala,
-    SbtDistributablesPlugin,
-    SwaggerPlugin
+    SbtDistributablesPlugin
   )
   .disablePlugins(JUnitXmlReportPlugin)
   .settings(
@@ -57,21 +56,6 @@ lazy val compileScalastyle = taskKey[Unit]("compileScalastyle1")
 compileScalastyle := (Compile / scalastyle).toTask("").value
 (Compile / compile) := ((Compile / compile) dependsOn compileScalastyle).value
 
-swaggerDomainNameSpaces := Seq(
-  "uk.gov.hmrc.securemessage.controllers.model",
-  "uk.gov.hmrc.securemessage.controllers.model.cdcm.read",
-  "uk.gov.hmrc.securemessage.controllers.model.cdcm.write",
-  "uk.gov.hmrc.securemessage.controllers.model.common",
-  "uk.gov.hmrc.securemessage.controllers.model.common.read",
-  "uk.gov.hmrc.securemessage.controllers.model.common.write",
-  "uk.gov.hmrc.securemessage.models.core.CustomerEnrolment",
-  "uk.gov.hmrc.securemessage.models.core.FilterTag"
-)
-swaggerTarget := baseDirectory.value / "public"
-swaggerFileName := "schema.json"
-swaggerPrettyJson := true
-swaggerRoutesFile := "prod.routes"
-swaggerV3 := true
 PlayKeys.playDefaultPort := 9051
 
 dependencyUpdatesFailBuild := false
