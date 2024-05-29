@@ -45,7 +45,6 @@ import uk.gov.hmrc.securemessage.models.core.{ Count, FilterTag, Identifier, Lan
 import uk.gov.hmrc.securemessage.models.v4.{ Content, ExtraAlertConfig, SecureMessage }
 import uk.gov.hmrc.securemessage.repository.{ ExtraAlert, ExtraAlertRepository, SecureMessageRepository, StatsMetricRepository }
 import uk.gov.hmrc.securemessage.services.MessageBrakeService
-import java.nio.charset.StandardCharsets
 import java.util.Locale
 import javax.inject.{ Inject, Named, Singleton }
 import scala.jdk.CollectionConverters._

@@ -27,7 +27,7 @@ import play.api.test.Helpers.{ await, defaultAwaitTimeout }
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core.Letter._
-import uk.gov.hmrc.securemessage.models.core.{ Count, FilterTag, Identifier, Letter }
+import uk.gov.hmrc.securemessage.models.core.{ Count, ExternalReference, FilterTag, Identifier, Letter }
 import uk.gov.hmrc.securemessage.{ MessageNotFound, SecureMessageError }
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -111,8 +111,8 @@ class MessageRepositorySpec
   "getLetters with future validFrom" should {
     "not return letters with a future validFrom Date" in new TestContext() {
       val result = (for {
-        _ <- repository.collection.insertOne(createLetter.copy(validFrom = LocalDate.now().plusDays(1))).toFuture()
-        _ <- repository.collection.insertOne(createLetter.copy(validFrom = LocalDate.now())).toFuture()
+        _ <- repository.collection.insertOne(letterWithFutureDate).toFuture()
+        _ <- repository.collection.insertOne(letterWithTodaysDate).toFuture()
         r <- repository.getLetters(identifiers, None)
       } yield r).futureValue
       result.size mustBe 2
@@ -120,7 +120,7 @@ class MessageRepositorySpec
 
     "return an empty list if no identifier value matches" in new TestContext() {
       val result = (for {
-        _ <- repository.collection.insertOne(createLetter.copy(validFrom = LocalDate.now().plusDays(1))).toFuture()
+        _ <- repository.collection.insertOne(letterWithFutureDate).toFuture()
         r <- repository.getLetters(identifiers.map(i => i.copy(value = "non-existing")), None)
       } yield r).futureValue
       result mustBe empty
@@ -196,8 +196,8 @@ class MessageRepositorySpec
     }
     "return a count ignoring letters with a future validFrom" in new TestContext() {
       val result = (for {
-        _ <- repository.collection.insertOne(createLetter.copy(validFrom = LocalDate.now().plusDays(1))).toFuture()
-        _ <- repository.collection.insertOne(createLetter.copy(validFrom = LocalDate.now())).toFuture()
+        _ <- repository.collection.insertOne(letterWithFutureDate).toFuture()
+        _ <- repository.collection.insertOne(letterWithTodaysDate).toFuture()
         r <- repository.getLettersCount(identifiers, None)
       } yield r).futureValue
       result mustBe Count(2, 0)
@@ -206,9 +206,20 @@ class MessageRepositorySpec
 
   class TestContext(coreLetters: JsValue = lettersWithTimeFields, val objectID: ObjectId = new ObjectId()) {
     val letter: Letter = coreLetters.add(Seq("_id" -> Json.toJson(objectID))).as[Letter]
+    val letterWithTodaysDate: Letter = letter.copy(
+      _id = new ObjectId(),
+      hash = "LfK755SXhY2rlc9kL50ohJZ2dvRzZGjU74kjcdJMAcX=",
+      externalRef = Some(ExternalReference("1234567891234567893", "mdtp")),
+      validFrom = LocalDate.now()
+    )
+    val letterWithFutureDate: Letter = letter.copy(
+      _id = new ObjectId(),
+      hash = "LfK755SXhY2rlc9kL50ohJZ2dvRzZGjU74kjcdJMAcZ=",
+      externalRef = Some(ExternalReference("1234567891234567894", "mdtp")),
+      validFrom = LocalDate.now().plusDays(1)
+    )
     repository.collection.deleteMany(Filters.empty()).toFuture().futureValue
     repository.collection.insertOne(letter).toFuture().futureValue
-    def createLetter: Letter = letter.copy(_id = new ObjectId())
   }
 
 }

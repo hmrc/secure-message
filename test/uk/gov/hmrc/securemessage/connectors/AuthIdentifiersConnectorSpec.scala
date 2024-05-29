@@ -17,7 +17,6 @@
 package uk.gov.hmrc.securemessage.connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import org.apache.commons.codec.binary.Base64
 import org.scalatest.concurrent.{ IntegrationPatience, ScalaFutures }
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec

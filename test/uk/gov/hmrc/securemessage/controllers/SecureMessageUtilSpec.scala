@@ -17,7 +17,7 @@
 package uk.gov.hmrc.securemessage.controllers
 
 import org.apache.commons.codec.binary.Base64
-import org.mockito.ArgumentMatchers.{ any, eq => meq, intThat }
+import org.mockito.ArgumentMatchers.{ any, eq => meq }
 import org.mockito.Mockito.{ reset, verifyNoInteractions, when }
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
@@ -30,7 +30,6 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.securemessage.connectors.{ EntityResolverConnector, TaxpayerNameConnector }
 import uk.gov.hmrc.securemessage.helpers.Resources
-import uk.gov.hmrc.securemessage.models.core.Language
 import uk.gov.hmrc.securemessage.models.v4.SecureMessage
 import uk.gov.hmrc.securemessage.repository.{ ExtraAlertRepository, SecureMessageRepository, StatsMetricRepository }
 import uk.gov.hmrc.securemessage.services.MessageBrakeService
