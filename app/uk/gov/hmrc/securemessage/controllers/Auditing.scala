@@ -346,7 +346,8 @@ trait Auditing extends Logging {
       "messageId"   -> m._id.toString,
       "source"      -> m.externalRef.source,
       "templateId"  -> m.alertDetails.templateId,
-      "messageType" -> m.messageType
+      "messageType" -> m.messageType,
+      "issueDate"   -> m.issueDate.toString
     ) ++ m.details.map("formId" -> _.formId).toMap ++ TaxEntity.forAudit(m.recipient)
 
   private def prettyPrintEnrolments(enrolments: Enrolments): String =
