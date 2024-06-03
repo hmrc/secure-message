@@ -419,6 +419,7 @@ class SecureMessageUtil @Inject() (
             "formId"                    -> m.details.map(_.formId).getOrElse(""),
             "messageType"               -> m.messageType,
             "messageContent"            -> buildAuditMessageContent(m).getOrElse(""),
+            "issueDate"                 -> m.issueDate.toString,
             m.recipient.identifier.name -> m.recipient.identifier.value,
             "originalRequest" -> {
               val requestStr = Json.stringify(request.body.asJson.getOrElse(JsArray(Array.empty[JsValue])))
