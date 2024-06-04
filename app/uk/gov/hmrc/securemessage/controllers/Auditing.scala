@@ -337,6 +337,7 @@ trait Auditing extends Logging {
       "source"                    -> l.externalRef.map(_.source).getOrElse(""),
       "templateId"                -> l.alertDetails.templateId,
       "messageType"               -> l.body.map(_.`type`).map(_.toString).getOrElse(""),
+      "issueData"                 -> l.issueDate.toString,
       "formId"                    -> l.body.map(_.form).map(_.toString).getOrElse(""),
       l.recipient.identifier.name -> l.recipient.identifier.value
     )

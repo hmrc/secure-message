@@ -117,7 +117,7 @@ object SecureMessage extends ApiFormats with AlertEmailTemplateMapper {
           messageDetails.flatMap(_.waitTime).fold[Map[String, String]](Map.empty)(v => Map("waitTime" -> v))
 
         val data = email ++ responseTime ++ Map(
-          "IssueDate" -> validFrom.toString,
+          "issueDate" -> validFrom.toString,
           "language"  -> subjectLang.entryName,
           "subject"   -> subject
         ) ++
