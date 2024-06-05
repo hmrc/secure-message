@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.securemessage.controllers
 
-import java.time.{ Instant, ZoneId, ZoneOffset }
+import java.time.{ Instant, LocalDate, ZoneId, ZoneOffset }
 import play.api.Logging
 import uk.gov.hmrc.auth.core.Enrolments
 import uk.gov.hmrc.common.message.emailaddress.EmailAddress
@@ -337,7 +337,7 @@ trait Auditing extends Logging {
       "source"                    -> l.externalRef.map(_.source).getOrElse(""),
       "templateId"                -> l.alertDetails.templateId,
       "messageType"               -> l.body.map(_.`type`).map(_.toString).getOrElse(""),
-      "issueDate"                 -> l.issueDate.toString,
+      "issueDate"                 -> LocalDate.ofInstant(l.issueDate, ZoneId.systemDefault()).toString,
       "formId"                    -> l.body.map(_.form).map(_.toString).getOrElse(""),
       l.recipient.identifier.name -> l.recipient.identifier.value
     )
@@ -348,7 +348,7 @@ trait Auditing extends Logging {
       "source"      -> m.externalRef.source,
       "templateId"  -> m.alertDetails.templateId,
       "messageType" -> m.messageType,
-      "issueDate"   -> m.issueDate.toString
+      "issueDate"   -> LocalDate.ofInstant(m.issueDate, ZoneId.systemDefault()).toString
     ) ++ m.details.map("formId" -> _.formId).toMap ++ TaxEntity.forAudit(m.recipient)
 
   private def prettyPrintEnrolments(enrolments: Enrolments): String =
