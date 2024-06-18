@@ -53,7 +53,11 @@ case class SecureMessage(
   def templateId: String = alertDetails.templateId
 
   def auditData: Map[String, String] = alertDetails.data ++
-    Map("messageId" -> _id.toString, recipient.identifier.name -> recipient.identifier.value)
+    Map(
+      "messageId"               -> _id.toString,
+      recipient.identifier.name -> recipient.identifier.value,
+      "batchId"                 -> details.flatMap(_.batchId).getOrElse("")
+    )
 
   override def issueDate: Instant = ZonedDateTime.of(validFrom.atTime(LocalTime.MIDNIGHT), ZoneOffset.UTC).toInstant
 }
