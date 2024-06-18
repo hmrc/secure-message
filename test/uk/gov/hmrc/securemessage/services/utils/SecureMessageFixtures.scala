@@ -44,9 +44,11 @@ object SecureMessageFixtures {
       None,
       messageType,
       validFrom = validFrom,
-      List(),      alertDetails = AlertDetails(alertTemplateId, recipientName, Map()),
+      List(),
+      alertDetails = AlertDetails(alertTemplateId, recipientName, Map()),
       alertQueue = None,
-      Some(MessageDetails(formId = form, None, None, None, Some("batch-1234"), None, None)),      "testemail@email.com",
+      Some(MessageDetails(formId = form, None, None, None, Some("batch-1234"), None, None)),
+      "testemail@email.com",
       hash = hash
     )
 
