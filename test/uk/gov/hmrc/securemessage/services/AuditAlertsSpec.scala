@@ -60,7 +60,8 @@ class AuditAlertsSpec extends PlaySpec {
             "messageId"         -> message._id.toString,
             "sautr"             -> message.recipient.identifier.toString,
             "formId"            -> "SA300",
-            "batchId"           -> "batch-1234"
+            "batchId"           -> "batch-1234",
+            "paperSent"         -> "false"
           )
         )
       )
@@ -92,7 +93,8 @@ class AuditAlertsSpec extends PlaySpec {
             "messageId"         -> message._id.toString,
             "sautr"             -> message.recipient.identifier.toString,
             "formId"            -> "SA300",
-            "batchId"           -> "batch-1234"
+            "batchId"           -> "batch-1234",
+            "paperSent"         -> "false"
           )
         )
       )
