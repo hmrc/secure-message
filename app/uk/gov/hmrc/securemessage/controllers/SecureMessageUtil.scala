@@ -401,6 +401,7 @@ class SecureMessageUtil @Inject() (
 
     val params = Map(
       "batchId"     -> m.details.flatMap(_.batchId),
+      "paperSent"   -> m.details.flatMap(_.paperSentOp).map(_.toString),
       "replyTo"     -> m.details.flatMap(_.replyTo),
       "threadId"    -> m.details.flatMap(_.threadId),
       "enquiryType" -> m.details.flatMap(_.enquiryType),

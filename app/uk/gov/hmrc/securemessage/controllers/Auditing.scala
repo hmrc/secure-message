@@ -339,6 +339,7 @@ trait Auditing extends Logging {
       "messageType"               -> l.body.map(_.`type`).map(_.toString).getOrElse(""),
       "issueDate"                 -> LocalDate.ofInstant(l.issueDate, ZoneId.systemDefault()).toString,
       "formId"                    -> l.body.map(_.form).map(_.toString).getOrElse(""),
+      "paperSent"                 -> l.body.flatMap(_.paperSent).map(_.toString).getOrElse(""),
       l.recipient.identifier.name -> l.recipient.identifier.value
     )
 
@@ -348,7 +349,8 @@ trait Auditing extends Logging {
       "source"      -> m.externalRef.source,
       "templateId"  -> m.alertDetails.templateId,
       "messageType" -> m.messageType,
-      "issueDate"   -> LocalDate.ofInstant(m.issueDate, ZoneId.systemDefault()).toString
+      "issueDate"   -> LocalDate.ofInstant(m.issueDate, ZoneId.systemDefault()).toString,
+      "paperSent"   -> m.details.flatMap(_.paperSentOp).map(_.toString).getOrElse("")
     ) ++ m.details.map("formId" -> _.formId).toMap ++ TaxEntity.forAudit(m.recipient)
 
   private def prettyPrintEnrolments(enrolments: Enrolments): String =
