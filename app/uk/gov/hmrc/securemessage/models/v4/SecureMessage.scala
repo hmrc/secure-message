@@ -56,7 +56,8 @@ case class SecureMessage(
     Map(
       "messageId"               -> _id.toString,
       recipient.identifier.name -> recipient.identifier.value,
-      "batchId"                 -> details.flatMap(_.batchId).getOrElse("")
+      "batchId"                 -> details.flatMap(_.batchId).getOrElse(""),
+      "paperSent"               -> details.flatMap(_.paperSentOp).map(_.toString).getOrElse("")
     )
 
   override def issueDate: Instant = ZonedDateTime.of(validFrom.atTime(LocalTime.MIDNIGHT), ZoneOffset.UTC).toInstant
