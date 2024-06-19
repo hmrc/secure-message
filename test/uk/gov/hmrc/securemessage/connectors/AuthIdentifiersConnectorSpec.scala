@@ -25,7 +25,7 @@ import play.api.Application
 import play.api.http.{ HeaderNames, Status }
 import play.api.inject._
 import play.api.inject.guice.GuiceApplicationBuilder
-import uk.gov.hmrc.common.message.model.TaxEntity.{ HmceVatdecOrg, HmrcCusOrg, HmrcIossOrg, HmrcPodsOrg, HmrcPodsPpOrg, HmrcPptOrg }
+import uk.gov.hmrc.common.message.model.TaxEntity.{ HmceVatdecOrg, HmrcAdOrg, HmrcCusOrg, HmrcIossOrg, HmrcPodsOrg, HmrcPodsPpOrg, HmrcPptOrg }
 import uk.gov.hmrc.domain._
 import uk.gov.hmrc.http.{ Authorization, HeaderCarrier, UpstreamErrorResponse }
 import uk.gov.hmrc.mongo.metrix.MetricOrchestrator
@@ -654,6 +654,41 @@ class AuthIdentifiersConnectorSpec
 
       authConnector.currentEffectiveTaxIdentifiers.futureValue must be(
         Set(HmrcIossOrg("example HMRC-IOSS-ORG"))
+      )
+    }
+
+    "get all val tax ids for only HMRC-AD-ORG (Alcohol Duty) enrolment " in new TestCase {
+
+      val responseBody = """
+                           |{
+                           |  "allEnrolments": [
+                           |    {
+                           |      "key": "HMRC-AD-ORG",
+                           |      "identifiers": [
+                           |        {
+                           |          "key": "APPAID",
+                           |          "value": "example HMRC-AD-ORG"
+                           |        }
+                           |      ],
+                           |      "state": "Activated",
+                           |      "confidenceLevel": 200
+                           |    }
+                           |  ]
+                           |}
+                         """.stripMargin
+
+      givenThat(
+        post(urlEqualTo("/auth/authorise"))
+          .withHeader(HeaderNames.AUTHORIZATION, equalTo(authToken))
+          .willReturn(
+            aResponse()
+              .withStatus(Status.OK)
+              .withBody(responseBody)
+          )
+      )
+
+      authConnector.currentEffectiveTaxIdentifiers.futureValue must be(
+        Set(HmrcAdOrg("example HMRC-AD-ORG"))
       )
     }
 
