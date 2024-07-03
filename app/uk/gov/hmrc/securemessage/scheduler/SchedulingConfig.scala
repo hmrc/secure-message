@@ -18,6 +18,8 @@ package uk.gov.hmrc.securemessage.scheduler
 
 import play.api.Configuration
 
+import java.util.concurrent.TimeUnit
+
 trait SchedulingConfig {
 
   import scala.concurrent.duration._
@@ -28,7 +30,7 @@ trait SchedulingConfig {
   def durationFromConfig(propertyKey: String): FiniteDuration =
     configuration
       .getOptional[FiniteDuration](s"scheduling.$name.$propertyKey")
-      .getOrElse(throw new IllegalStateException(s"$propertyKey missing"))
+      .getOrElse(FiniteDuration(0, TimeUnit.MILLISECONDS))
 
   lazy val initialDelay = durationFromConfig("initialDelay")
   lazy val interval = durationFromConfig("interval")

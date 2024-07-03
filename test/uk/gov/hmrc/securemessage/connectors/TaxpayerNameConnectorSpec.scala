@@ -19,23 +19,29 @@ package uk.gov.hmrc.securemessage.connectors
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.classic.{ Level, Logger => LogbackLogger }
 import ch.qos.logback.core.read.ListAppender
+import com.typesafe.config.ConfigFactory
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito._
+import org.mockito.Mockito.*
 import org.scalatest.concurrent.{ Eventually, IntegrationPatience, ScalaFutures }
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import org.slf4j.LoggerFactory
-import play.api.Application
+import play.api.{ Application, Configuration }
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json._
+import play.api.libs.json.*
 import uk.gov.hmrc.common.message.model.TaxpayerName
 import uk.gov.hmrc.domain.SaUtr
-import uk.gov.hmrc.http.{ HeaderCarrier, HttpClient, HttpReads, NotFoundException }
-import uk.gov.hmrc.mongo.metrix.MetricOrchestrator
+import uk.gov.hmrc.http.client.{ HttpClientV2, RequestBuilder }
+import uk.gov.hmrc.http.{ HeaderCarrier, HttpReads, NotFoundException }
 import uk.gov.hmrc.securemessage.services.utils.MetricOrchestratorStub
 
+import scala.concurrent.ExecutionContext.Implicits.global
+import uk.gov.hmrc.http.HttpReads.Implicits.*
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+
+import java.net.URL
 import scala.concurrent.{ ExecutionContext, Future }
 
 class TaxpayerNameConnectorSpec
@@ -170,20 +176,19 @@ class TaxpayerNameConnectorSpec
     }
   }
 
-  val mockHttp = mock[HttpClient]
+  val mockHttp = mock[HttpClientV2]
+  val requestBuilder = mock[RequestBuilder]
+  val underlyingConfig = ConfigFactory.load()
+  val configuration = Configuration(underlyingConfig) ++ Configuration.from(
+    Map(
+      "microservice.services.taxpayer-data.host"     -> "host",
+      "microservice.services.taxpayer-data.port"     -> 443,
+      "microservice.services.taxpayer-data.protocol" -> "https"
+    )
+  )
+  val serviceCOnfig = ServicesConfig(configuration)
 
-  override def fakeApplication(): Application =
-    new GuiceApplicationBuilder()
-      .overrides(
-        bind[MetricOrchestrator].toInstance(mockMetricOrchestrator).eagerly(),
-        bind[HttpClient].toInstance(mockHttp)
-      )
-      .configure(
-        "metrics.enabled" -> "false"
-      )
-      .build()
-
-  val connector = app.injector.instanceOf[TaxpayerNameConnector]
+  val connector = new TaxpayerNameConnector(mockHttp, serviceCOnfig)
 
   def connectorWithResponse(json: Option[JsValue], status: Int = 200): TaxpayerNameConnector = {
     val nameResponse = json
@@ -195,13 +200,8 @@ class TaxpayerNameConnectorSpec
         })
       )
 
-    when(
-      mockHttp.GET[NameFromHods](any[String], any[Seq[(String, String)]], any[Seq[(String, String)]])(
-        any[HttpReads[NameFromHods]],
-        any[HeaderCarrier],
-        any[ExecutionContext]
-      )
-    )
+    when(mockHttp.get(any[URL])(any[HeaderCarrier])).thenReturn(requestBuilder)
+    when(requestBuilder.execute[NameFromHods](any[HttpReads[NameFromHods]], any[ExecutionContext]))
       .thenReturn(nameResponse)
 
     connector

@@ -27,6 +27,8 @@ import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.Aggregates.{ `match`, sample }
 import org.mongodb.scala.model.Updates.set
 import org.mongodb.scala.model._
+import org.mongodb.scala.SingleObservableFuture
+import org.mongodb.scala.ObservableFuture
 import play.api.libs.json.Json
 import uk.gov.hmrc.common.message.model.{ EmailAlert, MessagesCount, TimeSource }
 import uk.gov.hmrc.domain.TaxIds.TaxIdWithName

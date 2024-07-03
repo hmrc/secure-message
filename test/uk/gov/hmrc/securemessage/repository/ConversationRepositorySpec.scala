@@ -21,6 +21,8 @@ import cats.data.NonEmptyList
 import java.time.Instant
 import org.mongodb.scala.bson.ObjectId
 import org.mongodb.scala.model.Filters
+import org.mongodb.scala.SingleObservableFuture
+import org.mongodb.scala.ObservableFuture
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.play.PlaySpec
@@ -40,7 +42,7 @@ import scala.concurrent.Future
 class ConversationRepositorySpec
     extends PlaySpec with DefaultPlayMongoRepositorySupport[Conversation] with BeforeAndAfterEach with ScalaFutures {
 
-  override lazy val repository: ConversationRepository = new ConversationRepository(mongoComponent)
+  override val repository: ConversationRepository = new ConversationRepository(mongoComponent)
 
   override def checkTtlIndex: Boolean = false
 

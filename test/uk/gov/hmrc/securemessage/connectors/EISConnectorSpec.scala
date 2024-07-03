@@ -24,32 +24,41 @@ import org.scalatest.EitherValues
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
-import play.api.libs.json.Writes
-import uk.gov.hmrc.http.{ HeaderCarrier, HttpClient, HttpReads, HttpResponse }
+import play.api.Configuration
+import uk.gov.hmrc.http.client.{ HttpClientV2, RequestBuilder }
+import uk.gov.hmrc.http.{ HeaderCarrier, HttpReads, HttpResponse }
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.securemessage.models.{ QueryMessageRequest, QueryMessageWrapper, RequestCommon, RequestDetail }
 
+import java.net.URL
 import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ ExecutionContext, Future }
+import uk.gov.hmrc.http.HttpReads.Implicits.*
 
 class EISConnectorSpec extends PlaySpec with ScalaFutures with MockitoSugar with EitherValues {
 
   "forwardMessage" must {
-    val httpClient = mock[HttpClient]
-    val servicesConfig = mock[ServicesConfig]
+    val httpClient = mock[HttpClientV2]
     val auditConnector = mock[AuditConnector]
-    "return unit on success" in {
-      when(
-        httpClient.PUT(any[String], any[String](), any[Seq[(String, String)]]())(
-          any[Writes[String]](),
-          any[HttpReads[HttpResponse]],
-          any[HeaderCarrier],
-          any[ExecutionContext]()
-        )
+    val requestBuilder = mock[RequestBuilder]
+    val servicesConfig = new ServicesConfig(
+      Configuration(
+        "microservice.services.eis.host"         -> "host",
+        "microservice.services.eis.port"         -> 443,
+        "microservice.services.eis.protocol"     -> "https",
+        "microservice.services.eis.bearer-token" -> "AbCdEf123456",
+        "microservice.services.eis.endpoint"     -> "9102",
+        "microservice.services.eis.environment"  -> "dev"
       )
-        .thenReturn(Future.successful(HttpResponse(NO_CONTENT, "")))
+    )
+    when(httpClient.put(any[URL])(any[HeaderCarrier])).thenReturn(requestBuilder)
+    when(requestBuilder.withBody(any)(any, any, any)).thenReturn(requestBuilder)
+    when(requestBuilder.setHeader(any)).thenReturn(requestBuilder)
+
+    "return unit on success" in {
+      when(requestBuilder.execute[HttpResponse]).thenReturn(Future.successful(HttpResponse(NO_CONTENT, "")))
 
       val eisConnector = new EISConnector(httpClient, servicesConfig, auditConnector)
       val result = eisConnector.forwardMessage(
@@ -58,15 +67,7 @@ class EISConnectorSpec extends PlaySpec with ScalaFutures with MockitoSugar with
       result.futureValue.toOption.get mustBe ()
     }
     "return error for bad request from eis" in {
-      when(
-        httpClient.PUT(any[String], any[String](), any[Seq[(String, String)]]())(
-          any[Writes[String]](),
-          any[HttpReads[HttpResponse]],
-          any[HeaderCarrier],
-          any[ExecutionContext]()
-        )
-      )
-        .thenReturn(Future.successful(HttpResponse(BAD_REQUEST, "")))
+      when(requestBuilder.execute[HttpResponse]).thenReturn(Future.successful(HttpResponse(BAD_REQUEST, "")))
 
       val eisConnector = new EISConnector(httpClient, servicesConfig, auditConnector)
       val result = eisConnector.forwardMessage(

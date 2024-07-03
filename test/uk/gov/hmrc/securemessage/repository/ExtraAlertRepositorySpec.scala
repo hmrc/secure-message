@@ -17,6 +17,8 @@
 package uk.gov.hmrc.securemessage.repository
 
 import org.mongodb.scala.model.Filters
+import org.mongodb.scala.SingleObservableFuture
+import org.mongodb.scala.ObservableFuture
 import org.scalatest.LoneElement
 import org.scalatest.concurrent.{ IntegrationPatience, ScalaFutures }
 import org.scalatestplus.play.PlaySpec
@@ -37,8 +39,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class ExtraAlertRepositorySpec
     extends PlaySpec with GuiceOneAppPerSuite with ScalaFutures with IntegrationPatience with MetricOrchestratorStub
     with LoneElement {
-
-  implicit val hc = HeaderCarrier()
 
   override def fakeApplication(): Application =
     new GuiceApplicationBuilder()

@@ -18,6 +18,8 @@ package uk.gov.hmrc.securemessage.repository
 
 import org.mongodb.scala.model.ReturnDocument.AFTER
 import org.mongodb.scala.model.{ Filters, Updates }
+import org.mongodb.scala.SingleObservableFuture
+import org.mongodb.scala.ObservableFuture
 import org.scalatest.concurrent.{ IntegrationPatience, ScalaFutures }
 import org.scalatest.{ BeforeAndAfterEach, LoneElement }
 import org.scalatestplus.play.PlaySpec
@@ -33,8 +35,6 @@ import uk.gov.hmrc.securemessage.services.utils.MetricOrchestratorStub
 class AllowlistRepositorySpec
     extends PlaySpec with BeforeAndAfterEach with GuiceOneAppPerSuite with ScalaFutures with IntegrationPatience
     with LoneElement with MetricOrchestratorStub {
-
-  implicit val hc = HeaderCarrier()
 
   override def fakeApplication(): Application =
     new GuiceApplicationBuilder()

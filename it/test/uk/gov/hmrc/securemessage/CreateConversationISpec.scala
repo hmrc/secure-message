@@ -23,6 +23,8 @@ import play.api.libs.json.Json
 import play.api.libs.ws.{ WSClient, WSResponse }
 import play.api.test.Helpers._
 import java.io.File
+import play.api.libs.ws.readableAsString
+import play.api.libs.ws.writeableOf_JsValue
 
 @DoNotDiscover
 class CreateConversationISpec extends ISpec {

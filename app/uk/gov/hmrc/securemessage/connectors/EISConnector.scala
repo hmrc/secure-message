@@ -23,8 +23,9 @@ import play.api.http.HeaderNames.{ ACCEPT, CONTENT_TYPE, DATE }
 import javax.inject.{ Inject, Singleton }
 import play.api.http.HeaderNames.AUTHORIZATION
 import play.api.http.MimeTypes
-import play.api.http.Status._
-import uk.gov.hmrc.http.{ HeaderCarrier, HttpClient, HttpResponse }
+import play.api.http.Status.*
+import play.api.libs.ws.writeableOf_JsValue
+import uk.gov.hmrc.http.{ HeaderCarrier, HttpResponse }
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.securemessage.EisForwardingError
@@ -32,12 +33,16 @@ import uk.gov.hmrc.securemessage.connectors.utils.CustomHeaders
 import uk.gov.hmrc.securemessage.controllers.Auditing
 import uk.gov.hmrc.securemessage.models.QueryMessageWrapper
 import uk.gov.hmrc.http.HttpReads.Implicits.readRaw
+import uk.gov.hmrc.http.client.HttpClientV2
+import common.url
+import play.api.libs.json.Json
+
 import scala.concurrent.{ ExecutionContext, Future }
 
 //TODO: add tests for the connector
 @Singleton
 class EISConnector @Inject() (
-  httpClient: HttpClient,
+  httpClient: HttpClientV2,
   servicesConfig: ServicesConfig,
   override val auditConnector: AuditConnector
 )(implicit ec: ExecutionContext)
@@ -51,19 +56,18 @@ class EISConnector @Inject() (
   def forwardMessage(queryMessageWrapper: QueryMessageWrapper): Future[Either[EisForwardingError, Unit]] = {
     implicit val hc: HeaderCarrier = HeaderCarrier()
     httpClient
-      .PUT[QueryMessageWrapper, HttpResponse](
-        s"$eisBaseUrl$eisEndpoint",
-        queryMessageWrapper,
-        Seq(
-          (CONTENT_TYPE, MimeTypes.JSON),
-          (ACCEPT, MimeTypes.JSON),
-          (AUTHORIZATION, s"Bearer $eisBearerToken"),
-          (DATE, DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(ZoneOffset.UTC))),
-          (CustomHeaders.CorrelationId, queryMessageWrapper.queryMessageRequest.requestCommon.acknowledgementReference),
-          (CustomHeaders.ForwardedHost, "Digital"),
-          (CustomHeaders.Environment, eisEnvironment)
-        )
+      .put(url(s"$eisBaseUrl$eisEndpoint"))
+      .withBody(Json.toJson(queryMessageWrapper))
+      .setHeader(
+        (CONTENT_TYPE, MimeTypes.JSON),
+        (ACCEPT, MimeTypes.JSON),
+        (AUTHORIZATION, s"Bearer $eisBearerToken"),
+        (DATE, DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(ZoneOffset.UTC))),
+        (CustomHeaders.CorrelationId, queryMessageWrapper.queryMessageRequest.requestCommon.acknowledgementReference),
+        (CustomHeaders.ForwardedHost, "Digital"),
+        (CustomHeaders.Environment, eisEnvironment)
       )
+      .execute[HttpResponse]
       .flatMap { response =>
         response.status match {
           case NO_CONTENT =>

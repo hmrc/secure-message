@@ -20,6 +20,7 @@ import org.mongodb.scala.bson.ObjectId
 import org.scalatest.DoNotDiscover
 import play.api.http.{ ContentTypes, HeaderNames }
 import play.api.test.Helpers._
+import play.api.libs.ws.readableAsString
 
 import java.io.File
 

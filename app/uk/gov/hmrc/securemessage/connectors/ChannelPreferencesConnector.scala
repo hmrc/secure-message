@@ -21,30 +21,35 @@ import play.api.http.Status.OK
 import play.api.libs.json.{ JsSuccess, Json }
 import uk.gov.hmrc.common.message.emailaddress.EmailAddress
 import uk.gov.hmrc.securemessage.formatter.PlayJsonFormats.emailAddressReads
-import uk.gov.hmrc.http.{ HeaderCarrier, HttpClient, HttpResponse }
-import uk.gov.hmrc.http.HttpReads.Implicits._
+import uk.gov.hmrc.http.{ HeaderCarrier, HttpResponse }
+import uk.gov.hmrc.http.HttpReads.Implicits.*
+import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.securemessage.EmailLookupError
 import uk.gov.hmrc.securemessage.models.core.Identifier
+import common.url
 
 import javax.inject.{ Inject, Singleton }
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success, Try }
 
 @Singleton
-class ChannelPreferencesConnector @Inject() (config: Configuration, httpClient: HttpClient)(implicit
+class ChannelPreferencesConnector @Inject() (config: Configuration, httpClient: HttpClientV2)(implicit
   ec: ExecutionContext
 ) extends ServicesConfig(config) with Logging {
 
   def getEmailForEnrolment(id: Identifier)(implicit hc: HeaderCarrier): Future[Either[EmailLookupError, EmailAddress]] =
     httpClient
-      .GET[HttpResponse](
-        url = s"${baseUrl("channel-preferences")}/channel-preferences/preferences/" +
-          s"enrolments/${id.enrolment.getOrElse("")}/" +
-          s"identifier-keys/${id.name}/" +
-          s"identifier-values/${id.value}/" +
-          s"channels/email"
+      .get(
+        url(
+          s"${baseUrl("channel-preferences")}/channel-preferences/preferences/" +
+            s"enrolments/${id.enrolment.getOrElse("")}/" +
+            s"identifier-keys/${id.name}/" +
+            s"identifier-values/${id.value}/" +
+            s"channels/email"
+        )
       )
+      .execute[HttpResponse]
       .map { resp =>
         resp.status match {
           case OK => parseEmail(resp.body)

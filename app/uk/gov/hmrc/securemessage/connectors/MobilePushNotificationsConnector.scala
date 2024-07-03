@@ -18,17 +18,21 @@ package uk.gov.hmrc.securemessage.connectors
 
 import play.api.Logging
 import play.api.http.Status
-import uk.gov.hmrc.http.{ HeaderCarrier, HttpClient, HttpResponse }
+import uk.gov.hmrc.http.{ HeaderCarrier, HttpResponse }
 import uk.gov.hmrc.securemessage.models.v4.MobileNotification
-import uk.gov.hmrc.http.HttpReads.Implicits._
+import uk.gov.hmrc.http.HttpReads.Implicits.*
+import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.securemessage.controllers.Auditing
+import play.api.libs.json.Json
+import play.api.libs.ws.writeableOf_JsValue
 
+import java.net.URI
 import javax.inject.{ Inject, Named }
 import scala.concurrent.{ ExecutionContext, Future }
 
 class MobilePushNotificationsConnector @Inject() (
-  http: HttpClient,
+  http: HttpClientV2,
   override val auditConnector: AuditConnector,
   @Named("mobile-push-notifications-orchestration-base-url") mobileNotificationsUri: String
 ) extends Logging with Auditing {
@@ -37,10 +41,9 @@ class MobilePushNotificationsConnector @Inject() (
     notification: MobileNotification
   )(implicit headerCarrier: HeaderCarrier, ex: ExecutionContext): Future[Unit] =
     http
-      .POST[MobileNotification, HttpResponse](
-        s"$mobileNotificationsUri/send-push-notification/secure-message",
-        notification
-      )
+      .post(new URI(s"$mobileNotificationsUri/send-push-notification/secure-message").toURL)
+      .withBody(Json.toJson(notification))
+      .execute[HttpResponse]
       .map { r =>
         val error: Option[String] = r.status match {
           case Status.CREATED => None

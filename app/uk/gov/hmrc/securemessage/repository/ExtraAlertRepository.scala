@@ -19,6 +19,7 @@ package uk.gov.hmrc.securemessage.repository
 import org.bson.types.ObjectId
 import java.time.{ Duration, LocalDate }
 import org.mongodb.scala.model.{ Filters, Updates }
+import org.mongodb.scala.SingleObservableFuture
 import play.api.libs.json.{ Json, OFormat }
 import play.api.{ Configuration, Environment }
 import uk.gov.hmrc.common.message.model._

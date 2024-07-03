@@ -17,17 +17,20 @@
 package uk.gov.hmrc.securemessage.connectors
 
 import org.mockito.Mockito.when
-import org.mockito.ArgumentMatchers._
+import org.mockito.ArgumentMatchers.*
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
-import uk.gov.hmrc.http.{ HeaderCarrier, HttpClient, HttpResponse }
+import uk.gov.hmrc.http.{ HeaderCarrier, HttpResponse }
 import play.api.http.Status.{ BAD_REQUEST, OK }
 import uk.gov.hmrc.common.message.emailaddress.EmailAddress
+import uk.gov.hmrc.http.client.{ HttpClientV2, RequestBuilder }
 import uk.gov.hmrc.securemessage.EmailLookupError
 import uk.gov.hmrc.securemessage.models.core.Identifier
+import uk.gov.hmrc.http.HttpReads.Implicits.*
 
+import java.net.URL
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ Await, Future }
@@ -87,17 +90,13 @@ class ChannelPreferencesConnectorSpec extends PlaySpec with ScalaFutures with Mo
   }
 
   trait TestCase {
-    val mockHttpClient: HttpClient = mock[HttpClient]
+    val mockHttpClient: HttpClientV2 = mock[HttpClientV2]
     val mockHttpResponse: HttpResponse = mock[HttpResponse]
-    when(
-      mockHttpClient
-        .GET[HttpResponse](any[String], any[Seq[(String, String)]], any[Seq[(String, String)]])(
-          any[uk.gov.hmrc.http.HttpReads[uk.gov.hmrc.http.HttpResponse]],
-          any[uk.gov.hmrc.http.HeaderCarrier],
-          any[scala.concurrent.ExecutionContext]
-        )
-    )
-      .thenReturn(Future.successful(mockHttpResponse))
+    val requestBuilder = mock[RequestBuilder]
+
+    when(mockHttpClient.get(any[URL])(any[HeaderCarrier])).thenReturn(requestBuilder)
+    when(requestBuilder.execute[HttpResponse]).thenReturn(Future.successful(mockHttpResponse))
+
     when(mockHttpResponse.status).thenReturn(OK)
   }
 

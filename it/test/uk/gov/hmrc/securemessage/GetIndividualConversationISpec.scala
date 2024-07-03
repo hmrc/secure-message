@@ -18,6 +18,7 @@ package uk.gov.hmrc.securemessage
 
 import org.mongodb.scala.bson.ObjectId
 import org.scalatest.DoNotDiscover
+import play.api.libs.ws.readableAsString
 
 @DoNotDiscover
 class GetIndividualConversationISpec extends ISpec {
