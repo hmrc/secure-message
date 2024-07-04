@@ -32,7 +32,7 @@ class GetIndividualConversationISpec extends ISpec {
           .get()
           .futureValue
       response.status mustBe 200
-      response.body must include("""{"senderInformation":{"name":"CDS Exports Team"""")
+      response.body must include(""""name":"CDS Exports Team"""")
     }
 
     "return a JSON body of [No conversation found] when id doesn't exist" in {

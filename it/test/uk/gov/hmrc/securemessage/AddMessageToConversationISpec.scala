@@ -51,10 +51,7 @@ class AddMessageToConversationISpec extends ISpec {
           .post(Json.obj("content" -> "PGRpdj5IZWxsbzwvZGl2Pg=="))
           .futureValue
       actualRresponse.status mustBe NOT_FOUND
-      actualRresponse.body mustBe
-        s""""Error on message with client: None, message id: $nonExistingEncodedId,
-           |error message: Conversation not found for identifiers:
-           |Set(Identifier(EORINumber,GB1234567890,Some(HMRC-CUS-ORG)))"""".stripMargin
+      actualRresponse.body mustBe s""""Error on message with client: None, message id: $nonExistingEncodedId, error message: Conversation not found for identifiers: Set(Identifier(EORINumber,GB1234567890,Some(HMRC-CUS-ORG)))""""
     }
 
     "return NOT_FOUND when the customer is not a participant" in new CustomerTestCase(
@@ -62,10 +59,7 @@ class AddMessageToConversationISpec extends ISpec {
       "D-80542-20201122"
     ) {
       response.status mustBe NOT_FOUND
-      response.body mustBe
-        s""""Error on message with client: None, message id: $nonExistingEncodedId,
-           |error message: Conversation not found for identifiers:
-           |Set(Identifier(EORINumber,GB1234567891,Some(HMRC-CUS-ORG)))"""".stripMargin
+      response.body mustBe s""""Error on message with client: None, message id: $nonExistingEncodedId, error message: Conversation not found for identifiers: Set(Identifier(EORINumber,GB1234567891,Some(HMRC-CUS-ORG)))""""
     }
   }
 
@@ -86,16 +80,13 @@ class AddMessageToConversationISpec extends ISpec {
           .post(new File("./it/test/resources/cdcm/caseworker-message.json"))
           .futureValue
       response.status mustBe NOT_FOUND
-      response.body mustBe "\"Error on message with client: Some(CDCM), message id: D-80542-20201120, " +
-        "error message: Conversation not found for identifiers: Set(Identifier(CDCM,D-80542-20201120,None))\""
+      response.body mustBe "\"Error on message with client: Some(CDCM), message id: D-80542-20201120, error message: Conversation not found for identifiers: Set(Identifier(CDCM,D-80542-20201120,None))\""
     }
     "return BAD_REQUEST when invalid message content is supplied" in new CaseworkerTestCase(
       "./it/test/resources/cdcm/caseworker-message-invalid-html.json"
     ) {
       response.status mustBe BAD_REQUEST
-      response.body mustBe "\"Error on message with client: Some(CDCM), message id: D-80542-20201120, " +
-        "error message: Html contains disallowed tags, attributes or protocols within the tags: matt. " +
-        "For allowed elements see class org.jsoup.safety.Safelist.relaxed()\""
+      response.body mustBe "\"Error on message with client: Some(CDCM), message id: D-80542-20201120, error message: Html contains disallowed tags, attributes or protocols within the tags: matt. For allowed elements see class org.jsoup.safety.Safelist.relaxed()\""
     }
   }
 
