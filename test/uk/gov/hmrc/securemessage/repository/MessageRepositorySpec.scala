@@ -19,6 +19,8 @@ package uk.gov.hmrc.securemessage.repository
 import java.time.{ Instant, LocalDate }
 import org.mongodb.scala.bson.ObjectId
 import org.mongodb.scala.model.Filters
+import org.mongodb.scala.SingleObservableFuture
+import org.mongodb.scala.ObservableFuture
 import org.scalatest.EitherValues
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.play.PlaySpec
@@ -39,7 +41,7 @@ class MessageRepositorySpec
 
   override def checkTtlIndex: Boolean = false
 
-  override lazy val repository = new MessageRepository(mongoComponent)
+  override val repository: MessageRepository = new MessageRepository(mongoComponent)
 
   "A letter" should {
     "be returned for a participating enrolment" in new TestContext() {

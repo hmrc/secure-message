@@ -20,6 +20,8 @@ import com.mongodb.client.model.Indexes.{ ascending, descending }
 import org.bson.types.ObjectId
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model._
+import org.mongodb.scala.SingleObservableFuture
+import org.mongodb.scala.ObservableFuture
 import play.api.libs.json.{ JsObject, Json }
 import uk.gov.hmrc.common.message.model.{ MessagesCount, Regime }
 import uk.gov.hmrc.domain.TaxIds.TaxIdWithName

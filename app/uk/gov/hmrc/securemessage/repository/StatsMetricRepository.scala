@@ -20,6 +20,8 @@ import org.mongodb.scala.model.Sorts.ascending
 import org.mongodb.scala.model._
 import org.mongodb.scala.result.UpdateResult
 import play.api.libs.json._
+import org.mongodb.scala.SingleObservableFuture
+import org.mongodb.scala.ObservableFuture
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.metrix.MetricSource
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository

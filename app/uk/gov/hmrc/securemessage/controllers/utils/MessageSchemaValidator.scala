@@ -258,6 +258,6 @@ trait MessageSchemaValidator {
   }
 
   private def toStringFormat(errors: Seq[ValidationMessage]): String =
-    s"Missing mandatory fields: {${errors.map(e => e.getMessage.replaceAll(": is missing but it is required", "")).mkString(", ")}}"
+    s"Missing mandatory fields: {${errors.map(e => e.getMessage.replaceAll(": required property ", ".").replaceAll(" not found", "")).mkString(", ")}}"
 
 }

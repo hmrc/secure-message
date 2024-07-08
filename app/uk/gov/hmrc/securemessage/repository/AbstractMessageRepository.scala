@@ -21,6 +21,8 @@ import org.bson.codecs.Codec
 import org.mongodb.scala.bson.ObjectId
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.{ Filters, IndexModel }
+import org.mongodb.scala.SingleObservableFuture
+import org.mongodb.scala.ObservableFuture
 import play.api.Logger
 import play.api.libs.json._
 import uk.gov.hmrc.mongo.MongoComponent

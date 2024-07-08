@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.securemessage.services
 
-import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{ times, verify, when }
@@ -44,7 +44,7 @@ class EmailAlertServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures
   "Send email alerts" should {
 
     "run successfully" in new TestCase {
-      implicit private val actorSystem = ActorSystem(Behaviors.empty, "test-actor-system")
+      given ActorSystem = ActorSystem()
 
       when(secureMessageRepository.pullMessageToAlert())
         .thenReturn(Future.successful(Some(messageForSA(utr = "3254567990"))))

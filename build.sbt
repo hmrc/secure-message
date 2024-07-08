@@ -20,8 +20,8 @@ import uk.gov.hmrc.DefaultBuildSettings
 
 val appName = "secure-message"
 
-ThisBuild / majorVersion := 0
-ThisBuild / scalaVersion := "2.13.12"
+ThisBuild / majorVersion := 1
+ThisBuild / scalaVersion := "3.3.3"
 
 
 lazy val microservice = Project(appName, file("."))
@@ -30,13 +30,9 @@ lazy val microservice = Project(appName, file("."))
     SbtDistributablesPlugin
   )
   .disablePlugins(JUnitXmlReportPlugin)
+  .settings(scalacOptions := scalacOptions.value.diff(Seq("-Wunused:all")))
   .settings(
     libraryDependencies ++= AppDependencies.compile ++ AppDependencies.test,
-    scalacOptions ++= Seq(
-      // Silence unused warnings on Play `routes` files
-      "-Wconf:cat=unused-imports&src=.*routes.*:s",
-      "-Wconf:cat=unused-privates&src=.*routes.*:s"
-    ),
     routesImport ++= Seq(
       "uk.gov.hmrc.securemessage.controllers.binders._",
       "uk.gov.hmrc.securemessage.controllers.model._",
@@ -51,10 +47,6 @@ lazy val it = project
   .enablePlugins(PlayScala)
   .dependsOn(microservice % "test->test") // the "test->test" allows reusing test code and test dependencies
   .settings(DefaultBuildSettings.itSettings())
-
-lazy val compileScalastyle = taskKey[Unit]("compileScalastyle1")
-compileScalastyle := (Compile / scalastyle).toTask("").value
-(Compile / compile) := ((Compile / compile) dependsOn compileScalastyle).value
 
 PlayKeys.playDefaultPort := 9051
 

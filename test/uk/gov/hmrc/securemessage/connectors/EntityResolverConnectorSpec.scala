@@ -17,7 +17,7 @@
 package uk.gov.hmrc.securemessage.connectors
 
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito._
+import org.mockito.Mockito.*
 import org.scalatest.EitherValues
 import org.scalatest.concurrent.{ IntegrationPatience, ScalaFutures }
 import org.scalatestplus.mockito.MockitoSugar
@@ -26,11 +26,13 @@ import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{ JsObject, JsString }
 import uk.gov.hmrc.domain.{ HmrcMtdVat, SaUtr }
-import uk.gov.hmrc.http.{ HeaderCarrier, HttpClient, HttpReads, HttpResponse }
+import uk.gov.hmrc.http.client.{ HttpClientV2, RequestBuilder }
+import uk.gov.hmrc.http.{ HeaderCarrier, HttpReads, HttpResponse }
 import uk.gov.hmrc.mongo.metrix.MetricOrchestrator
 import uk.gov.hmrc.securemessage.models.TaxId
 import uk.gov.hmrc.securemessage.services.utils.{ GenerateRandom, MessageFixtures, MetricOrchestratorStub }
 
+import java.net.URL
 import scala.concurrent.{ ExecutionContext, Future }
 
 class EntityResolverConnectorSpec
@@ -40,26 +42,22 @@ class EntityResolverConnectorSpec
   implicit val hc: HeaderCarrier = HeaderCarrier()
   lazy implicit val ec: ExecutionContext = mock[ExecutionContext]
 
-  lazy val mockHttp: HttpClient = mock[HttpClient]
+  lazy val mockHttp: HttpClientV2 = mock[HttpClientV2]
+  lazy val requestBuilder = mock[RequestBuilder]
 
   private val injector = new GuiceApplicationBuilder()
     .overrides(bind[MetricOrchestrator].to(mockMetricOrchestrator))
-    .overrides(bind[HttpClient].to(mockHttp))
+    .overrides(bind[HttpClientV2].to(mockHttp))
     .configure("metrics.enabled" -> false)
     .injector()
 
-  lazy val connector: EntityResolverConnector =
-    injector.instanceOf[EntityResolverConnector]
+  lazy val connector: EntityResolverConnector = injector.instanceOf[EntityResolverConnector]
+
+  when(mockHttp.get(any[URL])(any[HeaderCarrier])).thenReturn(requestBuilder)
 
   "getTaxId in connector" must {
     "return a valid taxId information for the given saUtr" in {
-      when(
-        mockHttp.GET(any[String], any[Seq[(String, String)]], any[Seq[(String, String)]])(
-          any[HttpReads[HttpResponse]],
-          any[HeaderCarrier],
-          any[ExecutionContext]
-        )
-      )
+      when(requestBuilder.execute[HttpResponse](any[HttpReads[HttpResponse]], any[ExecutionContext]))
         .thenReturn(
           Future.successful(
             HttpResponse(
@@ -85,13 +83,7 @@ class EntityResolverConnectorSpec
 
   "verifiedEmailAddress in connector" must {
     "return a valid email when a preference is found for sautr" in {
-      when(
-        mockHttp.GET(any[String], any[Seq[(String, String)]], any[Seq[(String, String)]])(
-          any[HttpReads[HttpResponse]],
-          any[HeaderCarrier],
-          any[ExecutionContext]
-        )
-      )
+      when(requestBuilder.execute[HttpResponse](any[HttpReads[HttpResponse]], any[ExecutionContext]))
         .thenReturn(
           Future.successful(HttpResponse(200, "{\"email\" :  \"an@email.com\"}", Map.empty[String, Seq[String]]))
         )
@@ -103,13 +95,7 @@ class EntityResolverConnectorSpec
 
     "return a valid email when a preference is found for nino" in {
       val nino = GenerateRandom.nino()
-      when(
-        mockHttp.GET(any[String], any[Seq[(String, String)]], any[Seq[(String, String)]])(
-          any[HttpReads[HttpResponse]],
-          any[HeaderCarrier],
-          any[ExecutionContext]
-        )
-      )
+      when(requestBuilder.execute[HttpResponse](any[HttpReads[HttpResponse]], any[ExecutionContext]))
         .thenReturn(
           Future.successful(
             HttpResponse(200, JsObject(Seq("email" -> JsString("an@email.com"))), Map.empty[String, Seq[String]])
@@ -121,13 +107,7 @@ class EntityResolverConnectorSpec
     }
 
     "return VerifiedEmailNotFoundException when a preference is not found" in {
-      when(
-        mockHttp.GET(any[String], any[Seq[(String, String)]], any[Seq[(String, String)]])(
-          any[HttpReads[HttpResponse]],
-          any[HeaderCarrier],
-          any[ExecutionContext]
-        )
-      )
+      when(requestBuilder.execute[HttpResponse](any[HttpReads[HttpResponse]], any[ExecutionContext]))
         .thenReturn(
           Future.successful(
             HttpResponse(404, JsObject(Seq("reason" -> JsString("not found"))), Map.empty[String, Seq[String]])
@@ -140,13 +120,7 @@ class EntityResolverConnectorSpec
     }
 
     "return a OtherException when status is 5xx" in {
-      when(
-        mockHttp.GET(any[String], any[Seq[(String, String)]], any[Seq[(String, String)]])(
-          any[HttpReads[HttpResponse]],
-          any[HeaderCarrier],
-          any[ExecutionContext]
-        )
-      )
+      when(requestBuilder.execute[HttpResponse](any[HttpReads[HttpResponse]], any[ExecutionContext]))
         .thenReturn(Future.successful(HttpResponse(504, "", Map.empty[String, Seq[String]])))
 
       val e = connector.verifiedEmailAddress(MessageFixtures.createTaxEntity(SaUtr("someUtr"))).failed.futureValue
@@ -155,13 +129,7 @@ class EntityResolverConnectorSpec
     }
 
     "return a OtherException when status is 4xx and is not 404" in {
-      when(
-        mockHttp.GET(any[String], any[Seq[(String, String)]], any[Seq[(String, String)]])(
-          any[HttpReads[HttpResponse]],
-          any[HeaderCarrier],
-          any[ExecutionContext]
-        )
-      )
+      when(requestBuilder.execute[HttpResponse](any[HttpReads[HttpResponse]], any[ExecutionContext]))
         .thenReturn(Future.successful(HttpResponse(403, "", Map.empty[String, Seq[String]])))
 
       val e = connector.verifiedEmailAddress(MessageFixtures.createTaxEntity(SaUtr("someUtr"))).failed.futureValue

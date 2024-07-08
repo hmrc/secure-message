@@ -20,6 +20,7 @@ import java.time.Instant
 import org.mongodb.scala.MongoWriteException
 import org.mongodb.scala.bson.ObjectId
 import org.mongodb.scala.model._
+import org.mongodb.scala.SingleObservableFuture
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.securemessage._

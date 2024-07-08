@@ -19,40 +19,45 @@ package uk.gov.hmrc.securemessage.connectors
 import javax.inject.{ Inject, Singleton }
 import play.api.http.Status.ACCEPTED
 import uk.gov.hmrc.http.HttpReads.Implicits.readRaw
-import uk.gov.hmrc.http.{ HeaderCarrier, HttpClient, HttpResponse }
+import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http.{ HeaderCarrier, HttpResponse }
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.securemessage.EmailSendingError
 import uk.gov.hmrc.securemessage.controllers.Auditing
 import uk.gov.hmrc.securemessage.models.EmailRequest
 import uk.gov.hmrc.securemessage.models.EmailRequest.emailRequestWrites
+import play.api.libs.json.Json
+import play.api.libs.ws.writeableOf_JsValue
 
+import java.net.URI
 import scala.concurrent.{ ExecutionContext, Future }
 
 @Singleton
 class EmailConnector @Inject() (
-  httpClient: HttpClient,
+  httpClient: HttpClientV2,
   servicesConfig: ServicesConfig,
   override val auditConnector: AuditConnector
 )(implicit ec: ExecutionContext)
     extends Auditing {
 
-  private val emailBaseUrl = servicesConfig.baseUrl("email")
+  private val emailUrl = new URI(s"${servicesConfig.baseUrl("email")}/hmrc/email").toURL
 
-  def send(emailRequest: EmailRequest)(implicit hc: HeaderCarrier): Future[Either[EmailSendingError, Unit]] = {
-    val eventualResponse: Future[HttpResponse] =
-      httpClient.POST[EmailRequest, HttpResponse](s"$emailBaseUrl/hmrc/email", emailRequest)
-    eventualResponse.map { response =>
-      response.status match {
-        case ACCEPTED =>
-          val _ = auditEmailSent("NotificationEmailSent", emailRequest, ACCEPTED)
-          Right(())
-        case status =>
-          val _ = auditEmailSent("NotificationEmailSentFailed", emailRequest, status)
-          val errMsg = s"Email request failed: got response status $status from email service"
-          Left(EmailSendingError(errMsg))
+  def send(emailRequest: EmailRequest)(implicit hc: HeaderCarrier): Future[Either[EmailSendingError, Unit]] =
+    httpClient
+      .post(emailUrl)
+      .withBody(Json.toJson(emailRequest))
+      .execute[HttpResponse]
+      .map { response =>
+        response.status match {
+          case ACCEPTED =>
+            val _ = auditEmailSent("NotificationEmailSent", emailRequest, ACCEPTED)
+            Right(())
+          case status =>
+            val _ = auditEmailSent("NotificationEmailSentFailed", emailRequest, status)
+            val errMsg = s"Email request failed: got response status $status from email service"
+            Left(EmailSendingError(errMsg))
+        }
       }
-    }
-  }
 
 }

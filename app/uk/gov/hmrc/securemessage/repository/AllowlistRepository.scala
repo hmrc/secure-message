@@ -19,6 +19,8 @@ package uk.gov.hmrc.securemessage.repository
 import org.mongodb.scala.model.ReturnDocument.AFTER
 import org.mongodb.scala.model.Updates.set
 import org.mongodb.scala.model.{ Filters, FindOneAndUpdateOptions, IndexModel }
+import org.mongodb.scala.SingleObservableFuture
+import org.mongodb.scala.ObservableFuture
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import uk.gov.hmrc.securemessage.models.v4.Allowlist

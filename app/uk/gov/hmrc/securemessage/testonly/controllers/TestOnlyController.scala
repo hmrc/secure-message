@@ -29,6 +29,7 @@ import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.securemessage.models.core.Letter.objectIdFormat
 import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository }
 import org.mongodb.scala.model.Filters.equal
+import org.mongodb.scala.SingleObservableFuture
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext

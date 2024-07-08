@@ -33,6 +33,7 @@ import play.api.test.Helpers.{ await, defaultAwaitTimeout }
 import uk.gov.hmrc.securemessage.controllers.model.MessageType
 import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository }
+import org.mongodb.scala.{ ObservableFuture, SingleObservableFuture }
 
 import java.io.File
 import java.time.Instant

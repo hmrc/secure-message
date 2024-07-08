@@ -23,6 +23,8 @@ import play.api.libs.json.Json
 import play.api.libs.ws.WSResponse
 import play.api.test.Helpers._
 import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata
+import play.api.libs.ws.readableAsString
+import play.api.libs.ws.writeableOf_JsValue
 
 import java.io.File
 

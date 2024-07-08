@@ -83,7 +83,7 @@ object BrakeBatchMessage {
     )
   }
 
-  private val contentEncoded = { content: Option[Content] =>
+  private val contentEncoded = { (content: Option[Content]) =>
     content.map(_.body).getOrElse("")
   }
 }

@@ -23,6 +23,8 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.test.Helpers.{ await, defaultAwaitTimeout }
+import org.mongodb.scala.SingleObservableFuture
+import org.mongodb.scala.ObservableFuture
 import uk.gov.hmrc.common.message.model.{ MessagesCount, TimeSource }
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.{ Deferred, Succeeded, ToDo }
@@ -38,7 +40,8 @@ class SecureMessageRepositorySpec
 
   override def checkTtlIndex: Boolean = false
 
-  override lazy val repository = new SecureMessageRepository(mongoComponent, mock[TimeSource], 30, 30, 30)
+  override val repository: SecureMessageRepository =
+    new SecureMessageRepository(mongoComponent, mock[TimeSource], 30, 30, 30)
 
   override def afterEach(): Unit =
     await(repository.collection.deleteMany(Filters.empty()).toFuture().map(_ => ()))

@@ -40,7 +40,7 @@ class MessageSchemaValidatorSpec extends PlaySpec with ScalaFutures with Message
     "return error for the missing fields " in {
       val messageJson = Resources.readJson("model/core/v4/missing_mandatory_fields.json").as[JsObject]
       isValidJson(messageJson) mustBe Right(
-        "Missing mandatory fields: {$.externalRef.id, $.messageType, $.content[0].lang, $.content[0].subject}"
+        "Missing mandatory fields: {$.externalRef.'id', $.content[0].'lang', $.content[0].'subject', $.'messageType'}"
       )
     }
   }

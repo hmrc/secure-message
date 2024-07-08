@@ -19,6 +19,7 @@ package uk.gov.hmrc.securemessage
 import org.scalatest.concurrent.ScalaFutures
 import play.api.libs.json.{ Json, Reads }
 import play.api.libs.ws.WSClient
+import play.api.libs.ws.writeableOf_String
 
 trait AuthHelper extends ScalaFutures {
 

@@ -25,28 +25,36 @@ import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
-import play.api.libs.json.Writes
-import uk.gov.hmrc.http.{ HeaderCarrier, HttpClient, HttpReads, HttpResponse }
+import play.api.Configuration
+import uk.gov.hmrc.http.client.{ HttpClientV2, RequestBuilder }
+import uk.gov.hmrc.http.{ HeaderCarrier, HttpReads, HttpResponse }
 import uk.gov.hmrc.securemessage.models.EmailRequest
 
+import java.net.URL
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ ExecutionContext, Future }
 
 class EmailConnectorSpec extends PlaySpec with ScalaFutures with MockitoSugar with EitherValues {
 
   "send" must {
-    val httpClient = mock[HttpClient]
-    val servicesConfig = mock[ServicesConfig]
+    val httpClient = mock[HttpClientV2]
     val auditConnector = mock[AuditConnector]
+    lazy val requestBuilder = mock[RequestBuilder]
+
+    val servicesConfig = new ServicesConfig(
+      Configuration(
+        "microservice.services.email.host"     -> "host",
+        "microservice.services.email.port"     -> 443,
+        "microservice.services.email.protocol" -> "https"
+      )
+    )
+
+    when(httpClient.post(any[URL])(any[HeaderCarrier])).thenReturn(requestBuilder)
+    when(requestBuilder.withBody(any)(any, any, any)).thenReturn(requestBuilder)
+
     "return unit when Accepted" in {
-      when(
-        httpClient.POST(any[String], any[EmailRequest], any[Seq[(String, String)]])(
-          any[Writes[EmailRequest]],
-          any[HttpReads[HttpResponse]],
-          any[HeaderCarrier],
-          any[ExecutionContext]
-        )
-      ).thenReturn(Future.successful(HttpResponse(202, "")))
+      when(requestBuilder.execute[HttpResponse](any[HttpReads[HttpResponse]], any[ExecutionContext]))
+        .thenReturn(Future.successful(HttpResponse(202, "")))
 
       val emailConnector = new EmailConnector(httpClient, servicesConfig, auditConnector)
 
@@ -57,14 +65,8 @@ class EmailConnectorSpec extends PlaySpec with ScalaFutures with MockitoSugar wi
     }
 
     "return error when not Accepted" in {
-      when(
-        httpClient.POST(any[String], any[EmailRequest], any[Seq[(String, String)]])(
-          any[Writes[EmailRequest]],
-          any[HttpReads[HttpResponse]],
-          any[HeaderCarrier],
-          any[ExecutionContext]
-        )
-      ).thenReturn(Future.successful(HttpResponse(404, "")))
+      when(requestBuilder.execute[HttpResponse](any[HttpReads[HttpResponse]], any[ExecutionContext]))
+        .thenReturn(Future.successful(HttpResponse(404, "")))
 
       val emailConnector = new EmailConnector(httpClient, servicesConfig, auditConnector)
 
