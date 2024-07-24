@@ -338,7 +338,7 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
     "return a message with ApiLetter" in {
       when(mockMessageRepository.getLetter(any[ObjectId], any[Set[Identifier]])(any[ExecutionContext]))
         .thenReturn(Future(Right(letter)))
-      when(mockMessageRepository.addReadTime(any[ObjectId])(any[ExecutionContext]))
+      when(mockMessageRepository.addReadTime(any[ObjectId], any[Instant])(any[ExecutionContext]))
         .thenReturn(Future(Right(())))
       val result = await(
         service
@@ -351,7 +351,7 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
     "return a Left(LetterNotFound)" in {
       when(mockMessageRepository.getLetter(any[ObjectId], any[Set[Identifier]])(any[ExecutionContext]))
         .thenReturn(Future(Left(MessageNotFound("Letter not found"))))
-      when(mockMessageRepository.addReadTime(any[ObjectId])(any[ExecutionContext]))
+      when(mockMessageRepository.addReadTime(any[ObjectId], any[Instant])(any[ExecutionContext]))
         .thenReturn(Future(Right(())))
       val result = await(
         service
@@ -364,7 +364,7 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
     "return a left if update readTime fails" in {
       when(mockMessageRepository.getLetter(any[ObjectId], any[Set[Identifier]])(any[ExecutionContext]))
         .thenReturn(Future(Right(MessageUtil.getMessage("subject", "content"))))
-      when(mockMessageRepository.addReadTime(any[ObjectId])(any[ExecutionContext]))
+      when(mockMessageRepository.addReadTime(any[ObjectId], any[Instant])(any[ExecutionContext]))
         .thenReturn(Future(Left(StoreError("cant store readTime", None))))
       val result = await(
         service
@@ -379,7 +379,7 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
     "return a v4 message with ApiLetter for given id & enrolments" in {
       when(mockSecureMessageUtil.getMessage(any[ObjectId], any[Set[Identifier]])(any[ExecutionContext]))
         .thenReturn(Future(Right(v4Message)))
-      when(mockSecureMessageUtil.addReadTime(any[ObjectId])(any[ExecutionContext]))
+      when(mockSecureMessageUtil.addReadTime(any[ObjectId], any[Instant])(any[ExecutionContext]))
         .thenReturn(Future(Right(())))
       val result = await(
         service
@@ -391,7 +391,7 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
     "return a v4 message with ApiLetter for given id" in {
       when(mockSecureMessageUtil.getMessage(any[ObjectId], any[Set[Identifier]])(any[ExecutionContext]))
         .thenReturn(Future(Right(v4Message)))
-      when(mockSecureMessageUtil.addReadTime(any[ObjectId])(any[ExecutionContext]))
+      when(mockSecureMessageUtil.addReadTime(any[ObjectId], any[Instant])(any[ExecutionContext]))
         .thenReturn(Future(Right(())))
       val result = await(
         service
@@ -403,7 +403,7 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
     "return a Left(MessageNotFound)" in {
       when(mockSecureMessageUtil.getMessage(any[ObjectId], any[Set[Identifier]])(any[ExecutionContext]))
         .thenReturn(Future(Left(MessageNotFound("Message not found"))))
-      when(mockSecureMessageUtil.addReadTime(any[ObjectId])(any[ExecutionContext]))
+      when(mockSecureMessageUtil.addReadTime(any[ObjectId], any[Instant])(any[ExecutionContext]))
         .thenReturn(Future(Right(())))
       val result = await(
         service
@@ -416,7 +416,7 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
     "return a left if update readTime fails" in {
       when(mockSecureMessageUtil.getMessage(any[ObjectId], any[Set[Identifier]])(any[ExecutionContext]))
         .thenReturn(Future(Right(v4Message)))
-      when(mockSecureMessageUtil.addReadTime(any[ObjectId])(any[ExecutionContext]))
+      when(mockSecureMessageUtil.addReadTime(any[ObjectId], any[Instant])(any[ExecutionContext]))
         .thenReturn(Future(Left(StoreError("cant store readTime", None))))
       val result = await(
         service

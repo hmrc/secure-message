@@ -29,7 +29,7 @@ import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.securemessage.models.core.{ Count, FilterTag, Identifier, Letter, MessageFilter }
 import uk.gov.hmrc.securemessage.{ SecureMessageError, StoreError }
-
+import java.time.Instant
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import scala.concurrent.duration.Duration
@@ -120,11 +120,13 @@ class MessageRepository @Inject() (mongo: MongoComponent)(implicit ec: Execution
     ec: ExecutionContext
   ): Future[Either[SecureMessageError, Letter]] = getMessage(id, identifiers)
 
-  def addReadTime(id: ObjectId)(implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] =
+  def addReadTime(id: ObjectId, readTime: Instant)(implicit
+    ec: ExecutionContext
+  ): Future[Either[SecureMessageError, Unit]] =
     collection
       .updateOne(
         filter = Filters.and(Filters.equal("_id", id), Filters.exists("readTime", exists = false)),
-        update = Updates.set("readTime", Codecs.toBson(Letter.dateTimeNow))
+        update = Updates.set("readTime", Codecs.toBson(Json.toJson(readTime)))
       )
       .toFuture()
       .map(_ => Right(()))

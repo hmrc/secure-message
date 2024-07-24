@@ -163,7 +163,7 @@ class SecureMessageServiceImpl @Inject() (
     val identifiers = enrolments.map(_.asIdentifier)
     for {
       letter <- EitherT(messageRepository.getLetter(id, identifiers))
-      _      <- EitherT(messageRepository.addReadTime(id))
+      _      <- EitherT(messageRepository.addReadTime(id, Instant.now()))
     } yield ApiLetter.fromCore(letter)
   }.value
 
@@ -174,7 +174,7 @@ class SecureMessageServiceImpl @Inject() (
     val identifiers = enrolments.map(_.asIdentifier)
     for {
       secureMessage <- EitherT(secureMessageUtil.getMessage(id, identifiers))
-      _             <- EitherT(secureMessageUtil.addReadTime(id))
+      _             <- EitherT(secureMessageUtil.addReadTime(id, Instant.now()))
     } yield {
       val apiLetter = ApiLetter.fromSecureMessage(secureMessage)
       apiLetter.copy(content = decodeBase64String(apiLetter.content))
@@ -384,13 +384,15 @@ class SecureMessageServiceImpl @Inject() (
         None
     }
 
-  def setReadTime(letter: Letter)(implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] =
-    messageRepository.addReadTime(letter._id)
-
-  def setReadTime(secureMessage: SecureMessage)(implicit
+  def setReadTime(letter: Letter, readTime: Instant)(implicit
     ec: ExecutionContext
   ): Future[Either[SecureMessageError, Unit]] =
-    secureMessageUtil.addReadTime(secureMessage._id)
+    messageRepository.addReadTime(letter._id, readTime)
+
+  def setReadTime(secureMessage: SecureMessage, readTime: Instant)(implicit
+    ec: ExecutionContext
+  ): Future[Either[SecureMessageError, Unit]] =
+    secureMessageUtil.addReadTime(secureMessage._id, readTime)
 
   private def formatMessageContent(message: SecureMessage)(implicit messages: Messages) =
     if (messages.lang.language == "cy") {

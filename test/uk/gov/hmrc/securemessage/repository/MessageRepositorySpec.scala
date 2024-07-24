@@ -91,16 +91,16 @@ class MessageRepositorySpec
 
   "Update letter with new read time" should {
     "update readTime only if its empty" in new TestContext(coreLetters = lettersWithoutReadTime) {
-      await(repository.addReadTime(objectID))
+      await(repository.addReadTime(objectID, readTime))
       val result: Either[SecureMessageError, Letter] =
         await(
           repository
             .getLetter(objectID, Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))))
         )
-      result.toOption.get.readTime must not be empty
+      result.toOption.get.readTime mustBe Some(readTime)
     }
     "not update readTime if it already exists" in new TestContext() {
-      await(repository.addReadTime(objectID))
+      await(repository.addReadTime(objectID, readTime))
       val result: Either[SecureMessageError, Letter] =
         await(
           repository
@@ -220,6 +220,7 @@ class MessageRepositorySpec
       externalRef = Some(ExternalReference("1234567891234567894", "mdtp")),
       validFrom = LocalDate.now().plusDays(1)
     )
+    val readTime: Instant = Instant.now()
     repository.collection.deleteMany(Filters.empty()).toFuture().futureValue
     repository.collection.insertOne(letter).toFuture().futureValue
   }

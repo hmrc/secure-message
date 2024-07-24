@@ -40,7 +40,7 @@ import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag, Lan
 import uk.gov.hmrc.securemessage.models.v4.SecureMessage
 import uk.gov.hmrc.securemessage.services.{ ImplicitClassesExtensions, SecureMessageServiceImpl }
 import uk.gov.hmrc.securemessage.utils.DateTimeUtils
-
+import java.time.Instant
 import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
@@ -299,15 +299,16 @@ class SecureMessageController @Inject() (
   }
 
   def setReadTime(id: ObjectId): Action[AnyContent] = Action.async { implicit request =>
+    val messageReadNow: Instant = Instant.now()
     messageBroker.default
-      .findAndSetReadTime(id)
+      .findAndSetReadTime(id, messageReadNow)
       .flatMap {
         case Left(e) =>
           logger.error(s"Unable to set secure message read time ${e.message}")
           Future.successful(InternalServerError)
         case Right(Some(message)) =>
           logger.debug(s"Secure Message is Read $id")
-          auditMessageReadStatus(message)
+          auditMessageReadStatus(message, messageReadNow)
           Future.successful(Ok)
         case Right(None) => Future.successful(InternalServerError(s"failed to set read time for : $id"))
       }

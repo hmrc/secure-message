@@ -28,7 +28,7 @@ import uk.gov.hmrc.securemessage.models.core._
 import uk.gov.hmrc.securemessage.models.v4.SecureMessage
 import uk.gov.hmrc.securemessage.services.SecureMessageServiceImpl
 import uk.gov.hmrc.securemessage.{ MessageNotFound, SecureMessageError, UserNotAuthorised }
-
+import java.time.Instant
 import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.xml.XML
@@ -188,7 +188,8 @@ class NonCDSMessageRetriever @Inject() (
   }
 
   def findAndSetReadTime(
-    id: ObjectId
+    id: ObjectId,
+    readTime: Instant
   )(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Either[SecureMessageError, Option[Message]]] =
     for {
       taxIds <- authIdentifiersConnector.currentEffectiveTaxIdentifiers
@@ -196,11 +197,11 @@ class NonCDSMessageRetriever @Inject() (
       strideUser <- authIdentifiersConnector.isStrideUser
       letter     <- secureMessageService.getLetter(id)
       v3orv4     <- if (letter.isDefined) Future.successful(letter) else secureMessageService.getSecureMessage(id)
-      _ <- v3orv4 match {
+      r <- v3orv4 match {
              case Some(l: Letter) if identifiers.contains(l.recipient.identifier) =>
-               secureMessageService.setReadTime(l)
+               secureMessageService.setReadTime(l, readTime)
              case Some(m: SecureMessage) if taxIds.contains(m.recipient.identifier) || strideUser =>
-               secureMessageService.setReadTime(m)
+               secureMessageService.setReadTime(m, readTime)
              case Some(_) =>
                Future.successful(Left(UserNotAuthorised("Unauthorised for the requested identifiers")))
              case None =>

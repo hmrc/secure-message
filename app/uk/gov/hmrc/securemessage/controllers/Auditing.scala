@@ -34,7 +34,7 @@ import uk.gov.hmrc.securemessage.controllers.utils.IdCoder
 import uk.gov.hmrc.securemessage.models.core.{ Conversation, Letter, Message, Reference }
 import uk.gov.hmrc.securemessage.models.v4.{ MobileNotification, SecureMessage }
 import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryMessageRequest }
-
+import java.time.Instant
 import java.time.format.DateTimeFormatter
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -311,7 +311,10 @@ trait Auditing extends Logging {
         logger.debug(s"AuditEvent is processed for mobile push notification with the result $r")
       }
 
-  def auditMessageReadStatus(message: Message)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] = {
+  def auditMessageReadStatus(message: Message, readTime: Instant)(implicit
+    hc: HeaderCarrier,
+    ec: ExecutionContext
+  ): Future[Unit] = {
     val detailsMap: Map[String, String] = message match {
       case s: SecureMessage => details(s)
       case l: Letter        => details(l)
@@ -323,7 +326,8 @@ trait Auditing extends Logging {
           auditSource = "secure-message",
           auditType = EventTypes.Succeeded,
           tags = Map(letterReadSuccessTxnName),
-          detail = detailsMap
+          detail = detailsMap ++
+            Map("readTime" -> isoDtf.format(readTime))
         )
       )
       .map { r =>

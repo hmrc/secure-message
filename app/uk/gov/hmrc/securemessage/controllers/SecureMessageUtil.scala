@@ -585,8 +585,10 @@ class SecureMessageUtil @Inject() (
   ): Future[Either[SecureMessageError, SecureMessage]] =
     secureMessageRepository.getSecureMessage(id, identifiers)
 
-  def addReadTime(id: ObjectId)(implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] =
-    secureMessageRepository.addReadTime(id, Instant.now)
+  def addReadTime(id: ObjectId, readTime: Instant)(implicit
+    ec: ExecutionContext
+  ): Future[Either[SecureMessageError, Unit]] =
+    secureMessageRepository.addReadTime(id, readTime)
 }
 
 case class MessageValidationException(message: String) extends RuntimeException(message)
