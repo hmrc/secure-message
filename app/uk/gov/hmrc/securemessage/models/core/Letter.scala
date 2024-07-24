@@ -151,6 +151,8 @@ object Letter {
 
   implicit val letterFormat: OFormat[Letter] = OFormat(letterReads, letterWrites)
 
+  def dateTimeNow(readTime: Instant): JsValue = Json.toJson(readTime)
+
   def localDateNow: JsValue = Json.toJson(LocalDate.now())
 }
 

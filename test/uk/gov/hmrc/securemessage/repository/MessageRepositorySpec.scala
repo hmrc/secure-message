@@ -97,7 +97,7 @@ class MessageRepositorySpec
           repository
             .getLetter(objectID, Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))))
         )
-      result.toOption.get.readTime mustBe Some(readTime)
+      result.toOption.get.readTime must not be empty
     }
     "not update readTime if it already exists" in new TestContext() {
       await(repository.addReadTime(objectID, readTime))

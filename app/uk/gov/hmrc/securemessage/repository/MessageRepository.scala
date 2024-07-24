@@ -126,7 +126,7 @@ class MessageRepository @Inject() (mongo: MongoComponent)(implicit ec: Execution
     collection
       .updateOne(
         filter = Filters.and(Filters.equal("_id", id), Filters.exists("readTime", exists = false)),
-        update = Updates.set("readTime", Codecs.toBson(Json.toJson(readTime)))
+        update = Updates.set("readTime", Codecs.toBson(Letter.dateTimeNow(readTime)))
       )
       .toFuture()
       .map(_ => Right(()))
