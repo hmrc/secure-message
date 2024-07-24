@@ -120,14 +120,14 @@ class MessageRepository @Inject() (mongo: MongoComponent)(implicit ec: Execution
     ec: ExecutionContext
   ): Future[Either[SecureMessageError, Letter]] = getMessage(id, identifiers)
 
-  def addReadTime(id: ObjectId)(implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] =
+  def addReadTime(id: ObjectId)(implicit ec: ExecutionContext): Future[Either[SecureMessageError, Letter]] =
     collection
-      .updateOne(
+      .findOneAndUpdate(
         filter = Filters.and(Filters.equal("_id", id), Filters.exists("readTime", exists = false)),
         update = Updates.set("readTime", Codecs.toBson(Letter.dateTimeNow))
       )
       .toFuture()
-      .map(_ => Right(()))
+      .map(m => Right(m))
       .recoverWith { case error =>
         Future.successful(Left(StoreError(error.getMessage, None)))
       }

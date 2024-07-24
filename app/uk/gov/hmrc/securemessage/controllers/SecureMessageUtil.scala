@@ -585,7 +585,7 @@ class SecureMessageUtil @Inject() (
   ): Future[Either[SecureMessageError, SecureMessage]] =
     secureMessageRepository.getSecureMessage(id, identifiers)
 
-  def addReadTime(id: ObjectId)(implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] =
+  def addReadTime(id: ObjectId)(implicit ec: ExecutionContext): Future[Either[SecureMessageError, SecureMessage]] =
     secureMessageRepository.addReadTime(id, Instant.now)
 }
 
