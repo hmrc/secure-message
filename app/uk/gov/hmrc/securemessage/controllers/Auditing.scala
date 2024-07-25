@@ -323,7 +323,8 @@ trait Auditing extends Logging {
           auditSource = "secure-message",
           auditType = EventTypes.Succeeded,
           tags = Map(letterReadSuccessTxnName),
-          detail = detailsMap
+          detail =
+            detailsMap ++ Map("readTime" -> isoDtf.format(message.readTime.getOrElse(Instant.now.atOffset(zone))))
         )
       )
       .map { r =>
