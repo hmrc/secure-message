@@ -233,14 +233,14 @@ class SecureMessageRepository @Inject() (
   import SecureMessageMongoFormat.dateTimeFormat
   def addReadTime(id: ObjectId, readTime: Instant)(implicit
     ec: ExecutionContext
-  ): Future[Either[SecureMessageError, Unit]] =
+  ): Future[Either[SecureMessageError, SecureMessage]] =
     collection
-      .updateOne(
+      .findOneAndUpdate(
         filter = Filters.and(Filters.equal("_id", id), Filters.exists("readTime", exists = false)),
         update = Updates.set("readTime", Codecs.toBson(Json.toJson(readTime)))
       )
       .toFuture()
-      .map(_ => Right(()))
+      .map(m => Right(m))
       .recoverWith { case error =>
         Future.successful(Left(StoreError(error.getMessage, None)))
       }

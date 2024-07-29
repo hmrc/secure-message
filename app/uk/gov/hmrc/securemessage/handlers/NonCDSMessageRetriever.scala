@@ -196,16 +196,16 @@ class NonCDSMessageRetriever @Inject() (
       strideUser <- authIdentifiersConnector.isStrideUser
       letter     <- secureMessageService.getLetter(id)
       v3orv4     <- if (letter.isDefined) Future.successful(letter) else secureMessageService.getSecureMessage(id)
-      _ <- v3orv4 match {
-             case Some(l: Letter) if identifiers.contains(l.recipient.identifier) =>
-               secureMessageService.setReadTime(l)
-             case Some(m: SecureMessage) if taxIds.contains(m.recipient.identifier) || strideUser =>
-               secureMessageService.setReadTime(m)
-             case Some(_) =>
-               Future.successful(Left(UserNotAuthorised("Unauthorised for the requested identifiers")))
-             case None =>
-               Future.successful(Left(MessageNotFound(s"Message not found for $id")))
-           }
-    } yield Right(v3orv4)
+      message <- v3orv4 match {
+                   case Some(l: Letter) if identifiers.contains(l.recipient.identifier) =>
+                     secureMessageService.setReadTime(l)
+                   case Some(m: SecureMessage) if taxIds.contains(m.recipient.identifier) || strideUser =>
+                     secureMessageService.setReadTime(m)
+                   case Some(_) =>
+                     Future.successful(Left(UserNotAuthorised("Unauthorised for the requested identifiers")))
+                   case None =>
+                     Future.successful(Left(MessageNotFound(s"Message not found for $id")))
+                 }
+    } yield Right(message.toOption)
 
 }

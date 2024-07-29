@@ -339,7 +339,7 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
       when(mockMessageRepository.getLetter(any[ObjectId], any[Set[Identifier]])(any[ExecutionContext]))
         .thenReturn(Future(Right(letter)))
       when(mockMessageRepository.addReadTime(any[ObjectId])(any[ExecutionContext]))
-        .thenReturn(Future(Right(())))
+        .thenReturn(Future(Right(letter)))
       val result = await(
         service
           .getLetter(new ObjectId(), Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777")))
@@ -352,7 +352,7 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
       when(mockMessageRepository.getLetter(any[ObjectId], any[Set[Identifier]])(any[ExecutionContext]))
         .thenReturn(Future(Left(MessageNotFound("Letter not found"))))
       when(mockMessageRepository.addReadTime(any[ObjectId])(any[ExecutionContext]))
-        .thenReturn(Future(Right(())))
+        .thenReturn(Future(Right(letter)))
       val result = await(
         service
           .getLetter(new ObjectId(), Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777")))
@@ -380,7 +380,7 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
       when(mockSecureMessageUtil.getMessage(any[ObjectId], any[Set[Identifier]])(any[ExecutionContext]))
         .thenReturn(Future(Right(v4Message)))
       when(mockSecureMessageUtil.addReadTime(any[ObjectId])(any[ExecutionContext]))
-        .thenReturn(Future(Right(())))
+        .thenReturn(Future(Right(v4Message)))
       val result = await(
         service
           .getSecureMessage(new ObjectId(), Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777")))
@@ -392,7 +392,7 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
       when(mockSecureMessageUtil.getMessage(any[ObjectId], any[Set[Identifier]])(any[ExecutionContext]))
         .thenReturn(Future(Right(v4Message)))
       when(mockSecureMessageUtil.addReadTime(any[ObjectId])(any[ExecutionContext]))
-        .thenReturn(Future(Right(())))
+        .thenReturn(Future(Right(v4Message)))
       val result = await(
         service
           .getSecureMessage(new ObjectId())

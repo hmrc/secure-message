@@ -384,12 +384,12 @@ class SecureMessageServiceImpl @Inject() (
         None
     }
 
-  def setReadTime(letter: Letter)(implicit ec: ExecutionContext): Future[Either[SecureMessageError, Unit]] =
+  def setReadTime(letter: Letter)(implicit ec: ExecutionContext): Future[Either[SecureMessageError, Letter]] =
     messageRepository.addReadTime(letter._id)
 
   def setReadTime(secureMessage: SecureMessage)(implicit
     ec: ExecutionContext
-  ): Future[Either[SecureMessageError, Unit]] =
+  ): Future[Either[SecureMessageError, SecureMessage]] =
     secureMessageUtil.addReadTime(secureMessage._id)
 
   private def formatMessageContent(message: SecureMessage)(implicit messages: Messages) =
