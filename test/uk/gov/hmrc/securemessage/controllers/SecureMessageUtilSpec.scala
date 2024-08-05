@@ -54,6 +54,7 @@ class SecureMessageUtilSpec extends PlaySpec with ScalaFutures with MockitoSugar
   implicit val hc: HeaderCarrier = HeaderCarrier()
   val testUtil = new SecureMessageUtil(
     appName,
+    Seq(),
     entityResolverConnector,
     taxpayerNameConnector,
     secureMessageRepository,

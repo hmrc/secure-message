@@ -18,6 +18,7 @@ package uk.gov.hmrc.securemessage
 
 import com.google.inject.{ AbstractModule, Provides }
 import com.google.inject.name.Named
+
 import java.time.Instant
 import play.api.Configuration
 import play.api.libs.concurrent.PekkoGuiceSupport
@@ -28,7 +29,7 @@ import uk.gov.hmrc.securemessage.services.{ SecureMessageService, SecureMessageS
 import uk.gov.hmrc.securemessage.utils.DateTimeUtils
 
 import javax.inject.Singleton
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.{ Duration, DurationInt, FiniteDuration }
 
 class SecureMessageModule extends AbstractModule with PekkoGuiceSupport {
 
@@ -102,6 +103,17 @@ class SecureMessageModule extends AbstractModule with PekkoGuiceSupport {
   def mobilePushNotificationsConnectorBaseUrl(servicesConfig: ServicesConfig): String =
     servicesConfig.baseUrl("mobile-push-notifications-orchestration")
 
+  @Provides
+  @Named("messageOnlyFormIds")
+  @Singleton
+  def messageOnlyFormIds(configuration: Configuration): Seq[String] =
+    configuration.getOptional[Seq[String]]("formids-for-optional-sendEmailAlert").getOrElse(Seq())
+
+  @Provides
+  @Named("messagesDeleteAfterDuration")
+  @Singleton
+  def messageRepoTTL(configuration: Configuration): Duration =
+    configuration.getOptional[Duration]("ttl-for-no-email-messages").getOrElse(365.days)
 }
 
 class TimeProvider extends DateTimeUtils
