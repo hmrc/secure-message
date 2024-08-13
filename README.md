@@ -94,12 +94,12 @@ For more examples of resources which can be inserted in your local mongo databas
 
 ## Admin API
 
-| Path                                   | Supported Methods | Description                                                                                                                  |
-|----------------------------------------|-------------------|------------------------------------------------------------------------------------------------------------------------------|
-| ```/admin/message/brake/gmc/batches``` | GET               | Add rescindments for the given message search criteria [More...](#post-adminmessageadd-rescindments)                         |
-| ```/admin/message/brake/accept```      | POST              | Trigger the send rescindments alert scheduled job to execute now [More...](#post-adminsend-rescindments-alerts)              |
-| ```/admin/message/brake/reject```      | POST              | Add an extra alert to be sent to the user associated with the given message ids [More...](#post-adminmessageadd-extra-alert) |
-| ```/admin/message/brake/random```      | POST              | Trigger the send extra alerts scheduled job to execute now [More...](#post-adminsend-extra-alerts)                           |
+| Path                                   | Supported Methods | Description                                                            |
+|----------------------------------------|-------------------|------------------------------------------------------------------------|
+| ```/admin/message/brake/gmc/batches``` | GET               | Pulls the message batches which are in deferred status      |
+| ```/admin/message/brake/accept```      | POST              | Accepts the message in message brake to be delivered        |
+| ```/admin/message/brake/reject```      | POST              | Rejects the message in message brake to be delivered      |
+| ```/admin/message/brake/random```      | POST              | Pulls the message with deferred status waiting to be delivered |
 
 ## Endpoints
 
