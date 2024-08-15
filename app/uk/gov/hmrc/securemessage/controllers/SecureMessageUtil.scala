@@ -111,7 +111,6 @@ class SecureMessageUtil @Inject() (
   import SecureMessageUtil._
 
   lazy val defaultAuditEventMaxSize = 128000
-  lazy val disableMessageBrake: Boolean = configuration.getOptional[Boolean]("disableMessageBrake").getOrElse(false)
   lazy val auditEventMaxSize: Int =
     configuration.getOptional[Int]("auditEventMaxSize").getOrElse(defaultAuditEventMaxSize)
 
@@ -547,7 +546,7 @@ class SecureMessageUtil @Inject() (
   }
 
   def checkAndUpdateMessageBrake(message: SecureMessage): Future[SecureMessage] =
-    if (!disableMessageBrake && isGmc(message)) {
+    if (isGmc(message)) {
       message.details
         .map { d =>
           messageBrakeService.allowlistContains(d.formId) transform {
