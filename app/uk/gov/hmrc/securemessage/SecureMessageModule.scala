@@ -104,16 +104,10 @@ class SecureMessageModule extends AbstractModule with PekkoGuiceSupport {
     servicesConfig.baseUrl("mobile-push-notifications-orchestration")
 
   @Provides
-  @Named("messageOnlyFormIds")
+  @Named("formIdsForOptionalEmail")
   @Singleton
-  def messageOnlyFormIds(configuration: Configuration): Seq[String] =
-    configuration.getOptional[Seq[String]]("formids-for-optional-sendEmailAlert").getOrElse(Seq())
-
-  @Provides
-  @Named("messagesDeleteAfterDuration")
-  @Singleton
-  def messageRepoTTL(configuration: Configuration): Duration =
-    configuration.getOptional[Duration]("ttl-for-no-email-messages").getOrElse(365.days)
+  def formIdsForOptionalEmail(configuration: Configuration): Seq[String] =
+    configuration.getOptional[Seq[String]]("formids-for-optional-sendEmailAlert").getOrElse(Seq()).map(_.toLowerCase)
 }
 
 class TimeProvider extends DateTimeUtils

@@ -53,8 +53,7 @@ class SecureMessageRepository @Inject() (
   val timeSource: TimeSource,
   @Named("retryFailedAfter") retryIntervalMillis: Int,
   @Named("retryInProgressAfter") retryInProgressAfter: Int,
-  @Named("queryMaxTimeMs") queryMaxTimeMs: Int,
-  @Named("messagesDeleteAfterDuration") expiry: Duration
+  @Named("queryMaxTimeMs") queryMaxTimeMs: Int
 )(implicit ec: ExecutionContext)
     extends AbstractMessageRepository[SecureMessage](
       "secure-message",
@@ -77,16 +76,7 @@ class SecureMessageRepository @Inject() (
             .background(true)
         ),
         IndexModel(ascending("status"), IndexOptions().name("status").unique(false)),
-        IndexModel(ascending("emailAddress"), IndexOptions().name("emailAddress").unique(false)),
-        IndexModel(
-          ascending("deleteAfter"),
-          IndexOptions()
-            .name("deleteAfter")
-            .unique(false)
-            .sparse(false)
-            .background(true)
-            .expireAfter(expiry.toSeconds, TimeUnit.SECONDS)
-        )
+        IndexModel(ascending("emailAddress"), IndexOptions().name("emailAddress").unique(false))
       ),
       replaceIndexes = true,
       extraCodecs = Seq(

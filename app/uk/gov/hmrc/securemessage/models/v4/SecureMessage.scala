@@ -47,8 +47,7 @@ case class SecureMessage(
   status: ProcessingStatus = ToDo,
   alerts: Option[EmailAlert] = None,
   readTime: Option[Instant] = None,
-  verificationBrake: Option[Boolean] = None,
-  deleteAfter: Option[LocalDate] = None
+  verificationBrake: Option[Boolean] = None
 ) extends uk.gov.hmrc.securemessage.models.core.Message {
 
   def templateId: String = alertDetails.templateId
