@@ -429,4 +429,8 @@ class SecureMessageServiceImpl @Inject() (
 
   def decodeBase64String(input: String): String =
     new String(Base64.decodeBase64(input.getBytes("UTF-8")))
+
+  def getUserMessage(identifier: Set[Identifier])(implicit executionContext: ExecutionContext): Future[List[Letter]] =
+    messageRepository.getLetters(identifier, None)
+
 }
