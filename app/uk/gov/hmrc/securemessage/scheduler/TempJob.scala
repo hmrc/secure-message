@@ -22,14 +22,14 @@ import play.api.{ Configuration, Logging }
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.audit.model.DataEvent
 import uk.gov.hmrc.securemessage.models.core.Identifier
-import uk.gov.hmrc.securemessage.services.SecureMessageService
+import uk.gov.hmrc.securemessage.repository.TempRepository
 
 import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
 
 class TempJob @Inject() (
   val configuration: Configuration,
-  secureMessageService: SecureMessageService,
+  tempRepo: TempRepository,
   val auditConnector: AuditConnector
 )(implicit ec: ExecutionContext, mat: Materializer)
     extends Actor with Timers with SchedulingConfig with Logging {
@@ -46,10 +46,9 @@ class TempJob @Inject() (
     logger.info(s"$name Started")
     val identifiers = Set(Identifier("sautr", sautr, Some("sautr")))
     for {
-      message <- secureMessageService.getUserMessage(identifiers)
+      message <- tempRepo.getLettersTempFunc(identifiers)
       _ <-
         auditConnector.sendEvent(DataEvent("secure-message", "MessageQuery", detail = Map("raw" -> message.toString())))
-
     } yield FinishedMessageQuery
   }
 

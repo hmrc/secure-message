@@ -95,7 +95,4 @@ trait SecureMessageService {
     randomId: String,
     reference: Option[Reference]
   )(implicit ec: ExecutionContext, request: Request[_]): Future[Either[SecureMessageError, Unit]]
-
-  def getUserMessage(identifier: Set[Identifier])(implicit executionContext: ExecutionContext): Future[List[Letter]]
-
 }
