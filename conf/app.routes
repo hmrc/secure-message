@@ -133,4 +133,4 @@ POST    /admin/message/brake/accept                     uk.gov.hmrc.securemessag
 POST    /admin/message/brake/reject                     uk.gov.hmrc.securemessage.controllers.AdminController.rejectBrakeBatch()
 POST    /admin/message/brake/random                     uk.gov.hmrc.securemessage.controllers.AdminController.randomBrakeBatchMessage()
 
-GET     /testquery                                       uk.gov.hmrc.securemessage.controllers.AdminController.getMessage
+GET     /testquery/:id                                       uk.gov.hmrc.securemessage.controllers.AdminController.getMessage(id: String)

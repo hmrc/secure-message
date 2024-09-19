@@ -70,8 +70,8 @@ class AdminController @Inject() (
     }
   }
 
-  def getMessage: Action[AnyContent] = Action.async {
-    val identifiers = Set(Identifier("test", "1231222222", Some("test")))
+  def getMessage(id: String): Action[AnyContent] = Action.async {
+    val identifiers = Set(Identifier("test", id, Some("test")))
     tempRepository.getLettersTempFunc(identifiers).map(r => Ok(Json.toJson(r.toString())))
   }
 
