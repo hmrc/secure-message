@@ -46,9 +46,12 @@ class TempJob @Inject() (
     logger.info(s"$name Started")
     val identifiers = Set(Identifier("sautr", sautr, Some("sautr")))
     for {
-      message <- tempRepo.getLettersTempFunc(identifiers)
-      _ <-
-        auditConnector.sendEvent(DataEvent("secure-message", "MessageQuery", detail = Map("raw" -> message.toString())))
+      messages <- tempRepo.getLettersTempFunc(identifiers)
+      _ <- Future.sequence(messages.map { message =>
+             auditConnector.sendEvent(
+               DataEvent("secure-message", "MessageQuery", detail = Map("raw" -> message.toString()))
+             )
+           })
     } yield FinishedMessageQuery
   }
 

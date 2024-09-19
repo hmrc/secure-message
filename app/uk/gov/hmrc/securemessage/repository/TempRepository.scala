@@ -41,8 +41,5 @@ class TempRepository @Inject() (mongo: MongoComponent)(implicit executionContext
     collection
       .find(query)
       .toFuture()
-      .map { documents =>
-        documents
-      }
   }
 }
