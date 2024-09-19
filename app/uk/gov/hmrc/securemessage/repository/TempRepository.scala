@@ -34,10 +34,7 @@ class TempRepository @Inject() (mongo: MongoComponent)(implicit executionContext
       Seq.empty[IndexModel]
     ) {
   def getLettersTempFunc(identifiers: Set[Identifier]): Future[Seq[JsValue]] = {
-    val query = Filters.and(
-      Filters.eq("recipient.identifier.name", identifiers.head.name),
-      Filters.eq("recipient.identifier.value", identifiers.head.value)
-    )
+    val query = Filters.equal("recipient.identifier.value", identifiers.head.value)
     collection
       .find(query)
       .toFuture()
