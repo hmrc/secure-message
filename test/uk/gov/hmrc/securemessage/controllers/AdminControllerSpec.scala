@@ -129,132 +129,129 @@ class AdminControllerSpec extends PlaySpec with ScalaFutures with MockitoSugar {
       )
     }
 
-    "GMC Allowlist" must {
+    "get gmc allow list" must {
 
-      "get gmc allow list" must {
+      "return allow list held in the database or cache" in {
+        val allowlist = Allowlist(List("TEST1", "TEST2", "TEST3", "TEST4"))
 
-        "return allow list held in the database or cache" in {
-          val allowlist = Allowlist(List("TEST1", "TEST2", "TEST3", "TEST4"))
+        when(mockInstances.messageBrakeService).thenReturn(mockMessageBrakeService)
 
-          when(mockInstances.messageBrakeService).thenReturn(mockMessageBrakeService)
+        when(mockMessageBrakeService.getOrInitialiseCachedAllowlist()(any[ExecutionContext]))
+          .thenReturn(Future.successful(Some(allowlist)))
 
-          when(mockMessageBrakeService.getOrInitialiseCachedAllowlist()(any[ExecutionContext]))
-            .thenReturn(Future.successful(Some(allowlist)))
-
-          val fakeRequest = FakeRequest(Helpers.GET, routes.AdminController.getGmcAllowlist().url)
-          val result: Future[Result] = controller.getGmcAllowlist()(fakeRequest)
-          status(result) mustBe OK
-          contentAsString(result) mustBe """{"formIdList":["TEST1","TEST2","TEST3","TEST4"]}"""
-        }
-
-        "return internal server error if the cached allowlist expired and the database cannot be reached" in {
-          when(mockInstances.messageBrakeService).thenReturn(mockMessageBrakeService)
-          when(mockMessageBrakeService.getOrInitialiseCachedAllowlist()(any[ExecutionContext]))
-            .thenReturn(Future.successful(None))
-
-          val fakeRequest = FakeRequest(Helpers.GET, routes.AdminController.getGmcAllowlist().url)
-          val result = controller.getGmcAllowlist()(fakeRequest)
-          status(result) mustBe INTERNAL_SERVER_ERROR
-          contentAsString(result) mustBe """{"error":"No allowlist present"}"""
-        }
+        val fakeRequest = FakeRequest(Helpers.GET, routes.AdminController.getGmcAllowlist().url)
+        val result: Future[Result] = controller.getGmcAllowlist()(fakeRequest)
+        status(result) mustBe OK
+        contentAsString(result) mustBe """{"formIdList":["TEST1","TEST2","TEST3","TEST4"]}"""
       }
 
-      "add a form id to the allow list" must {
+      "return internal server error if the cached allowlist expired and the database cannot be reached" in {
+        when(mockInstances.messageBrakeService).thenReturn(mockMessageBrakeService)
+        when(mockMessageBrakeService.getOrInitialiseCachedAllowlist()(any[ExecutionContext]))
+          .thenReturn(Future.successful(None))
 
-        "return allow list held in the database or cache" in {
-          val allowlistUpdateRequest = AllowlistUpdateRequest("TEST10", "some reason to add this form id")
-          val allowlist = Allowlist(List("TEST1", "TEST2", "TEST3", "TEST4", "TEST10"))
+        val fakeRequest = FakeRequest(Helpers.GET, routes.AdminController.getGmcAllowlist().url)
+        val result = controller.getGmcAllowlist()(fakeRequest)
+        status(result) mustBe INTERNAL_SERVER_ERROR
+        contentAsString(result) mustBe """{"error":"No allowlist present"}"""
+      }
+    }
 
-          when(mockInstances.messageBrakeService).thenReturn(mockMessageBrakeService)
+    "add a form id to the allow list" must {
 
-          when(
-            mockMessageBrakeService.addFormIdToAllowlist(eqTo(allowlistUpdateRequest))(
-              any[ExecutionContext]()
-            )
+      "return allow list held in the database or cache" in {
+        val allowlistUpdateRequest = AllowlistUpdateRequest("TEST10", "some reason to add this form id")
+        val allowlist = Allowlist(List("TEST1", "TEST2", "TEST3", "TEST4", "TEST10"))
+
+        when(mockInstances.messageBrakeService).thenReturn(mockMessageBrakeService)
+
+        when(
+          mockMessageBrakeService.addFormIdToAllowlist(eqTo(allowlistUpdateRequest))(
+            any[ExecutionContext]()
           )
-            .thenReturn(Future.successful(Some(allowlist)))
+        )
+          .thenReturn(Future.successful(Some(allowlist)))
 
-          val fakeRequest = FakeRequest(
-            Helpers.POST,
-            routes.AdminController.addFormIdToGmcAllowlist().url,
-            FakeHeaders(),
-            Json.toJson(allowlistUpdateRequest)
-          )
-          val result = controller.addFormIdToGmcAllowlist()(fakeRequest)
-          status(result) mustBe CREATED
-          contentAsString(result) mustBe """{"formIdList":["TEST1","TEST2","TEST3","TEST4","TEST10"]}"""
-        }
-
-        "return internal server error if the cached allowlist expired and the database cannot be reached" in {
-          val allowlistUpdateRequest = AllowlistUpdateRequest("TEST10", "some reason to add this form id")
-
-          when(mockInstances.messageBrakeService).thenReturn(mockMessageBrakeService)
-
-          when(
-            mockMessageBrakeService.addFormIdToAllowlist(eqTo(allowlistUpdateRequest))(
-              any[ExecutionContext]()
-            )
-          )
-            .thenReturn(Future.successful(None))
-
-          val fakeRequest = FakeRequest(
-            Helpers.POST,
-            routes.AdminController.addFormIdToGmcAllowlist().url,
-            FakeHeaders(),
-            Json.toJson(allowlistUpdateRequest)
-          )
-          val result = controller.addFormIdToGmcAllowlist()(fakeRequest)
-          status(result) mustBe INTERNAL_SERVER_ERROR
-          contentAsString(result) mustBe """{"error":"No allowlist present"}"""
-        }
+        val fakeRequest = FakeRequest(
+          Helpers.POST,
+          routes.AdminController.addFormIdToGmcAllowlist().url,
+          FakeHeaders(),
+          Json.toJson(allowlistUpdateRequest)
+        )
+        val result = controller.addFormIdToGmcAllowlist()(fakeRequest)
+        status(result) mustBe CREATED
+        contentAsString(result) mustBe """{"formIdList":["TEST1","TEST2","TEST3","TEST4","TEST10"]}"""
       }
 
-      "remove a form id from the allow list" must {
+      "return internal server error if the cached allowlist expired and the database cannot be reached" in {
+        val allowlistUpdateRequest = AllowlistUpdateRequest("TEST10", "some reason to add this form id")
 
-        "return allow list held in the database or cache" in {
-          val allowlistUpdateRequest = AllowlistUpdateRequest("TEST2", "some reason to remove this form id")
-          val allowlist = Allowlist(List("TEST1", "TEST3", "TEST4"))
+        when(mockInstances.messageBrakeService).thenReturn(mockMessageBrakeService)
 
-          when(mockInstances.messageBrakeService).thenReturn(mockMessageBrakeService)
-
-          when(
-            mockMessageBrakeService.deleteFormIdFromAllowlist(eqTo(allowlistUpdateRequest))(
-              any[ExecutionContext]()
-            )
-          ).thenReturn(Future.successful(Some(allowlist)))
-
-          val fakeRequest = FakeRequest(
-            Helpers.POST,
-            routes.AdminController.deleteFormIdFromGmcAllowlist().url,
-            FakeHeaders(),
-            Json.toJson(allowlistUpdateRequest)
+        when(
+          mockMessageBrakeService.addFormIdToAllowlist(eqTo(allowlistUpdateRequest))(
+            any[ExecutionContext]()
           )
-          val result = controller.deleteFormIdFromGmcAllowlist()(fakeRequest)
-          status(result) mustBe OK
-          contentAsString(result) mustBe """{"formIdList":["TEST1","TEST3","TEST4"]}"""
-        }
+        )
+          .thenReturn(Future.successful(None))
 
-        "return internal server error if the cached allowlist expired and the database cannot be reached" in {
-          val allowlistUpdateRequest = AllowlistUpdateRequest("TEST2", "some reason to remove this form id")
+        val fakeRequest = FakeRequest(
+          Helpers.POST,
+          routes.AdminController.addFormIdToGmcAllowlist().url,
+          FakeHeaders(),
+          Json.toJson(allowlistUpdateRequest)
+        )
+        val result = controller.addFormIdToGmcAllowlist()(fakeRequest)
+        status(result) mustBe INTERNAL_SERVER_ERROR
+        contentAsString(result) mustBe """{"error":"No allowlist present"}"""
+      }
+    }
 
-          when(mockInstances.messageBrakeService).thenReturn(mockMessageBrakeService)
+    "remove a form id from the allow list" must {
 
-          when(
-            mockMessageBrakeService.deleteFormIdFromAllowlist(eqTo(allowlistUpdateRequest))(
-              any[ExecutionContext]()
-            )
-          ).thenReturn(Future.successful(None))
+      "return allow list held in the database or cache" in {
+        val allowlistUpdateRequest = AllowlistUpdateRequest("TEST2", "some reason to remove this form id")
+        val allowlist = Allowlist(List("TEST1", "TEST3", "TEST4"))
 
-          val fakeRequest = FakeRequest(
-            Helpers.POST,
-            routes.AdminController.deleteFormIdFromGmcAllowlist().url,
-            FakeHeaders(),
-            Json.toJson(allowlistUpdateRequest)
+        when(mockInstances.messageBrakeService).thenReturn(mockMessageBrakeService)
+
+        when(
+          mockMessageBrakeService.deleteFormIdFromAllowlist(eqTo(allowlistUpdateRequest))(
+            any[ExecutionContext]()
           )
-          val result = controller.deleteFormIdFromGmcAllowlist()(fakeRequest)
-          status(result) mustBe INTERNAL_SERVER_ERROR
-          contentAsString(result) mustBe """{"error":"No allowlist present"}"""
-        }
+        ).thenReturn(Future.successful(Some(allowlist)))
+
+        val fakeRequest = FakeRequest(
+          Helpers.POST,
+          routes.AdminController.deleteFormIdFromGmcAllowlist().url,
+          FakeHeaders(),
+          Json.toJson(allowlistUpdateRequest)
+        )
+        val result = controller.deleteFormIdFromGmcAllowlist()(fakeRequest)
+        status(result) mustBe OK
+        contentAsString(result) mustBe """{"formIdList":["TEST1","TEST3","TEST4"]}"""
+      }
+
+      "return internal server error if the cached allowlist expired and the database cannot be reached" in {
+        val allowlistUpdateRequest = AllowlistUpdateRequest("TEST2", "some reason to remove this form id")
+
+        when(mockInstances.messageBrakeService).thenReturn(mockMessageBrakeService)
+
+        when(
+          mockMessageBrakeService.deleteFormIdFromAllowlist(eqTo(allowlistUpdateRequest))(
+            any[ExecutionContext]()
+          )
+        ).thenReturn(Future.successful(None))
+
+        val fakeRequest = FakeRequest(
+          Helpers.POST,
+          routes.AdminController.deleteFormIdFromGmcAllowlist().url,
+          FakeHeaders(),
+          Json.toJson(allowlistUpdateRequest)
+        )
+        val result = controller.deleteFormIdFromGmcAllowlist()(fakeRequest)
+        status(result) mustBe INTERNAL_SERVER_ERROR
+        contentAsString(result) mustBe """{"error":"No allowlist present"}"""
       }
     }
   }
