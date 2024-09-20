@@ -132,3 +132,6 @@ GET     /admin/message/brake/gmc/batches                uk.gov.hmrc.securemessag
 POST    /admin/message/brake/accept                     uk.gov.hmrc.securemessage.controllers.AdminController.acceptBrakeBatch()
 POST    /admin/message/brake/reject                     uk.gov.hmrc.securemessage.controllers.AdminController.rejectBrakeBatch()
 POST    /admin/message/brake/random                     uk.gov.hmrc.securemessage.controllers.AdminController.randomBrakeBatchMessage()
+GET     /admin/message/brake/gmc/allowlist              uk.gov.hmrc.securemessage.controllers.AdminController.getGmcAllowlist()
+POST    /admin/message/brake/gmc/allowlist/add          uk.gov.hmrc.securemessage.controllers.AdminController.addFormIdToGmcAllowlist()
+POST    /admin/message/brake/gmc/allowlist/delete       uk.gov.hmrc.securemessage.controllers.AdminController.deleteFormIdFromGmcAllowlist()

@@ -33,6 +33,7 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.metrix.MetricOrchestrator
 import uk.gov.hmrc.securemessage.models.v4.Allowlist
+import uk.gov.hmrc.securemessage.models.AllowlistUpdateRequest
 import uk.gov.hmrc.securemessage.repository.AllowlistRepository
 import uk.gov.hmrc.securemessage.services.utils.MetricOrchestratorStub
 

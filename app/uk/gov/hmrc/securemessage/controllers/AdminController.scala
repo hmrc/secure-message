@@ -23,6 +23,7 @@ import uk.gov.hmrc.securemessage.models.v4.{ BrakeBatch, BrakeBatchApproval }
 import uk.gov.hmrc.securemessage.repository.Instances
 import javax.inject.{ Inject, Singleton }
 import scala.concurrent.ExecutionContext
+import uk.gov.hmrc.securemessage.models.AllowlistUpdateRequest
 
 @Singleton
 class AdminController @Inject() (
@@ -64,6 +65,35 @@ class AdminController @Inject() (
         case Some(m) => Ok(Json.toJson(m))
         case None    => NotFound
       }
+    }
+  }
+
+  def getGmcAllowlist(): Action[AnyContent] = Action.async {
+    instances.messageBrakeService.getOrInitialiseCachedAllowlist().map {
+      case Some(allowlist) => Ok(Json.toJson(allowlist))
+      case None            => InternalServerError(Json.obj("error" -> "No allowlist present"))
+    }
+  }
+
+  def addFormIdToGmcAllowlist(): Action[JsValue] = Action.async(parse.json) { implicit request =>
+    withJsonBody[AllowlistUpdateRequest] { allowlistUpdateRequest =>
+      instances.messageBrakeService
+        .addFormIdToAllowlist(allowlistUpdateRequest)
+        .map {
+          case Some(allowlist) => Created(Json.toJson(allowlist))
+          case None            => InternalServerError(Json.obj("error" -> "No allowlist present"))
+        }
+    }
+  }
+
+  def deleteFormIdFromGmcAllowlist(): Action[JsValue] = Action.async(parse.json) { implicit request =>
+    withJsonBody[AllowlistUpdateRequest] { allowlistUpdateRequest =>
+      instances.messageBrakeService
+        .deleteFormIdFromAllowlist(allowlistUpdateRequest)
+        .map {
+          case Some(allowlist) => Ok(Json.toJson(allowlist))
+          case None            => InternalServerError(Json.obj("error" -> "No allowlist present"))
+        }
     }
   }
 }
