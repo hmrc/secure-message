@@ -17,20 +17,17 @@
 package uk.gov.hmrc.securemessage.controllers
 
 import play.api.libs.json.{ JsValue, Json }
-import play.api.mvc.{ Action, AnyContent, ControllerComponents, Result }
+import play.api.mvc.{ Action, AnyContent, ControllerComponents }
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.securemessage.models.core.Identifier
 import uk.gov.hmrc.securemessage.models.v4.{ BrakeBatch, BrakeBatchApproval }
-import uk.gov.hmrc.securemessage.repository.{ Instances, TempRepository }
-
+import uk.gov.hmrc.securemessage.repository.Instances
 import javax.inject.{ Inject, Singleton }
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.ExecutionContext
 
 @Singleton
 class AdminController @Inject() (
   instances: Instances,
-  cc: ControllerComponents,
-  tempRepository: TempRepository
+  cc: ControllerComponents
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
   def getGMCBrakeBatches(): Action[AnyContent] = Action.async {
@@ -69,10 +66,4 @@ class AdminController @Inject() (
       }
     }
   }
-
-  def getMessage(id: String): Action[AnyContent] = Action.async {
-    val identifiers = Set(Identifier("test", id, Some("test")))
-    tempRepository.getLettersTempFunc(identifiers).map(r => Ok(Json.toJson(r.toString())))
-  }
-
 }

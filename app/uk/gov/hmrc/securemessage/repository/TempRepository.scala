@@ -18,10 +18,12 @@ package uk.gov.hmrc.securemessage.repository
 
 import org.mongodb.scala.ObservableFuture
 import org.mongodb.scala.model.{ Filters, IndexModel }
+import play.api.Logging
 import play.api.libs.json.{ Format, JsValue }
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import uk.gov.hmrc.securemessage.models.core.Identifier
+
 import javax.inject.{ Inject, Singleton }
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -32,11 +34,18 @@ class TempRepository @Inject() (mongo: MongoComponent)(implicit executionContext
       "message",
       implicitly[Format[JsValue]],
       Seq.empty[IndexModel]
-    ) {
+    ) with Logging {
   def getLettersTempFunc(identifiers: Set[Identifier]): Future[Seq[JsValue]] = {
-    val query = Filters.equal("recipient.identifier.value", identifiers.head.value)
+    val query = Filters.and(
+      Filters.eq("recipient.identifier.name", identifiers.head.name),
+      Filters.eq("recipient.identifier.value", identifiers.head.value)
+    )
     collection
       .find(query)
       .toFuture()
+      .recover { e =>
+        logger.error(s"Failed to fetch document ${e.getMessage} ")
+        Seq.empty[JsValue]
+      }
   }
 }
