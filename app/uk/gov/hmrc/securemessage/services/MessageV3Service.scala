@@ -95,10 +95,14 @@ trait MessageV3Service {
   }
 
   def formatMessageContent(letter: Letter)(implicit messages: Messages): String =
-    formatSubject(
-      letter.subject,
-      letter.body.flatMap(_.form.map(_.toUpperCase)).fold(false)(_.endsWith("_CY"))
-    ) ++ addIssueDate(letter) ++ letter.content.getOrElse("")
+    if (letter.content.exists(c => c.contains(letter.subject))) {
+      ""
+    } else {
+      formatSubject(
+        letter.subject,
+        letter.body.flatMap(_.form.map(_.toUpperCase)).fold(false)(_.endsWith("_CY"))
+      ) ++ addIssueDate(letter) ++ letter.content.getOrElse("")
+    }
 
   // format: off
   private def formatSubject(messageSubject: String, isWelshSubject: Boolean): String =
