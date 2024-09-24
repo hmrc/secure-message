@@ -19,6 +19,7 @@ package uk.gov.hmrc.securemessage.services
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import org.mongodb.scala.bson.ObjectId
+import play.api.{ Logger, Logging }
 import play.api.i18n.Messages
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.securemessage.connectors.AuthIdentifiersConnector
@@ -29,12 +30,17 @@ import uk.gov.hmrc.securemessage.{ MessageNotFound, SecureMessageError, UserNotA
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.xml.XML
 
-trait MessageV3Service {
+trait MessageV3Service extends Logging {
   val authIdentifiersConnector: AuthIdentifiersConnector
 
   def getMessage(
     readRequest: MessageReadRequest
-  )(implicit hc: HeaderCarrier, ec: ExecutionContext, messages: Messages): Future[Either[SecureMessageError, Message]] =
+  )(implicit
+    hc: HeaderCarrier,
+    ec: ExecutionContext,
+    messages: Messages
+  ): Future[Either[SecureMessageError, Message]] = {
+    logger.warn(s"getMessage $readRequest")
     for {
       taxIds <- authIdentifiersConnector.currentEffectiveTaxIdentifiers
       identifiers = taxIds.map(s => Identifier(s.name, s.value, None))
@@ -50,6 +56,7 @@ trait MessageV3Service {
                     Future.successful(Left(MessageNotFound(s"Message not found for ${readRequest.messageId}")))
                 }
     } yield result
+  }
 
   // updates the message content with the content from all the messages in the chain (if there is one)
   def updateMessageContent(
@@ -66,7 +73,8 @@ trait MessageV3Service {
   def getContentChainString(letter: Option[Letter], id: ObjectId)(implicit
     ec: ExecutionContext,
     messages: Messages
-  ): Future[String] =
+  ): Future[String] = {
+    logger.warn(s"getContentChainString ${letter.get}")
     letter match {
       case Some(msg) =>
         msg.body.flatMap(_.replyTo) match {
@@ -75,6 +83,7 @@ trait MessageV3Service {
         }
       case None => Future.successful("")
     }
+  }
 
   def getMessagesContentChain(id: ObjectId)(implicit ec: ExecutionContext, messages: Messages): Future[List[String]] = {
 
@@ -85,16 +94,19 @@ trait MessageV3Service {
           letter.body.flatMap(_.replyTo) match {
             case None => Future.successful(formatMessageContent(letter) :: contentList)
             case Some(replyTo) =>
+              logger.warn(s"getMessagesContentChain $replyTo")
               getMessagesContentChain(
                 new ObjectId(replyTo),
                 formatMessageContent(letter) :: contentList
               )
+
           }
       }
     getMessagesContentChain(id, List())
   }
 
-  def formatMessageContent(letter: Letter)(implicit messages: Messages): String =
+  def formatMessageContent(letter: Letter)(implicit messages: Messages): String = {
+    logger.warn(s"formatMessageContent ${letter.toString}")
     if (letter.content.exists(c => c.contains(letter.subject))) {
       ""
     } else {
@@ -103,6 +115,7 @@ trait MessageV3Service {
         letter.body.flatMap(_.form.map(_.toUpperCase)).fold(false)(_.endsWith("_CY"))
       ) ++ addIssueDate(letter) ++ letter.content.getOrElse("")
     }
+  }
 
   // format: off
   private def formatSubject(messageSubject: String, isWelshSubject: Boolean): String =

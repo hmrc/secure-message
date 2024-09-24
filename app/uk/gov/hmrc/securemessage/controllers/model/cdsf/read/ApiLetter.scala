@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.securemessage.controllers.model.cdsf.read
 
+import play.api.{ Logger, Logging }
+
 import java.time.{ Instant, LocalDate }
 import play.api.libs.json.{ Format, Json }
 import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata
@@ -31,13 +33,14 @@ final case class ApiLetter(
   identifier: Identifier,
   readTime: Option[Instant] = None, // TODO: why is this always NONE ?
   tags: Option[Map[String, String]] = None
-) extends ApiMessage
-
+) extends ApiMessage with Logging
+val logger = Logger(getClass)
 final case class FirstReaderInformation(name: Option[String], read: Instant)
 final case class SenderInformation(name: String, sent: LocalDate)
 
 object ApiLetter extends ApiFormats {
-  def fromCore(letter: Letter): ApiLetter =
+  def fromCore(letter: Letter): ApiLetter = {
+    logger.logger.warn(s"fromCore $letter")
     ApiLetter(
       letter.subject,
       letter.content.getOrElse(""),
@@ -47,6 +50,7 @@ object ApiLetter extends ApiFormats {
       readTime = letter.readTime,
       tags = letter.tags
     )
+  }
 
   def fromSecureMessage(secureMessage: SecureMessage)(implicit language: Language): ApiLetter = {
     val taxId = secureMessage.recipient.identifier

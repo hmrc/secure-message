@@ -140,6 +140,7 @@ abstract class AbstractMessageRepository[A: ClassTag](
   protected def getMessage(id: ObjectId, identifiers: Set[Identifier])(implicit
     ec: ExecutionContext
   ): Future[Either[SecureMessageError, A]] = {
+    logger.warn(s"getMessage$id")
     val query = identifierQuery(identifiers)
     collection
       .find(
