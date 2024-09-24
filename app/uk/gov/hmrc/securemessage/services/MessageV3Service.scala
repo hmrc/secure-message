@@ -108,7 +108,7 @@ trait MessageV3Service extends Logging {
   def formatMessageContent(letter: Letter)(implicit messages: Messages): String = {
     logger.warn(s"formatMessageContent ${letter.toString}")
     if (letter.content.exists(c => c.contains(letter.subject))) {
-      ""
+      letter.content.getOrElse("")
     } else {
       formatSubject(
         letter.subject,
