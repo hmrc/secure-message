@@ -23,7 +23,7 @@ import play.api.Configuration
 import play.api.libs.concurrent.PekkoGuiceSupport
 import uk.gov.hmrc.common.message.model.TimeSource
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-import uk.gov.hmrc.securemessage.scheduler.{ EmailAlertJob, TempJob }
+import uk.gov.hmrc.securemessage.scheduler.EmailAlertJob
 import uk.gov.hmrc.securemessage.services.{ SecureMessageService, SecureMessageServiceImpl }
 import uk.gov.hmrc.securemessage.utils.DateTimeUtils
 
@@ -36,7 +36,6 @@ class SecureMessageModule extends AbstractModule with PekkoGuiceSupport {
     bind(classOf[DateTimeUtils]).to(classOf[TimeProvider])
     bind(classOf[SecureMessageService]).to(classOf[SecureMessageServiceImpl]).asEagerSingleton()
     bindActor[EmailAlertJob]("EmailAlertJob-actor")
-    bindActor[TempJob]("TempQueryMessage-actor")
     super.configure()
   }
   @Singleton
