@@ -94,11 +94,17 @@ trait MessageV3Service {
     getMessagesContentChain(id, List())
   }
 
-  def formatMessageContent(letter: Letter)(implicit messages: Messages): String =
-    formatSubject(
-      letter.subject,
-      letter.body.flatMap(_.form.map(_.toUpperCase)).fold(false)(_.endsWith("_CY"))
-    ) ++ addIssueDate(letter) ++ letter.content.getOrElse("")
+  def formatMessageContent(letter: Letter)(implicit messages: Messages): String = {
+    val letterContent = letter.content.getOrElse("")
+    if (letter.content.exists(c => c.contains(letter.subject))) {
+      letterContent
+    } else {
+      formatSubject(
+        letter.subject,
+        letter.body.flatMap(_.form.map(_.toUpperCase)).fold(false)(_.endsWith("_CY"))
+      ) ++ addIssueDate(letter) ++ letterContent
+    }
+  }
 
   // format: off
   private def formatSubject(messageSubject: String, isWelshSubject: Boolean): String =
