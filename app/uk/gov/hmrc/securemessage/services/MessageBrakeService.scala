@@ -20,6 +20,7 @@ import uk.gov.hmrc.securemessage.repository.AllowlistRepository
 import play.api.cache.AsyncCacheApi
 import play.api.libs.json.{ Json, OFormat }
 import uk.gov.hmrc.securemessage.models.v4.Allowlist
+import uk.gov.hmrc.securemessage.models.AllowlistUpdateRequest
 
 import javax.inject.Inject
 import scala.concurrent.duration._
@@ -116,10 +117,4 @@ object MessageBrakeAllowList {
     "PA302 2021",
     "PA302 2022"
   )
-}
-
-case class AllowlistUpdateRequest(formId: String, reasonText: String)
-
-object AllowlistUpdateRequest {
-  implicit val format: OFormat[AllowlistUpdateRequest] = Json.format[AllowlistUpdateRequest]
 }

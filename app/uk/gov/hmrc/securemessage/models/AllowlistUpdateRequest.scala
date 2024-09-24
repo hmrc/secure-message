@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 HM Revenue & Customs
+ * Copyright 2024 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,12 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.securemessage.repository
+package uk.gov.hmrc.securemessage.models
 
-import uk.gov.hmrc.securemessage.services.MessageBrakeService
+import play.api.libs.json.{ Json, OFormat }
 
-import javax.inject.{ Inject, Singleton }
+case class AllowlistUpdateRequest(formId: String, reasonText: String)
 
-@Singleton
-class Instances @Inject() (
-  val messageRepository: SecureMessageRepository,
-  val extraAlertRepository: ExtraAlertRepository,
-  val statsMetricRepository: StatsMetricRepository,
-  val messageBrakeService: MessageBrakeService
-) {}
+object AllowlistUpdateRequest {
+  implicit val format: OFormat[AllowlistUpdateRequest] = Json.format[AllowlistUpdateRequest]
+}
