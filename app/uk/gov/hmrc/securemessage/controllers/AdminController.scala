@@ -21,6 +21,7 @@ import play.api.mvc.{ Action, AnyContent, ControllerComponents }
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.securemessage.models.v4.{ BrakeBatch, BrakeBatchApproval }
 import uk.gov.hmrc.securemessage.repository.Instances
+
 import javax.inject.{ Inject, Singleton }
 import scala.concurrent.ExecutionContext
 
