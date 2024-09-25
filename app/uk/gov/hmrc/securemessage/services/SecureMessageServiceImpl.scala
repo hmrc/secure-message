@@ -160,7 +160,6 @@ class SecureMessageServiceImpl @Inject() (
   def getLetter(id: ObjectId, enrolments: Set[CustomerEnrolment])(implicit
     ec: ExecutionContext
   ): Future[Either[SecureMessageError, ApiLetter]] = {
-    logger.warn(s"getLetter $id")
     val identifiers = enrolments.map(_.asIdentifier)
     for {
       letter <- EitherT(messageRepository.getLetter(id, identifiers))
@@ -365,12 +364,8 @@ class SecureMessageServiceImpl @Inject() (
     for {
       msg <- secureMessageUtil.findById(id)
       result <- msg match {
-                  case Some(m) =>
-                    logger.warn(s"getContentV4")
-                    Future.successful(Some(formatMessageContent(m)))
-                  case None =>
-                    logger.warn(s"getContentBy this is V3")
-                    getContentForv3Message(id)
+                  case Some(m) => Future.successful(Some(formatMessageContent(m)))
+                  case None    => getContentForv3Message(id)
                 }
     } yield result
 
