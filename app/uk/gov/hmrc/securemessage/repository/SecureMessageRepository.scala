@@ -144,6 +144,10 @@ class SecureMessageRepository @Inject() (
       .toFuture()
       .map(_.getModifiedCount == 1)
 
+  override protected def messagesQuerySelector(identifiers: Set[Identifier], tags: Option[List[FilterTag]]): Bson = {
+    val superQuery = super.messagesQuerySelector(identifiers, tags)
+    Filters.and(readyForViewingQuery, superQuery)
+  }
   def findById(id: ObjectId): Future[Option[SecureMessage]] = {
 
     val query = Filters.and(Filters.equal("_id", id), readyForViewingQuery)
