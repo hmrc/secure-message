@@ -54,8 +54,8 @@ abstract class AbstractMessageRepository[A: ClassTag](
   implicit val format: OFormat[A] = domainFormat.asInstanceOf[OFormat[A]]
   val logger = Logger(getClass)
 
-  protected def messagesQuerySelector(identifiers: Set[Identifier], tags: Option[List[FilterTag]]): Bson =
-    (identifiers, tags) match {
+  protected def messagesQuerySelector(identifiers: Set[Identifier], tags: Option[List[FilterTag]]): Bson = {
+    val mainFilter = (identifiers, tags) match {
       case (identifiers, _) if identifiers.isEmpty => // TODO: move this case to service
         Filters.empty()
       case (identifiers, None) =>
@@ -70,6 +70,10 @@ abstract class AbstractMessageRepository[A: ClassTag](
       case _ =>
         Filters.empty()
     }
+    if (mainFilter != Filters.empty()) Filters.and(mainFilter, readyForViewingQuery()) else mainFilter
+  }
+
+  protected def readyForViewingQuery(): Bson = Filters.empty()
 
   protected def getMessages(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(implicit
     ec: ExecutionContext

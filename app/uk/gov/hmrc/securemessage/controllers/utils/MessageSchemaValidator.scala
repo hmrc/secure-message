@@ -234,10 +234,7 @@ trait MessageSchemaValidator {
       |            }
       |          ]
       |        }
-      |      },
-      |      "required": [
-      |        "formId"
-      |      ]
+      |      }
       |    }
       |  },
       |  "required": [
