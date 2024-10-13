@@ -151,7 +151,7 @@ class MessageRepository @Inject() (mongo: MongoComponent)(implicit ec: Execution
     ec: ExecutionContext
   ): Future[List[Letter]] =
     taxIdRegimeSelector(authTaxIds)
-      .map(Filters.and(_, readyForViewingQuery, rescindedExcludedQuery))
+      .map(Filters.and(_, readyForViewingQuery(), rescindedExcludedQuery))
       .fold(Future.successful(List[Letter]())) { query =>
         collection
           .find(query)
@@ -173,7 +173,7 @@ class MessageRepository @Inject() (mongo: MongoComponent)(implicit ec: Execution
     messageFilter: MessageFilter
   ): Future[MessagesCount] =
     taxIdRegimeSelector(authTaxIds)
-      .map(Filters.and(_, readyForViewingQuery, rescindedExcludedQuery))
+      .map(Filters.and(_, readyForViewingQuery(), rescindedExcludedQuery))
       .fold(Future.successful(MessagesCount(0, 0)))(query =>
         for {
           unreadCount <- collection
@@ -185,16 +185,15 @@ class MessageRepository @Inject() (mongo: MongoComponent)(implicit ec: Execution
         } yield MessagesCount(totalCount.toInt, unreadCount.toInt)
       )
 
+  override def readyForViewingQuery(): Bson =
+    Filters
+      .and(Filters.lte("validFrom", Codecs.toBson(Letter.localDateNow)), Filters.notEqual("verificationBrake", true))
 }
 
 trait MessageSelector {
 
   def selectByTaxId(taxId: TaxIdWithName): JsObject =
     Json.obj("recipient.identifier.value" -> taxId.value, "recipient.identifier.name" -> taxId.name)
-
-  def readyForViewingQuery: Bson =
-    Filters
-      .and(Filters.lte("validFrom", Codecs.toBson(Letter.localDateNow)), Filters.notEqual("verificationBrake", true))
 
   def rescindedExcludedQuery: Bson = Filters.exists("rescindment", exists = false)
 

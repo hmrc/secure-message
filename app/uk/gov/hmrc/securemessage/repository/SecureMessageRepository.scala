@@ -144,13 +144,9 @@ class SecureMessageRepository @Inject() (
       .toFuture()
       .map(_.getModifiedCount == 1)
 
-  override protected def messagesQuerySelector(identifiers: Set[Identifier], tags: Option[List[FilterTag]]): Bson = {
-    val superQuery = super.messagesQuerySelector(identifiers, tags)
-    Filters.and(readyForViewingQuery, superQuery)
-  }
   def findById(id: ObjectId): Future[Option[SecureMessage]] = {
 
-    val query = Filters.and(Filters.equal("_id", id), readyForViewingQuery)
+    val query = Filters.and(Filters.equal("_id", id), readyForViewingQuery())
 
     collection
       .withReadPreference(ReadPreference.secondaryPreferred)
@@ -179,7 +175,7 @@ class SecureMessageRepository @Inject() (
   ): Future[Count] =
     getMessagesCount(identifiers, tags)
 
-  override def readyForViewingQuery: Bson = {
+  override def readyForViewingQuery(): Bson = {
     import SecureMessageMongoFormat.localDateFormat
     Filters.and(
       Filters.lte("validFrom", Codecs.toBson(LocalDate.now())),
@@ -192,7 +188,7 @@ class SecureMessageRepository @Inject() (
     ec: ExecutionContext
   ): Future[List[SecureMessage]] =
     taxIdRegimeSelector(authTaxIds)
-      .map(Filters.and(_, readyForViewingQuery))
+      .map(Filters.and(_, readyForViewingQuery()))
       .fold(Future.successful(List[SecureMessage]())) { query =>
         logger.debug(s"SecureMessageQuery $query")
         collection
@@ -212,7 +208,7 @@ class SecureMessageRepository @Inject() (
     ec: ExecutionContext
   ): Future[MessagesCount] =
     taxIdRegimeSelector(authTaxIds)
-      .map(Filters.and(_, readyForViewingQuery))
+      .map(Filters.and(_, readyForViewingQuery()))
       .fold(Future.successful(MessagesCount(0, 0))) { query =>
         logger.debug(s"SecureMessageCountQuery $query")
         for {
