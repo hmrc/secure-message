@@ -34,7 +34,6 @@ import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.securemessage._
 import uk.gov.hmrc.securemessage.connectors._
 import uk.gov.hmrc.securemessage.controllers.model.MessageType
-import uk.gov.hmrc.securemessage.controllers.model.MessageType.Letter
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.{ ApiConversation, ConversationMetadata }
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage
 import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.ApiLetter
@@ -373,7 +372,11 @@ class SecureMessageServiceImpl @Inject() (
     id: ObjectId
   )(implicit hc: HeaderCarrier, ec: ExecutionContext, messages: Messages): Future[Option[String]] =
     getMessage(
-      MessageReadRequest(MessageType.withName(Letter.entryName), Enrolments(Set.empty[Enrolment]), id.toString)
+      MessageReadRequest(
+        MessageType.withName(MessageType.Letter.entryName),
+        Enrolments(Set.empty[Enrolment]),
+        id.toString
+      )
     ) map {
       case Left(e) =>
         logger.warn(s"Failed to retrieve message with id: ${id.toString}. Error: ${e.message}")
