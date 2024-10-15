@@ -22,20 +22,20 @@ import play.api.i18n.I18nSupport
 import play.api.libs.json.Json
 import play.utils.UriEncoding
 import play.api.mvc.*
-import uk.gov.hmrc.auth.core.AuthProvider.{GovernmentGateway, PrivilegedApplication}
+import uk.gov.hmrc.auth.core.AuthProvider.{ GovernmentGateway, PrivilegedApplication }
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import uk.gov.hmrc.auth.core.*
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.securemessage.services.{HtmlCreatorService, RenderType, SecureMessageServiceImpl}
+import uk.gov.hmrc.securemessage.services.{ HtmlCreatorService, RenderType, SecureMessageServiceImpl }
 import uk.gov.hmrc.securemessage.templates
 import uk.gov.hmrc.common.message.model.ConversationItem
 
 import javax.inject.Inject
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 
-class SecureMessageRenderer @Inject()(
+class SecureMessageRenderer @Inject() (
   cc: ControllerComponents,
   val authConnector: AuthConnector,
   override val auditConnector: AuditConnector,
@@ -72,9 +72,10 @@ class SecureMessageRenderer @Inject()(
         }
 
       def getHtmlResponse(
-                           id: String,
-                           msgList: List[ConversationItem],
-                           replyType: RenderType.ReplyType): Future[Result] =
+        id: String,
+        msgList: List[ConversationItem],
+        replyType: RenderType.ReplyType
+      ): Future[Result] =
         htmlCreatorService.createConversation(id, msgList, replyType).map {
           case Right(html) => Ok(html)
           case Left(error) =>
@@ -84,8 +85,8 @@ class SecureMessageRenderer @Inject()(
 
       msgType match {
         case "Customer" => createMsg(RenderType.CustomerLink)
-        case "Adviser" => createMsg(RenderType.Adviser)
-        case _ => Future.successful(BadRequest)
+        case "Adviser"  => createMsg(RenderType.Adviser)
+        case _          => Future.successful(BadRequest)
       }
 
     } recover {
