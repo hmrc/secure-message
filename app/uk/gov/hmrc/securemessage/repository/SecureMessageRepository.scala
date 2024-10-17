@@ -75,7 +75,8 @@ class SecureMessageRepository @Inject() (
             .unique(false)
             .background(true)
         ),
-        IndexModel(ascending("status"), IndexOptions().name("status").unique(false))
+        IndexModel(ascending("status"), IndexOptions().name("status").unique(false)),
+        IndexModel(ascending("emailAddress"), IndexOptions().name("emailAddress").unique(false))
       ),
       replaceIndexes = true,
       extraCodecs = Seq(
@@ -113,7 +114,8 @@ class SecureMessageRepository @Inject() (
 
     val todoQuery = Filters.and(
       Filters.equal("status", ToDo.name),
-      Filters.lte("validFrom", timeSource.today())
+      Filters.lte("validFrom", timeSource.today()),
+      Filters.and(Filters.exists("emailAddress"), Filters.notEqual("emailAddress", ""))
     )
 
     val failedBeforeQuery = Filters.or(

@@ -98,6 +98,7 @@ object SecureMessageUtil {
 @Singleton
 class SecureMessageUtil @Inject() (
   @Named("app-name") appName: String,
+  @Named("formIdsForOptionalEmail") formIdsForOptionalEmail: Seq[String],
   entityResolverConnector: EntityResolverConnector,
   taxpayerNameConnector: TaxpayerNameConnector,
   secureMessageRepository: SecureMessageRepository,
@@ -226,7 +227,7 @@ class SecureMessageUtil @Inject() (
   def checkPreferencesAndCreateMessage(
     message: SecureMessage
   )(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Result] = {
-
+    val isMessageOnly = formIdsForOptionalEmail.contains(message.details.map(_.formId).getOrElse("").toLowerCase)
     val TAXPAYER_NOTFOUND = errorResponseWithErrorId(
       "The backend has rejected the message due to not being able to verify the email address.",
       NOT_FOUND
@@ -235,9 +236,9 @@ class SecureMessageUtil @Inject() (
       .verifiedEmailAddress(message.recipient)
       .flatMap { resp =>
         resp.value match {
+          case Left(_) if isMessageOnly => cleanUpAndCreateMessage(message)
           case Left(failure) if failure.getMessage.startsWith("email: not verified") =>
             Future.successful(errorResponseWithErrorId(failure.getMessage, BAD_REQUEST))
-
           case Left(_) => Future.successful(TAXPAYER_NOTFOUND)
           case Right(EmailValidation(email)) =>
             val updatedAlertDetails: AlertDetails =
