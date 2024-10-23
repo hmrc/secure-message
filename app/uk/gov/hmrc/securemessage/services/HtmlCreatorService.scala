@@ -24,19 +24,20 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import scala.concurrent.Future
-import scala.util.{Failure, Success}
-import scala.xml.{Elem, Node, NodeSeq, Unparsed, Utility, Xhtml}
-import scala.util.{Failure, Success, Try}
-import scala.xml.{Node, SAXParseException, Text}
+import scala.util.{ Failure, Success }
+import scala.xml.{ Elem, Node, NodeSeq, Unparsed, Utility, Xhtml }
+import scala.util.{ Failure, Success, Try }
+import scala.xml.{ Node, SAXParseException, Text }
 import HtmlUtil._
 import XmlConversion._
 
-class HtmlCreatorService @Inject()(servicesConfig: ServicesConfig) {
+class HtmlCreatorService @Inject() (servicesConfig: ServicesConfig) {
 
   def createConversation(
-                                   latestMessageId: String,
-                                   messages: List[ConversationItem],
-                                   replyType: RenderType.ReplyType): Future[Either[String, Html]] = {
+    latestMessageId: String,
+    messages: List[ConversationItem],
+    replyType: RenderType.ReplyType
+  ): Future[Either[String, Html]] = {
 
     val conversation = createConversationList(messages.sortWith(_.id > _.id), replyType)
     val fullConversation = conversation.mkString(Xhtml.toXhtml(<hr/>))
@@ -52,7 +53,8 @@ class HtmlCreatorService @Inject()(servicesConfig: ServicesConfig) {
           .headOption
           .map { hm =>
             format2wsMessageForCustomer(hm, ItemMetadata(isLatestMessage = true)) :: messages.tail.map(m =>
-              format2wsMessageForCustomer(m, ItemMetadata(isLatestMessage = false)))
+              format2wsMessageForCustomer(m, ItemMetadata(isLatestMessage = false))
+            )
           }
           .getOrElse(List.empty)
       case RenderType.CustomerForm =>
@@ -60,13 +62,17 @@ class HtmlCreatorService @Inject()(servicesConfig: ServicesConfig) {
           .sortWith(_.id > _.id)
           .headOption
           .map { hm =>
-            format2wsMessageForCustomer(hm, ItemMetadata(isLatestMessage = true, hasSmallSubject = true)) :: messages.tail
+            format2wsMessageForCustomer(
+              hm,
+              ItemMetadata(isLatestMessage = true, hasSmallSubject = true)
+            ) :: messages.tail
               .map(m => format2wsMessageForCustomer(m, ItemMetadata(isLatestMessage = false)))
           }
           .getOrElse(List.empty)
       case RenderType.Adviser => messages.sortWith(_.id > _.id).map(msg => format2wsMessageForAdviser(msg))
     }
 
+  // format: off
   private def format2wsMessageForCustomer(item: ConversationItem, metadata: ItemMetadata): String =
     Xhtml.toXhtml(
       getHeader(metadata, item.subject) ++ <p class="faded-text--small">{getCustomerDateText(item)}</p>
@@ -90,6 +96,7 @@ class HtmlCreatorService @Inject()(servicesConfig: ServicesConfig) {
       <h2 class={headingClass}>{Unparsed(escapeForXhtml(subject))}</h2>
     }
   }
+
 
   private def fixHtmlString(htmlString: String): String = {
     // makes line breaks XHTML valid
@@ -158,6 +165,7 @@ class HtmlCreatorService @Inject()(servicesConfig: ServicesConfig) {
         </svg>
       </a>
     </span>)
+  // format: on
 
   private def getCustomerDateText(message: ConversationItem): String = {
     val messageDate = extractMessageDate(message)
@@ -165,8 +173,8 @@ class HtmlCreatorService @Inject()(servicesConfig: ServicesConfig) {
       case Some(conversationItemDetails) =>
         conversationItemDetails.`type` match {
           case Some("2wsm-customer") => s"You sent this message on $messageDate"
-          case Some("2wsm-advisor") => s"This message was sent to you on $messageDate"
-          case _                    => defaultDateText(messageDate)
+          case Some("2wsm-advisor")  => s"This message was sent to you on $messageDate"
+          case _                     => defaultDateText(messageDate)
         }
       case _ => defaultDateText(messageDate)
     }
@@ -177,9 +185,9 @@ class HtmlCreatorService @Inject()(servicesConfig: ServicesConfig) {
     message.body match {
       case Some(conversationItemDetails) =>
         conversationItemDetails.`type` match {
-          case Some("2wsm-advisor") => s"$messageDate by HMRC:"
+          case Some("2wsm-advisor")  => s"$messageDate by HMRC:"
           case Some("2wsm-customer") => s"$messageDate by the customer:"
-          case _                    => defaultDateText(messageDate)
+          case _                     => defaultDateText(messageDate)
         }
       case _ => defaultDateText(messageDate)
     }
@@ -222,9 +230,8 @@ object HtmlUtil {
 
 object XmlConversion {
 
-  /**
-    * Returns one or more XML nodes parsed from the given string or an exception if the parsing fails.
-    * If the string is empty an empty text node will be returned.
+  /** Returns one or more XML nodes parsed from the given string or an exception if the parsing fails. If the string is
+    * empty an empty text node will be returned.
     */
   def stringToXmlNodes(string: String): Try[Seq[Node]] =
     try {
@@ -242,7 +249,7 @@ object XmlConversion {
 }
 
 case class ItemMetadata(
-                         isLatestMessage: Boolean,
-                         hasLink: Boolean = true,
-                         hasSmallSubject: Boolean = false
-                       )
+  isLatestMessage: Boolean,
+  hasLink: Boolean = true,
+  hasSmallSubject: Boolean = false
+)
