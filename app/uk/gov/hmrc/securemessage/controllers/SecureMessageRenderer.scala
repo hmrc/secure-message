@@ -48,12 +48,14 @@ class SecureMessageRenderer @Inject() (
 
   def view(id: ObjectId): Action[AnyContent] = Action.async { implicit request =>
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
+    println(id)
     authorised() {
+      println(id)
       messageService.getLetter(id) map {
         case Some(letter) if letter.alertDetails.templateId == ATS_v2_renderTemplateId =>
           Ok(templates.html.ViewTaxSummary_v2(letter.subject, letter.validFrom))
             .withHeaders("X-Title" -> UriEncoding.encodePathSegment(letter.subject, "UTF-8"))
-        case _ => InternalServerError
+        case r => println(r); InternalServerError
       }
     }
   }
