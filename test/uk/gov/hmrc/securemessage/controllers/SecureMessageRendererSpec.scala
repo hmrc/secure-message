@@ -29,7 +29,7 @@ import play.api.http.ContentTypes.*
 import play.api.http.HeaderNames.*
 import play.api.http.Status.*
 import play.api.i18n.Messages
-import play.api.libs.json.{ JsObject, JsResult, JsValue, Json, OFormat }
+import play.api.libs.json.{ JsNull, JsObject, JsResult, JsValue, Json, OFormat }
 import play.api.mvc.{ AnyContent, AnyContentAsEmpty, Request, Result }
 import play.api.test.Helpers.{ POST, PUT, contentAsJson, contentAsString, defaultAwaitTimeout, status, stubMessages }
 import play.api.test.{ FakeHeaders, FakeRequest, Helpers }
@@ -38,9 +38,11 @@ import uk.gov.hmrc.http.HttpVerbs.GET
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.services.SecureMessageServiceImpl
-import uk.gov.hmrc.auth.core._
-import uk.gov.hmrc.securemessage.models.core.Letter._
-import uk.gov.hmrc.securemessage.models.core._
+import uk.gov.hmrc.auth.core.*
+import uk.gov.hmrc.common.message.model.MessageContentParameters
+import uk.gov.hmrc.securemessage.models.core.Letter.*
+import uk.gov.hmrc.securemessage.models.core.*
+
 import java.time.{ Instant, LocalDate }
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -56,8 +58,8 @@ class SecureMessageRendererSpec extends PlaySpec with ScalaFutures with MockitoS
     val letter: Option[Letter] = storedLetter.validate[Letter].asOpt
 
     "return OK with ats_v2 template when a V3 message exists" in new TestCase {
-      val alertDetails: Option[AlertDetails] = letter.map(_.alertDetails.copy(templateId = "ats_v2"))
-      val atsLetter: Option[Letter] = letter.map(_.copy(alertDetails = alertDetails.get))
+      val contentParams: Option[MessageContentParameters] = Some(MessageContentParameters(JsNull, "ats_v2"))
+      val atsLetter: Option[Letter] = letter.map(_.copy(contentParameters = contentParams))
 
       when(
         mockSecureMessageService
