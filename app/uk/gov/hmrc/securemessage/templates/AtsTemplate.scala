@@ -19,16 +19,16 @@ package uk.gov.hmrc.securemessage.templates
 import play.twirl.api.Html
 
 object AtsTemplate {
- def apply(subject: String, fromDate: java.time.LocalDate): Html = {
-   val date = java.time.format.DateTimeFormatter.ofPattern("d MMMM yyyy").format(fromDate)
-   Html(
-     s"""<h2>$subject</h2>
-        |
-        |<p class="message_time faded-text--small">This message was sent to you on $date</p>
-        |
-        |<p>This is a summary of how Government spends your tax and National Insurance contributions.</p>
-        |<p>See your <a href="https://www.tax.service.gov.uk/annual-tax-summary">Annual Tax Summary</a>.</p>
-        |<p>Tax summaries are for information only so you don't need to contact HMRC. But you can <a href="https://www.gov.uk/annual-tax-summary">comment on tax summaries</a>.</p>""".stripMargin
-   )
- }
+  def apply(subject: String, fromDate: java.time.LocalDate): Html = {
+    val date = java.time.format.DateTimeFormatter.ofPattern("d MMMM yyyy").format(fromDate)
+    Html(
+      s"""<h2>$subject</h2>
+         |
+         |<p class="message_time faded-text--small">This message was sent to you on $date</p>
+         |
+         |<p>This is a summary of how Government spends your tax and National Insurance contributions.</p>
+         |<p>See your <a href="https://www.tax.service.gov.uk/annual-tax-summary">Annual Tax Summary</a>.</p>
+         |<p>Tax summaries are for information only so you don't need to contact HMRC. But you can <a href="https://www.gov.uk/annual-tax-summary">comment on tax summaries</a>.</p>""".stripMargin
+    )
+  }
 }
