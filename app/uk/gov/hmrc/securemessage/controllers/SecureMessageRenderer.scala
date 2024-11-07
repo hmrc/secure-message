@@ -28,7 +28,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.securemessage.services.SecureMessageServiceImpl
-import uk.gov.hmrc.securemessage.templates
+import uk.gov.hmrc.securemessage.templates.AtsTemplate
 import uk.gov.hmrc.common.message.model.ConversationItem
 
 import javax.inject.Inject
@@ -48,7 +48,7 @@ class SecureMessageRenderer @Inject() (
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
     messageService.getLetter(id) map {
       case Some(letter) if letter.contentParameters.exists(_.templateId == ATS_v2_renderTemplateId) =>
-        Ok(templates.html.ViewTaxSummary_v2(letter.subject, letter.validFrom))
+        Ok(AtsTemplate(letter.subject, letter.validFrom))
           .withHeaders("X-Title" -> UriEncoding.encodePathSegment(letter.subject, "UTF-8"))
       case r => InternalServerError
     }

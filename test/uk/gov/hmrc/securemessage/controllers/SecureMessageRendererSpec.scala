@@ -69,6 +69,7 @@ class SecureMessageRendererSpec extends PlaySpec with ScalaFutures with MockitoS
       val response: Future[Result] = controller.view(messageId)(fakeRequest)
       status(response) mustBe OK
       contentAsString(response) must include("Annual Tax Summary")
+      contentAsString(response) must include("This message was sent to you on 26 April 2021")
     }
 
     "return InternalServerError when no V3 message exists" in new TestCase {
