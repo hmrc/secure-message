@@ -29,7 +29,7 @@ import uk.gov.hmrc.securemessage.services.{ SecureMessageService, SecureMessageS
 import uk.gov.hmrc.securemessage.utils.DateTimeUtils
 
 import javax.inject.Singleton
-import scala.concurrent.duration.{ Duration, DurationInt, FiniteDuration }
+import scala.concurrent.duration.FiniteDuration
 
 class SecureMessageModule extends AbstractModule with PekkoGuiceSupport {
 
@@ -102,12 +102,6 @@ class SecureMessageModule extends AbstractModule with PekkoGuiceSupport {
   @Singleton
   def mobilePushNotificationsConnectorBaseUrl(servicesConfig: ServicesConfig): String =
     servicesConfig.baseUrl("mobile-push-notifications-orchestration")
-
-  @Provides
-  @Named("formIdsForOptionalEmail")
-  @Singleton
-  def formIdsForOptionalEmail(configuration: Configuration): Seq[String] =
-    configuration.getOptional[Seq[String]]("formids-for-optional-sendEmailAlert").getOrElse(Seq()).map(_.toLowerCase)
 }
 
 class TimeProvider extends DateTimeUtils
