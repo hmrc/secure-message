@@ -16,21 +16,21 @@
 
 package uk.gov.hmrc.securemessage.controllers
 
-import cats.data._
-import cats.implicits._
+import cats.data.*
+import cats.implicits.*
 import org.mongodb.scala.bson.ObjectId
 import play.api.Logging
 import play.api.i18n.I18nSupport
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{ Action, AnyContent, ControllerComponents, Request, Result }
-import uk.gov.hmrc.auth.core._
+import uk.gov.hmrc.auth.core.*
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.securemessage._
-import uk.gov.hmrc.securemessage.controllers.model.cdcm.write._
-import uk.gov.hmrc.securemessage.controllers.model.common.write._
+import uk.gov.hmrc.securemessage.*
+import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.*
+import uk.gov.hmrc.securemessage.controllers.model.common.write.*
 import uk.gov.hmrc.securemessage.controllers.model.{ ApiMessage, ClientName }
 import uk.gov.hmrc.securemessage.controllers.utils.IdCoder.EncodedId
 import uk.gov.hmrc.securemessage.controllers.utils.{ IdCoder, MessageSchemaValidator, QueryStringValidation }
@@ -44,6 +44,7 @@ import uk.gov.hmrc.securemessage.utils.DateTimeUtils
 import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.control.NonFatal
 import scala.util.{ Failure, Success, Try }
 
 class SecureMessageController @Inject() (
@@ -309,7 +310,10 @@ class SecureMessageController @Inject() (
           logger.debug(s"Secure Message is Read $id")
           auditMessageReadStatus(message)
           Future.successful(Ok)
-        case Right(None) => Future.successful(InternalServerError(s"failed to set read time for : $id"))
+        case Right(None) => Future.successful(InternalServerError(s"failed to set read time for: $id"))
+      }
+      .recoverWith { case NonFatal(e) =>
+        Future.successful(InternalServerError(s"failed to set read time for: $id due to ${e.getMessage}"))
       }
   }
 }

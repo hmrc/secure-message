@@ -40,7 +40,7 @@ class EmailAlertJob @Inject() (
   lazy val maxLockHours: Long = 1
   lazy val releaseLockAfter: Duration = lockDuration match {
     case duration: FiniteDuration => Duration(duration.toMillis, MILLISECONDS)
-    case _                        => Duration(maxLockHours, HOURS)
+    case null                     => Duration(maxLockHours, HOURS)
   }
 
   lazy val ls = LockService(lockRepository = lockRepository, lockId = name, ttl = releaseLockAfter)
