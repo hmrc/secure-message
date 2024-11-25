@@ -19,9 +19,9 @@ package uk.gov.hmrc.securemessage.controllers
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.testkit.NoMaterializer
 
-import java.time.{Instant, LocalDate}
-import org.mockito.ArgumentMatchers.{any, eq as eqTo}
-import org.mockito.Mockito.{times, verify, when}
+import java.time.{ Instant, LocalDate }
+import org.mockito.ArgumentMatchers.{ any, eq as eqTo }
+import org.mockito.Mockito.{ times, verify, when }
 import org.mongodb.scala.bson.ObjectId
 import org.scalatest.OptionValues
 import org.scalatest.concurrent.ScalaFutures
@@ -31,11 +31,11 @@ import play.api.http.ContentTypes.*
 import play.api.http.HeaderNames.*
 import play.api.http.Status.*
 import play.api.i18n.Messages
-import play.api.libs.json.{JsObject, JsValue, Json, OFormat}
+import play.api.libs.json.{ JsObject, JsValue, Json, OFormat }
 import play.api.mvc.Results.Created
-import play.api.mvc.{AnyContent, AnyContentAsEmpty, Request, Result}
-import play.api.test.Helpers.{POST, PUT, contentAsJson, contentAsString, defaultAwaitTimeout, status, stubMessages}
-import play.api.test.{FakeHeaders, FakeRequest, Helpers}
+import play.api.mvc.{ AnyContent, AnyContentAsEmpty, Request, Result }
+import play.api.test.Helpers.{ POST, PUT, contentAsJson, contentAsString, defaultAwaitTimeout, status, stubMessages }
+import play.api.test.{ FakeHeaders, FakeRequest, Helpers }
 import uk.gov.hmrc.auth.core.*
 import uk.gov.hmrc.auth.core.authorise.Predicate
 import uk.gov.hmrc.auth.core.retrieve.Retrieval
@@ -47,14 +47,14 @@ import uk.gov.hmrc.play.audit.http.connector.AuditResult.Success
 import uk.gov.hmrc.play.audit.model.DataEvent
 import uk.gov.hmrc.securemessage.*
 import uk.gov.hmrc.securemessage.connectors.AuthIdentifiersConnector
-import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.{ApiConversation, ConversationMetadata}
-import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.{CaseworkerMessage, CdcmConversation}
-import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.{ApiLetter, SenderInformation}
+import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.{ ApiConversation, ConversationMetadata }
+import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.{ CaseworkerMessage, CdcmConversation }
+import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.{ ApiLetter, SenderInformation }
 import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
-import uk.gov.hmrc.securemessage.controllers.model.{ClientName, MessageType}
+import uk.gov.hmrc.securemessage.controllers.model.{ ClientName, MessageType }
 import uk.gov.hmrc.securemessage.controllers.utils.QueryStringValidationSuccess
-import uk.gov.hmrc.securemessage.handlers.{CDSMessageRetriever, MessageBroker, NonCDSMessageRetriever, RetrieverType}
+import uk.gov.hmrc.securemessage.handlers.{ CDSMessageRetriever, MessageBroker, NonCDSMessageRetriever, RetrieverType }
 import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core.Letter.*
 import uk.gov.hmrc.securemessage.models.core.*
@@ -64,7 +64,7 @@ import uk.gov.hmrc.securemessage.services.SecureMessageServiceImpl
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ExecutionContext, ExecutionException, Future}
+import scala.concurrent.{ ExecutionContext, ExecutionException, Future }
 
 class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with MockitoSugar with OptionValues with UnitTest {
 
