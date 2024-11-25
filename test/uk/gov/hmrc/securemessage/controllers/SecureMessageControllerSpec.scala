@@ -18,49 +18,53 @@ package uk.gov.hmrc.securemessage.controllers
 
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.testkit.NoMaterializer
-import java.time.{ Instant, LocalDate }
-import org.mockito.ArgumentMatchers.{ any, eq => eqTo }
-import org.mockito.Mockito.{ times, verify, when }
+
+import java.time.{Instant, LocalDate}
+import org.mockito.ArgumentMatchers.{any, eq as eqTo}
+import org.mockito.Mockito.{times, verify, when}
 import org.mongodb.scala.bson.ObjectId
 import org.scalatest.OptionValues
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
-import play.api.http.ContentTypes._
-import play.api.http.HeaderNames._
-import play.api.http.Status._
+import play.api.http.ContentTypes.*
+import play.api.http.HeaderNames.*
+import play.api.http.Status.*
 import play.api.i18n.Messages
-import play.api.libs.json.{ JsObject, JsValue, Json, OFormat }
+import play.api.libs.json.{JsObject, JsValue, Json, OFormat}
 import play.api.mvc.Results.Created
-import play.api.mvc.{ AnyContent, AnyContentAsEmpty, Request, Result }
-import play.api.test.Helpers.{ POST, PUT, contentAsJson, contentAsString, defaultAwaitTimeout, status, stubMessages }
-import play.api.test.{ FakeHeaders, FakeRequest, Helpers }
-import uk.gov.hmrc.auth.core._
+import play.api.mvc.{AnyContent, AnyContentAsEmpty, Request, Result}
+import play.api.test.Helpers.{POST, PUT, contentAsJson, contentAsString, defaultAwaitTimeout, status, stubMessages}
+import play.api.test.{FakeHeaders, FakeRequest, Helpers}
+import uk.gov.hmrc.auth.core.*
 import uk.gov.hmrc.auth.core.authorise.Predicate
 import uk.gov.hmrc.auth.core.retrieve.Retrieval
 import uk.gov.hmrc.common.message.model.MessagesCount
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HttpVerbs.GET
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import uk.gov.hmrc.securemessage._
-import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.{ ApiConversation, ConversationMetadata }
-import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.{ CaseworkerMessage, CdcmConversation }
-import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.{ ApiLetter, SenderInformation }
+import uk.gov.hmrc.play.audit.http.connector.AuditResult.Success
+import uk.gov.hmrc.play.audit.model.DataEvent
+import uk.gov.hmrc.securemessage.*
+import uk.gov.hmrc.securemessage.connectors.AuthIdentifiersConnector
+import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.{ApiConversation, ConversationMetadata}
+import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.{CaseworkerMessage, CdcmConversation}
+import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.{ApiLetter, SenderInformation}
 import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
-import uk.gov.hmrc.securemessage.controllers.model.{ ClientName, MessageType }
+import uk.gov.hmrc.securemessage.controllers.model.{ClientName, MessageType}
 import uk.gov.hmrc.securemessage.controllers.utils.QueryStringValidationSuccess
-import uk.gov.hmrc.securemessage.handlers.{ CDSMessageRetriever, MessageBroker, RetrieverType }
+import uk.gov.hmrc.securemessage.handlers.{CDSMessageRetriever, MessageBroker, NonCDSMessageRetriever, RetrieverType}
 import uk.gov.hmrc.securemessage.helpers.Resources
-import uk.gov.hmrc.securemessage.models.core.Letter._
-import uk.gov.hmrc.securemessage.models.core._
+import uk.gov.hmrc.securemessage.models.core.Letter.*
+import uk.gov.hmrc.securemessage.models.core.*
 import uk.gov.hmrc.securemessage.models.v4.SecureMessage
 import uk.gov.hmrc.securemessage.repository.ConversationRepository
 import uk.gov.hmrc.securemessage.services.SecureMessageServiceImpl
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ ExecutionContext, ExecutionException, Future }
+import scala.concurrent.{ExecutionContext, ExecutionException, Future}
 
 class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with MockitoSugar with OptionValues with UnitTest {
 
@@ -489,6 +493,31 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     }
   }
 
+  "setReadTime" must {
+    val messageId = new ObjectId
+    "return error when it is unable to set read-time value" in new TestCase {
+      val fakeRequest = FakeRequest(GET, routes.SecureMessageController.setReadTime(messageId).url)
+      when(
+        mockMessageRetriever.findAndSetReadTime(any[ObjectId])(any[ExecutionContext], any[HeaderCarrier])
+      )
+        .thenReturn(Future.failed(new NullPointerException("error")))
+      val response: Future[Result] = controller.setReadTime(messageId)(fakeRequest)
+      status(response) mustBe INTERNAL_SERVER_ERROR
+      contentAsString(response) mustBe s"Failed to set read time for: $messageId due to error"
+    }
+
+    "return success when it is able to set read-time value" in new TestCase {
+      val fakeRequest = FakeRequest(GET, routes.SecureMessageController.setReadTime(messageId).url)
+      val message: Letter = Resources.readJson("model/core/full-db-letter.json").as[Letter]
+      when(
+        mockMessageRetriever.findAndSetReadTime(any[ObjectId])(any[ExecutionContext], any[HeaderCarrier])
+      )
+        .thenReturn(Future.successful(Right(Some(message))))
+      val response: Future[Result] = controller.setReadTime(messageId)(fakeRequest)
+      status(response) mustBe OK
+    }
+  }
+
   "createMessage" must {
     "return CREATED for the valid message" in
       new CreateSecureMessageTestCase(requestBody = Resources.readJson("model/core/v4/valid_message.json")) {
@@ -512,6 +541,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     val mockRepository: ConversationRepository = mock[ConversationRepository]
     val mockAuthConnector: AuthConnector = mock[AuthConnector]
     val mockMessageBroker: MessageBroker = mock[MessageBroker]
+    val mockMessageRetriever: NonCDSMessageRetriever = mock[NonCDSMessageRetriever]
     val mockAuditConnector: AuditConnector = mock[AuditConnector]
     val mockSecureMessageService: SecureMessageServiceImpl = mock[SecureMessageServiceImpl]
     when(mockRepository.insertIfUnique(any[Conversation])(any[ExecutionContext]))
@@ -520,6 +550,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       .thenReturn(new CDSMessageRetriever(mockAuthConnector, mockSecureMessageService))
     when(mockMessageBroker.messageRetriever(any[RetrieverType]))
       .thenReturn(new CDSMessageRetriever(mockAuthConnector, mockSecureMessageService))
+    when(mockMessageBroker.default).thenReturn(mockMessageRetriever)
     val controller =
       new SecureMessageController(
         Helpers.stubControllerComponents(),
@@ -537,6 +568,12 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
         .authorise(any[Predicate], any[Retrieval[Enrolments]])(any[HeaderCarrier], any[ExecutionContext])
     )
       .thenReturn(Future.successful(enrolments))
+
+    when(
+      mockAuditConnector
+        .sendEvent(any[DataEvent])(any[HeaderCarrier], any[ExecutionContext])
+    )
+      .thenReturn(Future.successful(Success))
   }
 
   private val fullConversationJson = Resources.readJson("model/api/cdcm/write/create-conversation.json")

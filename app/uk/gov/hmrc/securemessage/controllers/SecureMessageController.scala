@@ -313,7 +313,8 @@ class SecureMessageController @Inject() (
         case Right(None) => Future.successful(InternalServerError(s"failed to set read time for: $id"))
       }
       .recoverWith { case NonFatal(e) =>
-        Future.successful(InternalServerError(s"failed to set read time for: $id due to ${e.getMessage}"))
+        logger.error(s"Failed to set read time for: $id due to ${e.getMessage}")
+        Future.successful(InternalServerError(s"Failed to set read time for: $id due to ${e.getMessage}"))
       }
   }
 }
