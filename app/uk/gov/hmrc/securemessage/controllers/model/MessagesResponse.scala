@@ -57,7 +57,7 @@ final case class MessagesResponse(items: Option[Seq[MessageMetadata]], count: Me
         val (standalones, conversations) = msgs
           .groupBy(m => m.replyTo.getOrElse(m.id))
           .values
-          .partition(m => m.size == 1 && m.head.replyTo.isEmpty)
+          .partition(m => m.size == 1 && m.headOption.flatMap(_.replyTo).isEmpty)
         val msgsWithCounter = (standalones.flatten.toList ++ addCounter(conversations.flatten.toList))
           .sortWith(_.id > _.id)
         MessagesResponse(Some(msgsWithCounter), MessagesCount(msgsWithCounter.size, count.unread))
