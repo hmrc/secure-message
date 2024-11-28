@@ -118,9 +118,9 @@ class MessageRepository @Inject() (mongo: MongoComponent)(implicit ec: Execution
 
   def getLetter(id: ObjectId, identifiers: Set[Identifier])(implicit
     ec: ExecutionContext
-  ): Future[Either[SecureMessageError, Letter]] = getMessage(id, identifiers).map(updateRendererUrl)
+  ): Future[Either[SecureMessageError, Letter]] = getMessage(id, identifiers).map(updateRenderUrl)
 
-  private val updateRendererUrl: Either[SecureMessageError, Letter] => Either[SecureMessageError, Letter] = {
+  private val updateRenderUrl: Either[SecureMessageError, Letter] => Either[SecureMessageError, Letter] = {
     case Right(l) if l.renderUrl.service == "ats-message-renderer" =>
       Right(l.copy(renderUrl = RenderUrl("secure-message", s"/secure-messaging${l.renderUrl.url}")))
     case other => other
