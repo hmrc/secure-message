@@ -19,7 +19,7 @@ package uk.gov.hmrc.securemessage.repository
 import com.mongodb.client.model.Indexes.{ ascending, descending }
 import org.bson.types.ObjectId
 import org.mongodb.scala.bson.conversions.Bson
-import org.mongodb.scala.model._
+import org.mongodb.scala.model.*
 import org.mongodb.scala.SingleObservableFuture
 import org.mongodb.scala.ObservableFuture
 import play.api.libs.json.{ JsObject, Json }
@@ -27,7 +27,7 @@ import uk.gov.hmrc.common.message.model.{ MessagesCount, Regime }
 import uk.gov.hmrc.domain.TaxIds.TaxIdWithName
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.Codecs
-import uk.gov.hmrc.securemessage.models.core.{ Count, FilterTag, Identifier, Letter, MessageFilter }
+import uk.gov.hmrc.securemessage.models.core.{ Count, FilterTag, Identifier, Letter, MessageFilter, RenderUrl }
 import uk.gov.hmrc.securemessage.{ SecureMessageError, StoreError }
 
 import java.util.concurrent.TimeUnit
@@ -118,7 +118,13 @@ class MessageRepository @Inject() (mongo: MongoComponent)(implicit ec: Execution
 
   def getLetter(id: ObjectId, identifiers: Set[Identifier])(implicit
     ec: ExecutionContext
-  ): Future[Either[SecureMessageError, Letter]] = getMessage(id, identifiers)
+  ): Future[Either[SecureMessageError, Letter]] = getMessage(id, identifiers).map(updateRenderUrl)
+
+  private val updateRenderUrl: Either[SecureMessageError, Letter] => Either[SecureMessageError, Letter] = {
+    case Right(l) if l.renderUrl.service == "ats-message-renderer" =>
+      Right(l.copy(renderUrl = RenderUrl("secure-message", s"/secure-messaging${l.renderUrl.url}")))
+    case other => other
+  }
 
   def addReadTime(id: ObjectId)(implicit ec: ExecutionContext): Future[Either[SecureMessageError, Letter]] =
     collection

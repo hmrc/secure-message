@@ -28,8 +28,8 @@ import play.api.libs.json.{ JsObject, JsValue, Json }
 import play.api.test.Helpers.{ await, defaultAwaitTimeout }
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 import uk.gov.hmrc.securemessage.helpers.Resources
-import uk.gov.hmrc.securemessage.models.core.Letter._
-import uk.gov.hmrc.securemessage.models.core.{ Count, ExternalReference, FilterTag, Identifier, Letter }
+import uk.gov.hmrc.securemessage.models.core.Letter.*
+import uk.gov.hmrc.securemessage.models.core.{ Count, ExternalReference, FilterTag, Identifier, Letter, RenderUrl }
 import uk.gov.hmrc.securemessage.{ MessageNotFound, SecureMessageError }
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -86,6 +86,21 @@ class MessageRepositorySpec
       result.left.value mustBe MessageNotFound(
         "Letter not found for identifiers: Set(Identifier(EORINumber,GB1234567891,Some(HMRC-CUS-ORG)))"
       )
+    }
+
+    "be returned with renderUrl updated for ats-message-renderer type" in new TestContext() {
+      val messageId = new ObjectId
+      val atsRenderUrl: RenderUrl = RenderUrl("ats-message-renderer", s"/ats-message-renderer/message/$messageId")
+      val renderUrl: RenderUrl =
+        RenderUrl("secure-message", s"/secure-messaging/ats-message-renderer/message/$messageId")
+      val letterWithAtsRenderUrl: Letter = letter.copy(_id = messageId, renderUrl = atsRenderUrl)
+      val letterWithUpdatedRenderUrl: Letter = letter.copy(_id = messageId, renderUrl = renderUrl)
+      repository.collection.deleteMany(Filters.empty()).toFuture().futureValue
+      repository.collection.insertOne(letterWithAtsRenderUrl).toFuture().futureValue
+
+      val result: Either[SecureMessageError, Letter] =
+        await(repository.getLetter(messageId, identifiers))
+      result mustBe Right(letterWithUpdatedRenderUrl)
     }
   }
 
