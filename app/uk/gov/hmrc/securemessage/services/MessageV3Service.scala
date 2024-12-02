@@ -20,6 +20,7 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import org.mongodb.scala.bson.ObjectId
 import play.api.i18n.Messages
+import uk.gov.hmrc.common.message.model.ConversationItem
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.securemessage.connectors.AuthIdentifiersConnector
 import uk.gov.hmrc.securemessage.handlers.MessageReadRequest
@@ -138,4 +139,60 @@ trait MessageV3Service {
     date.format(formatter)
   }
   def getLetter(id: ObjectId)(implicit ec: ExecutionContext): Future[Option[Letter]]
+
+  def findMessageListById(
+    id: String
+  )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Either[String, List[ConversationItem]]] =
+    for {
+      taxIds <- authIdentifiersConnector.currentEffectiveTaxIdentifiers
+      identifiers = taxIds.map(s => Identifier(s.name, s.value, None))
+      msgList <- getMessageListResponse(id, identifiers)
+    } yield msgList
+
+  private def getMessageListResponse(id: String, taxIds: Set[Identifier])(implicit
+    ec: ExecutionContext
+  ): Future[Either[String, List[ConversationItem]]] = {
+
+    def getMessageListResponse(
+      id: String,
+      messageList: List[ConversationItem]
+    ): Future[Either[String, List[ConversationItem]]] =
+      getLetter(new ObjectId(id)).flatMap {
+        case None => Future.successful(Left("Message not found"))
+        case Some(message) =>
+          if (taxIds.contains(message.recipient.identifier)) {
+            message.body.flatMap(_.replyTo) match {
+              case None =>
+                Future.successful(
+                  Right(
+                    ConversationItem(
+                      message._id.toString,
+                      message.subject,
+                      None,
+                      message.validFrom,
+                      message.content
+                    ) :: messageList
+                  )
+                )
+              case Some(replyTo) =>
+                getMessageListResponse(
+                  replyTo,
+                  ConversationItem(
+                    message._id.toString,
+                    message.subject,
+                    None,
+                    message.validFrom,
+                    message.content
+                  ) :: messageList
+                )
+            }
+          } else {
+            Future.successful(Left("Message unauthorised"))
+          }
+      }
+
+    for {
+      msgList <- getMessageListResponse(id, List())
+    } yield msgList
+  }
 }

@@ -37,7 +37,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HttpVerbs.GET
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.securemessage.helpers.Resources
-import uk.gov.hmrc.securemessage.services.SecureMessageServiceImpl
+import uk.gov.hmrc.securemessage.services.{ HtmlCreatorService, SecureMessageServiceImpl }
 import uk.gov.hmrc.auth.core.*
 import uk.gov.hmrc.common.message.model.MessageContentParameters
 import uk.gov.hmrc.securemessage.models.core.Letter.*
@@ -99,12 +99,14 @@ class SecureMessageRendererSpec extends PlaySpec with ScalaFutures with MockitoS
     val mockAuthConnector: AuthConnector = mock[AuthConnector]
     val mockAuditConnector: AuditConnector = mock[AuditConnector]
     val mockSecureMessageService: SecureMessageServiceImpl = mock[SecureMessageServiceImpl]
+    val mockHtmlCreatorService: HtmlCreatorService = mock[HtmlCreatorService]
     val controller =
       new SecureMessageRenderer(
         Helpers.stubControllerComponents(),
         mockAuthConnector,
         mockAuditConnector,
-        mockSecureMessageService
+        mockSecureMessageService,
+        mockHtmlCreatorService
       )
   }
 }
