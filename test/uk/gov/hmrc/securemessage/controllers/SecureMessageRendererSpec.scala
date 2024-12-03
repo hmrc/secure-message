@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.securemessage.controllers
 
+import org.apache.commons.codec.binary.Base64
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.testkit.NoMaterializer
 import org.mockito.ArgumentMatchers.{ any, eq as eqTo }
@@ -39,12 +40,12 @@ import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.services.{ HtmlCreatorService, SecureMessageServiceImpl }
 import uk.gov.hmrc.auth.core.*
-import uk.gov.hmrc.common.message.model.MessageContentParameters
+import uk.gov.hmrc.common.message.model.{ ConversationItem, MessageContentParameters }
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.securemessage.models.core.Letter.*
 import uk.gov.hmrc.securemessage.models.core.*
 
-import java.time.{ Instant, LocalDate }
-import java.util.UUID
+import java.time.LocalDate
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ ExecutionContext, ExecutionException, Future }
 
@@ -95,11 +96,58 @@ class SecureMessageRendererSpec extends PlaySpec with ScalaFutures with MockitoS
     }
   }
 
+  "getContentBy" must {
+    val messageId = new ObjectId().toString
+    val fakeRequest = FakeRequest(GET, routes.SecureMessageRenderer.getContentBy(messageId, "").url)
+    val conversationItemList: List[ConversationItem] = List(
+      ConversationItem(
+        messageId,
+        "test-subject",
+        None,
+        LocalDate.of(2024, 12, 3),
+        Some(Base64.encodeBase64String("test-content".getBytes("UTF-8")))
+      )
+    )
+
+    "return OK with two-way-message template for message-type as 'Customer'" in new TestCase {
+      when(
+        mockSecureMessageService
+          .findMessageListById(any[String])(any[HeaderCarrier], any[ExecutionContext])
+      )
+        .thenReturn(Future.successful(Right(conversationItemList)))
+
+      val response: Future[Result] = controller.getContentBy(messageId, "Customer")(fakeRequest)
+      status(response) mustBe OK
+      contentAsString(response) must include("test-subject")
+      contentAsString(response) must include("This message was sent on 03 December 2024")
+    }
+
+    "return OK with two-way-message template for message-type as 'Adviser'" in new TestCase {
+      when(
+        mockSecureMessageService
+          .findMessageListById(any[String])(any[HeaderCarrier], any[ExecutionContext])
+      )
+        .thenReturn(Future.successful(Right(conversationItemList)))
+
+      val response: Future[Result] = controller.getContentBy(messageId, "Adviser")(fakeRequest)
+      status(response) mustBe OK
+      contentAsString(response) must include("This message was sent on 03 December 2024")
+    }
+
+    "return BadRequest when message type is not Customer or Advisor" in new TestCase {
+      val response: Future[Result] = controller.getContentBy(messageId, "Advisor")(fakeRequest)
+      status(response) mustBe BAD_REQUEST
+    }
+  }
+
   class TestCase {
     val mockAuthConnector: AuthConnector = mock[AuthConnector]
     val mockAuditConnector: AuditConnector = mock[AuditConnector]
     val mockSecureMessageService: SecureMessageServiceImpl = mock[SecureMessageServiceImpl]
-    val mockHtmlCreatorService: HtmlCreatorService = mock[HtmlCreatorService]
+    val mockConfig: ServicesConfig = mock[ServicesConfig]
+    val mockHtmlCreatorService: HtmlCreatorService = new HtmlCreatorService(mockConfig)
+    when(mockConfig.getString(any[String])).thenReturn("test-url")
+
     val controller =
       new SecureMessageRenderer(
         Helpers.stubControllerComponents(),

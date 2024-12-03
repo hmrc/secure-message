@@ -26,8 +26,8 @@ import javax.inject.Inject
 import scala.concurrent.Future
 import scala.util.{ Failure, Success }
 import scala.xml.{ Elem, Node, NodeSeq, Unparsed, Utility, Xhtml }
-import scala.util.{ Failure, Success, Try }
-import scala.xml.{ Node, SAXParseException, Text }
+import scala.util.Try
+import scala.xml.{ SAXParseException, Text }
 import HtmlUtil.*
 import XmlConversion.*
 import uk.gov.hmrc.securemessage.models.RenderType
