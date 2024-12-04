@@ -20,6 +20,7 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import org.mongodb.scala.bson.ObjectId
 import play.api.i18n.Messages
+import uk.gov.hmrc.common.message.model.{ ConversationItem, Details }
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.securemessage.connectors.AuthIdentifiersConnector
 import uk.gov.hmrc.securemessage.handlers.MessageReadRequest
@@ -138,4 +139,64 @@ trait MessageV3Service {
     date.format(formatter)
   }
   def getLetter(id: ObjectId)(implicit ec: ExecutionContext): Future[Option[Letter]]
+
+  // ToDo - Refactor to use getMessage function instead
+  def findMessageListById(
+    id: String
+  )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Either[String, List[ConversationItem]]] =
+    for {
+      taxIds <- authIdentifiersConnector.currentEffectiveTaxIdentifiers
+      identifiers = taxIds.map(s => Identifier(s.name, s.value, None))
+      msgList <- getMessageListResponse(id, identifiers)
+    } yield msgList
+
+  private def getMessageListResponse(id: String, taxIds: Set[Identifier])(implicit
+    ec: ExecutionContext
+  ): Future[Either[String, List[ConversationItem]]] = {
+
+    def getMessageListResponse(
+      id: String,
+      messageList: List[ConversationItem]
+    ): Future[Either[String, List[ConversationItem]]] =
+      getLetter(new ObjectId(id)).flatMap {
+        case None => Future.successful(Left("Message not found"))
+        case Some(message) =>
+          val conversationItem = ConversationItem(
+            message._id.toString,
+            message.subject,
+            message.body.map(d =>
+              Details(
+                d.form,
+                d.`type`,
+                d.suppressedAt,
+                d.detailsId,
+                replyTo = d.replyTo,
+                enquiryType = d.enquiryType,
+                issueDate = d.issueDate
+              )
+            ),
+            message.validFrom,
+            message.content
+          )
+          if (taxIds.contains(message.recipient.identifier)) {
+            message.body.flatMap(_.replyTo) match {
+              case None =>
+                Future.successful(
+                  Right(conversationItem :: messageList)
+                )
+              case Some(replyTo) =>
+                getMessageListResponse(
+                  replyTo,
+                  conversationItem :: messageList
+                )
+            }
+          } else {
+            Future.successful(Left(s"Message unauthorised: $taxIds"))
+          }
+      }
+
+    for {
+      msgList <- getMessageListResponse(id, List())
+    } yield msgList
+  }
 }

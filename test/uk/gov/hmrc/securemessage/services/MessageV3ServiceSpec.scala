@@ -16,12 +16,18 @@
 
 package uk.gov.hmrc.securemessage.services
 
+import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.when
 import org.mongodb.scala.bson.ObjectId
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.play.PlaySpec
+import uk.gov.hmrc.common.message.model.ConversationItem
+import uk.gov.hmrc.common.message.model.TaxEntity.HmrcCusOrg
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.securemessage.connectors.AuthIdentifiersConnector
 import uk.gov.hmrc.securemessage.helpers.MessageUtil
-import uk.gov.hmrc.securemessage.models.core.Letter
+import uk.gov.hmrc.securemessage.models.core.{ Details, Identifier, Letter, Recipient }
+
 import java.time.{ Instant, LocalDate }
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -78,6 +84,47 @@ class MessageV3ServiceSpec extends PlaySpec with ScalaFutures with TestHelpers {
       subject.toString() must include("some other subject text")
       messageContent must include("File your next Self Assessment tax return")
       messageContent must include("This message was sent to you on 6 April 2018")
+    }
+  }
+
+  "getMessageListResponse" must {
+    "return conversationItems from message list" in {
+      implicit val hc: HeaderCarrier = HeaderCarrier()
+      implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
+      val letter: Letter = MessageUtil
+        .getMessage(
+          subject = "Two Way message subject",
+          content = "\\n\\n\\n\\n\\n\\n\\n\\t<h2>\\n\\tTwo Way message content\\n</h2>\\n\\t\\n\\t" +
+            "<p class=\\\"message_time faded-text--small\\\">This message was sent to you on 6 April 2018</p>\\n\\n\\t\\n\\n\\t\\n\\n<" +
+            "div class=\\\"alert alert--info alert--info__light\\\">\\n "
+        )
+        .copy(recipient = Recipient("cds", Identifier("HMRC-CUS-ORG", "example eori", None), None))
+
+      val mockIdentifierConnector = mock[AuthIdentifiersConnector]
+
+      val v3Service = new MessageV3Service {
+        override val authIdentifiersConnector: AuthIdentifiersConnector = mockIdentifierConnector
+
+        override def getLetter(id: ObjectId)(implicit ec: ExecutionContext): Future[Option[Letter]] =
+          Future.successful(Some(letter))
+      }
+
+      when(mockIdentifierConnector.currentEffectiveTaxIdentifiers(any[HeaderCarrier]))
+        .thenReturn(Future.successful(Set(HmrcCusOrg("example eori"))))
+
+      val response = v3Service.findMessageListById(letter._id.toString).futureValue
+
+      response mustBe Right(
+        List(
+          ConversationItem(
+            letter._id.toString,
+            letter.subject,
+            None,
+            letter.validFrom,
+            letter.content
+          )
+        )
+      )
     }
   }
 }

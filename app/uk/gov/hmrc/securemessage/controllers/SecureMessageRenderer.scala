@@ -27,9 +27,10 @@ import uk.gov.hmrc.auth.core.*
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.securemessage.services.SecureMessageServiceImpl
+import uk.gov.hmrc.securemessage.services.{ HtmlCreatorService, SecureMessageServiceImpl }
 import uk.gov.hmrc.securemessage.templates.AtsTemplate
 import uk.gov.hmrc.common.message.model.ConversationItem
+import uk.gov.hmrc.securemessage.models.RenderType
 
 import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
@@ -38,7 +39,8 @@ class SecureMessageRenderer @Inject() (
   cc: ControllerComponents,
   val authConnector: AuthConnector,
   override val auditConnector: AuditConnector,
-  messageService: SecureMessageServiceImpl
+  messageService: SecureMessageServiceImpl,
+  htmlCreatorService: HtmlCreatorService
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) with AuthorisedFunctions with Auditing with Logging {
 
@@ -51,6 +53,36 @@ class SecureMessageRenderer @Inject() (
         Ok(AtsTemplate(letter.subject, letter.validFrom))
           .withHeaders("X-Title" -> UriEncoding.encodePathSegment(letter.subject, "UTF-8"))
       case r => InternalServerError
+    }
+  }
+
+  def getContentBy(id: String, msgType: String): Action[AnyContent] = Action.async { implicit request =>
+    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
+
+    def renderMessage(replyType: RenderType.ReplyType): Future[Result] =
+      messageService.findMessageListById(id).flatMap {
+        case Right(msgList) => getHtmlResponse(id, msgList, replyType)
+        case Left(err) =>
+          logger.warn(s"Error retrieving messages: $err")
+          Future.successful(BadGateway(err))
+      }
+
+    def getHtmlResponse(
+      id: String,
+      msgList: List[ConversationItem],
+      replyType: RenderType.ReplyType
+    ): Future[Result] =
+      htmlCreatorService.createConversation(id, msgList, replyType).map {
+        case Right(html) => Ok(html)
+        case Left(error) =>
+          logger.warn(s"HtmlCreatorService conversion error: $error")
+          InternalServerError(error)
+      }
+
+    msgType match {
+      case "Customer" => renderMessage(RenderType.CustomerLink)
+      case "Adviser"  => renderMessage(RenderType.Adviser)
+      case _          => Future.successful(BadRequest)
     }
   }
 }
