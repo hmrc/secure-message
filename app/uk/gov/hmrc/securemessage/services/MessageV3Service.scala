@@ -191,7 +191,7 @@ trait MessageV3Service {
                 )
             }
           } else {
-            Future.successful(Left(s"Message unauthorised: $taxIds  && ${message.recipient.identifier}"))
+            Future.successful(Left(s"Message unauthorised: $taxIds"))
           }
       }
 

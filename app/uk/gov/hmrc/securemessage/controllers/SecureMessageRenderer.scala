@@ -59,7 +59,7 @@ class SecureMessageRenderer @Inject() (
   def getContentBy(id: String, msgType: String): Action[AnyContent] = Action.async { implicit request =>
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
 
-    def createMsg(replyType: RenderType.ReplyType): Future[Result] =
+    def renderMessage(replyType: RenderType.ReplyType): Future[Result] =
       messageService.findMessageListById(id).flatMap {
         case Right(msgList) => getHtmlResponse(id, msgList, replyType)
         case Left(err) =>
@@ -80,8 +80,8 @@ class SecureMessageRenderer @Inject() (
       }
 
     msgType match {
-      case "Customer" => createMsg(RenderType.CustomerLink)
-      case "Adviser"  => createMsg(RenderType.Adviser)
+      case "Customer" => renderMessage(RenderType.CustomerLink)
+      case "Adviser"  => renderMessage(RenderType.Adviser)
       case _          => Future.successful(BadRequest)
     }
   }
