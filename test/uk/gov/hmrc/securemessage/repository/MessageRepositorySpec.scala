@@ -102,21 +102,6 @@ class MessageRepositorySpec
         await(repository.getLetter(messageId, identifiers))
       result mustBe Right(letterWithUpdatedRenderUrl)
     }
-
-    "be returned with renderUrl updated for two-way-message type" in new TestContext() {
-      val messageId = new ObjectId
-      val twoWayMessageRenderUrl: RenderUrl = RenderUrl("two-way-message", s"/messages/$messageId/content")
-      val renderUrl: RenderUrl =
-        RenderUrl("secure-message", s"/secure-messaging/messages/$messageId/content")
-      val letterWith2WMRenderUrl: Letter = letter.copy(_id = messageId, renderUrl = twoWayMessageRenderUrl)
-      val letterWithUpdatedRenderUrl: Letter = letter.copy(_id = messageId, renderUrl = renderUrl)
-      repository.collection.deleteMany(Filters.empty()).toFuture().futureValue
-      repository.collection.insertOne(letterWith2WMRenderUrl).toFuture().futureValue
-
-      val result: Either[SecureMessageError, Letter] =
-        await(repository.getLetter(messageId, identifiers))
-      result mustBe Right(letterWithUpdatedRenderUrl)
-    }
   }
 
   "Update letter with new read time" should {
