@@ -86,7 +86,7 @@ class EntityResolverConnector @Inject() (config: Configuration, httpClient: Http
     val allowedRegimes = Set(Regime.itsa, Regime.paye, Regime.sa)
     if (allowedRegimes.contains(recipient.regime)) {
       httpClient
-        .get(prepareUrl(s"/entity-resolver/${recipient.regime}/${recipient.identifier.value}"))
+        .get(prepareUrl(s"/entity-resolver?taxRegime=${recipient.regime}&taxId=${recipient.identifier.value}"))
         .execute[HttpResponse]
         .map { response =>
           response.status match {
