@@ -584,6 +584,9 @@ class SecureMessageUtil @Inject() (
 
   def addReadTime(id: ObjectId)(implicit ec: ExecutionContext): Future[Either[SecureMessageError, SecureMessage]] =
     secureMessageRepository.addReadTime(id, Instant.now)
+
+  val deprecateRendererService: Boolean =
+    configuration.getOptional[Boolean]("deprecate.message-renderer").getOrElse(false)
 }
 
 case class MessageValidationException(message: String) extends RuntimeException(message)

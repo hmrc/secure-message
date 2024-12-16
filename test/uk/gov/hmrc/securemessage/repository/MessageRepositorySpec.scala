@@ -99,7 +99,7 @@ class MessageRepositorySpec
       repository.collection.insertOne(letterWithAtsRenderUrl).toFuture().futureValue
 
       val result: Either[SecureMessageError, Letter] =
-        await(repository.getLetter(messageId, identifiers))
+        await(repository.getLetter(messageId, identifiers, true))
       result mustBe Right(letterWithUpdatedRenderUrl)
     }
 
@@ -114,7 +114,7 @@ class MessageRepositorySpec
       repository.collection.insertOne(letterWith2WMRenderUrl).toFuture().futureValue
 
       val result: Either[SecureMessageError, Letter] =
-        await(repository.getLetter(messageId, identifiers))
+        await(repository.getLetter(messageId, identifiers, true))
       result mustBe Right(letterWithUpdatedRenderUrl)
     }
   }

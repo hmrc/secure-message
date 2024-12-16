@@ -188,7 +188,7 @@ class SecureMessageServiceImpl @Inject() (
     }
 
   def getLetter(id: ObjectId)(implicit ec: ExecutionContext): Future[Option[Letter]] =
-    messageRepository.getLetter(id, Set.empty[Identifier]) map {
+    messageRepository.getLetter(id, Set.empty[Identifier], secureMessageUtil.deprecateRendererService) map {
       case Right(letter) => Some(letter)
       case _             => None
     }
