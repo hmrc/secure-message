@@ -30,6 +30,7 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.securemessage.services.{ HtmlCreatorService, SecureMessageServiceImpl }
 import uk.gov.hmrc.securemessage.templates.AtsTemplate
 import uk.gov.hmrc.common.message.model.ConversationItem
+import uk.gov.hmrc.securemessage.{ MessageNotFound, UserNotAuthorised }
 import uk.gov.hmrc.securemessage.models.RenderType
 
 import javax.inject.Inject
@@ -61,10 +62,17 @@ class SecureMessageRenderer @Inject() (
 
     def renderMessage(replyType: RenderType.ReplyType): Future[Result] =
       messageService.findMessageListById(id).flatMap {
-        case Right(msgList) => getHtmlResponse(id, msgList, replyType)
+        case Left(UserNotAuthorised(msg)) =>
+          logger.warn(s"Error retrieving messages: $msg")
+          Future.successful(Unauthorized(msg))
+        case Left(MessageNotFound(msg)) =>
+          logger.warn(s"Error retrieving messages: $msg")
+          Future.successful(NotFound(msg))
         case Left(err) =>
-          logger.warn(s"Error retrieving messages: $err")
-          Future.successful(BadGateway(err))
+          logger.warn(s"Error retrieving messages: ${err.message}")
+          Future.successful(InternalServerError(err.message))
+        case Right(msgList) => getHtmlResponse(id, msgList, replyType)
+
       }
 
     def getHtmlResponse(

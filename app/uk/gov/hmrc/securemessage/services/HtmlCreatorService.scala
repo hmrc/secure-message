@@ -40,7 +40,7 @@ class HtmlCreatorService @Inject() (servicesConfig: ServicesConfig) {
     replyType: RenderType.ReplyType
   ): Future[Either[String, Html]] = {
 
-    val conversation = createConversationList(messages.sortWith(_.id > _.id), replyType)
+    val conversation = createConversationList(messages, replyType)
     val fullConversation = conversation.mkString(Xhtml.toXhtml(<hr/>))
 
     Future.successful(Right(Html.apply(fullConversation)))
@@ -48,31 +48,17 @@ class HtmlCreatorService @Inject() (servicesConfig: ServicesConfig) {
 
   private def createConversationList(messages: List[ConversationItem], replyType: RenderType.ReplyType): List[String] =
     replyType match {
-      case RenderType.CustomerLink =>
-        messages
-          .sortWith(_.id > _.id)
-          .headOption
+      case reply @ (RenderType.CustomerLink | RenderType.CustomerForm) =>
+        messages.headOption
           .map { hm =>
             format2wsMessageForCustomer(hm, ItemMetadata(isLatestMessage = true)) :: messages.tail.map(m =>
               format2wsMessageForCustomer(m, ItemMetadata(isLatestMessage = false))
             )
           }
           .getOrElse(List.empty)
-      case RenderType.CustomerForm =>
-        messages
-          .sortWith(_.id > _.id)
-          .headOption
-          .map { hm =>
-            format2wsMessageForCustomer(
-              hm,
-              ItemMetadata(isLatestMessage = true, hasSmallSubject = true)
-            ) :: messages.tail
-              .map(m => format2wsMessageForCustomer(m, ItemMetadata(isLatestMessage = false)))
-          }
-          .getOrElse(List.empty)
-      case RenderType.Adviser => messages.sortWith(_.id > _.id).map(msg => format2wsMessageForAdviser(msg))
+      case RenderType.Adviser => messages.map(msg => format2wsMessageForAdviser(msg))
     }
-
+  
   // format: off
   private def format2wsMessageForCustomer(item: ConversationItem, metadata: ItemMetadata): String =
     Xhtml.toXhtml(
@@ -91,7 +77,7 @@ class HtmlCreatorService @Inject() (servicesConfig: ServicesConfig) {
 
   private def getHeader(metadata: ItemMetadata, subject: String): Elem = {
     val headingClass = "govuk-heading-xl margin-top-small margin-bottom-small"
-    if (metadata.isLatestMessage && !metadata.hasSmallSubject) {
+    if (metadata.isLatestMessage) {
       <h1 class={headingClass}>{Unparsed(escapeForXhtml(subject))}</h1>
     } else {
       <h2 class={headingClass}>{Unparsed(escapeForXhtml(subject))}</h2>

@@ -140,10 +140,10 @@ trait MessageV3Service {
   }
   def getLetter(id: ObjectId)(implicit ec: ExecutionContext): Future[Option[Letter]]
 
-  // ToDo - Refactor to use getMessage function instead
+  // Use getMessage function instead, may need to re-write the implementation
   def findMessageListById(
     id: String
-  )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Either[String, List[ConversationItem]]] =
+  )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Either[SecureMessageError, List[ConversationItem]]] =
     for {
       taxIds <- authIdentifiersConnector.currentEffectiveTaxIdentifiers
       identifiers = taxIds.map(s => Identifier(s.name, s.value, None))
@@ -152,48 +152,50 @@ trait MessageV3Service {
 
   private def getMessageListResponse(id: String, taxIds: Set[Identifier])(implicit
     ec: ExecutionContext
-  ): Future[Either[String, List[ConversationItem]]] = {
+  ): Future[Either[SecureMessageError, List[ConversationItem]]] = {
 
     def getMessageListResponse(
       id: String,
       messageList: List[ConversationItem]
-    ): Future[Either[String, List[ConversationItem]]] =
+    ): Future[Either[SecureMessageError, List[ConversationItem]]] =
       getLetter(new ObjectId(id)).flatMap {
-        case None => Future.successful(Left("Message not found"))
-        case Some(message) =>
-          val conversationItem = ConversationItem(
-            message._id.toString,
-            message.subject,
-            message.body.map(d =>
-              Details(
-                d.form,
-                d.`type`,
-                d.suppressedAt,
-                d.detailsId,
-                replyTo = d.replyTo,
-                enquiryType = d.enquiryType,
-                issueDate = d.issueDate
-              )
-            ),
-            message.validFrom,
-            message.content
-          )
-          if (taxIds.contains(message.recipient.identifier)) {
-            message.body.flatMap(_.replyTo) match {
-              case None =>
-                Future.successful(
-                  Right(conversationItem :: messageList)
-                )
-              case Some(replyTo) =>
-                getMessageListResponse(
-                  replyTo,
-                  conversationItem :: messageList
-                )
-            }
-          } else {
-            Future.successful(Left(s"Message unauthorised: $taxIds"))
-          }
+        case None => Future.successful(Left(MessageNotFound(s"Message not found for $id")))
+        case Some(message) if taxIds.contains(message.recipient.identifier) =>
+          createConversationItem(message, messageList)
+        case Some(message) => Future.successful(Left(UserNotAuthorised("Unauthorised for the requested identifiers")))
       }
+
+    def createConversationItem(message: Letter, messageList: List[ConversationItem]) = {
+      val conversationItem = ConversationItem(
+        message._id.toString,
+        message.subject,
+        message.body.map(d =>
+          Details(
+            d.form,
+            d.`type`,
+            d.suppressedAt,
+            d.detailsId,
+            replyTo = d.replyTo,
+            enquiryType = d.enquiryType,
+            issueDate = d.issueDate
+          )
+        ),
+        message.validFrom,
+        message.content
+      )
+
+      message.body.flatMap(_.replyTo) match {
+        case None =>
+          Future.successful(
+            Right(conversationItem :: messageList)
+          )
+        case Some(replyTo) =>
+          getMessageListResponse(
+            replyTo,
+            conversationItem :: messageList
+          )
+      }
+    }
 
     for {
       msgList <- getMessageListResponse(id, List())
