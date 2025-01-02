@@ -18,11 +18,12 @@ package uk.gov.hmrc.securemessage.controllers
 
 import org.apache.commons.codec.binary.Base64
 import org.bson.types.ObjectId
+
 import java.time.{ Instant, LocalDate, ZoneId, ZonedDateTime }
 import java.time.format.DateTimeFormatter
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document.OutputSettings
-import org.jsoup.safety.{ Safelist => JsouptAllowList }
+import org.jsoup.safety.Safelist as JsouptAllowList
 import play.api.http.Status.{ BAD_REQUEST, CONFLICT, NOT_FOUND }
 import play.api.i18n.Messages
 import play.api.libs.json.{ JsArray, JsObject, JsValue, Json }
@@ -40,14 +41,15 @@ import uk.gov.hmrc.mongo.workitem.WorkItem
 import uk.gov.hmrc.play.audit.http.connector.{ AuditConnector, AuditResult }
 import uk.gov.hmrc.play.audit.model.{ DataEvent, EventTypes }
 import uk.gov.hmrc.securemessage.SecureMessageError
-import uk.gov.hmrc.securemessage.connectors.{ EmailValidation, EntityResolverConnector, TaxpayerNameConnector }
+import uk.gov.hmrc.securemessage.connectors.{ EmailValidation, EntityResolverConnector, PreferencesConnector, TaxpayerNameConnector }
 import uk.gov.hmrc.securemessage.models.core.{ Count, FilterTag, Identifier, Language, MessageFilter }
 import uk.gov.hmrc.securemessage.models.v4.{ Content, ExtraAlertConfig, SecureMessage }
 import uk.gov.hmrc.securemessage.repository.{ ExtraAlert, ExtraAlertRepository, SecureMessageRepository, StatsMetricRepository }
 import uk.gov.hmrc.securemessage.services.MessageBrakeService
+
 import java.util.Locale
 import javax.inject.{ Inject, Named, Singleton }
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success, Try }
 
@@ -98,7 +100,7 @@ object SecureMessageUtil {
 @Singleton
 class SecureMessageUtil @Inject() (
   @Named("app-name") appName: String,
-  entityResolverConnector: EntityResolverConnector,
+  preferencesConnector: PreferencesConnector,
   taxpayerNameConnector: TaxpayerNameConnector,
   secureMessageRepository: SecureMessageRepository,
   extraAlertRepository: ExtraAlertRepository,
@@ -230,7 +232,7 @@ class SecureMessageUtil @Inject() (
       "The backend has rejected the message due to not being able to verify the email address.",
       NOT_FOUND
     )
-    entityResolverConnector
+    preferencesConnector
       .verifiedEmailAddress(message.recipient)
       .flatMap { resp =>
         resp.value match {
