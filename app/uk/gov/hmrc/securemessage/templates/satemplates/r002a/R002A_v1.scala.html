@@ -1,0 +1,53 @@
+@*
+ * Copyright 2023 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *@
+
+@(data: uk.gov.hmrc.securemessage.templates.satemplates.r002a.R002A_v1ContentParams,
+        urlBuilder: uk.gov.hmrc.securemessage.templates.satemplates.helpers.PortalUrlBuilder,
+        saUtr: Option[String])
+
+@import play.twirl.api.TwirlFeatureImports.defining
+@import uk.gov.hmrc.securemessage.templates.satemplates.r002a.{Agent, Cheque, Electronic, Nominee, Taxpayer}
+@import uk.gov.hmrc.securemessage.templates.satemplates.views.html.poundsAndPence
+
+@defining(data.role match {
+    case Taxpayer => ""
+    case Agent    => " your agent"
+    case Nominee  => " your nominee"
+  }) { role =>
+
+    <p>You're due a tax refund of @poundsAndPence(data.amount).
+        @data.supplement.filter(_ > 0).map { supplement =>
+            This includes @poundsAndPence(supplement) interest.
+        }
+    </p>
+
+
+    <h3>Payment details</h3>
+    @data.method match {
+        case Electronic => {<p>An electronic payment will be made shortly to@role:</p>}
+        case Cheque => {<p>A cheque will be sent shortly to@role:</p>}
+    }
+    <p>@data.name</p>
+
+}
+
+<ul>
+    <li>
+        @defining(urlBuilder.buildPortalUrl(saUtr, "saAccountDetails")) { portalUrl =>
+            <a id="view-account-service-href" href=@{portalUrl} target="_self" class="govuk-link" data-sso="client" lang="en">View your account</a>
+        }
+    </li>
+</ul>

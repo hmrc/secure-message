@@ -20,6 +20,7 @@ import org.bson.types.ObjectId
 import play.api.libs.json.JsString
 import play.api.mvc.{ PathBindable, QueryStringBindable }
 import uk.gov.hmrc.common.message.model.Regime
+import uk.gov.hmrc.securemessage.models.{ JourneyStep, SecureMessageUrlStep }
 import uk.gov.hmrc.securemessage.models.core.Language.English
 import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag, Language, MessageFilter }
 
@@ -103,4 +104,27 @@ package object binders {
 
       def unbind(key: String, value: ObjectId): String = value.toString
     }
+
+  implicit def journeyStepBinder(implicit stringBinder: QueryStringBindable[String]): QueryStringBindable[JourneyStep] =
+    new QueryStringBindable[JourneyStep] {
+      override def bind(
+        key: String,
+        params: Map[String, Seq[String]]
+      ): Option[Either[String, JourneyStep]] =
+        stringBinder.bind("step", params).flatMap { stepParam =>
+          stepParam.fold(
+            _ => None,
+            step =>
+              SecureMessageUrlStep.toJourneyStep(
+                step,
+                stringBinder.bind("returnUrl", params).flatMap {
+                  _.fold(_ => None, Some(_))
+                }
+              )
+          )
+        }
+
+      override def unbind(key: String, value: JourneyStep): String = ""
+    }
+
 }

@@ -32,6 +32,7 @@ import HtmlUtil.*
 import XmlConversion.*
 import uk.gov.hmrc.securemessage.models.RenderType
 
+//Message renderer service for 2WSM
 class HtmlCreatorService @Inject() (servicesConfig: ServicesConfig) {
 
   def createConversation(
