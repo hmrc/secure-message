@@ -1,0 +1,68 @@
+@*
+ * Copyright 2023 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *@
+
+@(subject: String,
+sentInError: Boolean,
+fromDate: java.time.LocalDate,
+issueDate: java.time.Instant,
+body: uk.gov.hmrc.securemessage.templates.satemplates.helpers.Body)
+
+@import uk.gov.hmrc.securemessage.templates.satemplates.helpers.DateFormat.messageDateFormat
+
+@subjectPart = {
+	@subject@if(sentInError){&nbsp;&nbsp;-&nbsp;&nbsp;<nobr class='sent-in-error'>message withdrawn</nobr>}
+}
+
+@detailsPart = {
+	<p class="message_time faded-text--small">This message was sent to you on @{messageDateFormat(issueDate)}</p>
+
+	@if(sentInError) {
+		<div class="alert alert--info alert--info__light">
+			<p class="alert__message">On the 16th July we sent you a message in error, telling you that a Self Assessment penalty had been charged on your account and asking you to make payment.</p>
+			<p class="alert__message">We have now cancelled the penalty on your account and there is no action for you to take.</p>
+			<p class="alert__message">We are very sorry for any concern this might have caused.</p>
+		</div>
+	}
+
+	@body.messageBodyPart
+}
+
+@if(body.shrinkMessage) {
+<div id="secureMessageAccordionId"
+	 data-accordion
+	 data-accordion-animate
+	 aria-expanded="false"
+	 class="accordion" xmlns="http://www.w3.org/1999/html">
+	<div class="accordion__row">
+		<div class="accordion__row__left">
+			<i class="accordion__indicator arrow arrow--right font-small" data-accordion-arrow></i>
+			<a id="accordion-link" class="accordion__button link--no-underline bold-small" href="" data-accordion-button role="button">
+				@subjectPart
+			</a>
+		</div>
+	</div>
+	<div class="accordion__body hidden" data-accordion-body aria-hidden="true">
+		<div class="accordion__body__row__left align--top accordion__body__row">
+			@detailsPart
+		</div>
+	</div>
+</div>
+} else {
+	<h2>@subjectPart</h2>
+	@detailsPart
+}
+
+@body.secureMessageBodyPart

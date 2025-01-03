@@ -1,0 +1,49 @@
+@*
+ * Copyright 2023 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *@
+
+@import play.twirl.api.TwirlFeatureImports.defining
+    
+@(urlBuilder: uk.gov.hmrc.securemessage.templates.satemplates.helpers.PortalUrlBuilder, saUtr: Option[String])
+
+<p>Our records show that you have chosen to go paperless for Self Assessment, but as of 14th February you have not filed your tax return for the 2014 to 2015 tax year.</p>
+
+<p>We understand that switching from paper to digital messages is a big change. As this is the first year we have sent online messages instead of letters and you have not yet filed your return, we are sending you a paper Notice to File.</p>
+
+<p>You will have three months from the date on the form to file your return and pay any tax you owe for the tax year. If we do not receive your tax return by the deadline you will be charged penalties as set out in the paper Notice. Penalties will also be charged if your tax return is filed late for future tax years.</p>
+
+<p>You can still file and pay online at any time - you don't need to wait for the filing deadline.</p>
+
+<p>If you have already contacted HMRC to discuss missing the 31 January filing deadline, you should ignore this message. </p>
+
+<ul>
+    <li>
+        @defining(urlBuilder.buildPortalUrl(saUtr, "saViewTaxReturns")) { portalUrl =>
+            <a id="where-to-send-tax-return-href" href=@{portalUrl} target="_self" class="govuk-link" data-sso="client" lang="en">Send your tax return</a>
+        }
+    </li>
+    <li>
+        <a id="how-to-send-tax-return-href" href="https://www.gov.uk/self-assessment-tax-returns/sending-return" target="_blank" data-sso="false" class="govuk-link" rel="external noopener noreferrer" lang="en">How to send a tax return</a>
+    </li>
+    <li>
+        <a id="paying-through-tax-code-href" href="https://www.gov.uk/tax-overpayments-and-underpayments" target="_blank" data-sso="false" class="govuk-link" rel="external noopener noreferrer" lang="en">Paying tax through your tax code</a>
+    </li>
+    <li>
+        <a id="deadline-and-penalties-href" href="https://www.gov.uk/self-assessment-tax-returns/deadlines" target="_blank" data-sso="false" class="govuk-link" rel="external noopener noreferrer" lang="en">Deadlines and penalties</a>
+    </li>
+    <li>
+        <a id="contact-hmrc-href" href="https://www.gov.uk/government/organisations/hm-revenue-customs/contact/self-assessment" target="_blank" data-sso="false" class="govuk-link" rel="external noopener noreferrer" lang="en">Contact HMRC</a>
+    </li>
+</ul>
