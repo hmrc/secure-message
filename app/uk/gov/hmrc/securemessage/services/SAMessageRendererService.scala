@@ -31,13 +31,11 @@ import uk.gov.hmrc.securemessage.templates.satemplates.r002a.TemplateR002A_v1
 import uk.gov.hmrc.securemessage.templates.satemplates.views.html
 import uk.gov.hmrc.securemessage.templates.satemplates.helpers.{ Body, PlatformUrls, PortalUrlBuilder, RenderingData }
 
-import javax.inject.Singleton
 import scala.concurrent.{ ExecutionContext, Future }
 
 //Message renderer service for SA messages
 class SAMessageRendererService @Inject() (
   servicesConfig: ServicesConfig,
-  messageRenderer: SAMessageRenderer,
   portalUrlBuilder: PortalUrlBuilder
 )(implicit ec: ExecutionContext) {
   val saPaymentsUrl: String = servicesConfig.getConfString(
@@ -77,11 +75,18 @@ class SAMessageRendererService @Inject() (
     mayBeJourneyStep: Option[JourneyStep] = None,
     utr: String
   )(implicit messages: Messages): Future[Html] = {
+    val allTemplates: Seq[SATemplates] = Seq(
+      TemplateIgnorePaperFiling_v1,
+      TemplateR002A_v1
+    )
+    val templateRenderer: Map[String, RenderingData => HtmlFormat.Appendable] =
+      allTemplates.map(t => (t.templateKey, t.render _)).toMap
+
     val bodyF: Future[Body] = maybeContentParameters
       .map { contentParameters =>
         val renderingData =
           RenderingData(portalUrlBuilder, Some(utr), platUrls, contentParameters.data)
-        def messageBodyPart = messageRenderer.render(contentParameters.templateId, renderingData)
+        def messageBodyPart = templateRenderer(contentParameters.templateId)(renderingData)
 
         def secureMessageBodyPartF() =
           (contentParameters.templateId, mayBeJourneyStep) match {
@@ -114,16 +119,4 @@ class SAMessageRendererService @Inject() (
       )
     )
   }
-}
-
-@Singleton
-class SAMessageRenderer @Inject() (implicit messages: Messages) {
-  private val allTemplates: Seq[SATemplates] = Seq(
-    TemplateIgnorePaperFiling_v1,
-    TemplateR002A_v1
-  )
-  private val templateRenderer: Map[String, RenderingData => HtmlFormat.Appendable] =
-    allTemplates.map(t => (t.templateKey, t.render _)).toMap
-  def render(templateId: String, renderingData: RenderingData): HtmlFormat.Appendable =
-    templateRenderer(templateId)(renderingData)
 }
