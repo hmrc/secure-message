@@ -107,7 +107,7 @@ class MessageRepositorySpec
       val messageId = new ObjectId
       val twoWayMessageRenderUrl: RenderUrl = RenderUrl("two-way-message", s"/messages/$messageId/content")
       val renderUrl: RenderUrl =
-        RenderUrl("secure-message", s"/secure-messaging/messages/$messageId/content")
+        RenderUrl("secure-message", s"/secure-messaging/two-way-message/messages/$messageId/content")
       val letterWith2WMRenderUrl: Letter = letter.copy(_id = messageId, renderUrl = twoWayMessageRenderUrl)
       val letterWithUpdatedRenderUrl: Letter = letter.copy(_id = messageId, renderUrl = renderUrl)
       repository.collection.deleteMany(Filters.empty()).toFuture().futureValue

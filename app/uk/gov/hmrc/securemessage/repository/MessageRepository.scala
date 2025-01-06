@@ -125,8 +125,10 @@ class MessageRepository @Inject() (mongo: MongoComponent)(implicit ec: Execution
   }
 
   private val updateRenderUrl: Either[SecureMessageError, Letter] => Either[SecureMessageError, Letter] = {
-    case Right(l) if l.renderUrl.service == "ats-message-renderer" || l.renderUrl.service == "two-way-message" =>
+    case Right(l) if l.renderUrl.service == "ats-message-renderer" =>
       Right(l.copy(renderUrl = RenderUrl("secure-message", s"/secure-messaging${l.renderUrl.url}")))
+    case Right(l) if l.renderUrl.service == "two-way-message" =>
+      Right(l.copy(renderUrl = RenderUrl("secure-message", s"/secure-messaging/two-way-message${l.renderUrl.url}")))
     case other => other
   }
 
