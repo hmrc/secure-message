@@ -22,8 +22,10 @@ import com.google.inject.Inject
 
 import javax.inject.Singleton
 import play.api.{ Configuration, Logger, Mode }
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import scala.annotation.tailrec
+import scala.util.Try
 
 case class Body(messageBodyPart: Html, secureMessageBodyPart: Html, shrinkMessage: Boolean)
 
@@ -38,11 +40,12 @@ case class RenderingData(
 )
 
 @Singleton
-class PortalUrlBuilder @Inject() (configuration: Configuration) {
+class PortalUrlBuilder @Inject() (config: ServicesConfig) {
   def getPath(pathKey: String): String =
-    configuration
-      .getOptional[String](s"govuk-tax.portal.destinationPath.$pathKey")
-      .getOrElse("")
+    Try(
+      config
+        .getString(s"govuk-tax.portal.destinationPath.$pathKey")
+    ).getOrElse("")
 
   def buildPortalUrl(saUtr: Option[String], destinationPathKey: String): String =
     buildUrl(

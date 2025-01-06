@@ -38,12 +38,13 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HttpVerbs.GET
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.securemessage.helpers.Resources
-import uk.gov.hmrc.securemessage.services.{ HtmlCreatorService, SecureMessageServiceImpl }
+import uk.gov.hmrc.securemessage.services.{ HtmlCreatorService, SAMessageRenderer, SAMessageRendererService, SecureMessageServiceImpl }
 import uk.gov.hmrc.auth.core.*
 import uk.gov.hmrc.common.message.model.{ ConversationItem, MessageContentParameters }
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.securemessage.models.core.Letter.*
 import uk.gov.hmrc.securemessage.models.core.*
+import uk.gov.hmrc.securemessage.templates.satemplates.helpers.PortalUrlBuilder
 
 import java.time.LocalDate
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -146,6 +147,10 @@ class SecureMessageRendererSpec extends PlaySpec with ScalaFutures with MockitoS
     val mockSecureMessageService: SecureMessageServiceImpl = mock[SecureMessageServiceImpl]
     val mockConfig: ServicesConfig = mock[ServicesConfig]
     val mockHtmlCreatorService: HtmlCreatorService = new HtmlCreatorService(mockConfig)
+    val mockSAMessageRenderer: SAMessageRenderer = new SAMessageRenderer()(Helpers.stubMessages())
+    val mockPortalUrlBuilder: PortalUrlBuilder = new PortalUrlBuilder(mockConfig)
+    val mockSAMessageRendererService: SAMessageRendererService =
+      new SAMessageRendererService(mockConfig, mockSAMessageRenderer, mockPortalUrlBuilder)
     when(mockConfig.getString(any[String])).thenReturn("test-url")
 
     val controller =
@@ -154,7 +159,8 @@ class SecureMessageRendererSpec extends PlaySpec with ScalaFutures with MockitoS
         mockAuthConnector,
         mockAuditConnector,
         mockSecureMessageService,
-        mockHtmlCreatorService
+        mockHtmlCreatorService,
+        mockSAMessageRendererService
       )
   }
 }
