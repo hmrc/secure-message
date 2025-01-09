@@ -25,11 +25,12 @@ import uk.gov.hmrc.common.message.model.{ ContentParameters, MessageContentParam
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.securemessage.models.{ JourneyStep, ShowLinkJourneyStep }
 import uk.gov.hmrc.securemessage.models.core.{ Details, Letter }
-import uk.gov.hmrc.securemessage.templates.SATemplates
+import uk.gov.hmrc.securemessage.templates.{ SATemplates, WithSecureMessageIntegration }
 import uk.gov.hmrc.securemessage.templates.satemplates.ignorePaperFiling.TemplateIgnorePaperFiling_v1
 import uk.gov.hmrc.securemessage.templates.satemplates.r002a.TemplateR002A_v1
 import uk.gov.hmrc.securemessage.templates.satemplates.views.html
 import uk.gov.hmrc.securemessage.templates.satemplates.helpers.{ Body, PlatformUrls, PortalUrlBuilder, RenderingData }
+import uk.gov.hmrc.securemessage.templates.satemplates.sa326d.{ TemplateSA326D_filed_v1, TemplateSA326D_not_filed_v1 }
 
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -69,31 +70,43 @@ class SAMessageRendererService @Inject() (
     render(message, maybeParameters, journeyStep, utr)
   }
 
+  private val allTemplates: Seq[SATemplates] = Seq(
+    TemplateIgnorePaperFiling_v1,
+    TemplateR002A_v1,
+    TemplateSA326D_filed_v1,
+    TemplateSA326D_not_filed_v1
+  )
+
+  private val secureTemplates: Seq[SATemplates & WithSecureMessageIntegration] = Seq(
+    TemplateSA326D_filed_v1,
+    TemplateSA326D_not_filed_v1
+  )
+
+  private def isSecureTemplate(templateId: String): Boolean = secureTemplates.map(_.templateKey).contains(templateId)
+
   private def render(
     message: Letter,
     maybeContentParameters: Option[MessageContentParameters],
     mayBeJourneyStep: Option[JourneyStep] = None,
     utr: String
   )(implicit messages: Messages): Future[Html] = {
-    val allTemplates: Seq[SATemplates] = Seq(
-      TemplateIgnorePaperFiling_v1,
-      TemplateR002A_v1
-    )
+
     val templateRenderer: Map[String, RenderingData => HtmlFormat.Appendable] =
       allTemplates.map(t => (t.templateKey, t.render _)).toMap
+
+    val secureTemplateRenderer: Map[String, JourneyStep => Future[Html]] =
+      secureTemplates.map(t => (t.templateKey, t.secureTemplateRender _)).toMap
 
     val bodyF: Future[Body] = maybeContentParameters
       .map { contentParameters =>
         val renderingData =
           RenderingData(portalUrlBuilder, Some(utr), platUrls, contentParameters.data)
-        def messageBodyPart = templateRenderer(contentParameters.templateId)(renderingData)
+        def messageBodyPart: HtmlFormat.Appendable = templateRenderer(contentParameters.templateId)(renderingData)
 
-        def secureMessageBodyPartF() =
-          (contentParameters.templateId, mayBeJourneyStep) match {
-//            case (secureTemplateIntegration: WithSecureMessageIntegration, Some(js)) =>
-//              secureMessageService.secureMessagePartial(
-//                SecureMessageEvent(message.id, secureTemplateIntegration, js, utr)
-//              )
+        def secureMessageBodyPartF: Future[Html] =
+          mayBeJourneyStep match {
+            case Some(js) if isSecureTemplate(contentParameters.templateId) =>
+              secureTemplateRenderer(contentParameters.templateId)(js)
             case _ => Future.successful(HtmlFormat.empty)
           }
         val shrinkMessageFlag = mayBeJourneyStep match {
@@ -101,7 +114,7 @@ class SAMessageRendererService @Inject() (
           case _                            => false
         }
 
-        secureMessageBodyPartF().map(secureMessageBodyPart =>
+        secureMessageBodyPartF.map(secureMessageBodyPart =>
           Body(messageBodyPart, secureMessageBodyPart, shrinkMessageFlag)
         )
       }

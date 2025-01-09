@@ -39,6 +39,11 @@ case class RenderingData(
   shrinkMessage: Boolean = false
 )
 
+case class SecureMessageIntegration(
+  linkPartial: String => play.twirl.api.HtmlFormat.Appendable,
+  ackPartial: () => play.twirl.api.HtmlFormat.Appendable
+)
+
 @Singleton
 class PortalUrlBuilder @Inject() (config: ServicesConfig) {
   def getPath(pathKey: String): String =
