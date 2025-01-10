@@ -16,11 +16,11 @@
 
 package uk.gov.hmrc.securemessage.templates.satemplates.helpers
 
-import java.time.Instant
+import java.time.{ Instant, ZoneId, ZoneOffset }
 import java.time.format.DateTimeFormatter
 
 object DateFormat {
-  private val messageDateFormatter = DateTimeFormatter.ofPattern("dd MMMM yyyy")
+  private val messageDateFormatter = DateTimeFormatter.ofPattern("dd MMMM yyyy").withZone(ZoneId.from(ZoneOffset.UTC))
   def messageDateFormat(date: Instant): String =
     messageDateFormatter.format(date)
 }

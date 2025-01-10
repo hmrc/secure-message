@@ -17,8 +17,6 @@
 package uk.gov.hmrc.securemessage.controllers
 
 import org.apache.commons.codec.binary.Base64
-import org.apache.pekko.stream.Materializer
-import org.apache.pekko.stream.testkit.NoMaterializer
 import org.mockito.ArgumentMatchers.{ any, eq as eqTo }
 import org.mockito.Mockito.when
 import org.mongodb.scala.bson.ObjectId
@@ -30,7 +28,7 @@ import play.api.http.ContentTypes.*
 import play.api.http.HeaderNames.*
 import play.api.http.Status.*
 import play.api.i18n.Messages
-import play.api.libs.json.{ JsNull, JsObject, JsResult, JsValue, Json, OFormat }
+import play.api.libs.json.{ JsNull, JsObject, JsResult, JsString, JsValue, Json, OFormat }
 import play.api.mvc.{ AnyContent, AnyContentAsEmpty, Request, Result }
 import play.api.test.Helpers.{ POST, PUT, contentAsJson, contentAsString, defaultAwaitTimeout, status, stubMessages }
 import play.api.test.{ FakeHeaders, FakeRequest, Helpers }
@@ -42,9 +40,12 @@ import uk.gov.hmrc.securemessage.services.{ HtmlCreatorService, SAMessageRendere
 import uk.gov.hmrc.auth.core.*
 import uk.gov.hmrc.common.message.model.{ ConversationItem, MessageContentParameters }
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import uk.gov.hmrc.securemessage.models.ShowLinkJourneyStep
 import uk.gov.hmrc.securemessage.models.core.Letter.*
 import uk.gov.hmrc.securemessage.models.core.*
-import uk.gov.hmrc.securemessage.templates.satemplates.helpers.PortalUrlBuilder
+import uk.gov.hmrc.securemessage.templates.satemplates.helpers.{ DailyPenalty, PortalUrlBuilder, TaxYear }
+import uk.gov.hmrc.securemessage.templates.satemplates.r002a.{ Electronic, Method, R002A_v1ContentParams, Role, Taxpayer }
+import uk.gov.hmrc.securemessage.templates.satemplates.sa326d.SA326D_v1ContentParams
 
 import java.time.LocalDate
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -138,6 +139,86 @@ class SecureMessageRendererSpec extends PlaySpec with ScalaFutures with MockitoS
     "return BadRequest when message type is not Customer or Advisor" in new TestCase {
       val response: Future[Result] = controller.getContentBy(messageId, "Advisor")(fakeRequest)
       status(response) mustBe BAD_REQUEST
+    }
+  }
+
+  "renderMessageUnencryptedUrl" must {
+    val messageId = new ObjectId()
+    val fakeRequest = FakeRequest(
+      GET,
+      routes.SecureMessageRenderer
+        .renderMessageUnencryptedUrl("utr", messageId.toString, Some(ShowLinkJourneyStep("/returnUrl")))
+        .url
+    )
+    val storedLetter: JsValue =
+      Resources.readJson("model/core/letter.json").as[JsObject] + ("_id" -> Json.toJson(messageId))
+    val letter: Option[Letter] = storedLetter.validate[Letter].asOpt
+
+    "return OK with sa messages template for templateId 'R002A_v1' " in new TestCase {
+      val R002AContentParams: JsValue =
+        Json.toJson(R002A_v1ContentParams(BigDecimal(10), Some(BigDecimal(2)), Electronic, "test", Taxpayer))
+      val contentParams: Option[MessageContentParameters] =
+        Some(MessageContentParameters(R002AContentParams, "R002A_v1"))
+      val saMessage: Option[Letter] = letter.map(_.copy(contentParameters = contentParams))
+
+      when(mockAuthConnector.authorise(any(), any())(any(), any())).thenReturn(Future.successful {})
+      when(
+        mockSecureMessageService
+          .getLetter(any[ObjectId])(any[ExecutionContext])
+      )
+        .thenReturn(Future.successful(saMessage))
+
+      val response: Future[Result] =
+        controller.renderMessageUnencryptedUrl("utr", messageId.toString, Some(ShowLinkJourneyStep("/returnUrl")))(
+          fakeRequest
+        )
+      status(response) mustBe OK
+      contentAsString(response) must include("Test have subjects11")
+      contentAsString(response) must include("This message was sent to you on 26 April 2021")
+      contentAsString(response) must include("You're due a tax refund of £10.00.")
+    }
+
+    "return OK with sa messages template for templateId 'SA326D_filed_v1' " in new TestCase {
+      val SA326DContentParams: JsValue = Json.toJson(
+        SA326D_v1ContentParams(
+          TaxYear(2023, 2024),
+          LocalDate.now(),
+          None,
+          None,
+          false,
+          Some(DailyPenalty(Some(LocalDate.now()), None))
+        )
+      )
+      val contentParams: Option[MessageContentParameters] =
+        Some(MessageContentParameters(SA326DContentParams, "SA326D_filed_v1"))
+      val saMessage: Option[Letter] = letter.map(_.copy(contentParameters = contentParams))
+
+      when(mockAuthConnector.authorise(any(), any())(any(), any())).thenReturn(Future.successful {})
+      when(
+        mockSecureMessageService
+          .getLetter(any[ObjectId])(any[ExecutionContext])
+      )
+        .thenReturn(Future.successful(saMessage))
+
+      val response: Future[Result] =
+        controller.renderMessageUnencryptedUrl("utr", messageId.toString, Some(ShowLinkJourneyStep("/returnUrl")))(
+          fakeRequest
+        )
+      status(response) mustBe OK
+      contentAsString(response) must include("Test have subjects11")
+      contentAsString(response) must include("This message was sent to you on 26 April 2021")
+      contentAsString(response) must include("Your tax return for the 2023 to 2024 tax year was late.")
+    }
+
+    "return OK with a message when user has insufficient enrollments" in new TestCase {
+      when(mockAuthConnector.authorise(any(), any())(any(), any()))
+        .thenReturn(Future.failed(InsufficientEnrolments("error")))
+      val response: Future[Result] =
+        controller.renderMessageUnencryptedUrl("utr", messageId.toString, Some(ShowLinkJourneyStep("/returnUrl")))(
+          fakeRequest
+        )
+      status(response) mustBe OK
+      contentAsString(response) must include("You need to activate your Self Assessment to view your message content.")
     }
   }
 

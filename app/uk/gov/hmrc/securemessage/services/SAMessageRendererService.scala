@@ -39,17 +39,11 @@ class SAMessageRendererService @Inject() (
   servicesConfig: ServicesConfig,
   portalUrlBuilder: PortalUrlBuilder
 )(implicit ec: ExecutionContext) {
-  val saPaymentsUrl: String = servicesConfig.getConfString(
-    "platform.saPaymentsUrl",
-    throw new RuntimeException(
-      s"Could not find payments URL under platform.saPaymentsUrl"
-    )
+  val saPaymentsUrl: String = servicesConfig.getString(
+    "platform.saPaymentsUrl"
   )
-  val viewTaxSummaryUrl: String = servicesConfig.getConfString(
-    "platform.viewTaxSummaryUrl",
-    throw new RuntimeException(
-      s"Could not find payments URL under platform.viewTaxSummaryUrl"
-    )
+  val viewTaxSummaryUrl: String = servicesConfig.getString(
+    "platform.viewTaxSummaryUrl"
   )
   val platUrls: PlatformUrls = PlatformUrls(saPaymentsUrl, viewTaxSummaryUrl)
 
