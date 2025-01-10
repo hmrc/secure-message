@@ -17,7 +17,7 @@
 package uk.gov.hmrc.securemessage.controllers
 
 import org.apache.commons.codec.binary.Base64
-import org.mockito.ArgumentMatchers.{ any, eq => meq }
+import org.mockito.ArgumentMatchers.{ any, eq as meq }
 import org.mockito.Mockito.{ reset, verifyNoInteractions, when }
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
@@ -28,7 +28,7 @@ import uk.gov.hmrc.common.message.model.TaxpayerName
 import uk.gov.hmrc.domain.SaUtr
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import uk.gov.hmrc.securemessage.connectors.{ EntityResolverConnector, TaxpayerNameConnector }
+import uk.gov.hmrc.securemessage.connectors.{ EntityResolverConnector, PreferencesConnector, TaxpayerNameConnector }
 import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.v4.SecureMessage
 import uk.gov.hmrc.securemessage.repository.{ ExtraAlertRepository, SecureMessageRepository, StatsMetricRepository }
@@ -38,7 +38,7 @@ import scala.concurrent.{ ExecutionContext, Future }
 
 class SecureMessageUtilSpec extends PlaySpec with ScalaFutures with MockitoSugar with BeforeAndAfterEach {
   val appName: String = "Test"
-  val entityResolverConnector: EntityResolverConnector = mock[EntityResolverConnector]
+  val preferencesConnector: PreferencesConnector = mock[PreferencesConnector]
   val taxpayerNameConnector: TaxpayerNameConnector = mock[TaxpayerNameConnector]
   val secureMessageRepository: SecureMessageRepository = mock[SecureMessageRepository]
   val extraAlertRepository: ExtraAlertRepository = mock[ExtraAlertRepository]
@@ -55,7 +55,7 @@ class SecureMessageUtilSpec extends PlaySpec with ScalaFutures with MockitoSugar
   implicit val hc: HeaderCarrier = HeaderCarrier()
   val testUtil = new SecureMessageUtil(
     appName,
-    entityResolverConnector,
+    preferencesConnector,
     taxpayerNameConnector,
     secureMessageRepository,
     extraAlertRepository,
