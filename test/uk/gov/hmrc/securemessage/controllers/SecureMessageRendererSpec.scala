@@ -171,7 +171,9 @@ class SecureMessageRendererSpec extends PlaySpec with ScalaFutures with MockitoS
           fakeRequest
         )
       status(response) mustBe OK
-      contentAsString(response) must include("We understand that switching from paper to digital messages is a big change. As this is the first year we have sent online messages instead of letters and you have not yet filed your return, we are sending you a paper Notice to File.")
+      contentAsString(response) must include(
+        "We understand that switching from paper to digital messages is a big change. As this is the first year we have sent online messages instead of letters and you have not yet filed your return, we are sending you a paper Notice to File."
+      )
     }
 
     "return OK with sa messages template for templateId 'R002A_v1' " in new TestCase {
