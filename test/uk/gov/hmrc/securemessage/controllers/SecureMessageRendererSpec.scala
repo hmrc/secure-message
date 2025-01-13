@@ -154,6 +154,26 @@ class SecureMessageRendererSpec extends PlaySpec with ScalaFutures with MockitoS
       Resources.readJson("model/core/letter.json").as[JsObject] + ("_id" -> Json.toJson(messageId))
     val letter: Option[Letter] = storedLetter.validate[Letter].asOpt
 
+    "return OK with sa messages template for templateId 'IgnorePaperFiling_v1' " in new TestCase {
+      val contentParams: Option[MessageContentParameters] =
+        Some(MessageContentParameters(JsNull, "IgnorePaperFiling_v1"))
+      val saMessage: Option[Letter] = letter.map(_.copy(contentParameters = contentParams))
+
+      when(mockAuthConnector.authorise(any(), any())(any(), any())).thenReturn(Future.successful {})
+      when(
+        mockSecureMessageService
+          .getLetter(any[ObjectId])(any[ExecutionContext])
+      )
+        .thenReturn(Future.successful(saMessage))
+
+      val response: Future[Result] =
+        controller.renderMessageUnencryptedUrl("utr", messageId.toString, Some(ShowLinkJourneyStep("/returnUrl")))(
+          fakeRequest
+        )
+      status(response) mustBe OK
+      contentAsString(response) must include("We understand that switching from paper to digital messages is a big change. As this is the first year we have sent online messages instead of letters and you have not yet filed your return, we are sending you a paper Notice to File.")
+    }
+
     "return OK with sa messages template for templateId 'R002A_v1' " in new TestCase {
       val R002AContentParams: JsValue =
         Json.toJson(R002A_v1ContentParams(BigDecimal(10), Some(BigDecimal(2)), Electronic, "test", Taxpayer))
@@ -208,6 +228,38 @@ class SecureMessageRendererSpec extends PlaySpec with ScalaFutures with MockitoS
       contentAsString(response) must include("Test have subjects11")
       contentAsString(response) must include("This message was sent to you on 26 April 2021")
       contentAsString(response) must include("Your tax return for the 2023 to 2024 tax year was late.")
+    }
+
+    "return OK with sa messages template for templateId 'SA326D_not_filed_v1' " in new TestCase {
+      val SA326DContentParams: JsValue = Json.toJson(
+        SA326D_v1ContentParams(
+          TaxYear(2023, 2024),
+          LocalDate.now(),
+          Some(LocalDate.now()),
+          None,
+          false,
+          Some(DailyPenalty(Some(LocalDate.now()), None))
+        )
+      )
+      val contentParams: Option[MessageContentParameters] =
+        Some(MessageContentParameters(SA326DContentParams, "SA326D_not_filed_v1"))
+      val saMessage: Option[Letter] = letter.map(_.copy(contentParameters = contentParams))
+
+      when(mockAuthConnector.authorise(any(), any())(any(), any())).thenReturn(Future.successful {})
+      when(
+        mockSecureMessageService
+          .getLetter(any[ObjectId])(any[ExecutionContext])
+      )
+        .thenReturn(Future.successful(saMessage))
+
+      val response: Future[Result] =
+        controller.renderMessageUnencryptedUrl("utr", messageId.toString, Some(ShowLinkJourneyStep("/returnUrl")))(
+          fakeRequest
+        )
+      status(response) mustBe OK
+      contentAsString(response) must include("Test have subjects11")
+      contentAsString(response) must include("This message was sent to you on 26 April 2021")
+      contentAsString(response) must include("send your tax return and pay any tax you owe")
     }
 
     "return OK with a message when user has insufficient enrollments" in new TestCase {
