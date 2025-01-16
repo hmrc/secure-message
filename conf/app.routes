@@ -138,4 +138,5 @@ POST    /admin/message/brake/gmc/allowlist/delete       uk.gov.hmrc.securemessag
 
 #Message renderer endpoints
 GET     /ats-message-renderer/message/:id               uk.gov.hmrc.securemessage.controllers.SecureMessageRenderer.view(id: org.mongodb.scala.bson.ObjectId)
-GET     /two-way-message/messages/:id/content                           uk.gov.hmrc.securemessage.controllers.SecureMessageRenderer.getContentBy(id, msgType ?= "Customer")
+GET     /two-way-message/messages/:id/content           uk.gov.hmrc.securemessage.controllers.SecureMessageRenderer.getContentBy(id, msgType ?= "Customer")
+GET     /messages/sa/:utr/:messageId                    uk.gov.hmrc.securemessage.controllers.SecureMessageRenderer.renderMessageUnencryptedUrl(utr, messageId, journeyStep: Option[uk.gov.hmrc.securemessage.models.JourneyStep])

@@ -18,7 +18,7 @@ package uk.gov.hmrc.securemessage.controllers
 
 import org.mongodb.scala.bson.ObjectId
 import play.api.Logging
-import play.api.i18n.I18nSupport
+import play.api.i18n.{ I18nSupport, Messages }
 import play.api.libs.json.Json
 import play.utils.UriEncoding
 import play.api.mvc.*
@@ -27,11 +27,14 @@ import uk.gov.hmrc.auth.core.*
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.securemessage.services.{ HtmlCreatorService, SecureMessageServiceImpl }
+import uk.gov.hmrc.securemessage.services.{ HtmlCreatorService, SAMessageRendererService, SecureMessageServiceImpl }
 import uk.gov.hmrc.securemessage.templates.AtsTemplate
 import uk.gov.hmrc.common.message.model.ConversationItem
 import uk.gov.hmrc.securemessage.{ MessageNotFound, UserNotAuthorised }
-import uk.gov.hmrc.securemessage.models.RenderType
+import uk.gov.hmrc.securemessage.models.{ JourneyStep, RenderType }
+import play.api.i18n.Messages.implicitMessagesProviderToMessages
+import play.twirl.api.Html
+import uk.gov.hmrc.securemessage.models.core.Letter
 
 import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
@@ -41,9 +44,10 @@ class SecureMessageRenderer @Inject() (
   val authConnector: AuthConnector,
   override val auditConnector: AuditConnector,
   messageService: SecureMessageServiceImpl,
-  htmlCreatorService: HtmlCreatorService
+  htmlCreatorService: HtmlCreatorService,
+  saMessageRendererService: SAMessageRendererService
 )(implicit ec: ExecutionContext)
-    extends BackendController(cc) with AuthorisedFunctions with Auditing with Logging {
+    extends BackendController(cc) with AuthorisedFunctions with Auditing with Logging with I18nSupport {
 
   private val ATS_v2_renderTemplateId = "ats_v2"
 
@@ -93,4 +97,35 @@ class SecureMessageRenderer @Inject() (
       case _          => Future.successful(BadRequest)
     }
   }
+
+  def renderMessageUnencryptedUrl(
+    utr: String,
+    messageId: String,
+    step: Option[JourneyStep]
+  ): Action[AnyContent] =
+    Action.async { implicit request =>
+      implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(
+        request
+      )
+      val renderResult: Letter => Future[Result] = { m =>
+        saMessageRendererService
+          .apply(message = m, journeyStep = step, utr = utr)
+          .map(html => Ok(html).withHeaders("X-Title" -> UriEncoding.encodePathSegment(m.subject, "UTF-8")))
+      }
+      authorised(Enrolment("IR-SA").withIdentifier("UTR", utr)) {
+        for {
+          letter <- messageService.getLetter(new ObjectId(messageId))
+          render <- letter.map(renderResult).getOrElse(Future.successful(NoContent))
+        } yield render
+      }.recover { case _: InsufficientEnrolments =>
+        // Temporary solution
+        val message =
+          """
+                  <h1>You need to activate your Self Assessment to view your message content.</h1>
+                  <p> You will need the activation code you received in the post to do this. </p>
+                  <p>Go to your personal tax home page and select the Activate your Self Assessment link.</p>
+          """
+        Ok(message)
+      }
+    }
 }
