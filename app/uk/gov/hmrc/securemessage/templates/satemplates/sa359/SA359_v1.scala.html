@@ -1,0 +1,41 @@
+@*
+ * Copyright 2023 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *@
+
+@(data: uk.gov.hmrc.securemessage.templates.satemplates.sa359.SA359_v1ContentParams, platUrls: uk.gov.hmrc.securemessage.templates.satemplates.helpers.PlatformUrls)
+
+@import uk.gov.hmrc.securemessage.templates.satemplates.helpers.Render._
+
+<p>You didn't pay your @renderYear(data.taxYear) tax bill on time.</p>
+@if(data.onlineDeadline.isDefined) {
+<p>The deadline date was @renderDate(data.onlineDeadline.get).</p>
+}
+
+
+<h3>What you need to do</h3>
+<p>You need to pay your tax bills now. You're being charged daily interest on the amount. Legal action will be taken if you don't pay now.</p>
+
+<h3>After you pay</h3>
+<p>You will need to pay a penalty on any tax paid late. The total penalty will be confirmed after you pay this tax bill.</p>
+
+<h3>Get help</h3>
+<p>Contact HMRC if you can't pay the full amount or disagree with your tax bill. You may be able to pay in instalments, get more time to pay or appeal the tax bill.</p>
+<strong>Ignore this message if you have already paid this tax bill in total.</strong>
+
+<ul>
+    <li><a id="sa-payment-href" href=@{platUrls.saPaymentsUrl} target="_self" data-sso="false" class="govuk-link" lang="en">Make a payment</a></li>
+    <li><a id="difficulties-paying-href" href="https://www.gov.uk/difficulties-paying-hmrc" target="_blank" data-sso="false" class="govuk-link" rel="external noopener noreferrer" lang="en">Problems paying your tax bill</a></li>
+    <li><a id="contact-hmrc-href" href="https://www.gov.uk/government/organisations/hm-revenue-customs/contact/self-assessment" target="_blank" data-sso="false" class="govuk-link" rel="external noopener noreferrer" lang="en">Contact HMRC</a></li>
+</ul>

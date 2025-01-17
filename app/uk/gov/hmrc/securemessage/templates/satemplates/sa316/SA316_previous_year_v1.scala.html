@@ -1,0 +1,52 @@
+@*
+ * Copyright 2023 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *@
+
+@(data: uk.gov.hmrc.securemessage.templates.satemplates.sa316.SA316_v1ContentParams,
+        urlBuilder: uk.gov.hmrc.securemessage.templates.satemplates.helpers.PortalUrlBuilder,
+        saUtr: Option[String])
+
+@import play.twirl.api.TwirlFeatureImports.defining
+@import uk.gov.hmrc.securemessage.templates.satemplates.helpers.Render.{renderDate, renderYear}
+
+<div class="alert alert--info alert--info__light">
+    <p class="alert__message">You can ignore this message if you’ve already filed your @renderYear(data.taxYear) tax return.</p>
+</div>
+
+<p>You haven’t paid tax on your PAYE income for the tax year @renderYear(data.taxYear).</p>
+
+<p>You’ll need to file a Self Assessment tax return and pay any tax you owe.</p>
+
+<p>The filing deadline depends on how you file:</p>
+<ul class="bullets">
+    @data.paperDeadline.map { paperDeadline =>
+    <li>@renderDate(paperDeadline) if you're filing a paper tax return</li>
+    }
+    <li>@renderDate(data.onlineDeadline) if you're filing an online tax return</li>
+</ul>
+
+<p>You’ll need to pay any tax you owe by @renderDate(data.onlineDeadline).</p>
+
+<p>You’ll have to pay a fine if you don’t file the return and pay any tax you owe by the deadline.</p>
+
+<ul>
+    <li>
+        @defining(urlBuilder.buildPortalUrl(saUtr, "saViewTaxReturns")) { portalUrl =>
+            <a id="where-to-send-tax-return-href" href=@{portalUrl} target="_self" class="govuk-link" data-sso="client" lang="en">Send your tax return</a>
+        }
+    </li>
+    <li><a id="how-to-send-tax-return-href" href="https://www.gov.uk/self-assessment-tax-returns/sending-return" target="_blank" data-sso="false" class="govuk-link" rel="external noopener noreferrer" lang="en">How to send a tax return</a></li>
+    <li><a id="deadline-and-penalties-href" href="https://www.gov.uk/self-assessment-tax-returns/deadlines" target="_blank" data-sso="false" class="govuk-link" rel="external noopener noreferrer" lang="en">Deadlines and penalties</a></li>
+</ul>

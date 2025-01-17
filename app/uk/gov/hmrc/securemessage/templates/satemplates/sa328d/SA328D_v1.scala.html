@@ -1,0 +1,45 @@
+@*
+ * Copyright 2023 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *@
+
+@(data: uk.gov.hmrc.securemessage.templates.satemplates.sa328d.SA328D_v1ContentParams,
+    renderingData: uk.gov.hmrc.securemessage.templates.satemplates.helpers.RenderingData)
+
+@data.partnershipName match {
+    case Some(partnershipName) => {<p>The @data.taxYear.startYear to @data.taxYear.endYear tax return for @partnershipName is late.</p>}
+    case None => {<p>Your partnership return for the @data.taxYear.startYear to @data.taxYear.endYear tax year is late.</p>}
+}
+
+<p>The penalty for each partner is £100.</p>
+
+<h3>What you need to do</h3>
+
+<p>The <strong>nominated partner</strong> must send the partnership return (SA800) now.</p>
+
+<p>Pay the penalty by @data.penaltyDueDateFormatted.</p>
+
+<h3>Avoid a bigger penalty</h3>
+
+<p>Make sure the partnership return is sent now.</p>
+
+<p>Contact HMRC if you think you don't need to send this tax return.</p>
+
+<ul>
+    <li><a id="how-to-send-partnership-tax-return-href" href="https://www.gov.uk/software-tax-returns" target="_blank" data-sso="false" class="govuk-link" rel="external noopener noreferrer" lang="en">How to send a partnership tax return</a></li>
+    <li><a id="deadline-and-penalties-href" href="https://www.gov.uk/self-assessment-tax-returns/deadlines" target="_blank" data-sso="false" class="govuk-link" rel="external noopener noreferrer" lang="en">Deadline and penalties</a></li>
+    <li><a id="appeal-a-penalty-href" href="https://www.gov.uk/tax-appeals/penalty" target="_blank" data-sso="false" class="govuk-link" rel="external noopener noreferrer" lang="en">Appeal a penalty</a></li>
+    <li><a id="problems-paying-your-tax-bill-href" href="https://www.gov.uk/difficulties-paying-hmrc" target="_blank" data-sso="false" class="govuk-link" rel="external noopener noreferrer" lang="en">Problems paying your tax bill</a></li>
+    <li><a id="pay-your-penalty-href" href=@{renderingData.platformUrls.saPaymentsUrl} target="_self" data-sso="false" class="govuk-link" lang="en">Pay your penalty</a></li>
+</ul>

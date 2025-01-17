@@ -1,0 +1,33 @@
+@*
+ * Copyright 2023 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *@
+
+@(data: uk.gov.hmrc.securemessage.templates.satemplates.sa309c.SA309C_v1ContentParams,
+        platUrls: uk.gov.hmrc.securemessage.templates.satemplates.helpers.PlatformUrls)
+
+@import uk.gov.hmrc.securemessage.templates.satemplates.helpers.Render.{renderDate, renderYear}
+
+<p>The @renderYear(data.taxYear) tax year ended 5 April @data.taxYear.endYear.</p>
+
+<p>Pay any tax you owe by @renderDate(data.onlineDeadline).</p>
+
+<p>There are penalties if you're late.</p>
+
+<ul>
+    <li><a id="sa-payment-href" href=@{platUrls.saPaymentsUrl} target="_self" data-sso="false" class="govuk-link" lang="en">Pay your tax bill</a></li>
+    <li><a id="deadline-and-penalties-href" href="https://www.gov.uk/self-assessment-tax-returns/deadlines" target="_blank" data-sso="false" class="govuk-link" rel="external noopener noreferrer" lang="en">Deadlines and penalties</a></li>
+    <li><a id="contact-hmrc-href" href="https://www.gov.uk/government/organisations/hm-revenue-customs/contact/self-assessment" target="_blank" data-sso="false" class="govuk-link" rel="external noopener noreferrer" lang="en">Contact HMRC</a></li>
+</ul>
+ 

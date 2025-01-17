@@ -18,19 +18,28 @@ package uk.gov.hmrc.securemessage.services
 
 import com.google.inject.Inject
 import play.api.i18n.Messages
-import play.api.libs.json.{ JsNull, JsValue }
+import play.api.libs.json.JsNull
 import play.api.mvc.Request
 import play.twirl.api.{ Html, HtmlFormat }
-import uk.gov.hmrc.common.message.model.{ ContentParameters, MessageContentParameters }
+import uk.gov.hmrc.common.message.model.MessageContentParameters
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import uk.gov.hmrc.securemessage.models.core.Letter
 import uk.gov.hmrc.securemessage.models.{ JourneyStep, ShowLinkJourneyStep }
-import uk.gov.hmrc.securemessage.models.core.{ Details, Letter }
-import uk.gov.hmrc.securemessage.templates.{ SATemplates, WithSecureMessageIntegration }
+import uk.gov.hmrc.securemessage.templates.satemplates.helpers.{ Body, PlatformUrls, PortalUrlBuilder, RenderingData }
 import uk.gov.hmrc.securemessage.templates.satemplates.ignorePaperFiling.TemplateIgnorePaperFiling_v1
 import uk.gov.hmrc.securemessage.templates.satemplates.r002a.TemplateR002A_v1
-import uk.gov.hmrc.securemessage.templates.satemplates.views.html
-import uk.gov.hmrc.securemessage.templates.satemplates.helpers.{ Body, PlatformUrls, PortalUrlBuilder, RenderingData }
+import uk.gov.hmrc.securemessage.templates.satemplates.sa251.{ TemplateSA251_v1, TemplateSA251_v2, TemplateSA251_v3 }
+import uk.gov.hmrc.securemessage.templates.satemplates.sa309a.TemplateSA309A_v1
+import uk.gov.hmrc.securemessage.templates.satemplates.sa309c.TemplateSA309C_v1
+import uk.gov.hmrc.securemessage.templates.satemplates.sa316.*
 import uk.gov.hmrc.securemessage.templates.satemplates.sa326d.{ TemplateSA326D_filed_v1, TemplateSA326D_not_filed_v1 }
+import uk.gov.hmrc.securemessage.templates.satemplates.sa328d.TemplateSA328D_v1
+import uk.gov.hmrc.securemessage.templates.satemplates.sa359.{ TemplateSA359_v1, TemplateSA359_v2 }
+import uk.gov.hmrc.securemessage.templates.satemplates.sa372.TemplateSA372
+import uk.gov.hmrc.securemessage.templates.satemplates.sa373.TemplateSA373_v1
+import uk.gov.hmrc.securemessage.templates.satemplates.sx300.{ TemplateSA300_v1, TemplateSS300_v1 }
+import uk.gov.hmrc.securemessage.templates.satemplates.views.html
+import uk.gov.hmrc.securemessage.templates.{ SATemplates, WithSecureMessageIntegration }
 
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -68,8 +77,28 @@ class SAMessageRendererService @Inject() (
     TemplateIgnorePaperFiling_v1,
     TemplateR002A_v1,
     TemplateSA326D_filed_v1,
-    TemplateSA326D_not_filed_v1
+    TemplateSA326D_not_filed_v1,
+    TemplateSA251_v1,
+    TemplateSA251_v2,
+    TemplateSA251_v3,
+    TemplateSA309A_v1,
+    TemplateSA309C_v1,
+    TemplateSA316_v1,
+    TemplateSA316_v2,
+    TemplateSA359_v1,
+    TemplateSA359_v2,
+    TemplateSA372,
+    TemplateSA373_v1,
+    TemplateSS300_v1,
+    TemplateSA300_v1,
+    TemplateSA328D_v1,
+    TemplateSA316_previous_year_v1,
+    TemplateSA316_previous_year_v2
   )
+
+//  TemplateSA370_v1
+//  TemplateSA371_v1
+//  TemplateViewTaxSummary_2013_2014_v1
 
   private val secureTemplates: Seq[SATemplates & WithSecureMessageIntegration] = Seq(
     TemplateSA326D_filed_v1,
