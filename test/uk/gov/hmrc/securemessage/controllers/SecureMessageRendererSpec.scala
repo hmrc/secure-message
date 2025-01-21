@@ -463,8 +463,8 @@ class SecureMessageRendererSpec extends PlaySpec with ScalaFutures with MockitoS
       status(response) mustBe OK
       contentAsString(response) must include("Test have subjects11")
       contentAsString(response) must include("This message was sent to you on 26 April 2021")
-      contentAsString(response) must include("6 months late – a penalty of £50.")
-      contentAsString(response) must include("3 months late – a daily penalty of £2 a day for 10 days.")
+      contentAsString(response) must include("6 months late – a penalty of &pound;50.")
+      contentAsString(response) must include("3 months late – a daily penalty of &pound;2 a day for 10 days.")
     }
 
     "return OK with a message when user has insufficient enrollments" in new TestCase {
