@@ -17,20 +17,18 @@
 package uk.gov.hmrc.securemessage.templates.satemplates.sa371
 
 import play.api.i18n.Messages
-import play.api.libs.json.{Json, OFormat}
+import play.api.libs.json.{ Json, OFormat }
 import uk.gov.hmrc.securemessage.templates.SATemplates
-import uk.gov.hmrc.securemessage.templates.satemplates.helpers.{RenderingData, TaxYear}
+import uk.gov.hmrc.securemessage.templates.satemplates.helpers.{ RenderingData, TaxYear }
 import uk.gov.hmrc.securemessage.templates.satemplates.sa37X.*
 import uk.gov.hmrc.securemessage.templates.satemplates.sa371.fragments.html.*
 
-import scala.util.matching.Regex
-
-object SA371_ContentParams {
-  implicit val formats: OFormat[SA371_ContentParams] =
-    Json.format[SA371_ContentParams]
+object SA371_v1ContentParams {
+  implicit val formats: OFormat[SA371_v1ContentParams] =
+    Json.format[SA371_v1ContentParams]
 }
 
-case class SA371_ContentParams(
+case class SA371_v1ContentParams(
   taxYear: TaxYear,
   penaltiesTotal: String,
   partnershipName: String,
@@ -47,7 +45,7 @@ case object TemplateSA371_v1 extends SATemplates {
     renderingData: RenderingData
   )(implicit messages: Messages): play.twirl.api.HtmlFormat.Appendable =
     html.SA371_v1(
-      renderingData.contentParametersData.as[SA371_ContentParams],
+      renderingData.contentParametersData.as[SA371_v1ContentParams],
       List(
         SA371FilingFirst3MonthsPenaltyParams,
         SA371FilingSecond3MonthsPenaltyParams,
@@ -76,4 +74,3 @@ object SA371Filing6MonthsMinimumPenaltyParams extends SA37XFiling6MonthsMinimumP
 object SA371Filing12MonthsMinimumPenaltyParams extends SA37XFiling12MonthsMinimumPenaltyParams {
   override val templates = Map("Filing12MonthsMinimumPenalty_v1" -> Filing12MonthsMinimumPenalty.f)
 }
-

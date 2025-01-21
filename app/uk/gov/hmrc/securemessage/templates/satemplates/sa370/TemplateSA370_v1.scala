@@ -22,7 +22,6 @@ import uk.gov.hmrc.securemessage.templates.{ SATemplates, WithSecureMessageInteg
 import uk.gov.hmrc.securemessage.templates.satemplates.helpers.{ RenderingData, TaxYear }
 import uk.gov.hmrc.securemessage.templates.satemplates.sa37X.*
 import uk.gov.hmrc.securemessage.templates.satemplates.sa370.fragments.html.*
-import scala.util.matching.Regex
 
 object SA370_v1ContentParams {
   implicit val formats: OFormat[SA370_v1ContentParams] =

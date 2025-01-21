@@ -35,10 +35,13 @@ import uk.gov.hmrc.securemessage.templates.satemplates.sa316.*
 import uk.gov.hmrc.securemessage.templates.satemplates.sa326d.{ TemplateSA326D_filed_v1, TemplateSA326D_not_filed_v1 }
 import uk.gov.hmrc.securemessage.templates.satemplates.sa328d.TemplateSA328D_v1
 import uk.gov.hmrc.securemessage.templates.satemplates.sa359.{ TemplateSA359_v1, TemplateSA359_v2 }
+import uk.gov.hmrc.securemessage.templates.satemplates.sa370.TemplateSA370_v1
+import uk.gov.hmrc.securemessage.templates.satemplates.sa371.TemplateSA371_v1
 import uk.gov.hmrc.securemessage.templates.satemplates.sa372.TemplateSA372
 import uk.gov.hmrc.securemessage.templates.satemplates.sa373.TemplateSA373_v1
 import uk.gov.hmrc.securemessage.templates.satemplates.sx300.{ TemplateSA300_v1, TemplateSS300_v1 }
 import uk.gov.hmrc.securemessage.templates.satemplates.views.html
+import uk.gov.hmrc.securemessage.templates.satemplates.viewtaxsum.TemplateViewTaxSummary_2013_2014_v1
 import uk.gov.hmrc.securemessage.templates.{ SATemplates, WithSecureMessageIntegration }
 
 import scala.concurrent.{ ExecutionContext, Future }
@@ -93,16 +96,20 @@ class SAMessageRendererService @Inject() (
     TemplateSA300_v1,
     TemplateSA328D_v1,
     TemplateSA316_previous_year_v1,
-    TemplateSA316_previous_year_v2
+    TemplateSA316_previous_year_v2,
+    TemplateSA370_v1,
+    TemplateSA371_v1,
+    TemplateViewTaxSummary_2013_2014_v1
   )
-
-//  TemplateSA370_v1
-//  TemplateSA371_v1
-//  TemplateViewTaxSummary_2013_2014_v1
 
   private val secureTemplates: Seq[SATemplates & WithSecureMessageIntegration] = Seq(
     TemplateSA326D_filed_v1,
-    TemplateSA326D_not_filed_v1
+    TemplateSA326D_not_filed_v1,
+    TemplateSA328D_v1,
+    TemplateSA370_v1,
+    TemplateSA372,
+    TemplateSA300_v1,
+    TemplateSS300_v1
   )
 
   private def isSecureTemplate(templateId: String): Boolean = secureTemplates.map(_.templateKey).contains(templateId)
