@@ -1,0 +1,70 @@
+@*
+ * Copyright 2023 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *@
+
+@(data: uk.gov.hmrc.securemessage.templates.satemplates.sa371.SA371_v1ContentParams,
+  paramTypes: List[uk.gov.hmrc.securemessage.templates.satemplates.sa37X.ParamType[_]],
+  platUrls: uk.gov.hmrc.securemessage.templates.satemplates.helpers.PlatformUrls)
+
+@import uk.gov.hmrc.securemessage.templates.satemplates.helpers.Render._
+
+
+@if(data.showLateFilingHeading) {
+    <p>This is because the @renderYear(data.taxYear) tax return for @data.partnershipName is late.</p>
+}
+
+
+@if(data.showWhatToDoLateFiling) {
+ <ul>
+  <li>The <strong>nominated partner</strong> must send the partnership return (SA800) now to avoid further penalties.</li>
+ </ul>
+}
+
+<h3>How your penalty's calculated</h3>
+
+<div class="penalty-details">
+    <table>
+        @if(data.showLateFilingHeading) {
+          <tr>
+           <th>Late filing</th>
+           <th style="text-align: right; width: 20%">Amount</th>
+          </tr>
+          <tr style="border-bottom: hidden">
+            @data.lateFilingPenalties.map { penalty => @penalty.render(paramTypes) }
+          </tr>
+          @{
+            // empty row to make space between late filling and late payment
+          }
+        }
+
+        <tr style="border-top: solid; border-top-color: gray;">
+            <td style="text-align:right"><strong>Total penalties</strong></td>
+            <td style="text-align:right; width: 20%"><strong>&pound;@data.penaltiesTotal</strong></td>
+        </tr>
+    </table>
+</div>
+<p>Previous penalties (and interest) aren't included here.</p>
+
+
+@if(data.showWhatToDoLateFiling) {
+<ul>
+    <li><a id="deadline-and-penalties-href" href="https://www.gov.uk/self-assessment-tax-returns/deadlines" target="_blank" data-sso="false" class="govuk-link" rel="external noopener noreferrer" lang="en">Deadlines and penalties</a></li>
+    <li><a id="how-to-send-tax-return-href" href="https://www.gov.uk/how-to-send-self-assessment-online/software-you-can-buy" target="_blank" data-sso="false" class="govuk-link" rel="external noopener noreferrer" lang="en">How to send a partnership tax return</a></li>
+    <li><a id="sa-payment-href" href=@{platUrls.saPaymentsUrl} target="_self" data-sso="false" class="govuk-link" lang="en">Pay your penalty</a></li>
+    <li><a id="difficulties-paying-href" href="https://www.gov.uk/difficulties-paying-hmrc" target="_blank" data-sso="false" class="govuk-link" rel="external noopener noreferrer" lang="en">Problems paying your penalty</a></li>
+    <li><a id="appeal-a-penalty-href" href="https://www.gov.uk/tax-appeals/penalty" target="_blank" data-sso="false" class="govuk-link" rel="external noopener noreferrer" lang="en">Appeal a penalty</a></li>
+    <li><a id="contact-hmrc-href" href="https://www.gov.uk/government/organisations/hm-revenue-customs/contact/self-assessment" target="_blank" data-sso="false" class="govuk-link" rel="external noopener noreferrer" lang="en">Contact HMRC</a></li>
+</ul>
+}

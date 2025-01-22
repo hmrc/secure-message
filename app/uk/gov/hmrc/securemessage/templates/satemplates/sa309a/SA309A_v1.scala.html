@@ -1,0 +1,53 @@
+@*
+ * Copyright 2023 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *@
+
+@(data: uk.gov.hmrc.securemessage.templates.satemplates.sa309a.SA309A_v1ContentParams,
+        urlBuilder: uk.gov.hmrc.securemessage.templates.satemplates.helpers.PortalUrlBuilder,
+        saUtr: Option[String])
+
+@import play.twirl.api.TwirlFeatureImports.defining
+@import uk.gov.hmrc.securemessage.templates.satemplates.helpers.Render.{renderDate, renderYear}
+
+<p>The deadline to send a paper tax return for @renderYear(data.taxYear) has passed.</p>
+
+<h3>How to avoid a penalty</h3>
+
+<p>Send the tax return online and pay any tax you owe by @renderDate(data.onlineDeadline).</p>
+
+<p>If you send a paper return the penalty is £100.</p>
+
+<p>If you’ve already completed your return online please check it has been submitted.</p>
+
+<p>Contact HMRC if you think you don't need to send this tax return.</p>
+
+<ul>
+
+    <li>
+        @defining(urlBuilder.buildPortalUrl(saUtr, "saViewTaxReturns")) { portalUrl =>
+            <a id="where-to-send-tax-return-href" href=@{portalUrl} target="_self" class="govuk-link" data-sso="client" lang="en">Send your tax return</a>
+        }
+    </li>
+    <li>
+        <a id="how-to-send-tax-return-href" href="https://www.gov.uk/self-assessment-tax-returns/sending-return" target="_blank" data-sso="false" class="govuk-link" rel="external noopener noreferrer" lang="en">How to send a tax return</a>
+    </li>
+    <li>
+        <a id="deadline-and-penalties-href" href="https://www.gov.uk/self-assessment-tax-returns/deadlines" target="_blank" data-sso="false" class="govuk-link" rel="external noopener noreferrer" lang="en">Deadlines and penalties</a>
+    </li>
+    <li>
+        <a id="contact-hmrc-href" href="https://www.gov.uk/government/organisations/hm-revenue-customs/contact/self-assessment" target="_blank" data-sso="false" class="govuk-link" rel="external noopener noreferrer" lang="en">Contact HMRC</a>
+    </li>
+
+</ul>

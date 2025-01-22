@@ -1,0 +1,50 @@
+@*
+ * Copyright 2023 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *@
+
+@(data: uk.gov.hmrc.securemessage.templates.satemplates.sa251.SA251_v2ContentParams,
+        urlBuilder: uk.gov.hmrc.securemessage.templates.satemplates.helpers.PortalUrlBuilder,
+        saUtr: Option[String],
+        platUrls: uk.gov.hmrc.securemessage.templates.satemplates.helpers.PlatformUrls)
+
+@import uk.gov.hmrc.securemessage.templates.satemplates.helpers.Render.renderYear
+
+<p>You don’t have to send a tax return after the @renderYear(data.lastYearToFile) tax year unless:</p>
+<ul class="bullets">
+    <li>your financial circumstances change</li>
+    <li>HM Revenue and Customs tell you to</li>
+</ul>
+
+@data.totalAmountDueToHmrc match {
+    case value if value > 0 => {
+        <h3>Tax to pay</h3>
+        <p>You currently owe @uk.gov.hmrc.securemessage.templates.satemplates.views.html.poundsAndPence(value)</p>
+    }
+    case _ => {}
+}
+
+@if(data.outstandingYears.nonEmpty) {
+    <p>You must still send the following tax return(s):</p>
+    <ul class="bullets">
+        @for(year <- data.outstandingYears) {
+            <li>@renderYear(year)</li>
+        }
+    </ul>
+}
+@if((data.totalAmountDueToHmrc + data.outstandingYears.size) > 0) {
+    <p>Send the return(s) and pay any tax you owe on time - there are penalties if you’re late.</p>
+}
+
+@uk.gov.hmrc.securemessage.templates.satemplates.sa251.html.SA251_V1_footer(urlBuilder, saUtr, platUrls.saPaymentsUrl)

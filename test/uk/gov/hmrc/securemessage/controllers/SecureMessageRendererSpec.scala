@@ -17,39 +17,40 @@
 package uk.gov.hmrc.securemessage.controllers
 
 import org.apache.commons.codec.binary.Base64
-import org.mockito.ArgumentMatchers.{ any, eq as eqTo }
+import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.mongodb.scala.bson.ObjectId
-import org.scalatest.OptionValues
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
-import play.api.http.ContentTypes.*
-import play.api.http.HeaderNames.*
 import play.api.http.Status.*
-import play.api.i18n.Messages
-import play.api.libs.json.{ JsNull, JsObject, JsResult, JsString, JsValue, Json, OFormat }
-import play.api.mvc.{ AnyContent, AnyContentAsEmpty, Request, Result }
-import play.api.test.Helpers.{ POST, PUT, contentAsJson, contentAsString, defaultAwaitTimeout, status, stubMessages }
-import play.api.test.{ FakeHeaders, FakeRequest, Helpers }
+import play.api.libs.json.{ JsNull, JsObject, JsValue, Json }
+import play.api.mvc.Result
+import play.api.test.Helpers.{ contentAsString, defaultAwaitTimeout, status }
+import play.api.test.{ FakeRequest, Helpers }
+import uk.gov.hmrc.auth.core.*
+import uk.gov.hmrc.common.message.model.{ ConversationItem, MessageContentParameters }
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HttpVerbs.GET
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import uk.gov.hmrc.securemessage.helpers.Resources
-import uk.gov.hmrc.securemessage.services.{ HtmlCreatorService, SAMessageRendererService, SecureMessageServiceImpl }
-import uk.gov.hmrc.auth.core.*
-import uk.gov.hmrc.common.message.model.{ ConversationItem, MessageContentParameters }
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-import uk.gov.hmrc.securemessage.models.ShowLinkJourneyStep
-import uk.gov.hmrc.securemessage.models.core.Letter.*
+import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core.*
+import uk.gov.hmrc.securemessage.models.core.Letter.*
+import uk.gov.hmrc.securemessage.models.{ AckJourneyStep, ReplyFormJourneyStep, ShowLinkJourneyStep }
+import uk.gov.hmrc.securemessage.services.{ HtmlCreatorService, SAMessageRendererService, SecureMessageServiceImpl }
 import uk.gov.hmrc.securemessage.templates.satemplates.helpers.{ DailyPenalty, PortalUrlBuilder, TaxYear }
-import uk.gov.hmrc.securemessage.templates.satemplates.r002a.{ Electronic, Method, R002A_v1ContentParams, Role, Taxpayer }
+import uk.gov.hmrc.securemessage.templates.satemplates.r002a.{ Electronic, R002A_v1ContentParams, Taxpayer }
 import uk.gov.hmrc.securemessage.templates.satemplates.sa326d.SA326D_v1ContentParams
+import uk.gov.hmrc.securemessage.templates.satemplates.sa328d.SA328D_v1ContentParams
+import uk.gov.hmrc.securemessage.templates.satemplates.sa370.{ Filing12MonthsPenaltyParams, Filing6MonthsPenaltyParams, SA370_v1ContentParams }
+import uk.gov.hmrc.securemessage.templates.satemplates.sa371.SA371_v1ContentParams
+import uk.gov.hmrc.securemessage.templates.satemplates.sa372.SA372_ContentParams
+import uk.gov.hmrc.securemessage.templates.satemplates.sa37X.*
 
 import java.time.LocalDate
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ ExecutionContext, ExecutionException, Future }
+import scala.concurrent.{ ExecutionContext, Future }
 
 class SecureMessageRendererSpec extends PlaySpec with ScalaFutures with MockitoSugar {
 
@@ -262,6 +263,208 @@ class SecureMessageRendererSpec extends PlaySpec with ScalaFutures with MockitoS
       contentAsString(response) must include("Test have subjects11")
       contentAsString(response) must include("This message was sent to you on 26 April 2021")
       contentAsString(response) must include("send your tax return and pay any tax you owe")
+    }
+
+    "return OK with sa messages template for templateId 'SA328D_v1' " in new TestCase {
+      val SA328DContentParams: JsValue = Json.toJson(
+        SA328D_v1ContentParams(
+          TaxYear(2023, 2024),
+          LocalDate.now(),
+          Some("Partnership name")
+        )
+      )
+      val contentParams: Option[MessageContentParameters] =
+        Some(MessageContentParameters(SA328DContentParams, "SA328D_v1"))
+      val saMessage: Option[Letter] = letter.map(_.copy(contentParameters = contentParams))
+
+      when(mockAuthConnector.authorise(any(), any())(any(), any())).thenReturn(Future.successful {})
+      when(
+        mockSecureMessageService
+          .getLetter(any[ObjectId])(any[ExecutionContext])
+      )
+        .thenReturn(Future.successful(saMessage))
+
+      val response: Future[Result] =
+        controller.renderMessageUnencryptedUrl("utr", messageId.toString, Some(ReplyFormJourneyStep("/returnUrl")))(
+          fakeRequest
+        )
+      status(response) mustBe OK
+      contentAsString(response) must include("Test have subjects11")
+      contentAsString(response) must include("This message was sent to you on 26 April 2021")
+      contentAsString(response) must include("The 2023 to 2024 tax return for Partnership name is late.")
+    }
+
+    "return OK with sa messages template for templateId 'SA370_v1' " in new TestCase {
+      val SA370ContentParams: JsValue = Json.toJson(
+        SA370_v1ContentParams(
+          TaxYear(2023, 2024),
+          "£100",
+          true,
+          true,
+          true,
+          true,
+          false,
+          Seq(
+            Penalty(
+              "Filing12MonthsAmendedPenalty_v1",
+              Json.toJson(
+                Filing12MonthsPenaltyParams(
+                  "50",
+                  "45",
+                  "10",
+                  "40"
+                )
+              )
+            )
+          ),
+          Seq(
+            Penalty(
+              "Filing6MonthsAmendedPenalty_v1",
+              Json.toJson(
+                Filing6MonthsPenaltyParams(
+                  "20",
+                  "25",
+                  "10",
+                  "30"
+                )
+              )
+            )
+          )
+        )
+      )
+      val contentParams: Option[MessageContentParameters] =
+        Some(MessageContentParameters(SA370ContentParams, "SA370_v1"))
+      val saMessage: Option[Letter] = letter.map(_.copy(contentParameters = contentParams))
+
+      when(mockAuthConnector.authorise(any(), any())(any(), any())).thenReturn(Future.successful {})
+      when(
+        mockSecureMessageService
+          .getLetter(any[ObjectId])(any[ExecutionContext])
+      )
+        .thenReturn(Future.successful(saMessage))
+
+      val response: Future[Result] =
+        controller.renderMessageUnencryptedUrl("utr", messageId.toString, Some(ReplyFormJourneyStep("/returnUrl")))(
+          fakeRequest
+        )
+      status(response) mustBe OK
+      contentAsString(response) must include("Test have subjects11")
+      contentAsString(response) must include("This message was sent to you on 26 April 2021")
+      contentAsString(response) must include(
+        "12 months late – now you have filed an amended tax return you have a further penalty to pay."
+      )
+      contentAsString(response) must include(
+        "6 months late – now you have filed an amended tax return you have a further penalty to pay."
+      )
+    }
+
+    "return OK with sa messages template for templateId 'SA372'" in new TestCase {
+      val SA372ContentParams: JsValue = Json.toJson(
+        SA372_ContentParams(
+          TaxYear(2023, 2024),
+          Some(LocalDate.now()),
+          true,
+          true
+        )
+      )
+      val contentParams: Option[MessageContentParameters] =
+        Some(MessageContentParameters(SA372ContentParams, "SA372"))
+      val saMessage: Option[Letter] = letter.map(_.copy(contentParameters = contentParams))
+
+      when(mockAuthConnector.authorise(any(), any())(any(), any())).thenReturn(Future.successful {})
+      when(
+        mockSecureMessageService
+          .getLetter(any[ObjectId])(any[ExecutionContext])
+      )
+        .thenReturn(Future.successful(saMessage))
+
+      val response: Future[Result] =
+        controller.renderMessageUnencryptedUrl("utr", messageId.toString, Some(ShowLinkJourneyStep("/returnUrl")))(
+          fakeRequest
+        )
+      status(response) mustBe OK
+      contentAsString(response) must include("Test have subjects11")
+      contentAsString(response) must include("This message was sent to you on 26 April 2021")
+      contentAsString(response) must include("Your tax return for the 2023 to 2024 tax year is late.")
+    }
+
+    "return OK with sa messages template for templateId 'SA300_v1' " in new TestCase {
+      val contentParams: Option[MessageContentParameters] =
+        Some(MessageContentParameters(JsNull, "SA300_v1"))
+      val saMessage: Option[Letter] = letter.map(_.copy(contentParameters = contentParams))
+
+      when(mockAuthConnector.authorise(any(), any())(any(), any())).thenReturn(Future.successful {})
+      when(
+        mockSecureMessageService
+          .getLetter(any[ObjectId])(any[ExecutionContext])
+      )
+        .thenReturn(Future.successful(saMessage))
+
+      val response: Future[Result] =
+        controller.renderMessageUnencryptedUrl("utr", messageId.toString, Some(AckJourneyStep))(
+          fakeRequest
+        )
+      status(response) mustBe OK
+      contentAsString(response) must include("Test have subjects11")
+      contentAsString(response) must include("This message was sent to you on 26 April 2021")
+      contentAsString(response) must include(
+        "Your new Self Assessment statement has been prepared. You'll be able to view it online within 4 working days."
+      )
+    }
+
+    "return OK with sa messages template for templateId 'SA371_v1' " in new TestCase {
+      val SA371v1ContentParams: JsValue = Json.toJson(
+        SA371_v1ContentParams(
+          TaxYear(2023, 2024),
+          "£100",
+          "",
+          true,
+          true,
+          false,
+          Seq(
+            Penalty(
+              "FilingSecond3MonthsOnlinePenalty_v1",
+              Json.toJson(
+                FilingSecond3MonthsPenaltyParams(
+                  "2",
+                  "10",
+                  "10/01/2016",
+                  "10/03/2016",
+                  "600"
+                )
+              )
+            ),
+            Penalty(
+              "Filing6MonthsMinimumPenalty_v1",
+              Json.toJson(
+                Filing6MonthsMinimumPenaltyParams(
+                  "50"
+                )
+              )
+            )
+          )
+        )
+      )
+      val contentParams: Option[MessageContentParameters] =
+        Some(MessageContentParameters(SA371v1ContentParams, "SA371_v1"))
+      val saMessage: Option[Letter] = letter.map(_.copy(contentParameters = contentParams))
+
+      when(mockAuthConnector.authorise(any(), any())(any(), any())).thenReturn(Future.successful {})
+      when(
+        mockSecureMessageService
+          .getLetter(any[ObjectId])(any[ExecutionContext])
+      )
+        .thenReturn(Future.successful(saMessage))
+
+      val response: Future[Result] =
+        controller.renderMessageUnencryptedUrl("utr", messageId.toString, Some(ShowLinkJourneyStep("/returnUrl")))(
+          fakeRequest
+        )
+      status(response) mustBe OK
+      contentAsString(response) must include("Test have subjects11")
+      contentAsString(response) must include("This message was sent to you on 26 April 2021")
+      contentAsString(response) must include("6 months late – a penalty of &pound;50.")
+      contentAsString(response) must include("3 months late – a daily penalty of &pound;2 a day for 10 days.")
     }
 
     "return OK with a message when user has insufficient enrollments" in new TestCase {
