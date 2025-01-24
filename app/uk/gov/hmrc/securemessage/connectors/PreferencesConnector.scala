@@ -81,8 +81,8 @@ class PreferencesConnector @Inject() (config: Configuration, httpClient: HttpCli
       .map { response =>
         response.status match {
           case Status.OK        => response.json.as[EmailValidation]
-          case Status.NOT_FOUND => VerifiedEmailNotFound((response.json \ "reason").as[String])
-          case status           => throw new OtherException(s"OTHER_EXCEPTION_$status")
+          case Status.NOT_FOUND => VerifiedEmailNotFound(response.body)
+          case status           => throw OtherException(s"OTHER_EXCEPTION_$status")
         }
       }
 
