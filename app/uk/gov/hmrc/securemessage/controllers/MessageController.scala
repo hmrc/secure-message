@@ -32,6 +32,7 @@ import org.bson.types.ObjectId
 import uk.gov.hmrc.common.message.failuremodule.FailureResponseService.errorResponseResult
 import uk.gov.hmrc.common.message.validationmodule.MessageValidator.isValidMessage
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.UpstreamErrorResponse.{ Upstream4xxResponse, Upstream5xxResponse }
 
 import java.time.format.DateTimeFormatter
 import javax.inject.{ Inject, Singleton }
@@ -47,6 +48,31 @@ class MessageController @Inject() (
   ec: ExecutionContext
 ) extends BackendController(cc) with AlertEmailTemplateMapper with Logging {
 
+  override protected def withJsonBody[T](
+    f: T => Future[Result]
+  )(implicit request: Request[JsValue], m: Manifest[T], reads: Reads[T]): Future[Result] =
+    Try(request.body.validate[T]) match {
+      case Success(JsSuccess(payload, _)) =>
+        f(payload)
+
+      case Success(JsError(errs)) =>
+        Future.successful(errorResponseResult(errs.headOption.fold("Unknown") { case (_, validationErrors) =>
+          val errorMessage = validationErrors.headOption.fold("Unknown") { errors =>
+            errors.messages
+              .filter(_.startsWith("The backend has rejected the message due to an unknown tax identifier."))
+              .headOption
+              .getOrElse(errors.messages.toString)
+          }
+          secureMessageUtil.auditCreateMessageForFailure(errorMessage)
+          errorMessage
+        }))
+
+      case Failure(e) if e.isInstanceOf[DateValidationException] =>
+        Future.successful(buildBadRequest(e.getMessage))
+
+      case Failure(e) => Future.successful(buildBadRequest(s"could not parse body due to ${e.getMessage}"))
+    }
+
   def createMessageForV3(): Action[JsValue] = Action.async(parse.json) { implicit request =>
     withJsonBody[Message] { message =>
       isValidMessage(message) match {
@@ -57,6 +83,13 @@ class MessageController @Inject() (
         case Failure(e) =>
           Future.successful(buildBadRequest(e.getMessage))
       }
+    } recover {
+      case Upstream4xxResponse(error) =>
+        errorResponseResult(error.message, error.statusCode, showErrorID = true)
+      case Upstream5xxResponse(error) =>
+        errorResponseResult(error.message, error.statusCode, showErrorID = true)
+      case error =>
+        errorResponseResult(error.getMessage, INTERNAL_SERVER_ERROR, showErrorID = true)
     }
   }
 
