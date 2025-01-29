@@ -23,7 +23,7 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.common.message.util.SecureMessageUtil
 import play.api.libs.functional.syntax.*
 import uk.gov.hmrc.common.message.DateValidationException
-import uk.gov.hmrc.common.message.model.*
+import uk.gov.hmrc.common.message.model.{ AlertEmailTemplateMapper, * }
 
 import java.time.LocalDate
 import java.security.MessageDigest
@@ -32,7 +32,6 @@ import org.bson.types.ObjectId
 import uk.gov.hmrc.common.message.failuremodule.FailureResponseService.errorResponseResult
 import uk.gov.hmrc.common.message.validationmodule.MessageValidator.isValidMessage
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.http.UpstreamErrorResponse.{ Upstream4xxResponse, Upstream5xxResponse }
 
 import java.time.format.DateTimeFormatter
 import javax.inject.{ Inject, Singleton }
@@ -46,7 +45,7 @@ class MessageController @Inject() (
   secureMessageUtil: SecureMessageUtil
 )(implicit
   ec: ExecutionContext
-) extends BackendController(cc) with AlertEmailTemplateMapper with Logging {
+) extends BackendController(cc) with Logging {
 
   override protected def withJsonBody[T](
     f: T => Future[Result]
@@ -72,27 +71,30 @@ class MessageController @Inject() (
 
       case Failure(e) => Future.successful(buildBadRequest(s"could not parse body due to ${e.getMessage}"))
     }
+  import uk.gov.hmrc.securemessage.controllers.MessageV3Format.*
+  def createMessageForV3(): Action[JsValue] =
+    Action.async(parse.json) { implicit request =>
+      withJsonBody[Message] { message =>
+        isValidMessage(message) match {
+          case Success(_) =>
+            val v4RequestBody = AnyContentAsJson(SecureMessageUtil.createSecureMessage(request.body))
+            secureMessageController.createMessage()(request.withBody(v4RequestBody))
 
-  def createMessageForV3(): Action[JsValue] = Action.async(parse.json) { implicit request =>
-    withJsonBody[Message] { message =>
-      isValidMessage(message) match {
-        case Success(_) =>
-          val v4RequestBody = AnyContentAsJson(SecureMessageUtil.createSecureMessage(request.body))
-          secureMessageController.createMessage()(request.withBody(v4RequestBody))
-
-        case Failure(e) =>
-          Future.successful(buildBadRequest(e.getMessage))
+          case Failure(e) =>
+            Future.successful(buildBadRequest(e.getMessage))
+        }
       }
-    } recover {
-      case Upstream4xxResponse(error) =>
-        errorResponseResult(error.message, error.statusCode, showErrorID = true)
-      case Upstream5xxResponse(error) =>
-        errorResponseResult(error.message, error.statusCode, showErrorID = true)
-      case error =>
-        errorResponseResult(error.getMessage, INTERNAL_SERVER_ERROR, showErrorID = true)
     }
+
+  private def buildBadRequest(errorMessage: String)(implicit request: Request[JsValue], hc: HeaderCarrier): Result = {
+    logger.warn(s"Bad request: reason: $errorMessage")
+    secureMessageUtil.auditCreateMessageForFailure(errorMessage)
+    errorResponseResult(errorMessage)
   }
 
+}
+
+object MessageV3Format extends AlertEmailTemplateMapper {
   val defaultJavaDateFormat = "yyyy-MM-dd"
 
   def javaDateReads(): Reads[LocalDate] =
@@ -107,13 +109,6 @@ class MessageController @Inject() (
           }
         )
     )
-
-  private def buildBadRequest(errorMessage: String)(implicit request: Request[JsValue], hc: HeaderCarrier): Result = {
-    logger.warn(s"Bad request: reason: $errorMessage")
-    secureMessageUtil.auditCreateMessageForFailure(errorMessage)
-    errorResponseResult(errorMessage)
-  }
-
   implicit val messageApiV3Reads: Reads[Message] =
     ((__ \ "externalRef").read[ExternalRef] and
       (__ \ "recipient").read[Recipient] and
