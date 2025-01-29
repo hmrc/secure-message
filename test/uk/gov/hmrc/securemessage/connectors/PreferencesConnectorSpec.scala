@@ -84,7 +84,7 @@ class PreferencesConnectorSpec
       when(requestBuilder.execute[HttpResponse](any[HttpReads[HttpResponse]], any[ExecutionContext]))
         .thenReturn(
           Future.successful(
-            HttpResponse(404, JsObject(Seq("reason" -> JsString("not found"))), Map.empty[String, Seq[String]])
+            HttpResponse(404, "not found", Map.empty[String, Seq[String]])
           )
         )
 
