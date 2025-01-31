@@ -117,6 +117,21 @@ class MessageRepositorySpec
         await(repository.getLetter(messageId, identifiers, true))
       result mustBe Right(letterWithUpdatedRenderUrl)
     }
+
+    "be returned with renderUrl updated for sa-message-renderer type" in new TestContext() {
+      val messageId = new ObjectId
+      val saMessageRenderUrl: RenderUrl = RenderUrl("sa-message-renderer", s"/messages/sa/utr/$messageId")
+      val renderUrl: RenderUrl =
+        RenderUrl("secure-message", s"/secure-messaging/messages/sa/utr/$messageId")
+      val letterWithSARenderUrl: Letter = letter.copy(_id = messageId, renderUrl = saMessageRenderUrl)
+      val letterWithUpdatedRenderUrl: Letter = letter.copy(_id = messageId, renderUrl = renderUrl)
+      repository.collection.deleteMany(Filters.empty()).toFuture().futureValue
+      repository.collection.insertOne(letterWithUpdatedRenderUrl).toFuture().futureValue
+
+      val result: Either[SecureMessageError, Letter] =
+        await(repository.getLetter(messageId, identifiers, true))
+      result mustBe Right(letterWithUpdatedRenderUrl)
+    }
   }
 
   "Update letter with new read time" should {
