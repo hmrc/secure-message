@@ -33,6 +33,7 @@ lazy val microservice = Project(appName, file("."))
   .settings(scalacOptions := scalacOptions.value.diff(Seq("-Wunused:all")))
   .settings(
     libraryDependencies ++= AppDependencies.compile ++ AppDependencies.test,
+    routesGenerator := InjectedRoutesGenerator,
     routesImport ++= Seq(
       "uk.gov.hmrc.securemessage.controllers.binders._",
       "uk.gov.hmrc.securemessage.controllers.model._",

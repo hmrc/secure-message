@@ -42,11 +42,12 @@ import uk.gov.hmrc.securemessage.services.{ ImplicitClassesExtensions, SecureMes
 import uk.gov.hmrc.securemessage.utils.DateTimeUtils
 
 import java.util.UUID
-import javax.inject.Inject
+import javax.inject.{ Inject, Singleton }
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Success, Try }
 
+@Singleton
 class SecureMessageController @Inject() (
   cc: ControllerComponents,
   val authConnector: AuthConnector,

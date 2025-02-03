@@ -69,7 +69,7 @@ class AdminControllerSpec extends PlaySpec with ScalaFutures with MockitoSugar {
       val brakeBatchapproval = BrakeBatchApproval("batchId", "formId", LocalDate.now(), "templateId", "reason")
       val fakeRequest: FakeRequest[JsValue] = FakeRequest(
         method = POST,
-        uri = routes.AdminController.acceptBrakeBatch().url,
+        uri = "/admin/message/brake/accept",
         headers = FakeHeaders(Seq(CONTENT_TYPE -> JSON)),
         body = Json.toJson(brakeBatchapproval)
       )
@@ -90,7 +90,7 @@ class AdminControllerSpec extends PlaySpec with ScalaFutures with MockitoSugar {
       val brakeBatchapproval = BrakeBatchApproval("batchId", "formId", LocalDate.now(), "templateId", "reason")
       val fakeRequest: FakeRequest[JsValue] = FakeRequest(
         method = POST,
-        uri = routes.AdminController.rejectBrakeBatch().url,
+        uri = "/admin/message/brake/reject",
         headers = FakeHeaders(Seq(CONTENT_TYPE -> JSON)),
         body = Json.toJson(brakeBatchapproval)
       )
@@ -111,7 +111,7 @@ class AdminControllerSpec extends PlaySpec with ScalaFutures with MockitoSugar {
       val brakeBatch = BrakeBatch("batchId", "formId", LocalDate.now(), "templateId")
       val fakeRequest: FakeRequest[JsValue] = FakeRequest(
         method = POST,
-        uri = routes.AdminController.randomBrakeBatchMessage().url,
+        uri = "/admin/message/brake/random",
         headers = FakeHeaders(Seq(CONTENT_TYPE -> JSON)),
         body = Json.toJson(brakeBatch)
       )
@@ -139,7 +139,7 @@ class AdminControllerSpec extends PlaySpec with ScalaFutures with MockitoSugar {
         when(mockMessageBrakeService.getOrInitialiseCachedAllowlist()(any[ExecutionContext]))
           .thenReturn(Future.successful(Some(allowlist)))
 
-        val fakeRequest = FakeRequest(Helpers.GET, routes.AdminController.getGmcAllowlist().url)
+        val fakeRequest = FakeRequest(Helpers.GET, "/admin/message/brake/gmc/allowlist")
         val result: Future[Result] = controller.getGmcAllowlist()(fakeRequest)
         status(result) mustBe OK
         contentAsString(result) mustBe """{"formIdList":["TEST1","TEST2","TEST3","TEST4"]}"""
@@ -150,7 +150,7 @@ class AdminControllerSpec extends PlaySpec with ScalaFutures with MockitoSugar {
         when(mockMessageBrakeService.getOrInitialiseCachedAllowlist()(any[ExecutionContext]))
           .thenReturn(Future.successful(None))
 
-        val fakeRequest = FakeRequest(Helpers.GET, routes.AdminController.getGmcAllowlist().url)
+        val fakeRequest = FakeRequest(Helpers.GET, "/admin/message/brake/gmc/allowlist")
         val result = controller.getGmcAllowlist()(fakeRequest)
         status(result) mustBe INTERNAL_SERVER_ERROR
         contentAsString(result) mustBe """{"error":"No allowlist present"}"""
@@ -174,7 +174,7 @@ class AdminControllerSpec extends PlaySpec with ScalaFutures with MockitoSugar {
 
         val fakeRequest = FakeRequest(
           Helpers.POST,
-          routes.AdminController.addFormIdToGmcAllowlist().url,
+          "/admin/message/brake/gmc/allowlist/add",
           FakeHeaders(),
           Json.toJson(allowlistUpdateRequest)
         )
@@ -197,7 +197,7 @@ class AdminControllerSpec extends PlaySpec with ScalaFutures with MockitoSugar {
 
         val fakeRequest = FakeRequest(
           Helpers.POST,
-          routes.AdminController.addFormIdToGmcAllowlist().url,
+          "/admin/message/brake/gmc/allowlist/add",
           FakeHeaders(),
           Json.toJson(allowlistUpdateRequest)
         )
@@ -223,7 +223,7 @@ class AdminControllerSpec extends PlaySpec with ScalaFutures with MockitoSugar {
 
         val fakeRequest = FakeRequest(
           Helpers.POST,
-          routes.AdminController.deleteFormIdFromGmcAllowlist().url,
+          "/admin/message/brake/gmc/allowlist/delete",
           FakeHeaders(),
           Json.toJson(allowlistUpdateRequest)
         )
@@ -245,7 +245,7 @@ class AdminControllerSpec extends PlaySpec with ScalaFutures with MockitoSugar {
 
         val fakeRequest = FakeRequest(
           Helpers.POST,
-          routes.AdminController.deleteFormIdFromGmcAllowlist().url,
+          "/admin/message/brake/gmc/allowlist/delete",
           FakeHeaders(),
           Json.toJson(allowlistUpdateRequest)
         )
