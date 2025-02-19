@@ -56,7 +56,7 @@ class SecureMessageRendererSpec extends PlaySpec with ScalaFutures with MockitoS
 
   "view" must {
     val messageId = new ObjectId
-    val fakeRequest = FakeRequest(GET, routes.SecureMessageRenderer.view(messageId).url)
+    val fakeRequest = FakeRequest(GET, s"/ats-message-renderer/message/$messageId")
     val storedLetter: JsValue =
       Resources.readJson("model/core/letter.json").as[JsObject] + ("_id" -> Json.toJson(messageId))
     val letter: Option[Letter] = storedLetter.validate[Letter].asOpt
@@ -101,7 +101,7 @@ class SecureMessageRendererSpec extends PlaySpec with ScalaFutures with MockitoS
 
   "getContentBy" must {
     val messageId = new ObjectId().toString
-    val fakeRequest = FakeRequest(GET, routes.SecureMessageRenderer.getContentBy(messageId, "").url)
+    val fakeRequest = FakeRequest(GET, s"/two-way-message/messages/$messageId/content")
     val conversationItemList: List[ConversationItem] = List(
       ConversationItem(
         messageId,
@@ -147,9 +147,7 @@ class SecureMessageRendererSpec extends PlaySpec with ScalaFutures with MockitoS
     val messageId = new ObjectId()
     val fakeRequest = FakeRequest(
       GET,
-      routes.SecureMessageRenderer
-        .renderMessageUnencryptedUrl("utr", messageId.toString, Some(ShowLinkJourneyStep("/returnUrl")))
-        .url
+      s"/messages/sa/utr/$messageId"
     )
     val storedLetter: JsValue =
       Resources.readJson("model/core/letter.json").as[JsObject] + ("_id" -> Json.toJson(messageId))

@@ -1,3 +1,4 @@
 # Add all the application app.routes to the app.routes file
 ->         /secure-messaging        app.Routes
+->         /                        message.Routes
 ->         /                        health.Routes

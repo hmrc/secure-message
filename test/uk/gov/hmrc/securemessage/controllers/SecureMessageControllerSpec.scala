@@ -496,7 +496,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
   "setReadTime" must {
     val messageId = new ObjectId
     "return error when it is unable to set read-time value" in new TestCase {
-      val fakeRequest = FakeRequest(GET, routes.SecureMessageController.setReadTime(messageId).url)
+      val fakeRequest = FakeRequest(GET, s"/messages/$messageId/read-time")
       when(
         mockMessageRetriever.findAndSetReadTime(any[ObjectId])(any[ExecutionContext], any[HeaderCarrier])
       )
@@ -507,7 +507,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     }
 
     "return success when it is able to set read-time value" in new TestCase {
-      val fakeRequest = FakeRequest(GET, routes.SecureMessageController.setReadTime(messageId).url)
+      val fakeRequest = FakeRequest(GET, s"/messages/$messageId/read-time")
       val message: Letter = Resources.readJson("model/core/full-db-letter.json").as[Letter]
       when(
         mockMessageRetriever.findAndSetReadTime(any[ObjectId])(any[ExecutionContext], any[HeaderCarrier])
@@ -531,7 +531,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       }
     "return BAD_REQUEST for the message with invalid json" in new TestCase {
       val response = controller.createMessage()(
-        FakeRequest(POST, routes.SecureMessageController.createMessage().url).withBody("Test,Non-Json")
+        FakeRequest(POST, "/v4/message").withBody("Test,Non-Json")
       )
       status(response) mustBe BAD_REQUEST
     }
@@ -579,7 +579,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
   private val fullConversationJson = Resources.readJson("model/api/cdcm/write/create-conversation.json")
   val fullConversationfakeRequest: FakeRequest[JsValue] = FakeRequest(
     method = PUT,
-    uri = routes.SecureMessageController.createConversation(cdcm, "123").url,
+    uri = s"/conversation/$cdcm/123",
     headers = FakeHeaders(Seq(CONTENT_TYPE -> JSON)),
     body = fullConversationJson
   )
@@ -591,7 +591,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
   ) extends TestCase {
     val fakeRequest: FakeRequest[JsValue] = FakeRequest(
       method = PUT,
-      uri = routes.SecureMessageController.createConversation(cdcm, "123").url,
+      uri = s"/conversation/$cdcm/123",
       headers = FakeHeaders(Seq(CONTENT_TYPE -> JSON)),
       body = requestBody
     )
@@ -615,7 +615,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     val encodedId: String = IdCoder.encodeId(MessageType.Conversation, "D-80542-20201120")
     val fakeRequest: FakeRequest[JsObject] = FakeRequest(
       method = POST,
-      uri = routes.SecureMessageController.addCustomerMessage(encodedId).url,
+      uri = s"/messages/$encodedId/customer-message",
       headers = FakeHeaders(Seq(CONTENT_TYPE -> JSON)),
       body = Json.obj("content" -> "PGRpdj5IZWxsbzwvZGl2Pg==")
     )
@@ -741,7 +741,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
       extends TestCase {
     val fakeRequest: FakeRequest[JsValue] = FakeRequest(
       method = POST,
-      uri = routes.SecureMessageController.addCaseworkerMessage(cdcm, "123").url,
+      uri = s"/conversation/$cdcm/123/caseworker-message",
       headers = FakeHeaders(Seq(CONTENT_TYPE -> JSON)),
       body = requestBody
     )
@@ -757,7 +757,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
   }
 
   class CreateSecureMessageTestCase(requestBody: JsValue) extends TestCase {
-    val fakeRequest = FakeRequest(POST, routes.SecureMessageController.createMessage().url).withJsonBody(requestBody)
+    val fakeRequest = FakeRequest(POST, "/v4/message").withJsonBody(requestBody)
     when(
       mockSecureMessageService
         .createSecureMessage(any[SecureMessage])(any[Request[AnyContent]], any[HeaderCarrier], any[ExecutionContext])
@@ -766,7 +766,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
   }
 
   class GetContentTestCase(id: ObjectId) extends TestCase {
-    val fakeRequest = FakeRequest(GET, routes.SecureMessageController.getContentBy(id).url)
+    val fakeRequest = FakeRequest(GET, s"/messages/$id/content")
     when(
       mockSecureMessageService
         .getContentBy(any[ObjectId])(any[HeaderCarrier], any[ExecutionContext], any[Messages])
