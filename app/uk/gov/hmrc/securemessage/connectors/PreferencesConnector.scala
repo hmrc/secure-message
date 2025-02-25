@@ -74,7 +74,7 @@ class PreferencesConnector @Inject() (config: Configuration, httpClient: HttpCli
     httpClient
       .get(
         prepareUrl(
-          s"/preferences/verify/email-address?regime=${recipient.regime}&taxId=${recipient.identifier.value}"
+          s"/preferences/verified-email?regime=${recipient.regime}&taxId=${recipient.identifier.value}"
         )
       )
       .execute[HttpResponse]
