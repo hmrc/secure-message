@@ -81,18 +81,6 @@ class StatsMetricRepositorySpec
       )
     }
 
-    "increment the count and total for updated" in {
-      repo.incrementUpdate("sautr", "form1", "update.envelopid").futureValue
-
-      val value1 = repo.collection.find().toFuture().futureValue
-      value1 must contain only
-        StatsCount(
-          "stats.sautr.form1.update.envelopid",
-          1,
-          1
-        )
-    }
-
     "reset the count to 0 and retain the total value" in {
       repo.incrementReads("sautr", "form1").futureValue
       repo.incrementReads("sautr", "form2").futureValue
@@ -124,15 +112,6 @@ class StatsMetricRepositorySpec
       metrics("stats.sautr.form1.created.total") mustBe 2
       metrics("stats.sautr.form2.created.count") mustBe 1
       metrics("stats.sautr.form2.created.total") mustBe 1
-    }
-
-    "increment the source data deletions" in {
-      repo.incrementSourceDataDeletions(1).futureValue
-      repo.incrementSourceDataDeletions(1).futureValue
-
-      val metrics = repo.metrics.futureValue
-
-      metrics("stats.source.data.deletions.total") mustBe 2
     }
   }
 }

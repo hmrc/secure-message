@@ -59,7 +59,7 @@ import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core.Letter.*
 import uk.gov.hmrc.securemessage.models.core.*
 import uk.gov.hmrc.securemessage.models.v4.SecureMessage
-import uk.gov.hmrc.securemessage.repository.ConversationRepository
+import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, StatsMetricRepository }
 import uk.gov.hmrc.securemessage.services.SecureMessageServiceImpl
 
 import java.util.UUID
@@ -543,6 +543,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     val mockMessageBroker: MessageBroker = mock[MessageBroker]
     val mockMessageRetriever: NonCDSMessageRetriever = mock[NonCDSMessageRetriever]
     val mockAuditConnector: AuditConnector = mock[AuditConnector]
+    val mockStatsRepo: StatsMetricRepository = mock[StatsMetricRepository]
     val mockSecureMessageService: SecureMessageServiceImpl = mock[SecureMessageServiceImpl]
     when(mockRepository.insertIfUnique(any[Conversation])(any[ExecutionContext]))
       .thenReturn(Future.successful(Right(())))
@@ -558,7 +559,8 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
         mockAuditConnector,
         mockSecureMessageService,
         mockMessageBroker,
-        zeroTimeProvider
+        zeroTimeProvider,
+        mockStatsRepo
       )
 
     val enrolments: Enrolments = authEnrolmentsFrom(authEnrolments)
@@ -574,6 +576,12 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
         .sendEvent(any[DataEvent])(any[HeaderCarrier], any[ExecutionContext])
     )
       .thenReturn(Future.successful(Success))
+
+    when(
+      mockStatsRepo
+        .incrementReads(any, any)(any[ExecutionContext])
+    )
+      .thenReturn(Future.successful(()))
   }
 
   private val fullConversationJson = Resources.readJson("model/api/cdcm/write/create-conversation.json")

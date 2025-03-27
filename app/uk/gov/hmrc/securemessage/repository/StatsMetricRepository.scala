@@ -61,19 +61,11 @@ class StatsMetricRepository @Inject() (
   def incrementReads(taxIdName: String, form: String)(implicit ec: ExecutionContext): Future[Unit] =
     increment(s"stats.$taxIdName.$form.read", 1)
 
-  def incrementUpdate(taxIdName: String, form: String, metricNameSuffix: String)(implicit
-    ec: ExecutionContext
-  ): Future[Unit] =
-    increment(s"stats.$taxIdName.$form.$metricNameSuffix", 1)
-
   def incrementCreated(taxIdName: String, form: String)(implicit ec: ExecutionContext): Future[Unit] =
     increment(s"stats.$taxIdName.$form.created", 1)
 
   def incrementDuplicate(refSource: String)(implicit ec: ExecutionContext): Future[Unit] =
     increment(s"stats.$refSource.duplicates", 1)
-
-  def incrementSourceDataDeletions(deleted: Int)(implicit ec: ExecutionContext): Future[Unit] =
-    increment(s"stats.source.data.deletions", deleted)
 
   private def increment(metricName: String, count: Int)(implicit ec: ExecutionContext): Future[Unit] =
     collection
