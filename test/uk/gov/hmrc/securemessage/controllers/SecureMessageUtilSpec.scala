@@ -47,8 +47,7 @@ class SecureMessageUtilSpec extends PlaySpec with ScalaFutures with MockitoSugar
   val auditConnector: AuditConnector = mock[AuditConnector]
   val configuration: Configuration = Configuration.from(
     Map(
-      "alertProfile"               -> List(),
-      "deprecate.message-renderer" -> true
+      "alertProfile" -> List()
     )
   )
   implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
@@ -101,12 +100,6 @@ class SecureMessageUtilSpec extends PlaySpec with ScalaFutures with MockitoSugar
 
       decoded must include("Reminder to file a Self Assessment return")
       decoded must include("This message was sent to you on")
-    }
-  }
-
-  "deprecateRendererService" must {
-    "return the value from config" in {
-      testUtil.deprecateRendererService mustBe true
     }
   }
 
