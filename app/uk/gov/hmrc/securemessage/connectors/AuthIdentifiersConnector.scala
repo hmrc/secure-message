@@ -19,10 +19,10 @@ package uk.gov.hmrc.securemessage.connectors
 import uk.gov.hmrc.auth.core
 import uk.gov.hmrc.auth.core.AuthProvider.PrivilegedApplication
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
-import uk.gov.hmrc.auth.core.{ Nino => _, _ }
-import uk.gov.hmrc.common.message.model.TaxEntity.{ Epaye, HmceVatdecOrg, HmrcAdOrg, HmrcCusOrg, HmrcIossOrg, HmrcPodsOrg, HmrcPodsPpOrg, HmrcPptOrg }
-import uk.gov.hmrc.domain.TaxIds._
-import uk.gov.hmrc.domain._
+import uk.gov.hmrc.auth.core.{ Nino as _, * }
+import uk.gov.hmrc.common.message.model.TaxEntity.{ Epaye, HmceVatdecOrg, HmrcAdOrg, HmrcCusOrg, HmrcIossOrg, HmrcOssOrg, HmrcPodsOrg, HmrcPodsPpOrg, HmrcPptOrg }
+import uk.gov.hmrc.domain.TaxIds.*
+import uk.gov.hmrc.domain.*
 import uk.gov.hmrc.http.HeaderCarrier
 
 import javax.inject.{ Inject, Singleton }
@@ -63,6 +63,7 @@ class AuthIdentifiersConnector @Inject() (
       case "HMRC-PODS-ORG"   => taxIdValue.map(HmrcPodsOrg.apply)
       case "HMRC-PODSPP-ORG" => taxIdValue.map(HmrcPodsPpOrg.apply)
       case "HMRC-IOSS-ORG"   => taxIdValue.map(HmrcIossOrg.apply)
+      case "HMRC-OSS-ORG"    => taxIdValue.map(HmrcOssOrg.apply)
       case "HMRC-AD-ORG"     => taxIdValue.map(HmrcAdOrg.apply)
       case _                 => None
     }
@@ -95,6 +96,7 @@ class AuthIdentifiersConnector @Inject() (
             case "HMRC-PODS-ORG"   => Set(taxId, HmrcPodsOrg(taxId.value))
             case "HMRC-PODSPP-ORG" => Set(taxId, HmrcPodsPpOrg(taxId.value))
             case "HMRC-IOSS-ORG"   => Set(taxId, HmrcIossOrg(taxId.value))
+            case "HMRC-OSS-ORG"    => Set(taxId, HmrcOssOrg(taxId.value))
             case "HMRC-AD-ORG"     => Set(taxId, HmrcAdOrg(taxId.value))
             case "VRN"             => vrnSet(taxId.value)
             case _                 => Set(taxId)
