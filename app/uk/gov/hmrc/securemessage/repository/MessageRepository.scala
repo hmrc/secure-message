@@ -116,13 +116,9 @@ class MessageRepository @Inject() (mongo: MongoComponent)(implicit ec: Execution
   ): Future[Count] =
     getMessagesCount(identifiers, tags)
 
-  def getLetter(id: ObjectId, identifiers: Set[Identifier], deprecateRenderer: Boolean = false)(implicit
+  def getLetter(id: ObjectId, identifiers: Set[Identifier])(implicit
     ec: ExecutionContext
-  ): Future[Either[SecureMessageError, Letter]] = if (deprecateRenderer) {
-    getMessage(id, identifiers).map(updateRenderUrl)
-  } else {
-    getMessage(id, identifiers)
-  }
+  ): Future[Either[SecureMessageError, Letter]] = getMessage(id, identifiers).map(updateRenderUrl)
 
   private val updateRenderUrl: Either[SecureMessageError, Letter] => Either[SecureMessageError, Letter] = {
     case Right(l) if List("ats-message-renderer", "sa-message-renderer").contains(l.renderUrl.service) =>
