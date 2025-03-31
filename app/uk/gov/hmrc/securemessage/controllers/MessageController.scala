@@ -36,6 +36,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import java.time.format.DateTimeFormatter
 import javax.inject.{ Inject, Singleton }
 import scala.concurrent.{ ExecutionContext, Future }
+import scala.reflect.ClassTag
 import scala.util.{ Failure, Success, Try }
 
 @Singleton
@@ -49,7 +50,7 @@ class MessageController @Inject() (
 
   override protected def withJsonBody[T](
     f: T => Future[Result]
-  )(implicit request: Request[JsValue], m: Manifest[T], reads: Reads[T]): Future[Result] =
+  )(implicit request: Request[JsValue], c: ClassTag[T], reads: Reads[T]): Future[Result] =
     Try(request.body.validate[T]) match {
       case Success(JsSuccess(payload, _)) =>
         f(payload)

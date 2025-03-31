@@ -30,7 +30,7 @@ lazy val microservice = Project(appName, file("."))
     SbtDistributablesPlugin
   )
   .disablePlugins(JUnitXmlReportPlugin)
-  .settings(scalacOptions := scalacOptions.value.diff(Seq("-Wunused:all")))
+  .settings(scalacOptions := scalacOptions.value.diff(Seq("-Wunused:all", "-Wconf:src=routes/.*:s")))
   .settings(
     libraryDependencies ++= AppDependencies.compile ++ AppDependencies.test,
     routesGenerator := InjectedRoutesGenerator,
