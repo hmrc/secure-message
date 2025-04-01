@@ -50,7 +50,7 @@ class MessageController @Inject() (
 
   override protected def withJsonBody[T](
     f: T => Future[Result]
-  )(implicit request: Request[JsValue], c: ClassTag[T], reads: Reads[T]): Future[Result] =
+  )(implicit request: Request[JsValue], m: ClassTag[T], reads: Reads[T]): Future[Result] =
     Try(request.body.validate[T]) match {
       case Success(JsSuccess(payload, _)) =>
         f(payload)

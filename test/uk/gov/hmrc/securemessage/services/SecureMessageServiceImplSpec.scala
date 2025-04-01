@@ -336,7 +336,7 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
 
   "getMessage by id" must {
     "return a message with ApiLetter" in {
-      when(mockMessageRepository.getLetter(any[ObjectId], any[Set[Identifier]])(any[ExecutionContext]))
+      when(mockMessageRepository.getLetter(any[ObjectId], any[Set[Identifier]], any[Boolean])(any[ExecutionContext]))
         .thenReturn(Future(Right(letter)))
       when(mockMessageRepository.addReadTime(any[ObjectId])(any[ExecutionContext]))
         .thenReturn(Future(Right(letter)))
@@ -349,7 +349,7 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
     }
 
     "return a Left(LetterNotFound)" in {
-      when(mockMessageRepository.getLetter(any[ObjectId], any[Set[Identifier]])(any[ExecutionContext]))
+      when(mockMessageRepository.getLetter(any[ObjectId], any[Set[Identifier]], any[Boolean])(any[ExecutionContext]))
         .thenReturn(Future(Left(MessageNotFound("Letter not found"))))
       when(mockMessageRepository.addReadTime(any[ObjectId])(any[ExecutionContext]))
         .thenReturn(Future(Right(letter)))
@@ -362,7 +362,7 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
     }
 
     "return a left if update readTime fails" in {
-      when(mockMessageRepository.getLetter(any[ObjectId], any[Set[Identifier]])(any[ExecutionContext]))
+      when(mockMessageRepository.getLetter(any[ObjectId], any[Set[Identifier]], any[Boolean])(any[ExecutionContext]))
         .thenReturn(Future(Right(MessageUtil.getMessage("subject", "content"))))
       when(mockMessageRepository.addReadTime(any[ObjectId])(any[ExecutionContext]))
         .thenReturn(Future(Left(StoreError("cant store readTime", None))))

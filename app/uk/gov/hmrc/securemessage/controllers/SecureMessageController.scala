@@ -36,8 +36,9 @@ import uk.gov.hmrc.securemessage.controllers.utils.IdCoder.EncodedId
 import uk.gov.hmrc.securemessage.controllers.utils.{ IdCoder, MessageSchemaValidator, QueryStringValidation }
 import uk.gov.hmrc.securemessage.handlers.{ MessageBroker, MessageReadRequest }
 import uk.gov.hmrc.securemessage.models.core.Language.English
-import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag, Language, MessageFilter, MessageRequestWrapper, Reference }
+import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag, Language, Letter, Message, MessageFilter, MessageRequestWrapper, Reference }
 import uk.gov.hmrc.securemessage.models.v4.SecureMessage
+import uk.gov.hmrc.securemessage.repository.StatsMetricRepository
 import uk.gov.hmrc.securemessage.services.{ ImplicitClassesExtensions, SecureMessageServiceImpl }
 import uk.gov.hmrc.securemessage.utils.DateTimeUtils
 
@@ -54,7 +55,8 @@ class SecureMessageController @Inject() (
   override val auditConnector: AuditConnector,
   secureMessageService: SecureMessageServiceImpl,
   messageBroker: MessageBroker,
-  dataTimeUtils: DateTimeUtils
+  dataTimeUtils: DateTimeUtils,
+  statsMetricRepository: StatsMetricRepository
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) with AuthorisedFunctions with QueryStringValidation with I18nSupport
     with ErrorHandling with Auditing with Logging with ImplicitClassesExtensions with MessageSchemaValidator {
@@ -309,13 +311,27 @@ class SecureMessageController @Inject() (
           Future.successful(InternalServerError)
         case Right(Some(message)) =>
           logger.debug(s"Secure Message is Read $id")
-          auditMessageReadStatus(message)
-          Future.successful(Ok)
+          val audit = auditMessageReadStatus(message).recover { case e =>
+            logger.error("Audit for setReadTime is failed ")
+          }
+          val stats = updateStats(message).recover { case e => logger.error("Stats update for setReadTime is failed") }
+
+          Future.sequence(Seq(audit, stats)).map(_ => Ok)
+
         case Right(None) => Future.successful(InternalServerError(s"failed to set read time for: $id"))
       }
       .recoverWith { case NonFatal(e) =>
         logger.error(s"Failed to set read time for: $id due to ${e.getMessage}")
         Future.successful(InternalServerError(s"Failed to set read time for: $id due to ${e.getMessage}"))
       }
+  }
+
+  private def updateStats(message: Message): Future[Unit] = {
+    val (identifier, formId) = message match {
+      case s: SecureMessage => (s.recipient.identifier.name, s.details.map(_.formId).getOrElse("NoForm"))
+      case l: Letter        => (l.recipient.identifier.name, l.body.flatMap(_.form).getOrElse("NoForm"))
+      case _                => throw IllegalAccessException(s"Invalid message: ${message.getClass}")
+    }
+    statsMetricRepository.incrementReads(identifier, formId)
   }
 }
