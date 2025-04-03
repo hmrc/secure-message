@@ -689,7 +689,7 @@ class AuthIdentifiersConnectorSpec
       )
 
       authConnector.currentEffectiveTaxIdentifiers.futureValue must be(
-        Set(HmrcOssOrg("999 9999 99"))
+        Set(HmrcOssOrg("999999999"), HmrcOssOrg("999 9999 99"))
       )
     }
 
