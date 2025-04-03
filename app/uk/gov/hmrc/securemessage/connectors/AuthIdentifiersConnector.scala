@@ -69,11 +69,13 @@ class AuthIdentifiersConnector @Inject() (
     }
   }
 
-  private def vrnSet(vrnValue: String): Set[Vrn] = {
+  private def identifierSet[T](value: String)(identfier: String => T): Set[T] = {
     val formatStr = (s: String) => "(\\d{3})(\\d{4})(\\d{2})".r.replaceAllIn(s, "$1 $2 $3")
-    vrnValue.filterNot(_.isWhitespace) match {
-      case value: String if value.length == 9 => Set(Vrn(value), Vrn(formatStr(value)))
-      case _                                  => Set(Vrn(vrnValue))
+    value.filterNot(_.isWhitespace) match {
+      case s if s.length == 9 =>
+        Set(identfier(s), identfier(formatStr(s)))
+      case _ =>
+        Set(identfier(value))
     }
   }
 
@@ -91,14 +93,14 @@ class AuthIdentifiersConnector @Inject() (
       taxIds
         .flatMap { taxId =>
           taxId.name.toUpperCase match {
-            case "HMRC-MTD-VAT"    => Set(taxId, HmceVatdecOrg(taxId.value)) ++ vrnSet(taxId.value)
+            case "HMRC-MTD-VAT" => Set(taxId, HmceVatdecOrg(taxId.value)) ++ identifierSet[Vrn](taxId.value)(Vrn.apply)
             case "HMCE-VATDEC-ORG" => Set(taxId, HmrcMtdVat(taxId.value))
             case "HMRC-PODS-ORG"   => Set(taxId, HmrcPodsOrg(taxId.value))
             case "HMRC-PODSPP-ORG" => Set(taxId, HmrcPodsPpOrg(taxId.value))
             case "HMRC-IOSS-ORG"   => Set(taxId, HmrcIossOrg(taxId.value))
-            case "HMRC-OSS-ORG"    => Set(taxId, HmrcOssOrg(taxId.value))
+            case "HMRC-OSS-ORG"    => Set(taxId) ++ identifierSet[HmrcOssOrg](taxId.value)(HmrcOssOrg.apply)
             case "HMRC-AD-ORG"     => Set(taxId, HmrcAdOrg(taxId.value))
-            case "VRN"             => vrnSet(taxId.value)
+            case "VRN"             => identifierSet[Vrn](taxId.value)(Vrn.apply)
             case _                 => Set(taxId)
           }
         }
