@@ -330,8 +330,8 @@ class SecureMessageController @Inject() (
     val (identifier, formId) = message match {
       case s: SecureMessage => (s.recipient.identifier.name, s.details.map(_.formId).getOrElse("NoForm"))
       case l: Letter        => (l.recipient.identifier.name, l.body.flatMap(_.form).getOrElse("NoForm"))
-      case _                => throw IllegalAccessException(s"Invalid message: ${message.getClass}")
-    }
+      case _                => logger.error(s"Invalid message: ${message.getClass}")
+    }: @unchecked
     statsMetricRepository.incrementReads(identifier, formId)
   }
 }
