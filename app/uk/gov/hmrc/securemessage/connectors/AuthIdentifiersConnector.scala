@@ -19,10 +19,10 @@ package uk.gov.hmrc.securemessage.connectors
 import uk.gov.hmrc.auth.core
 import uk.gov.hmrc.auth.core.AuthProvider.PrivilegedApplication
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
-import uk.gov.hmrc.auth.core.{ Nino => _, _ }
-import uk.gov.hmrc.common.message.model.TaxEntity.{ Epaye, HmceVatdecOrg, HmrcAdOrg, HmrcCusOrg, HmrcIossOrg, HmrcPodsOrg, HmrcPodsPpOrg, HmrcPptOrg }
-import uk.gov.hmrc.domain.TaxIds._
-import uk.gov.hmrc.domain._
+import uk.gov.hmrc.auth.core.{ Nino as _, * }
+import uk.gov.hmrc.common.message.model.TaxEntity.{ Epaye, HmceVatdecOrg, HmrcAdOrg, HmrcCusOrg, HmrcIossOrg, HmrcOssOrg, HmrcPodsOrg, HmrcPodsPpOrg, HmrcPptOrg }
+import uk.gov.hmrc.domain.TaxIds.*
+import uk.gov.hmrc.domain.*
 import uk.gov.hmrc.http.HeaderCarrier
 
 import javax.inject.{ Inject, Singleton }
@@ -63,16 +63,19 @@ class AuthIdentifiersConnector @Inject() (
       case "HMRC-PODS-ORG"   => taxIdValue.map(HmrcPodsOrg.apply)
       case "HMRC-PODSPP-ORG" => taxIdValue.map(HmrcPodsPpOrg.apply)
       case "HMRC-IOSS-ORG"   => taxIdValue.map(HmrcIossOrg.apply)
+      case "HMRC-OSS-ORG"    => taxIdValue.map(HmrcOssOrg.apply)
       case "HMRC-AD-ORG"     => taxIdValue.map(HmrcAdOrg.apply)
       case _                 => None
     }
   }
 
-  private def vrnSet(vrnValue: String): Set[Vrn] = {
+  private def identifierSet[T](value: String)(identfier: String => T): Set[T] = {
     val formatStr = (s: String) => "(\\d{3})(\\d{4})(\\d{2})".r.replaceAllIn(s, "$1 $2 $3")
-    vrnValue.filterNot(_.isWhitespace) match {
-      case value: String if value.length == 9 => Set(Vrn(value), Vrn(formatStr(value)))
-      case _                                  => Set(Vrn(vrnValue))
+    value.filterNot(_.isWhitespace) match {
+      case s if s.length == 9 =>
+        Set(identfier(s), identfier(formatStr(s)))
+      case _ =>
+        Set(identfier(value))
     }
   }
 
@@ -90,13 +93,14 @@ class AuthIdentifiersConnector @Inject() (
       taxIds
         .flatMap { taxId =>
           taxId.name.toUpperCase match {
-            case "HMRC-MTD-VAT"    => Set(taxId, HmceVatdecOrg(taxId.value)) ++ vrnSet(taxId.value)
+            case "HMRC-MTD-VAT" => Set(taxId, HmceVatdecOrg(taxId.value)) ++ identifierSet[Vrn](taxId.value)(Vrn.apply)
             case "HMCE-VATDEC-ORG" => Set(taxId, HmrcMtdVat(taxId.value))
             case "HMRC-PODS-ORG"   => Set(taxId, HmrcPodsOrg(taxId.value))
             case "HMRC-PODSPP-ORG" => Set(taxId, HmrcPodsPpOrg(taxId.value))
             case "HMRC-IOSS-ORG"   => Set(taxId, HmrcIossOrg(taxId.value))
+            case "HMRC-OSS-ORG"    => Set(taxId) ++ identifierSet[HmrcOssOrg](taxId.value)(HmrcOssOrg.apply)
             case "HMRC-AD-ORG"     => Set(taxId, HmrcAdOrg(taxId.value))
-            case "VRN"             => vrnSet(taxId.value)
+            case "VRN"             => identifierSet[Vrn](taxId.value)(Vrn.apply)
             case _                 => Set(taxId)
           }
         }
