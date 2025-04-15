@@ -22,11 +22,13 @@ import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.*
 import org.mongodb.scala.SingleObservableFuture
 import org.mongodb.scala.ObservableFuture
+import org.mongodb.scala.bson.BsonDocument
 import play.api.libs.json.{ JsObject, Json }
-import uk.gov.hmrc.common.message.model.{ MessagesCount, Regime }
+import uk.gov.hmrc.common.message.model.{ MessagesCount, Regime, TimeSource }
 import uk.gov.hmrc.domain.TaxIds.TaxIdWithName
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.Codecs
+import uk.gov.hmrc.mongo.workitem.ProcessingStatus
 import uk.gov.hmrc.securemessage.models.core.{ Count, FilterTag, Identifier, Letter, MessageFilter, RenderUrl }
 import uk.gov.hmrc.securemessage.{ SecureMessageError, StoreError }
 
@@ -35,7 +37,7 @@ import javax.inject.Inject
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ ExecutionContext, Future }
 
-class MessageRepository @Inject() (mongo: MongoComponent)(implicit ec: ExecutionContext)
+class MessageRepository @Inject() (mongo: MongoComponent, val timeSource: TimeSource)(implicit ec: ExecutionContext)
     extends AbstractMessageRepository[Letter](
       "message",
       mongo,
@@ -105,6 +107,20 @@ class MessageRepository @Inject() (mongo: MongoComponent)(implicit ec: Execution
       Filters.and(superQuery, Filters.lte("validFrom", Codecs.toBson(Letter.localDateNow)))
     }
   }
+
+  def count(): Future[Map[String, Int]] =
+    Future
+      .sequence(ProcessingStatus.values.map { status =>
+        mongo.database
+          .getCollection[BsonDocument]("message")
+          .countDocuments(
+            Filters.and(Filters.equal("status", status.name), Filters.gte("lastUpdated", timeSource.today()))
+          )
+          .toFuture()
+          .map(_.toInt)
+          .map(count => Map(s"message.${status.name}" -> count))
+      })
+      .map(_.fold(Map.empty)(_ ++ _))
 
   def getLetters(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(implicit
     ec: ExecutionContext
