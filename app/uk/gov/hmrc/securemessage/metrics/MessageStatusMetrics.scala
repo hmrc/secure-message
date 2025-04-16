@@ -16,13 +16,13 @@
 
 package uk.gov.hmrc.message.metrics
 
-import uk.gov.hmrc.securemessage.repository.MessageRepository
+import uk.gov.hmrc.securemessage.repository.SecureMessageRepository
 import uk.gov.hmrc.mongo.metrix.MetricSource
 
 import javax.inject.{ Inject, Singleton }
 import scala.concurrent.{ ExecutionContext, Future }
 
 @Singleton
-class MessageStatusMetrics @Inject() (messageRepository: MessageRepository) extends MetricSource {
-  def metrics(implicit ec: ExecutionContext): Future[Map[String, Int]] = messageRepository.count()
+class MessageStatusMetrics @Inject() (secureMessageRepository: SecureMessageRepository) extends MetricSource {
+  def metrics(implicit ec: ExecutionContext): Future[Map[String, Int]] = secureMessageRepository.count()
 }
