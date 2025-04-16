@@ -66,8 +66,8 @@ class MessageStatusMetricsSpec
       values.size mustBe ProcessingStatus.values.size
 
       val expectedKeys = ProcessingStatus.values.map(status => s"message.${status.name}")
-      values.keySet must contain theSameElementsAs expectedKeys
-      values.values.foreach(_ mustBe 1)
+      values.keys must contain theSameElementsAs expectedKeys
+      values.values must contain only 1
     }
   }
 
