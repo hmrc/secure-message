@@ -23,22 +23,67 @@ import java.time.Instant
 import play.api.Configuration
 import play.api.libs.concurrent.PekkoGuiceSupport
 import uk.gov.hmrc.common.message.model.TimeSource
+import uk.gov.hmrc.message.metrics.MessageStatusMetrics
+import uk.gov.hmrc.mongo.{ MongoComponent, TimestampSupport }
+import uk.gov.hmrc.mongo.lock.{ LockRepository, LockService, MongoLockRepository }
+import uk.gov.hmrc.mongo.metrix.{ MetricOrchestrator, MetricSource, MongoMetricRepository }
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import uk.gov.hmrc.play.bootstrap.metrics.Metrics
+import uk.gov.hmrc.securemessage.metrics.{ MessageMain, MetricsLock }
+import uk.gov.hmrc.securemessage.repository.StatsMetricRepository
 import uk.gov.hmrc.securemessage.scheduler.EmailAlertJob
 import uk.gov.hmrc.securemessage.services.{ SecureMessageService, SecureMessageServiceImpl }
 import uk.gov.hmrc.securemessage.utils.DateTimeUtils
 
+import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.{ Duration, FiniteDuration }
 
 class SecureMessageModule extends AbstractModule with PekkoGuiceSupport {
 
   override def configure(): Unit = {
+    bind(classOf[MessageMain]).asEagerSingleton()
     bind(classOf[DateTimeUtils]).to(classOf[TimeProvider])
     bind(classOf[SecureMessageService]).to(classOf[SecureMessageServiceImpl]).asEagerSingleton()
     bindActor[EmailAlertJob]("EmailAlertJob-actor")
     super.configure()
   }
+
+  @Provides
+  @Singleton
+  def lockRepositoryProvider(mongo: MongoComponent, timestampSupport: TimestampSupport)(implicit
+    ec: ExecutionContext
+  ): LockRepository =
+    new MongoLockRepository(mongo, timestampSupport)
+
+  @Provides
+  @Singleton
+  def mongoMetricRepositoryProvider(mongo: MongoComponent)(implicit ec: ExecutionContext): MongoMetricRepository =
+    new MongoMetricRepository(mongo)
+
+  @Provides
+  @Singleton
+  def metricsOrchestratorProvider(
+    statusMetrics: MessageStatusMetrics,
+    statsRepo: StatsMetricRepository,
+    configuration: Configuration,
+    mongoMetricRepository: MongoMetricRepository,
+    metrics: Metrics,
+    lockRepository: LockRepository
+  ): MetricOrchestrator = {
+
+    val refreshInterval = configuration.getMillis(s"microservice.metrics.gauges.interval")
+    val metricsLock = MetricsLock("message-metrics", Duration(refreshInterval, TimeUnit.MILLISECONDS), lockRepository)
+    val sources: List[MetricSource] = List(statusMetrics, statsRepo)
+    new MetricOrchestrator(
+      sources,
+      LockService(metricsLock.lockRepository, metricsLock.lockId, metricsLock.ttl),
+      mongoMetricRepository,
+      metrics.defaultRegistry
+    )
+  }
+
   @Singleton
   @Provides
   def systemTimeSourceProvider(): TimeSource = new TimeSource() {
@@ -102,6 +147,12 @@ class SecureMessageModule extends AbstractModule with PekkoGuiceSupport {
   @Singleton
   def mobilePushNotificationsConnectorBaseUrl(servicesConfig: ServicesConfig): String =
     servicesConfig.baseUrl("mobile-push-notifications-orchestration")
+
+  @Provides
+  @Named("metricsActive")
+  @Singleton
+  def isSecureMessageMetricsActive(configuration: Configuration): Boolean =
+    configuration.getOptional[Boolean]("metrics.active").getOrElse(false)
 }
 
 class TimeProvider extends DateTimeUtils

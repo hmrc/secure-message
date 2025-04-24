@@ -26,6 +26,7 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json.{ JsObject, JsValue, Json }
 import play.api.test.Helpers.{ await, defaultAwaitTimeout }
+import uk.gov.hmrc.common.message.model.{ SystemTimeSource, TimeSource }
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core.Letter.*
@@ -41,7 +42,11 @@ class MessageRepositorySpec
 
   override def checkTtlIndex: Boolean = false
 
-  override val repository: MessageRepository = new MessageRepository(mongoComponent)
+  val timeSource: TimeSource = new TimeSource() {
+    override def now(): Instant = SystemTimeSource.now()
+  }
+
+  override val repository: MessageRepository = new MessageRepository(mongoComponent, timeSource)
 
   "A letter" should {
     "be returned for a participating enrolment" in new TestContext() {

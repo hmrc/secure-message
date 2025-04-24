@@ -97,6 +97,20 @@ class SecureMessageRepository @Inject() (
         Future.successful(false)
     }
 
+  def count(): Future[Map[String, Int]] =
+    Future
+      .sequence(ProcessingStatus.values.map { status =>
+        mongo.database
+          .getCollection[BsonDocument]("secure-message")
+          .countDocuments(
+            Filters.and(Filters.equal("status", status.name), Filters.gte("lastUpdated", timeSource.today()))
+          )
+          .toFuture()
+          .map(_.toInt)
+          .map(count => Map(s"message.${status.name}" -> count))
+      })
+      .map(_.fold(Map.empty)(_ ++ _))
+
   def pullMessageToAlert(): Future[Option[SecureMessage]] = {
 
     val failedBefore: Instant = timeSource.now().minusMillis(retryIntervalMillis.toLong)
@@ -131,6 +145,18 @@ class SecureMessageRepository @Inject() (
       Updates.set("status", newStatus.name),
       Updates.set("lastUpdated", timeSource.now())
     )
+
+  def updateStatus(id: ObjectId, status: ProcessingStatus): Future[Boolean] =
+    collection
+      .updateOne(
+        Filters.equal("_id", id),
+        Updates.combine(
+          Updates.set("status", status.name),
+          Updates.set("lastUpdated", timeSource.now())
+        )
+      )
+      .toFuture()
+      .map(_.getModifiedCount == 1)
 
   def alertCompleted(id: ObjectId, status: ProcessingStatus, alert: EmailAlert): Future[Boolean] =
     collection
