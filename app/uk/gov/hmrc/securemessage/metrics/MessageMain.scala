@@ -42,7 +42,7 @@ class MessageMain @Inject() (
     .getOrElse(throw new RuntimeException(s"microservice.metrics.gauges.interval is not specified"))
     .toMillis
 
-  if (!metricsActive) {
+  if (metricsActive) {
     logger.warn(s"Metric process has scheduled for every $refreshInterval milliseconds")
     actorSystem.scheduler.scheduleWithFixedDelay(60 seconds, refreshInterval milliseconds) { () =>
       Try {
