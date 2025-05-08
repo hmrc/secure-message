@@ -17,11 +17,12 @@
 package uk.gov.hmrc.securemessage.repository
 
 import org.mongodb.scala.model.Sorts.ascending
-import org.mongodb.scala.model._
+import org.mongodb.scala.model.*
 import org.mongodb.scala.result.UpdateResult
-import play.api.libs.json._
+import play.api.libs.json.*
 import org.mongodb.scala.SingleObservableFuture
 import org.mongodb.scala.ObservableFuture
+import play.api.Logging
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.metrix.MetricSource
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
@@ -46,10 +47,10 @@ class StatsMetricRepository @Inject() (
       Seq(
         IndexModel(ascending("name"), IndexOptions().name("stats_metric_key_idx").unique(true).background(true))
       )
-    ) with MetricSource {
+    ) with MetricSource with Logging {
 
-  override def metrics(implicit ec: ExecutionContext): Future[Map[String, Int]] =
-    collection
+  override def metrics(implicit ec: ExecutionContext): Future[Map[String, Int]] = {
+    val data = collection
       .find(
         Filters.empty()
       )
@@ -57,6 +58,10 @@ class StatsMetricRepository @Inject() (
       .map(
         _.flatMap(metric => Map(s"${metric.name}.total" -> metric.total, s"${metric.name}.count" -> metric.count)).toMap
       )
+
+    logger.warn(s" Stats Metric ${data.value}")
+    data
+  }
 
   def incrementReads(taxIdName: String, form: String)(implicit ec: ExecutionContext): Future[Unit] =
     increment(s"stats.$taxIdName.$form.read", 1)
