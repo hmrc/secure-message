@@ -17,10 +17,14 @@
 package uk.gov.hmrc.securemessage.services
 
 import play.api.Logging
+import uk.gov.hmrc.common.message.model.{ Alertable, TaxEntity }
+import uk.gov.hmrc.domain.TaxIdentifier
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.audit.model.DataEvent
+import uk.gov.hmrc.securemessage.controllers.model.common.write.Recipient
 import uk.gov.hmrc.securemessage.models.v4.SecureMessage
+import uk.gov.hmrc.securemessage.repository.ExtraAlert
 
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -43,7 +47,10 @@ sealed trait AlertEvent {
   def auditEvent: DataEvent
 
   def auditAlertEvent(
-    message: SecureMessage,
+    recipient: TaxEntity,
+    templateId: String,
+    formId: Option[String],
+    auditData: Map[String, String],
     emailAddress: Option[String],
     failureReason: Option[String] = None
   ): DataEvent =
@@ -51,24 +58,62 @@ sealed trait AlertEvent {
       auditSource = "secure-message",
       auditType = failureReason.fold(EventTypes.Succeeded)(_ => EventTypes.Failed),
       tags = Map(
-        "transactionName"                 -> "Send Email Alert",
-        message.recipient.identifier.name -> message.recipient.identifier.value
+        "transactionName"         -> "Send Email Alert",
+        recipient.identifier.name -> recipient.identifier.value
       ) ++ emailAddress.map("emailAddress" -> _).toMap,
       detail = Map(
-        "emailTemplateName" -> message.templateId
+        "emailTemplateName" -> templateId
       )
-        ++ message.details.map("formId" -> _.formId).toMap
+        ++ formId.map("formId" -> _).toMap
         ++ failureReason.map("failureReason" -> _).toMap
-        ++ message.auditData
+        ++ auditData
     )
 }
 
 case class AlertFailed(message: SecureMessage, failureReason: String) extends AlertEvent {
   def auditEvent: DataEvent =
-    auditAlertEvent(message, None, Some(failureReason))
+    auditAlertEvent(
+      message.recipient,
+      message.templateId,
+      message.details.map(_.formId),
+      message.auditData,
+      None,
+      Some(failureReason)
+    )
 }
 
 case class AlertSucceeded(message: SecureMessage, emailAddress: String) extends AlertEvent {
   def auditEvent: DataEvent =
-    auditAlertEvent(message, Some(emailAddress), None)
+    auditAlertEvent(
+      message.recipient,
+      message.templateId,
+      message.details.map(_.formId),
+      message.auditData,
+      Some(emailAddress),
+      None
+    )
+}
+
+case class ExtraAlertFailed(alertable: Alertable, failureReason: String) extends AlertEvent {
+  def auditEvent: DataEvent =
+    auditAlertEvent(
+      alertable.recipient,
+      alertable.alertTemplateName,
+      None,
+      alertable.auditData,
+      None,
+      Some(failureReason)
+    )
+}
+
+case class ExtraAlertSucceeded(alertable: Alertable, emailAddress: String) extends AlertEvent {
+  def auditEvent: DataEvent =
+    auditAlertEvent(
+      alertable.recipient,
+      alertable.alertTemplateName,
+      None,
+      alertable.auditData,
+      Some(emailAddress),
+      None
+    )
 }

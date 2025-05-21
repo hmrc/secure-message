@@ -88,7 +88,7 @@ class EmailAlertService @Inject() (
   def sendAlert(results: EmailResults, message: SecureMessage)(implicit ec: ExecutionContext): Future[EmailResults] = {
     for {
       taxIds <- entityResolverConnector.getTaxId(message.recipient)
-      _      <- emailConnector.send(createEmailRequest(message, taxIds))
+      _      <- emailConnector.send(EmailRequest.createEmailRequest(message, taxIds))
       _ <- {
         auditAlert(AlertSucceeded(message, message.emailAddress))
         secureMessageRepository.alertCompleted(
@@ -133,36 +133,13 @@ class EmailAlertService @Inject() (
         case _ => Future.successful(())
       }
     }
-
-  def createEmailRequest(message: SecureMessage, taxId: Option[TaxId] = None): EmailRequest =
-    EmailRequest(
-      to = List(EmailAddress(message.emailAddress)),
-      templateId = message.templateId,
-      parameters = message.alertDetails.data ++
-        message.alertDetails.recipientName.fold(Map.empty[String, String])(_.asMap) ++
-        taxIdentifiers(taxId, Map(message.recipient.identifier.name -> message.recipient.identifier.value)),
-      auditData = message.auditData,
-      eventUrl = None,
-      onSendUrl = None,
-      alertQueue = message.alertQueue,
-      emailSource = None,
-      tags = Tags(
-        message.externalRef.id.some,
-        message.externalRef.source.some,
-        getEnrolments(message.recipient).main.some
-      ).some
-    )
-
-  private def taxIdentifiers(taxId: Option[TaxId], default: Map[String, String]): Map[String, String] =
-    taxId match {
-      case Some(id) =>
-        Map("sautr" -> id.sautr.getOrElse("N/A"), "nino" -> id.nino.getOrElse("N/A")) ++
-          default.filterNot(p => List("sautr", "nino") contains p._1)
-      case _ => default
-    }
 }
 
-case class EmailResults(sent: Int = 0, requeued: Int = 0) {
+case class EmailResults(sent: Int = 0, requeued: Int = 0, permanentlyFailed: Int = 0, hardCopyRequested: Int = 0) {
   def incrementSent: EmailResults = copy(sent = sent + 1)
   def incrementRequeued: EmailResults = copy(requeued = requeued + 1)
+
+  def incrementPermanentlyFailed: EmailResults = copy(permanentlyFailed = permanentlyFailed + 1)
+
+  def incrementHardCopyRequested: EmailResults = copy(hardCopyRequested = hardCopyRequested + 1)
 }

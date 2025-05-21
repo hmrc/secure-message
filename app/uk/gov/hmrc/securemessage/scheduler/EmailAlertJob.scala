@@ -62,8 +62,8 @@ class EmailAlertJob @Inject() (
       emailAlerter
         .sendEmailAlerts()
         .map {
-          case EmailResults(0, 0) => s"$name No messages to process"
-          case EmailResults(sent, requeued) =>
+          case EmailResults(0, 0, _, _) => s"$name No messages to process"
+          case EmailResults(sent, requeued, _, _) =>
             s"$name: Succeeded - $sent, Will be retried - $requeued"
         }
         .recover { case e: Exception =>

@@ -68,7 +68,7 @@ class EmailAlertServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures
       val message = messageForSA(utr = "3254567990")
 
       val emailRequest =
-        emailAlertService.createEmailRequest(message, Some(TaxId("", Some("3254567990"), Some("SK12345678A"))))
+        EmailRequest.createEmailRequest(message, Some(TaxId("", Some("3254567990"), Some("SK12345678A"))))
 
       emailRequest.parameters.get("sautr") mustBe Some("3254567990")
       emailRequest.parameters.get("nino") mustBe Some("SK12345678A")
@@ -77,7 +77,7 @@ class EmailAlertServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures
     "email request should include tax identifier along with Nino and SaUtr" in new TestCase {
       val message = messageForSA(utr = "3254567990")
 
-      val emailRequest = emailAlertService.createEmailRequest(message)
+      val emailRequest = EmailRequest.createEmailRequest(message)
 
       emailRequest.parameters.get("sautr") mustBe Some("3254567990")
     }
