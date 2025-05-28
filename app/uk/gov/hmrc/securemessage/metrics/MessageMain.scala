@@ -40,12 +40,8 @@ class MessageMain @Inject() (
 )(implicit val ec: ExecutionContext)
     extends Logging {
 
-  logger.warn(
-    s" About to initiate scheduler with the flag 'scheduled-jobs.enabled' being set as $scheduledJobsEnabled "
-  )
   if (scheduledJobsEnabled) {
     scheduledJobs.foreach(scheduleJob)
-    logger.warn(s"Initiated scheduled jobs")
   }
 
   val refreshInterval: Long = configuration
@@ -69,9 +65,8 @@ class MessageMain @Inject() (
 
   private def scheduleJob(job: ScheduledJob)(implicit ec: ExecutionContext): Unit = {
     val _ = actorSystem.scheduler.scheduleWithFixedDelay(job.initialDelay, job.interval) { () =>
-      logger.warn(s"Next schedule statrretd for ${job.name}")
       job.execute.foreach { result =>
-        logger.warn(s"Job ${job.name} result: ${result.message}")
+        logger.debug(s"Job ${job.name} result: ${result.message}")
       }
     }
   }
