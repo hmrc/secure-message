@@ -86,7 +86,7 @@ class StatsMetricRepositorySpec
       repo.incrementReads("sautr", "form2").futureValue
       repo.incrementReads("sautr", "form1").futureValue
 
-      repo.reset.futureValue
+      repo.reset().futureValue
 
       repo.collection.find().toFuture().futureValue must contain.only(
         StatsCount("stats.sautr.form1.read", 2, 0),

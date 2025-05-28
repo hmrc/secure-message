@@ -77,7 +77,7 @@ class StatsMetricRepository @Inject() (
       .toFuture()
       .map(_ => ())
 
-  def reset: Future[Option[UpdateResult]] =
+  def reset(): Future[Option[UpdateResult]] =
     collection
       .updateMany(
         Filters.empty(),

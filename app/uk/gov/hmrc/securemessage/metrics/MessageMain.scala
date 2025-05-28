@@ -20,6 +20,7 @@ import org.apache.pekko.actor.ActorSystem
 import play.api.{ Configuration, Logging }
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.metrix.MetricOrchestrator
+import uk.gov.hmrc.securemessage.scheduler.ScheduledJob
 
 import javax.inject.{ Inject, Named, Singleton }
 import scala.concurrent.duration.*
@@ -31,11 +32,17 @@ import scala.util.{ Failure, Success, Try }
 class MessageMain @Inject() (
   actorSystem: ActorSystem,
   configuration: Configuration,
+  scheduledJobs: Seq[ScheduledJob],
   metricOrchestator: MetricOrchestrator,
   mongo: MongoComponent,
-  @Named("metricsActive") metricsActive: Boolean
+  @Named("metricsActive") metricsActive: Boolean,
+  @Named("scheduledJobsEnabled") scheduledJobsEnabled: Boolean
 )(implicit val ec: ExecutionContext)
     extends Logging {
+
+  if (scheduledJobsEnabled) {
+    scheduledJobs.foreach(scheduleJob)
+  }
 
   val refreshInterval: Long = configuration
     .getOptional[FiniteDuration](s"microservice.metrics.gauges.interval")
@@ -52,6 +59,14 @@ class MessageMain @Inject() (
       } match {
         case Failure(e) => logger.error(s"An error occurred processing metrics: ${e.getMessage}", e)
         case Success(_) => ()
+      }
+    }
+  }
+
+  private def scheduleJob(job: ScheduledJob)(implicit ec: ExecutionContext): Unit = {
+    val _ = actorSystem.scheduler.scheduleWithFixedDelay(job.initialDelay, job.interval) { () =>
+      job.execute.foreach { result =>
+        logger.debug(s"Job ${job.name} result: ${result.message}")
       }
     }
   }
