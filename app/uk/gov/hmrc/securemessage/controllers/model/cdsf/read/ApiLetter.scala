@@ -18,9 +18,10 @@ package uk.gov.hmrc.securemessage.controllers.model.cdsf.read
 
 import java.time.{ Instant, LocalDate }
 import play.api.libs.json.{ Format, Json }
+import uk.gov.hmrc.common.message.model.Language
 import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata
 import uk.gov.hmrc.securemessage.controllers.model.{ ApiFormats, ApiMessage }
-import uk.gov.hmrc.securemessage.models.core.{ Identifier, Language, Letter }
+import uk.gov.hmrc.securemessage.models.core.{ Identifier, Letter }
 import uk.gov.hmrc.securemessage.models.v4.SecureMessage
 
 final case class ApiLetter(

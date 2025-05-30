@@ -15,26 +15,6 @@
  */
 
 package uk.gov.hmrc.securemessage.models.core
-import enumeratum._
-import play.api.libs.json._
+import uk.gov.hmrc.common.message.model.Language as CommonLanguage
 
-import scala.collection.immutable
-
-sealed abstract class Language(override val entryName: String) extends EnumEntry
-
-case object Language extends Enum[Language] with PlayJsonEnum[Language] {
-
-  val values: immutable.IndexedSeq[Language] = findValues
-
-  case object English extends Language("en")
-
-  case object Welsh extends Language("cy")
-
-  implicit val languageReads: Reads[Language] = Reads[Language] {
-    case JsString(value) => JsSuccess[Language](Language.withNameInsensitiveOption(value).getOrElse(Language.English))
-    case _               => JsSuccess[Language](Language.English)
-  }
-  implicit val languageWrites: Writes[Language] = (e: Language) => JsString(e.entryName)
-
-  implicit val languageFormat: Format[Language] = Format(languageReads, languageWrites)
-}
+type Language = CommonLanguage

@@ -16,11 +16,11 @@
 
 package uk.gov.hmrc.securemessage.controllers.model
 
-import play.api.libs.functional.syntax._
-import play.api.libs.json._
-import uk.gov.hmrc.common.message.model.MessagesCount
+import play.api.libs.functional.syntax.*
+import play.api.libs.json.*
+import uk.gov.hmrc.common.message.model.{ Language, MessagesCount }
 import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata
-import uk.gov.hmrc.securemessage.models.core.{ Language, Message }
+import uk.gov.hmrc.securemessage.models.core.Message
 
 import scala.annotation.tailrec
 

@@ -20,12 +20,12 @@ import java.time.{ Instant, LocalDate }
 import play.api.i18n.Messages
 import play.api.libs.json.{ Json, OFormat }
 import uk.gov.hmrc.auth.core.Enrolments
-import uk.gov.hmrc.common.message.model.TaxpayerName
+import uk.gov.hmrc.common.message.model.{ Language, TaxpayerName }
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.ConversationMetadata
 import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.ApiLetter
 import uk.gov.hmrc.securemessage.controllers.model.{ ApiFormats, MessageType }
 import uk.gov.hmrc.securemessage.controllers.utils.IdCoder
-import uk.gov.hmrc.securemessage.models.core.{ Conversation, Language, Letter, Message, RecipientName }
+import uk.gov.hmrc.securemessage.models.core.{ Conversation, Letter, Message, RecipientName }
 import uk.gov.hmrc.securemessage.models.v4.{ Content, SecureMessage }
 import uk.gov.hmrc.securemessage.services.ImplicitClassesExtensions
 

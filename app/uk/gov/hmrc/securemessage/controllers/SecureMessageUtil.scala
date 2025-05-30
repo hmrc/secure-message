@@ -32,7 +32,7 @@ import play.api.mvc.{ AnyContent, Request, Result }
 import play.api.{ Configuration, Logging }
 import uk.gov.hmrc.common.message.emailaddress.EmailAddress
 import uk.gov.hmrc.common.message.failuremodule.FailureResponseService.errorResponseResult
-import uk.gov.hmrc.common.message.model.{ AlertDetails, AlertQueueTypes, MessagesCount }
+import uk.gov.hmrc.common.message.model.{ AlertDetails, AlertQueueTypes, Language, MessagesCount }
 import uk.gov.hmrc.domain.SaUtr
 import uk.gov.hmrc.domain.TaxIds.TaxIdWithName
 import uk.gov.hmrc.http.HeaderCarrier
@@ -42,7 +42,7 @@ import uk.gov.hmrc.play.audit.http.connector.{ AuditConnector, AuditResult }
 import uk.gov.hmrc.play.audit.model.{ DataEvent, EventTypes }
 import uk.gov.hmrc.securemessage.SecureMessageError
 import uk.gov.hmrc.securemessage.connectors.{ EmailValidation, EntityResolverConnector, PreferencesConnector, TaxpayerNameConnector }
-import uk.gov.hmrc.securemessage.models.core.{ Count, FilterTag, Identifier, Language, MessageFilter }
+import uk.gov.hmrc.securemessage.models.core.{ FilterTag, Identifier, MessageFilter }
 import uk.gov.hmrc.securemessage.models.v4.{ Content, ExtraAlertConfig, SecureMessage }
 import uk.gov.hmrc.securemessage.repository.{ ExtraAlert, ExtraAlertRepository, SecureMessageRepository, StatsMetricRepository }
 import uk.gov.hmrc.securemessage.services.MessageBrakeService
@@ -565,7 +565,7 @@ class SecureMessageUtil @Inject() (
 
   def getSecureMessageCount(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(implicit
     ec: ExecutionContext
-  ): Future[Count] = secureMessageRepository.getSecureMessageCount(identifiers, tags)
+  ): Future[MessagesCount] = secureMessageRepository.getSecureMessageCount(identifiers, tags)
 
   def findById(id: ObjectId): Future[Option[SecureMessage]] = secureMessageRepository.findById(id)
 

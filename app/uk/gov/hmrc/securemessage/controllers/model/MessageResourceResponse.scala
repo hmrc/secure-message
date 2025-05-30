@@ -17,10 +17,10 @@
 package uk.gov.hmrc.securemessage.controllers.model
 
 import java.time.{ Instant, LocalDate }
-import play.api.libs.json.{ Writes, _ }
-import uk.gov.hmrc.common.message.model.MessageContentParameters
+import play.api.libs.json.{ Writes, * }
+import uk.gov.hmrc.common.message.model.{ Language, MessageContentParameters }
 import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata
-import uk.gov.hmrc.securemessage.models.core.{ Details, Language, Letter, Message, RenderUrl }
+import uk.gov.hmrc.securemessage.models.core.{ Details, Letter, Message, RenderUrl }
 import uk.gov.hmrc.securemessage.models.v4.SecureMessage
 
 final case class ServiceUrl(service: String, url: String)

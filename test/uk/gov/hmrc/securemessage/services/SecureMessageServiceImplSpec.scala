@@ -30,9 +30,9 @@ import play.api.i18n.Messages
 import play.api.libs.json.{ JsObject, Json }
 import play.api.mvc.AnyContentAsEmpty
 import play.api.test.FakeRequest
-import play.api.test.Helpers._
+import play.api.test.Helpers.*
 import uk.gov.hmrc.auth.core.{ Enrolment, EnrolmentIdentifier, Enrolments }
-import uk.gov.hmrc.common.message.model.MessagesCount
+import uk.gov.hmrc.common.message.model.{ Language, MessagesCount }
 import uk.gov.hmrc.common.message.emailaddress.EmailAddress
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
@@ -43,12 +43,12 @@ import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
 import uk.gov.hmrc.securemessage.handlers.MessageBroker
 import uk.gov.hmrc.securemessage.helpers.{ ConversationUtil, MessageUtil, Resources }
-import uk.gov.hmrc.securemessage.models.core.Conversation._
-import uk.gov.hmrc.securemessage.models.core._
+import uk.gov.hmrc.securemessage.models.core.Conversation.*
+import uk.gov.hmrc.securemessage.models.core.*
 import uk.gov.hmrc.securemessage.models.v4.SecureMessage
 import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryMessageWrapper, Tags }
 import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository }
-import uk.gov.hmrc.securemessage.{ DuplicateConversationError, EmailLookupError, NoReceiverEmailError, SecureMessageError, _ }
+import uk.gov.hmrc.securemessage.{ DuplicateConversationError, EmailLookupError, NoReceiverEmailError, SecureMessageError, * }
 
 import java.time.format.DateTimeFormatter
 import java.time.{ Instant, OffsetDateTime, ZoneId, ZoneOffset }
@@ -648,17 +648,17 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
       mockConversationRepository
         .getConversationsCount(any[Set[Identifier]](), any[Option[List[FilterTag]]]())(any[ExecutionContext])
     )
-      .thenReturn(Future.successful(Count(1, 1)))
+      .thenReturn(Future.successful(MessagesCount(1, 1)))
     when(
       mockMessageRepository
         .getLettersCount(any[Set[Identifier]](), any[Option[List[FilterTag]]]())(any[ExecutionContext])
     )
-      .thenReturn(Future.successful(Count(1, 0)))
+      .thenReturn(Future.successful(MessagesCount(1, 0)))
     when(
       mockSecureMessageUtil
         .getSecureMessageCount(any[Set[Identifier]](), any[Option[List[FilterTag]]]())(any[ExecutionContext])
     )
-      .thenReturn(Future.successful(Count(1, 1)))
+      .thenReturn(Future.successful(MessagesCount(1, 1)))
 
     val service: SecureMessageServiceImpl =
       new SecureMessageServiceImpl(

@@ -81,7 +81,7 @@ POST        /messages/:encodedId/customer-message  uk.gov.hmrc.securemessage.con
 #   401:
 #     description: unauthorised customer when they don't have an enrolment
 ###
-GET         /messages  uk.gov.hmrc.securemessage.controllers.SecureMessageController.getMessages(enrolmentKey: Option[List[String]], enrolment: Option[List[CustomerEnrolment]], tag: Option[List[FilterTag]], messageFilter: Option[uk.gov.hmrc.securemessage.models.core.MessageFilter], language: Option[uk.gov.hmrc.securemessage.models.core.Language])
+GET         /messages  uk.gov.hmrc.securemessage.controllers.SecureMessageController.getMessages(enrolmentKey: Option[List[String]], enrolment: Option[List[CustomerEnrolment]], tag: Option[List[FilterTag]], messageFilter: Option[uk.gov.hmrc.securemessage.models.core.MessageFilter], language: Option[uk.gov.hmrc.common.message.model.Language])
 
 ###
 # summary: Gets inbox counts by filter
@@ -107,7 +107,7 @@ GET        /messages/count   uk.gov.hmrc.securemessage.controllers.SecureMessage
 #   404:
 #     description: conversation/message not found
 ###
-GET        /messages/:encodedId   uk.gov.hmrc.securemessage.controllers.SecureMessageController.getMessage(encodedId: String, language: Option[uk.gov.hmrc.securemessage.models.core.Language])
+GET        /messages/:encodedId   uk.gov.hmrc.securemessage.controllers.SecureMessageController.getMessage(encodedId: String, language: Option[uk.gov.hmrc.common.message.model.Language])
 ###
 # summary: Create a new version4 message
 # requestBody:

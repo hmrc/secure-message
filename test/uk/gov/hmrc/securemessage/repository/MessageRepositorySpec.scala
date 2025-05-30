@@ -26,11 +26,11 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json.{ JsObject, JsValue, Json }
 import play.api.test.Helpers.{ await, defaultAwaitTimeout }
-import uk.gov.hmrc.common.message.model.{ SystemTimeSource, TimeSource }
+import uk.gov.hmrc.common.message.model.{ MessagesCount, SystemTimeSource, TimeSource }
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core.Letter.*
-import uk.gov.hmrc.securemessage.models.core.{ Count, ExternalReference, FilterTag, Identifier, Letter, RenderUrl }
+import uk.gov.hmrc.securemessage.models.core.{ ExternalReference, FilterTag, Identifier, Letter, RenderUrl }
 import uk.gov.hmrc.securemessage.{ MessageNotFound, SecureMessageError }
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -218,33 +218,33 @@ class MessageRepositorySpec
   "getLettersCount" should {
     "return Count when readTime is recorded for matching identifier enrolment and value" in new TestContext() {
       val result = repository.getLettersCount(identifiers, None)
-      result.futureValue mustBe Count(1, 0)
+      result.futureValue mustBe MessagesCount(1, 0)
     }
     "return Count when no readTime is recorded for matching identifier enrolment and value" in new TestContext(
       lettersWithoutReadTime
     ) {
       val result = repository.getLettersCount(identifiers, None)
-      result.futureValue mustBe Count(1, 1)
+      result.futureValue mustBe MessagesCount(1, 1)
     }
     "return Count if no identifier enrolment matches" in new TestContext() {
       val result =
         repository.getLettersCount(identifiers.map(i => i.copy(enrolment = Some("non-existing"))), None)
-      result.futureValue mustBe Count(0, 0)
+      result.futureValue mustBe MessagesCount(0, 0)
     }
     "return Count ignoring identifier name matches" in new TestContext() {
       val result =
         repository.getLettersCount(identifiers.map(i => i.copy(name = "non-existing")), None)
-      result.futureValue mustBe Count(1, 0)
+      result.futureValue mustBe MessagesCount(1, 0)
     }
     "return Count matching tags" in new TestContext() {
       val result =
         repository.getLettersCount(identifiers, Some(List(FilterTag("notificationType", "Direct Debit"))))
-      result.futureValue mustBe Count(1, 0)
+      result.futureValue mustBe MessagesCount(1, 0)
     }
     "return an empty Count for non matching tags" in new TestContext() {
       val result =
         repository.getLettersCount(identifiers, Some(List(FilterTag("notificationType", "non-existing")))).futureValue
-      result mustBe Count(0, 0)
+      result mustBe MessagesCount(0, 0)
     }
     "return a count ignoring letters with a future validFrom" in new TestContext() {
       val result = (for {
@@ -252,7 +252,7 @@ class MessageRepositorySpec
         _ <- repository.collection.insertOne(letterWithTodaysDate).toFuture()
         r <- repository.getLettersCount(identifiers, None)
       } yield r).futureValue
-      result mustBe Count(2, 0)
+      result mustBe MessagesCount(2, 0)
     }
   }
 

@@ -19,11 +19,11 @@ package uk.gov.hmrc.securemessage.helpers
 import cats.data.NonEmptyList
 import org.mongodb.scala.bson.ObjectId
 import uk.gov.hmrc.common.message.emailaddress.EmailAddress
+import uk.gov.hmrc.common.message.model.Language.English
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CdcmConversation
 import uk.gov.hmrc.securemessage.controllers.model.common.write.{ Customer, Recipient }
 import uk.gov.hmrc.securemessage.models.core
-import uk.gov.hmrc.securemessage.models.core.Language.English
-import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, _ }
+import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, * }
 
 import java.time.format.DateTimeFormatter
 import java.time.{ Instant, OffsetDateTime, ZoneId, ZoneOffset }

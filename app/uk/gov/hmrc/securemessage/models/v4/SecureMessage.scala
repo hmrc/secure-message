@@ -20,14 +20,13 @@ import org.apache.commons.codec.binary.Base64
 
 import java.time.{ Instant, LocalDate, LocalTime, ZoneOffset, ZonedDateTime }
 import org.mongodb.scala.bson.ObjectId
-import play.api.libs.functional.syntax._
-import play.api.libs.json._
-import uk.gov.hmrc.common.message.model._
+import play.api.libs.functional.syntax.*
+import play.api.libs.json.*
+import uk.gov.hmrc.common.message.model.*
+import uk.gov.hmrc.common.message.model.Language.English
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.ToDo
 import uk.gov.hmrc.securemessage.controllers.model.ApiFormats
-import uk.gov.hmrc.securemessage.models.core.Language
-import uk.gov.hmrc.securemessage.models.core.Language.English
 
 import java.security.MessageDigest
 

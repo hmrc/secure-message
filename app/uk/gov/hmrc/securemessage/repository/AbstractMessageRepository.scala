@@ -24,10 +24,11 @@ import org.mongodb.scala.model.{ Filters, IndexModel }
 import org.mongodb.scala.SingleObservableFuture
 import org.mongodb.scala.ObservableFuture
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
+import uk.gov.hmrc.common.message.model.MessagesCount
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
-import uk.gov.hmrc.securemessage.models.core.{ Conversation, Count, FilterTag, Identifier }
+import uk.gov.hmrc.securemessage.models.core.{ Conversation, FilterTag, Identifier }
 import uk.gov.hmrc.securemessage.{ MessageNotFound, SecureMessageError }
 
 import scala.collection.immutable
@@ -92,7 +93,7 @@ abstract class AbstractMessageRepository[A: ClassTag](
 
   protected def getMessagesCount(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(implicit
     ec: ExecutionContext
-  ): Future[Count] = {
+  ): Future[MessagesCount] = {
     val querySelector = messagesQuerySelector(identifiers, tags)
     val totalCount: Future[Int] = {
       val querySelector = messagesQuerySelector(identifiers, tags)
@@ -118,7 +119,7 @@ abstract class AbstractMessageRepository[A: ClassTag](
     for {
       total  <- totalCount
       unread <- unreadCount
-    } yield Count(total, unread)
+    } yield MessagesCount(total, unread)
   }
 
   private[repository] def conversationRead(conversation: A, identifier: Set[Identifier]): Int =

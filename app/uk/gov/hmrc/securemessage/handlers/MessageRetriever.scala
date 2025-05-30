@@ -19,10 +19,11 @@ package uk.gov.hmrc.securemessage.handlers
 import play.api.Logging
 import play.api.i18n.Messages
 import play.api.libs.json.JsValue
+import uk.gov.hmrc.common.message.model.Language
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.securemessage.SecureMessageError
 import uk.gov.hmrc.securemessage.controllers.model.ApiMessage
-import uk.gov.hmrc.securemessage.models.core.{ Language, MessageRequestWrapper }
+import uk.gov.hmrc.securemessage.models.core.MessageRequestWrapper
 
 import scala.concurrent.Future
 
