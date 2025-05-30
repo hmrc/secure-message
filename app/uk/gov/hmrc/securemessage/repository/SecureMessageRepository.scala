@@ -37,7 +37,7 @@ import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.{ Cancelled, Deferred, Failed, InProgress, ToDo }
 import uk.gov.hmrc.securemessage.{ SecureMessageError, StoreError }
-import uk.gov.hmrc.securemessage.models.core.{ Count, FilterTag, Identifier, MessageFilter }
+import uk.gov.hmrc.securemessage.models.core.{ FilterTag, Identifier, MessageFilter }
 import uk.gov.hmrc.securemessage.models.v4.{ BrakeBatch, BrakeBatchApproval, BrakeBatchDetails, BrakeBatchMessage, SecureMessage, SecureMessageMongoFormat }
 import uk.gov.hmrc.securemessage.models.v4.SecureMessageMongoFormat._
 
@@ -198,7 +198,7 @@ class SecureMessageRepository @Inject() (
 
   def getSecureMessageCount(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(implicit
     ec: ExecutionContext
-  ): Future[Count] =
+  ): Future[MessagesCount] =
     getMessagesCount(identifiers, tags)
 
   override def readyForViewingQuery(): Bson = {

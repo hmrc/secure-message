@@ -19,6 +19,7 @@ import cats.data.NonEmptyList
 import java.time.Instant
 import org.mongodb.scala.bson.ObjectId
 import play.api.libs.json.{ Format, Json, OFormat }
+import uk.gov.hmrc.common.message.model.Language
 import uk.gov.hmrc.mongo.play.json.formats.MongoFormats
 import uk.gov.hmrc.securemessage.ParticipantNotFound
 import uk.gov.hmrc.securemessage.models.utils.NonEmptyListOps
