@@ -22,7 +22,6 @@ import uk.gov.hmrc.common.message.emailaddress.EmailAddress
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CdcmConversation
 import uk.gov.hmrc.securemessage.controllers.model.common.write.{ Customer, Recipient }
 import uk.gov.hmrc.securemessage.models.core
-import uk.gov.hmrc.securemessage.models.core.Language.English
 import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, _ }
 
 import java.time.format.DateTimeFormatter

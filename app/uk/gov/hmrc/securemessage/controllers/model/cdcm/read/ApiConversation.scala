@@ -17,12 +17,13 @@
 package uk.gov.hmrc.securemessage.controllers.model.cdcm.read
 
 import cats.data.NonEmptyList
-import cats.implicits._
+import cats.implicits.*
 
 import java.time.Instant
-import play.api.libs.json.{ Format, Json, Writes }
+import play.api.libs.json.{Format, Json, Writes}
+import uk.gov.hmrc.common.message.model.Language
 import uk.gov.hmrc.securemessage.controllers.model.ApiMessage
-import uk.gov.hmrc.securemessage.models.core.{ Identifier, _ }
+import uk.gov.hmrc.securemessage.models.core.{Identifier, *}
 import uk.gov.hmrc.securemessage.models.utils.NonEmptyListOps.nonEmptyListFormat
 
 final case class ApiConversation(

@@ -19,15 +19,16 @@ package uk.gov.hmrc.securemessage.repository
 import java.time.Instant
 import org.mongodb.scala.MongoWriteException
 import org.mongodb.scala.bson.ObjectId
-import org.mongodb.scala.model._
+import org.mongodb.scala.model.*
 import org.mongodb.scala.SingleObservableFuture
+import uk.gov.hmrc.common.message.model.MessagesCount
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.Codecs
-import uk.gov.hmrc.securemessage._
-import uk.gov.hmrc.securemessage.models.core.{ Filters => _, _ }
+import uk.gov.hmrc.securemessage.*
+import uk.gov.hmrc.securemessage.models.core.{Filters as _, *}
 
-import javax.inject.{ Inject, Singleton }
-import scala.concurrent.{ ExecutionContext, Future }
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class ConversationRepository @Inject() (mongo: MongoComponent)(implicit ec: ExecutionContext)
@@ -96,7 +97,7 @@ class ConversationRepository @Inject() (mongo: MongoComponent)(implicit ec: Exec
 
   def getConversationsCount(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(implicit
     ec: ExecutionContext
-  ): Future[Count] =
+  ): Future[MessagesCount] =
     getMessagesCount(identifiers, tags)
 
   def getConversation(client: String, conversationId: String, identifiers: Set[Identifier])(implicit

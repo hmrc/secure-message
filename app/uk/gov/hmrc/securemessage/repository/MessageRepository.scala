@@ -29,7 +29,7 @@ import uk.gov.hmrc.domain.TaxIds.TaxIdWithName
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus
-import uk.gov.hmrc.securemessage.models.core.{ Count, FilterTag, Identifier, Letter, MessageFilter, RenderUrl }
+import uk.gov.hmrc.securemessage.models.core.{  FilterTag, Identifier, Letter, MessageFilter, RenderUrl }
 import uk.gov.hmrc.securemessage.{ SecureMessageError, StoreError }
 
 import java.util.concurrent.TimeUnit
@@ -129,7 +129,7 @@ class MessageRepository @Inject() (mongo: MongoComponent, val timeSource: TimeSo
 
   def getLettersCount(identifiers: Set[Identifier], tags: Option[List[FilterTag]])(implicit
     ec: ExecutionContext
-  ): Future[Count] =
+  ): Future[MessagesCount] =
     getMessagesCount(identifiers, tags)
 
   def getLetter(id: ObjectId, identifiers: Set[Identifier])(implicit

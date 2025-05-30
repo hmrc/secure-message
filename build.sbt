@@ -18,6 +18,7 @@ import play.sbt.PlayImport.PlayKeys
 import sbt.Keys._
 import uk.gov.hmrc.DefaultBuildSettings
 
+
 val appName = "secure-message"
 
 ThisBuild / majorVersion := 1
