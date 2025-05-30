@@ -26,12 +26,13 @@ import org.mongodb.scala.ObservableFuture
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.play.PlaySpec
-import play.api.test.Helpers._
+import play.api.test.Helpers.*
+import uk.gov.hmrc.common.message.model.MessagesCount
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 import uk.gov.hmrc.securemessage.helpers.ConversationUtil
-import uk.gov.hmrc.securemessage.models.core._
+import uk.gov.hmrc.securemessage.models.core.*
 import uk.gov.hmrc.securemessage.{ MessageNotFound, StoreError }
-import uk.gov.hmrc.securemessage.helpers.DateTimeHelper._
+import uk.gov.hmrc.securemessage.helpers.DateTimeHelper.*
 
 import scala.collection.immutable
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -296,32 +297,32 @@ class ConversationRepositorySpec
     "return 0 total messages and 0 unread" in new TestContext(
       conversations = Seq.empty
     ) {
-      val result: Count =
+      val result: MessagesCount =
         await(
           repository.getConversationsCount(Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))), None)
         )
-      result must be(Count(total = 0, unread = 0))
+      result must be(MessagesCount(total = 0, unread = 0))
     }
 
     "return 2 total messages and 2 unread" in new TestContext(
       conversations = allConversations
     ) {
-      val result: Count =
+      val result: MessagesCount =
         await(
           repository.getConversationsCount(Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))), None)
         )
-      result must be(Count(total = 2, unread = 2))
+      result must be(MessagesCount(total = 2, unread = 2))
     }
 
     "return 2 total messages and 1 unread" in new TestContext(
       conversations = allConversations
     ) {
       await(repository.addReadTime(conversation1.client, conversation1.id, 2, Instant.now))
-      val result: Count =
+      val result: MessagesCount =
         await(
           repository.getConversationsCount(Set(Identifier("EORINumber", "GB1234567890", Some("HMRC-CUS-ORG"))), None)
         )
-      result must be(Count(total = 2, unread = 1))
+      result must be(MessagesCount(total = 2, unread = 1))
     }
   }
 

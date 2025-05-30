@@ -16,9 +16,9 @@
 
 package uk.gov.hmrc.securemessage.controllers.binders
 
-import org.scalatestplus.play._
+import org.scalatestplus.play.*
 import play.api.mvc.QueryStringBindable
-import uk.gov.hmrc.common.message.model.Regime
+import uk.gov.hmrc.common.message.model.{ Language, Regime }
 import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag, Language, MessageFilter }
 
 class PackageTest extends PlaySpec {
@@ -53,6 +53,7 @@ class PackageTest extends PlaySpec {
     }
 
     "return an error if the tag enrolment parameter is incorrectly formatted" in {
+      2
       queryStringBindableTag.bind("", Map("tag" -> List("notifcation~type~DirectDEBIT"))) mustBe
         Some(Left("Unable to bind a Tag"))
     }

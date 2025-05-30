@@ -18,7 +18,7 @@ package uk.gov.hmrc.securemessage.handlers
 
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.testkit.NoMaterializer
-import org.mockito.ArgumentMatchers.{ any, eq => eqTo }
+import org.mockito.ArgumentMatchers.{ any, eq as eqTo }
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
@@ -28,12 +28,13 @@ import play.api.test.Helpers.stubMessages
 import uk.gov.hmrc.auth.core.authorise.Predicate
 import uk.gov.hmrc.auth.core.retrieve.Retrieval
 import uk.gov.hmrc.auth.core.{ AuthConnector, Enrolments }
+import uk.gov.hmrc.common.message.model.Language.English
 import uk.gov.hmrc.common.message.model.MessagesCount
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.securemessage.UnitTest
 import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata
 import uk.gov.hmrc.securemessage.helpers.Resources
-import uk.gov.hmrc.securemessage.models.core._
+import uk.gov.hmrc.securemessage.models.core.*
 import uk.gov.hmrc.securemessage.services.SecureMessageServiceImpl
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -53,7 +54,7 @@ class CDSMessageRetrieverSpec extends PlaySpec with MockitoSugar with UnitTest {
   "getMessagesCount" must {
     "return count" in new TestCase() {
       val result = retriever.messageCount(MessageRequestWrapper(None, Some(List(testEnrolment)), None))(hc, stubMsgs)
-      result.map(_.as[List[Count]] mustBe Count(1, 1))
+      result.map(_.as[List[MessagesCount]] mustBe MessagesCount(1, 1))
     }
   }
 

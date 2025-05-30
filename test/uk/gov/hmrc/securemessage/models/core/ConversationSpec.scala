@@ -20,9 +20,10 @@ import cats.data.NonEmptyList
 import org.mongodb.scala.bson.ObjectId
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json.{ JsObject, JsSuccess, JsValue, Json }
+import uk.gov.hmrc.common.message.model.Language
 import uk.gov.hmrc.securemessage.helpers.{ ConversationUtil, Resources }
-import uk.gov.hmrc.securemessage.models.core.Conversation._
-import uk.gov.hmrc.securemessage.helpers.DateTimeHelper._
+import uk.gov.hmrc.securemessage.models.core.Conversation.*
+import uk.gov.hmrc.securemessage.helpers.DateTimeHelper.*
 
 import java.time.format.DateTimeFormatter
 import java.time.{ Instant, ZoneId, ZoneOffset, ZonedDateTime }

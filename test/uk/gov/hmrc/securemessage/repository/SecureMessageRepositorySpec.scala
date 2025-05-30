@@ -29,7 +29,7 @@ import uk.gov.hmrc.common.message.model.{ MessagesCount, TimeSource }
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.{ Deferred, Succeeded, ToDo }
 import uk.gov.hmrc.securemessage.helpers.Resources
-import uk.gov.hmrc.securemessage.models.core.{ Count, Identifier, MessageFilter }
+import uk.gov.hmrc.securemessage.models.core.{ Identifier, MessageFilter }
 import uk.gov.hmrc.securemessage.models.v4.{ BrakeBatch, BrakeBatchApproval, BrakeBatchDetails, BrakeBatchMessage, SecureMessage }
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -81,12 +81,12 @@ class SecureMessageRepositorySpec
       val niIdentifier = Identifier("", niTaxIdWithName.value, Some(niTaxIdWithName.name))
 
       await(repository.save(message.copy(verificationBrake = Some(false))))
-      val result: Count = await(repository.getSecureMessageCount(Set(identifier), None))
-      result mustBe Count(1, 1)
+      val result: MessagesCount = await(repository.getSecureMessageCount(Set(identifier), None))
+      result mustBe MessagesCount(1, 1)
 
       await(repository.save(niMessage.copy(readTime = Some(Instant.now()), verificationBrake = Some(false))))
-      val result1: Count = await(repository.getSecureMessageCount(Set(identifier, niIdentifier), None))
-      result1 mustBe Count(2, 1)
+      val result1: MessagesCount = await(repository.getSecureMessageCount(Set(identifier, niIdentifier), None))
+      result1 mustBe MessagesCount(2, 1)
     }
 
     "return the message - findBy (NonCDS messages)" in {

@@ -26,6 +26,7 @@ import org.scalatestplus.play.PlaySpec
 import play.api.http.Status.{ ACCEPTED, INTERNAL_SERVER_ERROR, NO_CONTENT }
 import uk.gov.hmrc.auth.core.{ Enrolment, EnrolmentIdentifier, Enrolments }
 import uk.gov.hmrc.common.message.emailaddress.EmailAddress
+import uk.gov.hmrc.common.message.model.Language
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.audit.model.EventTypes
@@ -34,7 +35,7 @@ import uk.gov.hmrc.securemessage.controllers.model.ClientName.CDCM
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage
 import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.{ ApiLetter, SenderInformation }
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
-import uk.gov.hmrc.securemessage.models.core._
+import uk.gov.hmrc.securemessage.models.core.*
 import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryMessageRequest, RequestCommon, RequestDetail }
 
 import java.time.format.DateTimeFormatter
