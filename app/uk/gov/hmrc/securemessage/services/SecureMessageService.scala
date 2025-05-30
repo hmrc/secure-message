@@ -18,13 +18,13 @@ package uk.gov.hmrc.securemessage.services
 
 import org.mongodb.scala.bson.ObjectId
 import play.api.i18n.Messages
-import play.api.mvc.{AnyContent, Request, Result}
+import play.api.mvc.{ AnyContent, Request, Result }
 import uk.gov.hmrc.auth.core.Enrolments
-import uk.gov.hmrc.common.message.model.{Language, MessagesCount}
+import uk.gov.hmrc.common.message.model.{ Language, MessagesCount }
 import uk.gov.hmrc.domain.TaxIds.TaxIdWithName
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.securemessage.SecureMessageError
-import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.{ApiConversation, ConversationMetadata}
+import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.{ ApiConversation, ConversationMetadata }
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage
 import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.ApiLetter
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
@@ -32,7 +32,7 @@ import uk.gov.hmrc.securemessage.models.core.*
 import uk.gov.hmrc.securemessage.models.core.Message as CDSMessage
 import uk.gov.hmrc.securemessage.models.v4.SecureMessage
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 
 trait SecureMessageService {
 

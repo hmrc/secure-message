@@ -18,7 +18,7 @@ package uk.gov.hmrc.securemessage.models.v4
 
 import org.apache.commons.codec.binary.Base64
 
-import java.time.{Instant, LocalDate, LocalTime, ZoneOffset, ZonedDateTime}
+import java.time.{ Instant, LocalDate, LocalTime, ZoneOffset, ZonedDateTime }
 import org.mongodb.scala.bson.ObjectId
 import play.api.libs.functional.syntax.*
 import play.api.libs.json.*

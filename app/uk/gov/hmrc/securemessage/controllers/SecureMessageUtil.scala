@@ -19,39 +19,39 @@ package uk.gov.hmrc.securemessage.controllers
 import org.apache.commons.codec.binary.Base64
 import org.bson.types.ObjectId
 
-import java.time.{Instant, LocalDate, ZoneId, ZonedDateTime}
+import java.time.{ Instant, LocalDate, ZoneId, ZonedDateTime }
 import java.time.format.DateTimeFormatter
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document.OutputSettings
 import org.jsoup.safety.Safelist as JsouptAllowList
-import play.api.http.Status.{BAD_REQUEST, CONFLICT, NOT_FOUND}
+import play.api.http.Status.{ BAD_REQUEST, CONFLICT, NOT_FOUND }
 import play.api.i18n.Messages
-import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
+import play.api.libs.json.{ JsArray, JsObject, JsValue, Json }
 import play.api.mvc.Results.Created
-import play.api.mvc.{AnyContent, Request, Result}
-import play.api.{Configuration, Logging}
+import play.api.mvc.{ AnyContent, Request, Result }
+import play.api.{ Configuration, Logging }
 import uk.gov.hmrc.common.message.emailaddress.EmailAddress
 import uk.gov.hmrc.common.message.failuremodule.FailureResponseService.errorResponseResult
-import uk.gov.hmrc.common.message.model.{AlertDetails, AlertQueueTypes, Language, MessagesCount}
+import uk.gov.hmrc.common.message.model.{ AlertDetails, AlertQueueTypes, Language, MessagesCount }
 import uk.gov.hmrc.domain.SaUtr
 import uk.gov.hmrc.domain.TaxIds.TaxIdWithName
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.Deferred
 import uk.gov.hmrc.mongo.workitem.WorkItem
-import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
-import uk.gov.hmrc.play.audit.model.{DataEvent, EventTypes}
+import uk.gov.hmrc.play.audit.http.connector.{ AuditConnector, AuditResult }
+import uk.gov.hmrc.play.audit.model.{ DataEvent, EventTypes }
 import uk.gov.hmrc.securemessage.SecureMessageError
-import uk.gov.hmrc.securemessage.connectors.{EmailValidation, EntityResolverConnector, PreferencesConnector, TaxpayerNameConnector}
-import uk.gov.hmrc.securemessage.models.core.{FilterTag, Identifier, MessageFilter}
-import uk.gov.hmrc.securemessage.models.v4.{Content, ExtraAlertConfig, SecureMessage}
-import uk.gov.hmrc.securemessage.repository.{ExtraAlert, ExtraAlertRepository, SecureMessageRepository, StatsMetricRepository}
+import uk.gov.hmrc.securemessage.connectors.{ EmailValidation, EntityResolverConnector, PreferencesConnector, TaxpayerNameConnector }
+import uk.gov.hmrc.securemessage.models.core.{ FilterTag, Identifier, MessageFilter }
+import uk.gov.hmrc.securemessage.models.v4.{ Content, ExtraAlertConfig, SecureMessage }
+import uk.gov.hmrc.securemessage.repository.{ ExtraAlert, ExtraAlertRepository, SecureMessageRepository, StatsMetricRepository }
 import uk.gov.hmrc.securemessage.services.MessageBrakeService
 
 import java.util.Locale
-import javax.inject.{Inject, Named, Singleton}
+import javax.inject.{ Inject, Named, Singleton }
 import scala.jdk.CollectionConverters.*
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
+import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.{ Failure, Success, Try }
 
 object SecureMessageUtil {
 

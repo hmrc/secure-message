@@ -25,10 +25,10 @@ import uk.gov.hmrc.common.message.model.MessagesCount
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.securemessage.*
-import uk.gov.hmrc.securemessage.models.core.{Filters as _, *}
+import uk.gov.hmrc.securemessage.models.core.{ Filters as _, * }
 
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import javax.inject.{ Inject, Singleton }
+import scala.concurrent.{ ExecutionContext, Future }
 
 @Singleton
 class ConversationRepository @Inject() (mongo: MongoComponent)(implicit ec: ExecutionContext)

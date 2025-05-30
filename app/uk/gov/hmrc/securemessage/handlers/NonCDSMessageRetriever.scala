@@ -21,18 +21,18 @@ import org.bson.types.ObjectId
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import play.api.i18n.Messages
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.{ JsValue, Json }
 import uk.gov.hmrc.common.message.model.Language
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.securemessage.connectors.AuthIdentifiersConnector
-import uk.gov.hmrc.securemessage.controllers.model.{ApiMessage, MessageResourceResponse, MessagesResponse}
+import uk.gov.hmrc.securemessage.controllers.model.{ ApiMessage, MessageResourceResponse, MessagesResponse }
 import uk.gov.hmrc.securemessage.models.core.*
 import uk.gov.hmrc.securemessage.models.v4.SecureMessage
 import uk.gov.hmrc.securemessage.services.SecureMessageServiceImpl
-import uk.gov.hmrc.securemessage.{MessageNotFound, SecureMessageError, UserNotAuthorised}
+import uk.gov.hmrc.securemessage.{ MessageNotFound, SecureMessageError, UserNotAuthorised }
 
 import javax.inject.Inject
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 import scala.xml.XML
 
 class NonCDSMessageRetriever @Inject() (

@@ -16,9 +16,9 @@
 
 package uk.gov.hmrc.securemessage.models.v4
 
-import java.time.{LocalDate, ZoneOffset}
-import play.api.libs.json.{Json, OFormat}
-import uk.gov.hmrc.common.message.model.Language.{English, Welsh}
+import java.time.{ LocalDate, ZoneOffset }
+import play.api.libs.json.{ Json, OFormat }
+import uk.gov.hmrc.common.message.model.Language.{ English, Welsh }
 
 trait BaseBrakeBatch {
   def batchId: String

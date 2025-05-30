@@ -22,7 +22,7 @@ import org.mongodb.scala.bson.ObjectId
 import play.api.Logging
 import play.api.i18n.I18nSupport
 import play.api.libs.json.*
-import play.api.mvc.{Action, AnyContent, ControllerComponents, Request, Result}
+import play.api.mvc.{ Action, AnyContent, ControllerComponents, Request, Result }
 import uk.gov.hmrc.auth.core.*
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.common.message.model.Language
@@ -33,20 +33,20 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.securemessage.*
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.*
 import uk.gov.hmrc.securemessage.controllers.model.common.write.*
-import uk.gov.hmrc.securemessage.controllers.model.{ApiMessage, ClientName}
+import uk.gov.hmrc.securemessage.controllers.model.{ ApiMessage, ClientName }
 import uk.gov.hmrc.securemessage.controllers.utils.IdCoder.EncodedId
-import uk.gov.hmrc.securemessage.controllers.utils.{IdCoder, MessageSchemaValidator, QueryStringValidation}
-import uk.gov.hmrc.securemessage.handlers.{MessageBroker, MessageReadRequest}
-import uk.gov.hmrc.securemessage.models.core.{CustomerEnrolment, FilterTag, Letter, Message, MessageFilter, MessageRequestWrapper, Reference}
+import uk.gov.hmrc.securemessage.controllers.utils.{ IdCoder, MessageSchemaValidator, QueryStringValidation }
+import uk.gov.hmrc.securemessage.handlers.{ MessageBroker, MessageReadRequest }
+import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag, Letter, Message, MessageFilter, MessageRequestWrapper, Reference }
 import uk.gov.hmrc.securemessage.models.v4.SecureMessage
 import uk.gov.hmrc.securemessage.repository.StatsMetricRepository
-import uk.gov.hmrc.securemessage.services.{ImplicitClassesExtensions, SecureMessageServiceImpl}
+import uk.gov.hmrc.securemessage.services.{ ImplicitClassesExtensions, SecureMessageServiceImpl }
 import uk.gov.hmrc.securemessage.utils.DateTimeUtils
 import java.util.UUID
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import javax.inject.{ Inject, Singleton }
+import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.control.NonFatal
-import scala.util.{Failure, Success, Try}
+import scala.util.{ Failure, Success, Try }
 
 @Singleton
 class SecureMessageController @Inject() (

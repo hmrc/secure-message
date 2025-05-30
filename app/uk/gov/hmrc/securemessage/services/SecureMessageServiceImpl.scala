@@ -21,13 +21,13 @@ import cats.implicits.*
 import com.google.inject.Inject
 import org.apache.commons.codec.binary.Base64
 import java.time.format.DateTimeFormatter
-import java.time.{Instant, LocalDate, ZoneOffset}
+import java.time.{ Instant, LocalDate, ZoneOffset }
 import org.mongodb.scala.bson.ObjectId
 import play.api.i18n.Messages
-import play.api.mvc.{AnyContent, Request, Result}
-import uk.gov.hmrc.auth.core.{Enrolment, Enrolments}
-import uk.gov.hmrc.common.message.model.Language.{English, Welsh}
-import uk.gov.hmrc.common.message.model.{Language, MessagesCount}
+import play.api.mvc.{ AnyContent, Request, Result }
+import uk.gov.hmrc.auth.core.{ Enrolment, Enrolments }
+import uk.gov.hmrc.common.message.model.Language.{ English, Welsh }
+import uk.gov.hmrc.common.message.model.{ Language, MessagesCount }
 import uk.gov.hmrc.domain.TaxIds.TaxIdWithName
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
@@ -35,24 +35,24 @@ import uk.gov.hmrc.securemessage.*
 import uk.gov.hmrc.securemessage.connectors.*
 import uk.gov.hmrc.securemessage.controllers.model.MessageType
 import uk.gov.hmrc.securemessage.controllers.model.MessageType.Letter
-import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.{ApiConversation, ConversationMetadata}
+import uk.gov.hmrc.securemessage.controllers.model.cdcm.read.{ ApiConversation, ConversationMetadata }
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage
 import uk.gov.hmrc.securemessage.controllers.model.cdsf.read.ApiLetter
 import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata
 import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
-import uk.gov.hmrc.securemessage.controllers.{Auditing, SecureMessageUtil}
+import uk.gov.hmrc.securemessage.controllers.{ Auditing, SecureMessageUtil }
 import uk.gov.hmrc.securemessage.handlers.MessageReadRequest
 import uk.gov.hmrc.securemessage.models.*
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.Customer.eqCustomer
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.Customer as PCustomer
-import uk.gov.hmrc.securemessage.models.core.{CustomerEnrolment, *}
-import uk.gov.hmrc.securemessage.models.v4.{Content, SecureMessage}
-import uk.gov.hmrc.securemessage.repository.{ConversationRepository, MessageRepository}
+import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, * }
+import uk.gov.hmrc.securemessage.models.v4.{ Content, SecureMessage }
+import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository }
 import uk.gov.hmrc.securemessage.services.utils.ContentValidator
 
 import java.util.UUID
 import javax.inject.Singleton
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 import scala.xml.XML
 
 //TODO: refactor service to only accept core model classes as params

@@ -29,7 +29,7 @@ import uk.gov.hmrc.domain.TaxIds.TaxIdWithName
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus
-import uk.gov.hmrc.securemessage.models.core.{  FilterTag, Identifier, Letter, MessageFilter, RenderUrl }
+import uk.gov.hmrc.securemessage.models.core.{ FilterTag, Identifier, Letter, MessageFilter, RenderUrl }
 import uk.gov.hmrc.securemessage.{ SecureMessageError, StoreError }
 
 import java.util.concurrent.TimeUnit

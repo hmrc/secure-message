@@ -18,11 +18,11 @@ package uk.gov.hmrc.securemessage.controllers
 
 import org.bson.types.ObjectId
 import play.api.libs.json.JsString
-import play.api.mvc.{PathBindable, QueryStringBindable}
+import play.api.mvc.{ PathBindable, QueryStringBindable }
 import uk.gov.hmrc.common.message.model.Language.English
-import uk.gov.hmrc.common.message.model.{Language, Regime}
-import uk.gov.hmrc.securemessage.models.{JourneyStep, SecureMessageUrlStep}
-import uk.gov.hmrc.securemessage.models.core.{CustomerEnrolment, FilterTag, MessageFilter}
+import uk.gov.hmrc.common.message.model.{ Language, Regime }
+import uk.gov.hmrc.securemessage.models.{ JourneyStep, SecureMessageUrlStep }
+import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag, MessageFilter }
 
 package object binders {
 
@@ -126,7 +126,5 @@ package object binders {
 
       override def unbind(key: String, value: JourneyStep): String = ""
     }
-
-
 
 }
