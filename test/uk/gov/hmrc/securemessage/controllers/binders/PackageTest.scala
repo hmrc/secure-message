@@ -19,7 +19,7 @@ package uk.gov.hmrc.securemessage.controllers.binders
 import org.scalatestplus.play.*
 import play.api.mvc.QueryStringBindable
 import uk.gov.hmrc.common.message.model.{ Language, Regime }
-import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag, Language, MessageFilter }
+import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag, MessageFilter }
 
 class PackageTest extends PlaySpec {
   "queryStringBindableCustomerEnrolment" must {

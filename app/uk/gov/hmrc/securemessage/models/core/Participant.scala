@@ -18,11 +18,9 @@ package uk.gov.hmrc.securemessage.models.core
 
 import java.time.Instant
 import play.api.libs.json.{ Format, Json }
-import uk.gov.hmrc.securemessage.formatter.PlayJsonFormats._
-import uk.gov.hmrc.common.message.emailaddress._
-
-import uk.gov.hmrc.securemessage.models.core.DateFormats.formatInstantReads
-import uk.gov.hmrc.securemessage.models.core.DateFormats.formatInstantWrites
+import uk.gov.hmrc.securemessage.formatter.PlayJsonFormats.*
+import uk.gov.hmrc.common.message.emailaddress.*
+import uk.gov.hmrc.common.message.model.DateFormats.{ formatInstantReads, formatInstantWrites }
 
 final case class Participant(
   id: Int,

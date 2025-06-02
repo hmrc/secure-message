@@ -18,7 +18,7 @@ package uk.gov.hmrc.securemessage.controllers.model
 
 import java.time.{ Instant, LocalDate }
 import play.api.libs.json.Format
-import uk.gov.hmrc.securemessage.models.core.DateFormats._
+import uk.gov.hmrc.common.message.model.DateFormats.{ formatInstantReads, formatInstantWrites, formatLocalDateReads, formatLocalDateWrites }
 
 trait ApiFormats {
 
