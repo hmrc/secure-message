@@ -18,13 +18,11 @@ package uk.gov.hmrc.securemessage.models.core
 
 import java.time.{ Instant, LocalDate, ZoneOffset }
 import org.mongodb.scala.bson.ObjectId
-import play.api.libs.json._
-import play.api.libs.functional.syntax._
+import play.api.libs.json.*
+import play.api.libs.functional.syntax.*
+import uk.gov.hmrc.common.message.model.DateFormats.{ formatLocalDateReads, formatLocalDateWrites }
 import uk.gov.hmrc.common.message.model.{ Adviser, MessageContentParameters, Rescindment }
 import uk.gov.hmrc.mongo.play.json.formats.{ MongoFormats, MongoJavatimeFormats }
-
-import uk.gov.hmrc.securemessage.models.core.DateFormats.formatLocalDateReads
-import uk.gov.hmrc.securemessage.models.core.DateFormats.formatLocalDateWrites
 
 final case class RecipientName(
   title: Option[String],
