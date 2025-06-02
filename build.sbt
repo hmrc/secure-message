@@ -44,6 +44,16 @@ lazy val microservice = Project(appName, file("."))
     )
   )
   .settings(ScoverageSettings())
+  .settings(
+    scalacOptions ++= Seq(
+      // Silence unused imports in template files
+      "-Wconf:msg=unused import&src=.*:s",
+      // Silence "Flag -XXX set repeatedly"
+      "-Wconf:msg=Flag.*repeatedly:s",
+      // Silence unused warnings on Play `routes` files
+      "-Wconf:src=routes/.*:s")
+
+  )
 
 lazy val it = project
   .enablePlugins(PlayScala)

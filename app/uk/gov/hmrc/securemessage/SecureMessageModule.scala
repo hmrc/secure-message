@@ -31,7 +31,7 @@ import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 import uk.gov.hmrc.securemessage.metrics.{ MessageMain, MetricsLock }
 import uk.gov.hmrc.securemessage.repository.StatsMetricRepository
-import uk.gov.hmrc.securemessage.scheduler.EmailAlertJob
+import uk.gov.hmrc.securemessage.scheduler.{ EmailAlertJob, ExtraAlertsJob, ScheduledJob, StatsMetricResetJob }
 import uk.gov.hmrc.securemessage.services.{ SecureMessageService, SecureMessageServiceImpl }
 import uk.gov.hmrc.securemessage.utils.DateTimeUtils
 
@@ -49,6 +49,13 @@ class SecureMessageModule extends AbstractModule with PekkoGuiceSupport {
     bindActor[EmailAlertJob]("EmailAlertJob-actor")
     super.configure()
   }
+
+  @Provides
+  @Singleton
+  def scheduledJobsProvider(
+    processExtraAlerts: ExtraAlertsJob,
+    statsMetricResetJob: StatsMetricResetJob
+  ): Seq[ScheduledJob] = Seq(processExtraAlerts, statsMetricResetJob)
 
   @Provides
   @Singleton
@@ -153,6 +160,12 @@ class SecureMessageModule extends AbstractModule with PekkoGuiceSupport {
   @Singleton
   def isSecureMessageMetricsActive(configuration: Configuration): Boolean =
     configuration.getOptional[Boolean]("metrics.active").getOrElse(false)
+
+  @Provides
+  @Named("scheduledJobsEnabled")
+  @Singleton
+  def isScheduledJobsEnabled(configuration: Configuration): Boolean =
+    configuration.getOptional[Boolean]("scheduled-jobs.enabled").getOrElse(false)
 }
 
 class TimeProvider extends DateTimeUtils
