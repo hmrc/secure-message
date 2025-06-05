@@ -16,13 +16,15 @@
 
 package uk.gov.hmrc.securemessage.repository
 
+import com.mongodb.client.model.Indexes.ascending
 import org.bson.types.ObjectId
+
 import java.time.{ Duration, LocalDate }
-import org.mongodb.scala.model.{ Filters, Updates }
-import org.mongodb.scala.SingleObservableFuture
+import org.mongodb.scala.model.{ Filters, IndexOptions, Updates }
+import org.mongodb.scala.{ SingleObservableFuture, model }
 import play.api.libs.json.{ Json, OFormat }
 import play.api.{ Configuration, Environment }
-import uk.gov.hmrc.common.message.model._
+import uk.gov.hmrc.common.message.model.*
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.{ Cancelled, Deferred, ToDo }
 import uk.gov.hmrc.mongo.workitem.{ ProcessingStatus, WorkItem, WorkItemFields, WorkItemRepository }
@@ -52,6 +54,13 @@ class ExtraAlertRepository @Inject() (
         status = "status",
         failureCount = "failureCount",
         item = "item"
+      ),
+      replaceIndexes = false,
+      extraIndexes = Seq(
+        model.IndexModel(
+          ascending("item.reference"),
+          IndexOptions().name("item-reference-index").unique(false).background(true)
+        )
       )
     ) {
 
