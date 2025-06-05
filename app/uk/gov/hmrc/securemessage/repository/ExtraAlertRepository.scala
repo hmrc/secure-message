@@ -58,6 +58,10 @@ class ExtraAlertRepository @Inject() (
       replaceIndexes = false,
       extraIndexes = Seq(
         model.IndexModel(
+          ascending("item.messageRecipient", "item.reference", "item.extraReference"),
+          IndexOptions().name("extra-alert-index").unique(true).background(true)
+        ),
+        model.IndexModel(
           ascending("item.reference"),
           IndexOptions().name("item-reference-index").unique(false).background(true)
         )

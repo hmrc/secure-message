@@ -52,7 +52,7 @@ class ExtraAlertRepositorySpec
 
   "The ExtraAlertRepository" must {
     "have the expected number of indexes - ensureIndex" in new TestCase {
-      repo.collection.listIndexes().toFuture().futureValue must have size 5
+      repo.collection.listIndexes().toFuture().futureValue must have size 6
     }
 
     "allow an alert to be pushed, pulled and marked as done." in new TestCase {
@@ -74,8 +74,7 @@ class ExtraAlertRepositorySpec
       repo.ensureIndexes().futureValue
 
       repo.pushNew(item = alert).futureValue
-
-      // repo.pushNew(item = alert).failed.futureValue
+      repo.pushNew(item = alert).failed.futureValue
     }
 
     "allow pushed alert, to be deleted." in new TestCase {
