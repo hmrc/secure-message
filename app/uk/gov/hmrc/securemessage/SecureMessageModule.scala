@@ -82,7 +82,14 @@ class SecureMessageModule extends AbstractModule with PekkoGuiceSupport {
 
     val refreshInterval = configuration.getMillis(s"microservice.metrics.gauges.interval")
     val metricsLock = MetricsLock("message-metrics", Duration(refreshInterval, TimeUnit.MILLISECONDS), lockRepository)
-    val sources: List[MetricSource] = List(statusMetrics, statsRepo)
+    // DC-7476 Flag to disable the status count metrics temporarily, statusMetrics source to be removed
+    val isStatusCountEnabled: Boolean =
+      configuration.getOptional("metrics.statusCount.enabled").getOrElse(false)
+
+    val sources: List[MetricSource] =
+      if isStatusCountEnabled then List(statusMetrics, statsRepo)
+      else List(statsRepo)
+
     new MetricOrchestrator(
       sources,
       LockService(metricsLock.lockRepository, metricsLock.lockId, metricsLock.ttl),
