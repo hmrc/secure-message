@@ -31,7 +31,9 @@ lazy val microservice = Project(appName, file("."))
     SbtDistributablesPlugin
   )
   .disablePlugins(JUnitXmlReportPlugin)
-  .settings(scalacOptions := scalacOptions.value.diff(Seq("-Wunused:all", "-Wconf:src=routes/.*:s")))
+  .settings(scalacOptions := scalacOptions.value.diff(Seq("-Wunused:all",
+    "-Wconf:msg=unused import:s,msg=Flag.*repeatedly:s"
+  )).distinct)
   .settings(
     libraryDependencies ++= AppDependencies.compile ++ AppDependencies.test,
     routesGenerator := InjectedRoutesGenerator,
@@ -44,16 +46,7 @@ lazy val microservice = Project(appName, file("."))
     )
   )
   .settings(ScoverageSettings())
-  .settings(
-    scalacOptions ++= Seq(
-      // Silence unused imports in template files
-      "-Wconf:msg=unused import&src=.*:s",
-      // Silence "Flag -XXX set repeatedly"
-      "-Wconf:msg=Flag.*repeatedly:s",
-      // Silence unused warnings on Play `routes` files
-      "-Wconf:src=routes/.*:s")
 
-  )
 
 lazy val it = project
   .enablePlugins(PlayScala)
@@ -76,9 +69,7 @@ dependencyUpdatesFilter -= moduleFilter(name = "flexmark-all")
 
 Compile / doc / sources := Seq.empty
 
-//TODO make bellow work and rename resources/service/ContentValidation/*html.txt to html
 Test / resourceDirectory := baseDirectory.value / "test" / "resources"
-Test / resources / excludeFilter := HiddenFileFilter || "*.html"
 
 Test / test := (Test / test)
   .dependsOn(scalafmtCheckAll)
