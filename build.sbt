@@ -22,7 +22,7 @@ import uk.gov.hmrc.DefaultBuildSettings
 val appName = "secure-message"
 
 ThisBuild / majorVersion := 1
-ThisBuild / scalaVersion := "3.3.3"
+ThisBuild / scalaVersion := "3.3.4"
 
 
 lazy val microservice = Project(appName, file("."))
