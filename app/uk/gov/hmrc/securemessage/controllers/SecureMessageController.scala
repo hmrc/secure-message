@@ -47,6 +47,7 @@ import javax.inject.{ Inject, Singleton }
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Success, Try }
+import scala.reflect.ClassTag
 
 @Singleton
 class SecureMessageController @Inject() (
@@ -180,12 +181,12 @@ class SecureMessageController @Inject() (
 
   private def parseAs[T]()(implicit
     request: Request[JsValue],
-    m: Manifest[T],
+    ct: ClassTag[T],
     reads: Reads[T]
   ): Either[InvalidRequest, T] =
     Try(request.body.validate[T]) match {
       case Success(JsSuccess(payload, _)) => Right(payload)
-      case Success(JsError(errs)) => Left(InvalidRequest(s"Invalid ${m.runtimeClass.getSimpleName} payload: $errs"))
+      case Success(JsError(errs)) => Left(InvalidRequest(s"Invalid ${ct.runtimeClass.getSimpleName} payload: $errs"))
       case Failure(e)             => Left(InvalidRequest(s"Could not parse body due to ${e.getMessage}", Some(e)))
     }
 

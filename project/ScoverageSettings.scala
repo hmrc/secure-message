@@ -21,9 +21,17 @@ import scoverage.ScoverageKeys
 object ScoverageSettings {
   def apply(): Seq[Def.Setting[_ >: String with Double with Boolean]] =
     Seq( // Semicolon-separated list of regexes matching classes to exclude
-      ScoverageKeys.coverageExcludedPackages := "<empty>;.*Reverse.*;.*(config|testonly).*;.*(BuildInfo|Routes).*",
+      ScoverageKeys.coverageExcludedPackages :=
+        """<empty>;
+          |.*Reverse.*;
+          |.*Routes.*;
+          |.*\$anon.*;
+          |testOnlyDoNotUseInAppConf.*;
+          |.*controllers\.javascript.*;
+          |uk\.gov\.hmrc\.securemessage\.testonly\.controllers.*
+  """.stripMargin.replaceAll("\\s+", ""),
       ScoverageKeys.coverageMinimumStmtTotal := 61.00,
-      ScoverageKeys.coverageFailOnMinimum := false,
+      ScoverageKeys.coverageFailOnMinimum := true,
       ScoverageKeys.coverageHighlighting := true,
       ConfigKey.configurationToKey(Test) / parallelExecution := false
     )
