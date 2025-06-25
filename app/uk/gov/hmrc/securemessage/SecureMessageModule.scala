@@ -20,7 +20,7 @@ import com.google.inject.{ AbstractModule, Provides }
 import com.google.inject.name.Named
 
 import java.time.Instant
-import play.api.Configuration
+import play.api.{ Configuration, Environment }
 import play.api.libs.concurrent.PekkoGuiceSupport
 import uk.gov.hmrc.common.message.model.TimeSource
 import uk.gov.hmrc.message.metrics.MessageStatusMetrics
@@ -31,22 +31,30 @@ import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 import uk.gov.hmrc.securemessage.metrics.{ MessageMain, MetricsLock }
 import uk.gov.hmrc.securemessage.repository.StatsMetricRepository
-import uk.gov.hmrc.securemessage.scheduler.{ EmailAlertJob, ExtraAlertsJob, ScheduledJob, StatsMetricResetJob }
+import uk.gov.hmrc.securemessage.scheduler.{ EmailAlertJob, EmailAlertsStream, ExtraAlertsJob, ScheduledJob, StatsMetricResetJob }
 import uk.gov.hmrc.securemessage.services.{ SecureMessageService, SecureMessageServiceImpl }
 import uk.gov.hmrc.securemessage.utils.DateTimeUtils
 
 import java.util.concurrent.TimeUnit
-import javax.inject.Singleton
+import javax.inject.{ Inject, Singleton }
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.{ Duration, FiniteDuration }
 
-class SecureMessageModule extends AbstractModule with PekkoGuiceSupport {
+class SecureMessageModule @Inject() (environment: Environment, configuration: Configuration)
+    extends AbstractModule with PekkoGuiceSupport {
 
   override def configure(): Unit = {
+    val useStream = configuration.getOptional[Boolean]("email.alerts.use-stream").getOrElse(false)
+
     bind(classOf[MessageMain]).asEagerSingleton()
     bind(classOf[DateTimeUtils]).to(classOf[TimeProvider])
     bind(classOf[SecureMessageService]).to(classOf[SecureMessageServiceImpl]).asEagerSingleton()
-    bindActor[EmailAlertJob]("EmailAlertJob-actor")
+    if (useStream) {
+      bind(classOf[EmailAlertsStream]).asEagerSingleton()
+    } else {
+      bindActor[EmailAlertJob]("EmailAlertJob-actor")
+    }
+
     super.configure()
   }
 
