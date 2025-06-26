@@ -31,7 +31,13 @@ object ExtraAlertConfig {
       m.getOrElse("extraTemplate", throw new RuntimeException("extraTemplate is missing")).toString
 
     val secondsMap: Map[String, Long] =
-      Map("H" -> 1000 * 60 * 60, "D" -> 1000 * 60 * 60 * 24, "M" -> 1000 * 60 * 60 * 24 * 30, "m" -> 1000, "s" -> 1000)
+      Map(
+        "H" -> 1000 * 60 * 60,
+        "D" -> 1000 * 60 * 60 * 24,
+        "M" -> 1000 * 60 * 60 * 24 * 30,
+        "m" -> 60 * 1000,
+        "s" -> 1000
+      )
     val delay =
       try {
         val pattern = "([0-9]+)(H|D|M|m|s)".r
