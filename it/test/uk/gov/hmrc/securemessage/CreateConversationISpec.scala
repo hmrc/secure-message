@@ -59,7 +59,7 @@ class CreateConversationISpec extends ISpec {
           .put(new File("./it/test/resources/cdcm/create-conversation.json"))
           .futureValue
       response.status mustBe BAD_REQUEST
-      response.body must startWith("Unknown value supplied for uk.gov.hmrc.securemessage.controllers.model.ClientName")
+      response.body must startWith("Invalid ClientName provided: cdcm")
       response.body must include("cdcm")
     }
 

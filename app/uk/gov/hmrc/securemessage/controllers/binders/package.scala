@@ -136,7 +136,7 @@ package object binders {
           try
             Right(ClientName.valueOf(name))
           catch {
-            case _: IllegalArgumentException => Left(s"Invalid client name provided: $name")
+            case _: IllegalArgumentException => Left(s"Invalid ClientName provided: $name")
           }
       }
 
