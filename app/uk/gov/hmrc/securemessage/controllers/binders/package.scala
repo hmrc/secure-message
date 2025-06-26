@@ -21,6 +21,7 @@ import play.api.libs.json.JsString
 import play.api.mvc.{ PathBindable, QueryStringBindable }
 import uk.gov.hmrc.common.message.model.Language.English
 import uk.gov.hmrc.common.message.model.{ Language, Regime }
+import uk.gov.hmrc.securemessage.controllers.model.ClientName
 import uk.gov.hmrc.securemessage.models.{ JourneyStep, SecureMessageUrlStep }
 import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, FilterTag, MessageFilter }
 
@@ -127,4 +128,18 @@ package object binders {
       override def unbind(key: String, value: JourneyStep): String = ""
     }
 
+  implicit def clientNameBinder(implicit stringBinder: PathBindable[String]): PathBindable[ClientName] =
+    new PathBindable[ClientName] {
+      def bind(key: String, value: String): Either[String, ClientName] = stringBinder.bind(key, value) match {
+        case Left(msg) => Left(msg)
+        case Right(name) =>
+          try
+            Right(ClientName.valueOf(name))
+          catch {
+            case _: IllegalArgumentException => Left(s"Invalid client name provided: $name")
+          }
+      }
+
+      def unbind(key: String, value: ClientName): String = value.toString
+    }
 }

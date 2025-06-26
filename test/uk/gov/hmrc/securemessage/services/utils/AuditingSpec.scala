@@ -59,7 +59,7 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
     val alert = Alert("", None)
     val conversation = Conversation(
       new ObjectId(),
-      CDCM.entryName,
+      CDCM.toString,
       "D-80542-20210327",
       ConversationStatus.Open,
       None,
@@ -86,7 +86,7 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
           "messageId"       -> "D-80542-20210327",
           "responseMessage" -> responseMessage,
           "initialMessage"  -> messageContent,
-          "client"          -> CDCM.entryName,
+          "client"          -> CDCM.toString,
           newConversationTxnName,
           "id"           -> randomId,
           "X-request-ID" -> xRequestId
@@ -110,7 +110,7 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
           "messageId"       -> "D-80542-20210327",
           "responseMessage" -> responseMessage,
           "initialMessage"  -> messageContent,
-          "client"          -> CDCM.entryName,
+          "client"          -> CDCM.toString,
           newConversationTxnName,
           "id"           -> randomId,
           "X-request-ID" -> xRequestId
@@ -154,7 +154,7 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
         "CaseWorkerReplyToConversationSuccess",
         Map(
           caseworkerReplyTxnName,
-          "client"       -> CDCM.entryName,
+          "client"       -> CDCM.toString,
           "messageId"    -> conversationId,
           "content"      -> messageContent,
           "id"           -> randomId,
@@ -176,7 +176,7 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
         "CaseWorkerReplyToConversationFailed",
         Map(
           caseworkerReplyTxnName,
-          "client"       -> CDCM.entryName,
+          "client"       -> CDCM.toString,
           "messageId"    -> conversationId,
           "content"      -> messageContent,
           "id"           -> randomId,
@@ -202,7 +202,7 @@ class AuditingSpec extends PlaySpec with MockitoSugar with Auditing {
         "QueryMessageReadSuccess",
         Map(
           conversationReadTxnName,
-          "client"      -> CDCM.entryName,
+          "client"      -> CDCM.toString,
           "messageId"   -> conversationId,
           "messageType" -> "Conversation",
           "enrolments"  -> "HMRC-CUS-ORG:EORINumber=GB1234567890"

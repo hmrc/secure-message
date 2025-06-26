@@ -610,7 +610,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     private lazy val conversation: Conversation =
       requestBody
         .as[CdcmConversation]
-        .asConversationWithCreatedDate(client.entryName, conversationId, now, randomId, Some(reference))
+        .asConversationWithCreatedDate(client.toString, conversationId, now, randomId, Some(reference))
         .copy(_id = objectID)
     private lazy val expectedParticipants = conversation.participants.map(p => p.copy(email = None))
     lazy val expectedConversation: Conversation = conversation.copy(participants = expectedParticipants, _id = objectID)

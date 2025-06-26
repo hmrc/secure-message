@@ -16,12 +16,28 @@
 
 package uk.gov.hmrc.securemessage.controllers.model
 
-import enumeratum._
-import scala.collection.immutable
+import play.api.libs.json.{ Format, JsError, JsResult, JsString, JsSuccess, JsValue }
 
-sealed abstract class ClientName extends EnumEntry
+enum ClientName {
+  case CDCM
+}
 
-object ClientName extends Enum[ClientName] with PlayEnum[ClientName] {
-  val values: immutable.IndexedSeq[ClientName] = findValues
-  case object CDCM extends ClientName
+object ClientName {
+
+  def withNameOption(name: String): Option[ClientName] =
+    try
+      Some(ClientName.valueOf(name))
+    catch {
+      case _: IllegalArgumentException => None
+    }
+
+  implicit val format: Format[ClientName] = new Format[ClientName] {
+    def reads(json: JsValue): JsResult[ClientName] = json match {
+      case JsString(s) =>
+        JsSuccess(ClientName.valueOf(s))
+      case _ => JsError("Expected string")
+    }
+
+    def writes(clientName: ClientName): JsValue = JsString(clientName.toString)
+  }
 }

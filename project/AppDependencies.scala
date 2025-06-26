@@ -26,7 +26,6 @@ object AppDependencies {
     caffeine,
     "uk.gov.hmrc"   %% "bootstrap-backend-play-30" % bootstrapVersion,
     "uk.gov.hmrc"   %% "dc-message-library"        % dcMessageLibraryVersion,
-    "com.beachape"  %% "enumeratum-play"           % "1.8.0",
     "org.typelevel" %% "cats-core"                 % "2.12.0",
     "com.networknt" % "json-schema-validator" % "1.4.3" excludeAll ("com.fasterxml.jackson.core", "jackson-databind"),
     "org.jsoup"     % "jsoup"                 % "1.17.2",
