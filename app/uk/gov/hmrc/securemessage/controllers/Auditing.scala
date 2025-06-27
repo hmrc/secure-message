@@ -122,7 +122,7 @@ trait Auditing extends Logging {
   )(implicit hc: HeaderCarrier, ec: ExecutionContext): Unit = {
     val detail = Map(
       caseworkerReplyTxnName,
-      "client"       -> client.entryName,
+      "client"       -> client.toString,
       "messageId"    -> conversationId,
       "content"      -> cwm.content,
       "id"           -> id,
@@ -174,7 +174,7 @@ trait Auditing extends Logging {
   ): Unit = {
     val detail = Map(
       conversationReadTxnName,
-      "client"    -> client.fold("")(_.entryName),
+      "client"    -> client.fold("")(_.toString),
       "messageId" -> conversationId,
       ConversationMessageType,
       "enrolments" -> prettyPrintEnrolments(enrolments)

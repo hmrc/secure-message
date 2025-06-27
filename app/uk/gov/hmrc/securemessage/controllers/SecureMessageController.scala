@@ -69,7 +69,7 @@ class SecureMessageController @Inject() (
       withJsonBody[CdcmConversation] { cdcmConversation =>
         val conversation =
           cdcmConversation.asConversationWithCreatedDate(
-            client.entryName,
+            client.toString,
             conversationId,
             dataTimeUtils.now,
             randomId,
@@ -88,7 +88,7 @@ class SecureMessageController @Inject() (
                 randomId,
                 maybeReference
               )
-              handleErrors(conversation.id, error, Some(ClientName.withName(conversation.client)))
+              handleErrors(conversation.id, error, ClientName.withNameOption(conversation.client))
           }
         auditCreateConversation(
           "CreateQueryConversationSuccess",
@@ -108,7 +108,7 @@ class SecureMessageController @Inject() (
       withJsonBody[CaseworkerMessage] { caseworkerMessageRequest =>
         secureMessageService
           .addCaseWorkerMessageToConversation(
-            client.entryName,
+            client.toString,
             conversationId,
             caseworkerMessageRequest,
             randomId,
