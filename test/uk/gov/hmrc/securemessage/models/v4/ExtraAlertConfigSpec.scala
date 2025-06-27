@@ -45,13 +45,27 @@ class ExtraAlertConfigSpec extends PlaySpec {
             "mainTemplate"  -> "main1",
             "extraTemplate" -> "extra1",
             "delay"         -> "2H"
+          ),
+        "alertProfile.2" ->
+          Map(
+            "mainTemplate"  -> "main2",
+            "extraTemplate" -> "extra2",
+            "delay"         -> "2m"
+          ),
+        "alertProfile.3" ->
+          Map(
+            "mainTemplate"  -> "main3",
+            "extraTemplate" -> "extra3",
+            "delay"         -> "2s"
           )
       )
     )
     ExtraAlertConfig(config) must be(
       List(
         ExtraAlertConfig("main0", "extra0", Duration.ofSeconds(2 * 24 * 60 * 60)),
-        ExtraAlertConfig("main1", "extra1", Duration.ofSeconds(2 * 60 * 60))
+        ExtraAlertConfig("main1", "extra1", Duration.ofSeconds(2 * 60 * 60)),
+        ExtraAlertConfig("main2", "extra2", Duration.ofSeconds(2 * 60)),
+        ExtraAlertConfig("main3", "extra3", Duration.ofSeconds(2))
       )
     )
   }
