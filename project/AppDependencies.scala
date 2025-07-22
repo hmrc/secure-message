@@ -20,7 +20,7 @@ import sbt._
 object AppDependencies {
 
   private val bootstrapVersion = "9.13.0"
-  private val dcMessageLibraryVersion = "1.11.0"
+  private val dcMessageLibraryVersion = "1.12.0"
 
   val compile = Seq(
     caffeine,
