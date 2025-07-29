@@ -36,10 +36,11 @@ trait QueryStringValidation {
   ): Either[InvalidQueryStringException, QueryStringValidationSuccess] = {
     val cdsParams = queryString.keys.toList diff validCdsQueryParams
     val nonCdsParams = queryString.keys.toList diff validNonCdsQueryParams
+    val isQueryStringEmptyOrJustLang = queryString.keySet.isEmpty || queryString.keySet == Set("lang")
     (cdsParams, nonCdsParams) match {
-      case (_, _) if queryString.isEmpty => Right(ValidNonCDSQueryParameters)
-      case (List(), _)                   => Right(ValidCDSQueryParameters)
-      case (_, List())                   => Right(ValidNonCDSQueryParameters)
+      case (_, _) if isQueryStringEmptyOrJustLang => Right(ValidNonCDSQueryParameters)
+      case (List(), _)                            => Right(ValidCDSQueryParameters)
+      case (_, List())                            => Right(ValidNonCDSQueryParameters)
       case (invalidParams1: List[String], invalidParams2: List[String]) =>
         Left(InvalidQueryParameterException(invalidParams1 ++ invalidParams2))
     }
