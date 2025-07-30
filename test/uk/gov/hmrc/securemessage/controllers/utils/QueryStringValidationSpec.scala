@@ -36,6 +36,12 @@ class QueryStringValidationSpec extends PlaySpec with QueryStringValidation {
       result mustBe Right(ValidNonCDSQueryParameters)
     }
 
+    "confirm that the query is from non-CDS when there is just lang parameter" in {
+      val queryString: Map[String, Seq[String]] = Map("lang" -> Seq("en"))
+      val result = validateQueryParameters(queryString)
+      result mustBe Right(ValidNonCDSQueryParameters)
+    }
+
     "confirm that the query parameters are for CDS" in {
       val queryString: Map[String, Seq[String]] = Map(
         "enrolment" -> Seq("3"),

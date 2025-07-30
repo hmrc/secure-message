@@ -41,23 +41,6 @@ class GetMessagesISpec extends ISpec {
     }
   }
 
-  "A GET request to /secure-messaging/messages for a filtered query with language flag" should {
-
-    "return a JSON body of conversation metadata when no filters are provided by leveraging auth enrolments" in new TestClass {
-      val response =
-        wsClient
-          .url(resource("/secure-messaging/messages?lang=cy"))
-          .withHttpHeaders(buildEoriToken(VALID_EORI))
-          .get()
-          .futureValue
-
-      response.status mustBe 200
-      response.body must include("""senderName":"CDS Exports Team""")
-      response.body must include(""""count":1""")
-      response.body must include(""""subject":"D-80542-20201120"""")
-    }
-  }
-
   class TestClass {
     wsClient
       .url(resource("/secure-messaging/conversation/CDCM/D-80542-20201120"))
