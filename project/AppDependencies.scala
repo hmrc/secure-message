@@ -19,7 +19,7 @@ import sbt._
 
 object AppDependencies {
 
-  private val bootstrapVersion = "9.13.0"
+  private val bootstrapVersion = "10.0.0"
   private val dcMessageLibraryVersion = "1.13.0"
 
   val compile = Seq(
@@ -34,7 +34,7 @@ object AppDependencies {
 
   val test = Seq(
     "uk.gov.hmrc"         %% "bootstrap-test-play-30"  % bootstrapVersion        % Test,
-    "uk.gov.hmrc.mongo"   %% "hmrc-mongo-test-play-30" % "2.6.0"                 % Test,
+    "uk.gov.hmrc.mongo"   %% "hmrc-mongo-test-play-30" % "2.7.0"                 % Test,
     "org.scalatestplus"   %% "mockito-4-11"            % "3.2.18.0"              % Test,
     "uk.gov.hmrc"         %% "dc-message-library"      % dcMessageLibraryVersion % Test,
     "com.vladsch.flexmark" % "flexmark-all"            % "0.64.8"                % Test
