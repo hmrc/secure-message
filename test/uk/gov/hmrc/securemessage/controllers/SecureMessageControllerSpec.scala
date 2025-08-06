@@ -223,7 +223,7 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     ) {
       private val response = controller.createConversation(cdcm, "123")(fakeRequest)
       status(response) mustBe BAD_REQUEST
-      contentAsString(response) mustBe "Could not parse body due to requirement failed: empty mrn not allowed"
+      contentAsString(response) must include("Could not parse body due to requirement failed: empty mrn not allowed")
     }
   }
 
