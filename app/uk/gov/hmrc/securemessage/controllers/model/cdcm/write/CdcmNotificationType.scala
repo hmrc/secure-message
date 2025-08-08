@@ -16,14 +16,29 @@
 
 package uk.gov.hmrc.securemessage.controllers.model.cdcm.write
 
-import enumeratum.{ Enum, EnumEntry, PlayJsonEnum }
+import play.api.libs.json.*
 
-import scala.collection.immutable
+enum CdcmNotificationType(val entryName: String) {
+  case CDSExports extends CdcmNotificationType("CDS-EXPORTS")
+  case CDSImports extends CdcmNotificationType("CDS-IMPORTS")
+}
 
-sealed abstract class CdcmNotificationType(override val entryName: String) extends EnumEntry
+object CdcmNotificationType {
 
-object CdcmNotificationType extends Enum[CdcmNotificationType] with PlayJsonEnum[CdcmNotificationType] {
-  val values: immutable.IndexedSeq[CdcmNotificationType] = findValues
-  case object CDSExports extends CdcmNotificationType("CDS-EXPORTS")
-  case object CDSImports extends CdcmNotificationType("CDS-IMPORTS")
+  implicit val reads: Reads[CdcmNotificationType] = Reads {
+    case JsString(value) =>
+      withNameOption(value) match
+        case Some(nt) => JsSuccess(nt)
+        case None     => JsError(s"Unknown CdcmNotificationType: $value")
+    case _ => JsError("CdcmNotificationType must be a string")
+  }
+
+  implicit val writes: Writes[CdcmNotificationType] = Writes { nt =>
+    JsString(nt.entryName)
+  }
+
+  implicit val format: Format[CdcmNotificationType] = Format(reads, writes)
+
+  def withNameOption(name: String): Option[CdcmNotificationType] =
+    values.find(_.entryName == name)
 }

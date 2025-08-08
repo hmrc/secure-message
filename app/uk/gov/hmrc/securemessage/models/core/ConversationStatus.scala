@@ -16,19 +16,29 @@
 
 package uk.gov.hmrc.securemessage.models.core
 
-import enumeratum.EnumEntry.Lowercase
-import enumeratum.{ Enum, EnumEntry, PlayJsonEnum }
+import play.api.libs.json.*
 
-import scala.collection.immutable
+enum ConversationStatus {
+  case Open, Closed
+  def entryName: String = this.toString.toLowerCase
+}
 
-sealed trait ConversationStatus extends EnumEntry with Lowercase
+object ConversationStatus {
 
-object ConversationStatus extends Enum[ConversationStatus] with PlayJsonEnum[ConversationStatus] {
+  implicit val reads: Reads[ConversationStatus] = Reads {
+    case JsString(value) =>
+      values.find(_.entryName.equalsIgnoreCase(value)) match {
+        case Some(status) => JsSuccess(status)
+        case None         => JsError(s"Unknown ConversationStatus: $value")
+      }
+    case _ => JsError("ConversationStatus must be a string")
+  }
 
-  val values: immutable.IndexedSeq[ConversationStatus] = findValues
+  implicit val writes: Writes[ConversationStatus] = Writes { status =>
+    JsString(status.entryName)
+  }
 
-  case object Open extends ConversationStatus
-
-  case object Closed extends ConversationStatus
+  implicit val format: Format[ConversationStatus] =
+    Format(reads, writes)
 
 }

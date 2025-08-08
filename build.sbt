@@ -63,7 +63,6 @@ dependencyUpdatesFilter -= moduleFilter(organization = "com.github.ghik")
 dependencyUpdatesFilter -= moduleFilter(organization = "org.playframework")
 dependencyUpdatesFilter -= moduleFilter(organization = "org.scalatestplus.play")
 dependencyUpdatesFilter -= moduleFilter(organization = "org.webjars")
-dependencyUpdatesFilter -= moduleFilter(name = "enumeratum-play")
 dependencyUpdatesFilter -= moduleFilter(organization = "com.lucidchart")
 dependencyUpdatesFilter -= moduleFilter(name = "flexmark-all")
 

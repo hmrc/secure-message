@@ -16,24 +16,31 @@
 
 package uk.gov.hmrc.securemessage.models.core
 
-import enumeratum.EnumEntry.Lowercase
-import enumeratum.{ Enum, EnumEntry, PlayJsonEnum }
 import cats.kernel.Eq
+import play.api.libs.json.*
 
 import scala.collection.immutable
 
-sealed trait ParticipantType extends EnumEntry with Lowercase
+enum ParticipantType {
+  case System, Customer
 
-object ParticipantType extends Enum[ParticipantType] with PlayJsonEnum[ParticipantType] {
-
-  val values: immutable.IndexedSeq[ParticipantType] = findValues
-
-  case object System extends ParticipantType {
-    implicit val eqSystem: Eq[System] = Eq.fromUniversalEquals
-  }
-
-  case object Customer extends ParticipantType {
-    implicit val eqCustomer: Eq[ParticipantType] = Eq.fromUniversalEquals
-  }
+  def entryName: String = this.toString.toLowerCase
 
 }
+
+object ParticipantType:
+
+  def withNameInsensitiveOption(name: String): Option[ParticipantType] =
+    values.find(_.entryName.equalsIgnoreCase(name))
+
+  implicit val reads: Reads[ParticipantType] = Reads {
+    case JsString(value) =>
+      withNameInsensitiveOption(value) match
+        case Some(pt) => JsSuccess(pt)
+        case None     => JsError(s"Unknown ParticipantType: $value")
+    case _ => JsError("ParticipantType must be a string")
+  }
+
+  implicit val writes: Writes[ParticipantType] = Writes { pt =>
+    JsString(pt.entryName)
+  }
