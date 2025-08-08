@@ -43,7 +43,6 @@ import uk.gov.hmrc.securemessage.controllers.model.common.write.CustomerMessage
 import uk.gov.hmrc.securemessage.controllers.{ Auditing, SecureMessageUtil }
 import uk.gov.hmrc.securemessage.handlers.MessageReadRequest
 import uk.gov.hmrc.securemessage.models.*
-import uk.gov.hmrc.securemessage.models.core.ParticipantType.Customer.eqCustomer
 import uk.gov.hmrc.securemessage.models.core.ParticipantType.Customer as PCustomer
 import uk.gov.hmrc.securemessage.models.core.{ CustomerEnrolment, * }
 import uk.gov.hmrc.securemessage.models.v4.{ Content, SecureMessage }
@@ -291,7 +290,7 @@ class SecureMessageServiceImpl @Inject() (
   private def addMissingEmails(
     participants: List[Participant]
   )(implicit hc: HeaderCarrier, ec: ExecutionContext): EitherT[Future, SecureMessageError, GroupedParticipants] = {
-    val (customers, systems) = participants.partition(_.participantType === PCustomer)
+    val (customers, systems) = participants.partition(_.participantType == PCustomer)
     val (noEmailCustomers, emailCustomers) = customers.partition(_.email.isEmpty)
     val result = for {
       customersWithEmail <- lookupEmail(noEmailCustomers)
@@ -372,7 +371,7 @@ class SecureMessageServiceImpl @Inject() (
     id: ObjectId
   )(implicit hc: HeaderCarrier, ec: ExecutionContext, messages: Messages): Future[Option[String]] =
     getMessage(
-      MessageReadRequest(MessageType.withName(Letter.entryName), Enrolments(Set.empty[Enrolment]), id.toString)
+      MessageReadRequest(MessageType.withName(Letter.toString), Enrolments(Set.empty[Enrolment]), id.toString)
     ) map {
       case Left(e) =>
         logger.warn(s"Failed to retrieve message with id: ${id.toString}. Error: ${e.message}")

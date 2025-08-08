@@ -16,15 +16,36 @@
 
 package uk.gov.hmrc.securemessage.controllers.model
 
-import enumeratum.EnumEntry.Lowercase
-import enumeratum.{ Enum, EnumEntry, PlayJsonEnum }
+import play.api.libs.json.*
 
-import scala.collection.immutable
+enum MessageType {
+  case Conversation, Letter
+  def entryName: String = this.toString.toLowerCase
+}
 
-sealed trait MessageType extends EnumEntry with Lowercase
+object MessageType {
 
-object MessageType extends Enum[MessageType] with PlayJsonEnum[MessageType] {
-  val values: immutable.IndexedSeq[MessageType] = findValues
-  case object Conversation extends MessageType
-  case object Letter extends MessageType
+  def withName(name: String): MessageType =
+    values
+      .find(_.entryName == name)
+      .getOrElse(throw new NoSuchElementException(s"$name is not a valid MessageType"))
+
+  def withNameOption(name: String): Option[MessageType] =
+    values.find(_.entryName == name)
+
+  implicit val reads: Reads[MessageType] = Reads {
+    case JsString(value) =>
+      values.find(_.toString.equalsIgnoreCase(value)) match {
+        case Some(mt) => JsSuccess(mt)
+        case None     => JsError(s"Unknown MessageType: $value")
+      }
+    case _ => JsError("MessageType must be a string")
+  }
+
+  implicit val writes: Writes[MessageType] = Writes { mt =>
+    JsString(mt.toString.toLowerCase)
+  }
+
+  implicit val format: Format[MessageType] =
+    Format(reads, writes)
 }
