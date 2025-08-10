@@ -26,7 +26,8 @@ import org.scalatest.EitherValues
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
-import play.api.i18n.Messages
+import play.api.i18n.{ Lang, Messages, MessagesApi }
+import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{ JsObject, Json }
 import play.api.mvc.AnyContentAsEmpty
 import play.api.test.FakeRequest
@@ -60,6 +61,9 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
 
   val dtf: DateTimeFormatter =
     DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS").withZone(ZoneId.from(ZoneOffset.UTC))
+
+  val app = new GuiceApplicationBuilder().build()
+  val messagesApi: MessagesApi = app.injector.instanceOf[MessagesApi]
 
   "createConversation" must {
 
@@ -371,6 +375,77 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
           .getLetter(new ObjectId(), Set(CustomerEnrolment("HMRC-CUS_ORG", "EORIName", "GB7777777777")))
       )
       result.left.value.message mustBe "cant store readTime"
+    }
+  }
+
+  "getContentBy when both English/Welsh contents are available" should {
+    val v4JsonMessageBoth: JsObject =
+      Resources.readJson("model/core/v4/valid_message.json").as[JsObject] + ("_id" -> Json
+        .toJson(new ObjectId))
+    val v4MessageBoth: SecureMessage = v4JsonMessageBoth.as[SecureMessage]
+
+    "return English content when language set as English" in {
+      implicit val messages: Messages = messagesApi.preferred(Seq(Lang("en")))
+      when(mockSecureMessageUtil.findById(any[ObjectId])).thenReturn(Future(Some(v4MessageBoth)))
+      val result = await(service.getContentBy(new ObjectId())).get
+      result must include("""<h1 lang="en" class="govuk-heading-xl">Reminder to file a Self Assessment return</h1>""")
+    }
+
+    "return Welsh content when language set as Welsh" in {
+      implicit val messages: Messages = messagesApi.preferred(Seq(Lang("cy")))
+      when(mockSecureMessageUtil.findById(any[ObjectId])).thenReturn(Future(Some(v4MessageBoth)))
+      val result = await(service.getContentBy(new ObjectId())).get
+      result must include(
+        """<h1 lang="cy" class="govuk-heading-xl">Nodyn atgoffa i ffeilio ffurflen Hunanasesiad</h1>"""
+      )
+    }
+  }
+
+  "getContentBy when only English content is available" should {
+    val v4JsonMessageEnglish: JsObject =
+      Resources.readJson("model/core/v4/valid_message_english_only_content.json").as[JsObject] + ("_id" -> Json
+        .toJson(new ObjectId))
+    val v4MessageEnglish: SecureMessage = v4JsonMessageEnglish.as[SecureMessage]
+
+    "return English content when language set as English" in {
+      implicit val messages: Messages = messagesApi.preferred(Seq(Lang("en")))
+      when(mockSecureMessageUtil.findById(any[ObjectId])).thenReturn(Future(Some(v4MessageEnglish)))
+      val result = await(service.getContentBy(new ObjectId())).get
+      result must include("""<h1 lang="en" class="govuk-heading-xl">Reminder to file a Self Assessment return</h1>""")
+    }
+
+    "return English content even when language is set as Welsh" in {
+      implicit val messages: Messages = messagesApi.preferred(Seq(Lang("cy")))
+      when(mockSecureMessageUtil.findById(any[ObjectId])).thenReturn(Future(Some(v4MessageEnglish)))
+      val result = await(service.getContentBy(new ObjectId())).get
+      result must not include """<h1 lang="cy" class="govuk-heading-xl">Reminder to file a Self Assessment return</h1>"""
+      result must include("""<h1 lang="en" class="govuk-heading-xl">Reminder to file a Self Assessment return</h1>""")
+    }
+  }
+
+  "getContentBy when only Welsh content is available" should {
+    val v4JsonMessageWelsh: JsObject =
+      Resources.readJson("model/core/v4/valid_message_welsh_only_content.json").as[JsObject] + ("_id" -> Json
+        .toJson(new ObjectId))
+    val v4MessageWelsh: SecureMessage = v4JsonMessageWelsh.as[SecureMessage]
+
+    "return Welsh content when language set as Welsh" in {
+      implicit val messages: Messages = messagesApi.preferred(Seq(Lang("cy")))
+      when(mockSecureMessageUtil.findById(any[ObjectId])).thenReturn(Future(Some(v4MessageWelsh)))
+      val result = await(service.getContentBy(new ObjectId())).get
+      result must include(
+        """<h1 lang="cy" class="govuk-heading-xl">Nodyn atgoffa i ffeilio ffurflen Hunanasesiad</h1>"""
+      )
+    }
+
+    "return Welsh content even when language is set as English" in {
+      implicit val messages: Messages = messagesApi.preferred(Seq(Lang("en")))
+      when(mockSecureMessageUtil.findById(any[ObjectId])).thenReturn(Future(Some(v4MessageWelsh)))
+      val result = await(service.getContentBy(new ObjectId())).get
+      result must include(
+        """<h1 lang="cy" class="govuk-heading-xl">Nodyn atgoffa i ffeilio ffurflen Hunanasesiad</h1>"""
+      )
+      result must not include """<h1 lang="en" class="govuk-heading-xl">Nodyn atgoffa i ffeilio ffurflen Hunanasesiad</h1>"""
     }
   }
 
