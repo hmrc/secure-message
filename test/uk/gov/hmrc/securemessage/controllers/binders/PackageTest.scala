@@ -53,7 +53,6 @@ class PackageTest extends PlaySpec {
     }
 
     "return an error if the tag enrolment parameter is incorrectly formatted" in {
-      2
       queryStringBindableTag.bind("", Map("tag" -> List("notifcation~type~DirectDEBIT"))) mustBe
         Some(Left("Unable to bind a Tag"))
     }

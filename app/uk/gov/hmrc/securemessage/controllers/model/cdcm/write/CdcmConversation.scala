@@ -64,8 +64,8 @@ final case class CdcmConversation(
 
   private def getLanguage(maybeLanguage: Option[String]): Language =
     maybeLanguage match {
-      case Some(lang) => Language.withNameInsensitiveOption(lang).getOrElse(Language.English)
-      case _          => Language.English
+      case Some("cy") | Some("CY") => Language.Welsh
+      case _                       => Language.English
 
     }
   private def getSenderParticipant(client: String, conversationId: String, senderSystem: CdcmSystem): Participant =

@@ -19,7 +19,7 @@ package uk.gov.hmrc.securemessage.controllers
 import org.bson.types.ObjectId
 import play.api.libs.json.JsString
 import play.api.mvc.{ PathBindable, QueryStringBindable }
-import uk.gov.hmrc.common.message.model.Language.English
+import uk.gov.hmrc.common.message.model.Language.{ English, Welsh }
 import uk.gov.hmrc.common.message.model.{ Language, Regime }
 import uk.gov.hmrc.securemessage.controllers.model.ClientName
 import uk.gov.hmrc.securemessage.models.{ JourneyStep, SecureMessageUrlStep }
@@ -49,8 +49,8 @@ package object binders {
 
       override def bind(key: String, params: Map[String, Seq[String]]): Option[Either[String, Language]] =
         stringBinder.bind("lang", params) map {
-          case Right(language) => Right(Language.namesToValuesMap.getOrElse(language, English))
-          case _               => Right(English)
+          case Right("cy") | Right("CY") => Right(Welsh)
+          case _                         => Right(English)
         }
 
       override def unbind(key: String, language: Language): String = language.entryName
