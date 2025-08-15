@@ -123,7 +123,6 @@ object ApiConversation {
       }
     )
 
-  implicit val languageWrites: Writes[Language] = Language.languageWrites
   implicit val conversationFormat: Format[ApiConversation] =
     Json.format[ApiConversation]
 }
