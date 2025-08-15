@@ -49,8 +49,8 @@ package object binders {
 
       override def bind(key: String, params: Map[String, Seq[String]]): Option[Either[String, Language]] =
         stringBinder.bind("lang", params) map {
-          case Right("cy") | Right("CY") => Right(Welsh)
-          case _                         => Right(English)
+          case Right(language) if language.toLowerCase == "cy" => Right(Welsh)
+          case _                                               => Right(English)
         }
 
       override def unbind(key: String, language: Language): String = language.entryName
