@@ -25,7 +25,7 @@ import play.api.Application
 import play.api.http.{ HeaderNames, Status }
 import play.api.inject.*
 import play.api.inject.guice.GuiceApplicationBuilder
-import uk.gov.hmrc.common.message.model.TaxEntity.{ HmceVatdecOrg, HmrcAdOrg, HmrcCusOrg, HmrcIossOrg, HmrcOssOrg, HmrcPodsOrg, HmrcPodsPpOrg, HmrcPptOrg }
+import uk.gov.hmrc.common.message.model.TaxEntity.{ HmceVatdecOrg, HmrcAdOrg, HmrcCusOrg, HmrcIossInt, HmrcIossOrg, HmrcOssOrg, HmrcPodsOrg, HmrcPodsPpOrg, HmrcPptOrg }
 import uk.gov.hmrc.domain.*
 import uk.gov.hmrc.http.{ Authorization, HeaderCarrier, UpstreamErrorResponse }
 import uk.gov.hmrc.mongo.metrix.MetricOrchestrator
@@ -654,6 +654,42 @@ class AuthIdentifiersConnectorSpec
 
       authConnector.currentEffectiveTaxIdentifiers.futureValue must be(
         Set(HmrcIossOrg("example HMRC-IOSS-ORG"))
+      )
+    }
+
+    "get the tax ids for only HMRC-IOSS-INT enrolment " in new TestCase {
+
+      val responseBody =
+        """
+          |{
+          |  "allEnrolments": [
+          |    {
+          |      "key": "HMRC-IOSS-INT",
+          |      "identifiers": [
+          |        {
+          |          "key": "IntNumber",
+          |          "value": "IN9001234567"
+          |        }
+          |      ],
+          |      "state": "Activated",
+          |      "confidenceLevel": 200
+          |    }
+          |  ]
+          |}
+                             """.stripMargin
+
+      givenThat(
+        post(urlEqualTo("/auth/authorise"))
+          .withHeader(HeaderNames.AUTHORIZATION, equalTo(authToken))
+          .willReturn(
+            aResponse()
+              .withStatus(Status.OK)
+              .withBody(responseBody)
+          )
+      )
+
+      authConnector.currentEffectiveTaxIdentifiers.futureValue must be(
+        Set(HmrcIossInt("IN9001234567"))
       )
     }
 

@@ -20,7 +20,7 @@ import uk.gov.hmrc.auth.core
 import uk.gov.hmrc.auth.core.AuthProvider.PrivilegedApplication
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.auth.core.{ Nino as _, * }
-import uk.gov.hmrc.common.message.model.TaxEntity.{ Epaye, HmceVatdecOrg, HmrcAdOrg, HmrcCusOrg, HmrcIossOrg, HmrcOssOrg, HmrcPodsOrg, HmrcPodsPpOrg, HmrcPptOrg }
+import uk.gov.hmrc.common.message.model.TaxEntity.{ Epaye, HmceVatdecOrg, HmrcAdOrg, HmrcCusOrg, HmrcIossInt, HmrcIossOrg, HmrcOssOrg, HmrcPodsOrg, HmrcPodsPpOrg, HmrcPptOrg }
 import uk.gov.hmrc.domain.TaxIds.*
 import uk.gov.hmrc.domain.*
 import uk.gov.hmrc.http.HeaderCarrier
@@ -63,6 +63,7 @@ class AuthIdentifiersConnector @Inject() (
       case "HMRC-PODS-ORG"   => taxIdValue.map(HmrcPodsOrg.apply)
       case "HMRC-PODSPP-ORG" => taxIdValue.map(HmrcPodsPpOrg.apply)
       case "HMRC-IOSS-ORG"   => taxIdValue.map(HmrcIossOrg.apply)
+      case "HMRC-IOSS-INT"   => taxIdValue.map(HmrcIossInt.apply)
       case "HMRC-OSS-ORG"    => taxIdValue.map(HmrcOssOrg.apply)
       case "HMRC-AD-ORG"     => taxIdValue.map(HmrcAdOrg.apply)
       case _                 => None
@@ -98,6 +99,7 @@ class AuthIdentifiersConnector @Inject() (
             case "HMRC-PODS-ORG"   => Set(taxId, HmrcPodsOrg(taxId.value))
             case "HMRC-PODSPP-ORG" => Set(taxId, HmrcPodsPpOrg(taxId.value))
             case "HMRC-IOSS-ORG"   => Set(taxId, HmrcIossOrg(taxId.value))
+            case "HMRC-IOSS-INT"   => Set(taxId, HmrcIossInt(taxId.value))
             case "HMRC-OSS-ORG"    => Set(taxId) ++ identifierSet[HmrcOssOrg](taxId.value)(HmrcOssOrg.apply)
             case "HMRC-AD-ORG"     => Set(taxId, HmrcAdOrg(taxId.value))
             case "VRN"             => identifierSet[Vrn](taxId.value)(Vrn.apply)
