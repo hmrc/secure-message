@@ -19,7 +19,7 @@ package uk.gov.hmrc.securemessage.models.v4
 import java.time.{ Instant, LocalDate }
 import org.mongodb.scala.bson.ObjectId
 import play.api.libs.json.{ Format, JsError, JsSuccess, Json, OFormat, Reads, Writes, __ }
-import uk.gov.hmrc.common.message.model.TaxEntity.{ Epaye, HmceVatdecOrg, HmrcAdOrg, HmrcCusOrg, HmrcIossOrg, HmrcOssOrg, HmrcPodsOrg, HmrcPodsPpOrg, HmrcPptOrg }
+import uk.gov.hmrc.common.message.model.TaxEntity.{ Epaye, HmceVatdecOrg, HmrcAdOrg, HmrcCusOrg, HmrcIossInt, HmrcIossOrg, HmrcOssOrg, HmrcPodsOrg, HmrcPodsPpOrg, HmrcPptOrg }
 import uk.gov.hmrc.common.message.model.EmailAlert
 import uk.gov.hmrc.domain.{ SerialisableTaxId, TaxIds }
 import uk.gov.hmrc.domain.TaxIds.TaxIdWithName
@@ -46,6 +46,7 @@ object SecureMessageMongoFormat {
         :+ SerialisableTaxId("HMCE-VATDEC-ORG", HmceVatdecOrg.apply)
         :+ SerialisableTaxId("HMRC-CUS-ORG", HmrcCusOrg.apply)
         :+ SerialisableTaxId("HMRC-IOSS-ORG", HmrcIossOrg.apply)
+        :+ SerialisableTaxId("HMRC-IOSS-INT", HmrcIossInt.apply)
         :+ SerialisableTaxId("HMRC-OSS-ORG", HmrcOssOrg.apply)
         :+ SerialisableTaxId("HMRC-AD-ORG", HmrcAdOrg.apply)
         :+ SerialisableTaxId("ETMPREGISTRATIONNUMBER", HmrcPptOrg.apply)
