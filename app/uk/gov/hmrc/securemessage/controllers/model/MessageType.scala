@@ -24,7 +24,7 @@ enum MessageType {
 }
 
 object MessageType {
- 
+
   def withName(name: String): MessageType =
     values
       .find(_.toString.equalsIgnoreCase(name))
