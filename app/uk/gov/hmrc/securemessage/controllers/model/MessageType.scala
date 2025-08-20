@@ -27,11 +27,11 @@ object MessageType {
 
   def withName(name: String): MessageType =
     values
-      .find(_.entryName == name)
+      .find(_.toString.equalsIgnoreCase(name))
       .getOrElse(throw new NoSuchElementException(s"$name is not a valid MessageType"))
 
   def withNameOption(name: String): Option[MessageType] =
-    values.find(_.entryName == name)
+    values.find(_.toString.equalsIgnoreCase(name))
 
   implicit val reads: Reads[MessageType] = Reads {
     case JsString(value) =>
