@@ -1,1 +1,1 @@
-POST    /messages                   uk.gov.hmrc.securemessage.controllers.MessageController.createMessageForV3()
+POST    /messages                   uk.gov.hmrc.securemessage.controllers.message.MessageController.createMessageForV3()

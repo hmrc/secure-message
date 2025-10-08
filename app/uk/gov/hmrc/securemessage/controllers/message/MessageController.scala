@@ -14,25 +14,25 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.securemessage.controllers
+package uk.gov.hmrc.securemessage.controllers.message
 
-import play.api.Logging
-import play.api.libs.json.*
-import play.api.mvc.{ Action, AnyContentAsJson, ControllerComponents, Request, Result }
-import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.common.message.util.SecureMessageUtil
-import play.api.libs.functional.syntax.*
-import uk.gov.hmrc.common.message.DateValidationException
-import uk.gov.hmrc.common.message.model.{ AlertEmailTemplateMapper, * }
-
-import java.time.LocalDate
-import java.security.MessageDigest
 import org.apache.commons.codec.binary.Base64
 import org.bson.types.ObjectId
+import play.api.Logging
+import play.api.libs.functional.syntax.*
+import play.api.libs.json.*
+import play.api.mvc.*
+import uk.gov.hmrc.common.message.DateValidationException
 import uk.gov.hmrc.common.message.failuremodule.FailureResponseService.errorResponseResult
+import uk.gov.hmrc.common.message.model.*
+import uk.gov.hmrc.common.message.util.SecureMessageUtil as DCMLSecureMessageUtil
 import uk.gov.hmrc.common.message.validationmodule.MessageValidator.isValidMessage
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+import uk.gov.hmrc.securemessage.controllers.{ SecureMessageController, SecureMessageUtil }
 
+import java.security.MessageDigest
+import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import javax.inject.{ Inject, Singleton }
 import scala.concurrent.{ ExecutionContext, Future }
@@ -72,13 +72,13 @@ class MessageController @Inject() (
 
       case Failure(e) => Future.successful(buildBadRequest(s"could not parse body due to ${e.getMessage}"))
     }
-  import uk.gov.hmrc.securemessage.controllers.MessageV3Format.*
+  import MessageV3Format.*
   def createMessageForV3(): Action[JsValue] =
     Action.async(parse.json) { implicit request =>
       withJsonBody[Message] { message =>
         isValidMessage(message) match {
           case Success(_) =>
-            val v4RequestBody = AnyContentAsJson(SecureMessageUtil.createSecureMessage(request.body))
+            val v4RequestBody = AnyContentAsJson(DCMLSecureMessageUtil.createSecureMessage(request.body))
             secureMessageController.createMessage()(request.withBody(v4RequestBody))
 
           case Failure(e) =>
