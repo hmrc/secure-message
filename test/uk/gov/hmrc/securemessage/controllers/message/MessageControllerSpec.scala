@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.securemessage
+package uk.gov.hmrc.securemessage.controllers.message
 
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.testkit.NoMaterializer
@@ -27,16 +27,18 @@ import org.scalatestplus.play.PlaySpec
 import play.api.http.Status.*
 import play.api.i18n.Messages
 import play.api.libs.json.JsValue
-import play.api.mvc.{ Action, AnyContent, AnyContentAsJson, BaseControllerHelpers, ControllerComponents, DefaultActionBuilder, Request, Result, Results }
+import play.api.mvc.*
 import play.api.test.Helpers.{ POST, defaultAwaitTimeout, status, stubMessages }
 import play.api.test.{ FakeHeaders, FakeRequest, Helpers }
+import uk.gov.hmrc.common.message.util.SecureMessageUtil as commonUtil
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.securemessage.controllers.{ MessageController, SecureMessageController, SecureMessageUtil }
+import uk.gov.hmrc.securemessage.UnitTest
+import uk.gov.hmrc.securemessage.controllers.message.MessageController
+import uk.gov.hmrc.securemessage.controllers.{ SecureMessageController, SecureMessageUtil }
 import uk.gov.hmrc.securemessage.helpers.Resources
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ ExecutionContext, Future }
-import uk.gov.hmrc.common.message.util.SecureMessageUtil as commonUtil
 
 class MessageControllerSpec extends PlaySpec with ScalaFutures with MockitoSugar with OptionValues with UnitTest {
 
