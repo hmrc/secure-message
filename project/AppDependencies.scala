@@ -24,17 +24,17 @@ object AppDependencies {
 
   val compile = Seq(
     caffeine,
-    "uk.gov.hmrc"   %% "bootstrap-backend-play-30" % bootstrapVersion,
-    "uk.gov.hmrc"   %% "dc-message-library"        % dcMessageLibraryVersion,
-    "org.typelevel" %% "cats-core"                 % "2.12.0",
-    "com.networknt" % "json-schema-validator" % "1.4.3" excludeAll ("com.fasterxml.jackson.core", "jackson-databind"),
-    "org.jsoup"     % "jsoup"                 % "1.17.2",
-    "net.codingwell" %% "scala-guice" % "6.0.0"
+    "uk.gov.hmrc"    %% "bootstrap-backend-play-30" % bootstrapVersion,
+    "uk.gov.hmrc"    %% "dc-message-library"        % dcMessageLibraryVersion,
+    "org.typelevel"  %% "cats-core"                 % "2.13.0",
+    "com.networknt"  %  "json-schema-validator"     % "1.5.9" excludeAll ("com.fasterxml.jackson.core", "jackson-databind"),
+    "org.jsoup"      %  "jsoup"                     % "1.21.2",
+    "net.codingwell" %% "scala-guice"               % "6.0.0"
   )
 
   val test = Seq(
     "uk.gov.hmrc"         %% "bootstrap-test-play-30"  % bootstrapVersion        % Test,
-    "uk.gov.hmrc.mongo"   %% "hmrc-mongo-test-play-30" % "2.7.0"                 % Test,
+    "uk.gov.hmrc.mongo"   %% "hmrc-mongo-test-play-30" % "2.9.0"                 % Test,
     "org.scalatestplus"   %% "mockito-4-11"            % "3.2.18.0"              % Test,
     "uk.gov.hmrc"         %% "dc-message-library"      % dcMessageLibraryVersion % Test,
     "com.vladsch.flexmark" % "flexmark-all"            % "0.64.8"                % Test

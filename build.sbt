@@ -52,6 +52,12 @@ lazy val it = project
   .enablePlugins(PlayScala)
   .dependsOn(microservice % "test->test") // the "test->test" allows reusing test code and test dependencies
   .settings(DefaultBuildSettings.itSettings())
+  .settings(
+    scalacOptions ++= List(
+      // Silence "Flag -XXX set repeatedly"
+      "-Wconf:msg=Flag.*repeatedly:s"
+    )
+  )
 
 PlayKeys.playDefaultPort := 9051
 

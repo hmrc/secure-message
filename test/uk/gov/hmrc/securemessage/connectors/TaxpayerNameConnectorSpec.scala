@@ -179,13 +179,15 @@ class TaxpayerNameConnectorSpec
   val mockHttp = mock[HttpClientV2]
   val requestBuilder = mock[RequestBuilder]
   val underlyingConfig = ConfigFactory.load()
-  val configuration = Configuration(underlyingConfig) ++ Configuration.from(
-    Map(
-      "microservice.services.taxpayer-data.host"     -> "host",
-      "microservice.services.taxpayer-data.port"     -> 443,
-      "microservice.services.taxpayer-data.protocol" -> "https"
-    )
-  )
+  val configuration =
+    Configuration(underlyingConfig)
+      .withFallback(
+        Configuration(
+          "microservice.services.taxpayer-data.host"     -> "host",
+          "microservice.services.taxpayer-data.port"     -> 443,
+          "microservice.services.taxpayer-data.protocol" -> "https"
+        )
+      )
   val serviceCOnfig = ServicesConfig(configuration)
 
   val connector = new TaxpayerNameConnector(mockHttp, serviceCOnfig)
@@ -223,7 +225,7 @@ trait LogCapturing {
 //    appender.setContext(logger.getLoggerContext)
     appender.start()
     logger.addAppender(appender)
-    logger.setLevel(Level.ALL)
+    logger.setLevel(Level.TRACE)
     logger.setAdditive(true)
     body(appender.list.asScala.toList)
   }
