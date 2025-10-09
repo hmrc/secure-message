@@ -19,9 +19,9 @@ package uk.gov.hmrc.securemessage.services
 import org.apache.pekko.Done
 import com.google.inject.AbstractModule
 import net.codingwell.scalaguice.ScalaModule
-import org.mockito.ArgumentMatchers.{ eq => eqTo }
-import org.mockito.Mockito._
-import org.scalatest.concurrent.{ IntegrationPatience, ScalaFutures }
+import org.mockito.ArgumentMatchers.eq as eqTo
+import org.mockito.Mockito.*
+import org.scalatest.concurrent.{ Eventually, IntegrationPatience, ScalaFutures }
 import org.scalatest.{ BeforeAndAfterEach, LoneElement }
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
@@ -39,12 +39,12 @@ import uk.gov.hmrc.securemessage.services.utils.MetricOrchestratorStub
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.reflect.ClassTag
 
 class MessageBrakeServiceSpec
     extends PlaySpec with BeforeAndAfterEach with GuiceOneAppPerSuite with ScalaFutures with IntegrationPatience
-    with MetricOrchestratorStub with LoneElement with MockitoSugar {
+    with MetricOrchestratorStub with LoneElement with MockitoSugar with Eventually {
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
@@ -151,9 +151,11 @@ class MessageBrakeServiceSpec
         val result = service.addFormIdToAllowlist(allowlistUpdateRequest).futureValue
         result.get.formIdList mustBe List("TEST10", "TEST11", "TEST12")
 
-        cache.get[Allowlist]("brake-gmc-allowlist").futureValue.get mustBe Some(
-          Allowlist(List("TEST10", "TEST11", "TEST12"))
-        )
+        eventually {
+          cache.get[Allowlist]("brake-gmc-allowlist").futureValue.get mustBe Some(
+            Allowlist(List("TEST10", "TEST11", "TEST12"))
+          )
+        }
       }
 
       "add a form id to a non-existing collection must update the cache and the database with an uppercased default version" in new TestCase {
@@ -168,7 +170,9 @@ class MessageBrakeServiceSpec
         val result = service.addFormIdToAllowlist(allowlistUpdateRequest).futureValue
         result.get.formIdList mustBe newAllowlist
 
-        cache.get[Allowlist]("brake-gmc-allowlist").futureValue.get mustBe Some(Allowlist(newAllowlist))
+        eventually {
+          cache.get[Allowlist]("brake-gmc-allowlist").futureValue.get mustBe Some(Allowlist(newAllowlist))
+        }
       }
     }
 
@@ -185,9 +189,11 @@ class MessageBrakeServiceSpec
         val result = service.addFormIdToAllowlist(allowlistUpdateRequest).futureValue
         result.get.formIdList mustBe List("TEST10", "TEST11", "TEST12")
 
-        cache.get[Allowlist]("brake-gmc-allowlist").futureValue.get mustBe Some(
-          Allowlist(List("TEST10", "TEST11", "TEST12"))
-        )
+        eventually {
+          cache.get[Allowlist]("brake-gmc-allowlist").futureValue.get mustBe Some(
+            Allowlist(List("TEST10", "TEST11", "TEST12"))
+          )
+        }
       }
 
       "remove a form id from a non-existing collection must update the cache and the database with the default version" in new TestCase {
@@ -202,14 +208,16 @@ class MessageBrakeServiceSpec
         val result = service.deleteFormIdFromAllowlist(allowlistUpdateRequest).futureValue
         result.get.formIdList mustBe allowlistWithoutSA359
 
-        cache.get[Allowlist]("brake-gmc-allowlist").futureValue.get mustBe Some(Allowlist(allowlistWithoutSA359))
+        eventually {
+          cache.get[Allowlist]("brake-gmc-allowlist").futureValue.get mustBe Some(Allowlist(allowlistWithoutSA359))
+        }
       }
     }
   }
 
   trait TestCase {
     reset(mockAllowlistRepository)
-    cache.removeAll()
+    cache.removeAll().futureValue
   }
 
   class InMemoryCache() extends AsyncCacheApi {
