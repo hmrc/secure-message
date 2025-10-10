@@ -18,7 +18,7 @@ package uk.gov.hmrc.securemessage.controllers
 
 import org.apache.commons.codec.binary.Base64
 import org.mockito.ArgumentMatchers.{ any, eq as meq }
-import org.mockito.Mockito.{ reset, verifyNoInteractions, when }
+import org.mockito.Mockito.{ doNothing, reset, verifyNoInteractions, when }
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
@@ -33,8 +33,15 @@ import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.v4.SecureMessage
 import uk.gov.hmrc.securemessage.repository.{ ExtraAlertRepository, SecureMessageRepository, StatsMetricRepository }
 import uk.gov.hmrc.securemessage.services.MessageBrakeService
-
+import play.api.test.FakeRequest
+import play.api.test.Helpers._
+import play.api.mvc.AnyContentAsEmpty
+import uk.gov.hmrc.play.audit.http.connector.AuditResult
+import uk.gov.hmrc.play.audit.model.EventTypes
+import play.api.libs.json.Json
 import scala.concurrent.{ ExecutionContext, Future }
+import uk.gov.hmrc.securemessage.models.v4.Content
+import uk.gov.hmrc.common.message.model.Language
 
 class SecureMessageUtilSpec extends PlaySpec with ScalaFutures with MockitoSugar with BeforeAndAfterEach {
   val appName: String = "Test"
@@ -140,6 +147,80 @@ class SecureMessageUtilSpec extends PlaySpec with ScalaFutures with MockitoSugar
       import java.time.LocalDate
       val date = LocalDate.of(2023, 12, 25)
       SecureMessageUtil.formatter(date) mustBe "25 December 2023"
+    }
+  }
+
+  "checkPreferencesAndCreateMessage" must {
+    import play.api.test.FakeRequest
+    import play.api.test.Helpers._
+    import play.api.mvc.AnyContentAsEmpty
+    import cats.data.EitherT
+    import uk.gov.hmrc.securemessage.connectors.{ EmailValidation, VerifiedEmailNotFound }
+
+    implicit val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
+
+    "return BAD_REQUEST when email is not verified" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val messageWithoutEmail = message.copy(recipient = message.recipient.copy(email = None))
+
+      when(
+        preferencesConnector
+          .verifiedEmailAddress(any[uk.gov.hmrc.common.message.model.TaxEntity]())(any[HeaderCarrier]())
+      )
+        .thenReturn(Future.successful(VerifiedEmailNotFound("NOT_OPTED_IN")))
+
+      val result = testUtil.checkPreferencesAndCreateMessage(messageWithoutEmail)
+      status(result) mustBe BAD_REQUEST
+      contentAsString(result) must include("email: not verified as user not opted in")
+    }
+
+    "return BAD_REQUEST when preferences connector returns PREFERENCES_NOT_FOUND" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val messageWithoutEmail = message.copy(recipient = message.recipient.copy(email = None))
+
+      when(
+        preferencesConnector
+          .verifiedEmailAddress(any[uk.gov.hmrc.common.message.model.TaxEntity]())(any[HeaderCarrier]())
+      )
+        .thenReturn(Future.successful(VerifiedEmailNotFound("PREFERENCES_NOT_FOUND")))
+
+      val result = testUtil.checkPreferencesAndCreateMessage(messageWithoutEmail)
+      status(result) mustBe BAD_REQUEST
+      contentAsString(result) must include("email: not verified as preferences not found")
+    }
+
+    "return NOT_FOUND when preferences connector returns EMAIL_ADDRESS_NOT_VERIFIED" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val messageWithoutEmail = message.copy(recipient = message.recipient.copy(email = None))
+
+      when(
+        preferencesConnector
+          .verifiedEmailAddress(any[uk.gov.hmrc.common.message.model.TaxEntity]())(any[HeaderCarrier]())
+      )
+        .thenReturn(Future.successful(VerifiedEmailNotFound("EMAIL_ADDRESS_NOT_VERIFIED")))
+
+      val result = testUtil.checkPreferencesAndCreateMessage(messageWithoutEmail)
+      status(result) mustBe NOT_FOUND
+      contentAsString(result) must include(
+        "The backend has rejected the message due to not being able to verify the email address"
+      )
+    }
+
+    "return NOT_FOUND when preferences connector throws exception" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val messageWithoutEmail = message.copy(recipient = message.recipient.copy(email = None))
+
+      when(
+        preferencesConnector
+          .verifiedEmailAddress(any[uk.gov.hmrc.common.message.model.TaxEntity]())(any[HeaderCarrier]())
+      )
+        .thenReturn(Future.failed(new RuntimeException("Connection error")))
+
+      val result = testUtil.checkPreferencesAndCreateMessage(messageWithoutEmail)
+      status(result) mustBe NOT_FOUND
+      contentAsString(result) must include(
+        "The backend has rejected the message due to not being able to verify the email address"
+      )
     }
   }
 
@@ -441,6 +522,146 @@ class SecureMessageUtilSpec extends PlaySpec with ScalaFutures with MockitoSugar
     }
   }
 
-  override def beforeEach(): Unit =
+  "cleanupContent" must {
+    "successfully clean up all content in the message" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val result = testUtil.cleanupContent(message).futureValue
+      result.content.size mustBe message.content.size
+    }
+
+    "clean HTML from subject and body" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val dirtySubject = "<script>alert('xss')</script>Clean Subject"
+      val dirtyBody = Base64.encodeBase64String("<div>Test</div>".getBytes("UTF-8"))
+      val dirtyContent = message.content.head.copy(subject = dirtySubject, body = dirtyBody)
+      val messageWithDirtyContent = message.copy(content = List(dirtyContent))
+
+      val result = testUtil.cleanupContent(messageWithDirtyContent).futureValue
+      result.content.head.subject must not include "<script>"
+    }
+  }
+
+  "cleanUpSubjectAndBody" must {
+    "clean up subject successfully" in {
+      val dirtySubject = "Clean <b>Subject</b>"
+      val body = "<p>Test Body</p>"
+      val content = Content(Language.English, dirtySubject, body)
+
+      val result = testUtil.cleanUpSubjectAndBody(content)
+      result.subject must not be empty
+      result.subject must include("Clean")
+      result.subject must include("Subject")
+    }
+
+    "clean up body successfully with allowed tags" in {
+      val subject = "Test Subject"
+      val dirtyBody = "<details><summary>Summary</summary><p>Content</p></details>"
+      val content = Content(Language.English, subject, dirtyBody)
+
+      val result = testUtil.cleanUpSubjectAndBody(content)
+      result.body must include("details")
+      result.body must include("summary")
+    }
+
+    "remove script tags from subject" in {
+      val dirtySubject = "Subject <script>alert('xss')</script>"
+      val body = "<p>Body</p>"
+      val content = Content(Language.English, dirtySubject, body)
+
+      val result = testUtil.cleanUpSubjectAndBody(content)
+      result.subject must not include "<script>"
+    }
+
+    "throw exception when subject cleaning fails" in {
+      val content = Content(Language.English, null, "body")
+      intercept[NullPointerException] {
+        testUtil.cleanUpSubjectAndBody(content)
+      }
+    }
+
+    "throw exception when body cleaning fails" in {
+      val subject = "Subject"
+      val content = Content(Language.English, subject, null)
+      intercept[NullPointerException] {
+        testUtil.cleanUpSubjectAndBody(content)
+      }
+    }
+  }
+
+  "auditCreateMessageFor" must {
+
+    implicit val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
+
+    "send audit event for succeeded message creation" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+
+      when(auditConnector.sendEvent(any())(any(), any())).thenReturn(Future.successful(AuditResult.Success))
+
+      testUtil.auditCreateMessageFor(EventTypes.Succeeded, message, "Message Created").futureValue
+    }
+
+    "send audit event for failed message creation" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+
+      when(auditConnector.sendEvent(any())(any(), any())).thenReturn(Future.successful(AuditResult.Success))
+
+      testUtil.auditCreateMessageFor(EventTypes.Failed, message, "Message Failed").futureValue
+    }
+
+    "include all message details in audit event" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+
+      when(auditConnector.sendEvent(any())(any(), any())).thenReturn(Future.successful(AuditResult.Success))
+
+      testUtil.auditCreateMessageFor(EventTypes.Succeeded, message, "Test Transaction").futureValue
+    }
+
+    "handle large request body by truncating content" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val largeBody = "x" * 200000
+      val largeFakeRequestWithJson = FakeRequest().withJsonBody(Json.obj("content" -> largeBody))
+
+      when(auditConnector.sendEvent(any())(any(), any())).thenReturn(Future.successful(AuditResult.Success))
+
+      testUtil
+        .auditCreateMessageFor(EventTypes.Succeeded, message, "Large Message")(hc, largeFakeRequestWithJson)
+        .futureValue
+    }
+
+    "handle audit connector returning Disabled status" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+
+      when(auditConnector.sendEvent(any())(any(), any())).thenReturn(Future.successful(AuditResult.Disabled))
+
+      testUtil.auditCreateMessageFor(EventTypes.Succeeded, message, "Message Created").futureValue
+    }
+
+    "handle audit connector returning Failure status" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+
+      when(auditConnector.sendEvent(any())(any(), any()))
+        .thenReturn(Future.successful(AuditResult.Failure("Audit failed", None)))
+
+      testUtil.auditCreateMessageFor(EventTypes.Failed, message, "Message Failed").futureValue
+    }
+
+    "include message content in audit event" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+
+      when(auditConnector.sendEvent(any())(any(), any())).thenReturn(Future.successful(AuditResult.Success))
+
+      val result = testUtil.auditCreateMessageFor(EventTypes.Succeeded, message, "Message Created").futureValue
+      result mustBe ()
+    }
+  }
+
+  override def beforeEach(): Unit = {
     reset(taxpayerNameConnector)
+    reset(preferencesConnector)
+    reset(secureMessageRepository)
+    reset(messageBrakeService)
+    reset(statsMetricRepository)
+    reset(auditConnector)
+    reset(extraAlertRepository)
+  }
 }
