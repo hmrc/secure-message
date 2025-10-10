@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 import uk.gov.hmrc.securemessage.metrics.{ MessageMain, MetricsLock }
 import uk.gov.hmrc.securemessage.repository.StatsMetricRepository
-import uk.gov.hmrc.securemessage.scheduler.{ EmailAlertJob, EmailAlertsStream, ExtraAlertsJob, ScheduledJob, StatsMetricResetJob }
+import uk.gov.hmrc.securemessage.scheduler.{ EmailAlertsStream, ExtraAlertsStream, StatsMetricResetStream }
 import uk.gov.hmrc.securemessage.services.{ SecureMessageService, SecureMessageServiceImpl }
 import uk.gov.hmrc.securemessage.utils.DateTimeUtils
 
@@ -44,26 +44,16 @@ class SecureMessageModule @Inject() (environment: Environment, configuration: Co
     extends AbstractModule with PekkoGuiceSupport {
 
   override def configure(): Unit = {
-    val useStream = configuration.getOptional[Boolean]("email.alerts.use-stream").getOrElse(false)
-
     bind(classOf[MessageMain]).asEagerSingleton()
     bind(classOf[DateTimeUtils]).to(classOf[TimeProvider])
     bind(classOf[SecureMessageService]).to(classOf[SecureMessageServiceImpl]).asEagerSingleton()
-    if (useStream) {
-      bind(classOf[EmailAlertsStream]).asEagerSingleton()
-    } else {
-      bindActor[EmailAlertJob]("EmailAlertJob-actor")
-    }
+
+    bind(classOf[EmailAlertsStream]).asEagerSingleton()
+    bind(classOf[ExtraAlertsStream]).asEagerSingleton()
+    bind(classOf[StatsMetricResetStream]).asEagerSingleton()
 
     super.configure()
   }
-
-  @Provides
-  @Singleton
-  def scheduledJobsProvider(
-    processExtraAlerts: ExtraAlertsJob,
-    statsMetricResetJob: StatsMetricResetJob
-  ): Seq[ScheduledJob] = Seq(processExtraAlerts, statsMetricResetJob)
 
   @Provides
   @Singleton
@@ -139,6 +129,7 @@ class SecureMessageModule @Inject() (environment: Environment, configuration: Co
       .getOrElse(throw new RuntimeException("mongodb.retryInProgressAfter not found in config"))
       .toMillis
       .toInt
+
   @Provides
   @Named("queryMaxTimeMs")
   @Singleton
@@ -152,9 +143,7 @@ class SecureMessageModule @Inject() (environment: Environment, configuration: Co
   @Provides
   @Named("invalid-template-ids-push-notifications")
   @Singleton
-  def invalidTemplateIdsForPushNotifications(
-    configuration: Configuration
-  ): List[String] =
+  def invalidTemplateIdsForPushNotifications(configuration: Configuration): List[String] =
     configuration
       .getOptional[Seq[String]]("invalidTemplateIdsForPushNotifications")
       .getOrElse(
@@ -175,12 +164,6 @@ class SecureMessageModule @Inject() (environment: Environment, configuration: Co
   @Singleton
   def isSecureMessageMetricsActive(configuration: Configuration): Boolean =
     configuration.getOptional[Boolean]("metrics.active").getOrElse(false)
-
-  @Provides
-  @Named("scheduledJobsEnabled")
-  @Singleton
-  def isScheduledJobsEnabled(configuration: Configuration): Boolean =
-    configuration.getOptional[Boolean]("scheduled-jobs.enabled").getOrElse(false)
 }
 
 class TimeProvider extends DateTimeUtils
