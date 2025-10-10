@@ -103,6 +103,344 @@ class SecureMessageUtilSpec extends PlaySpec with ScalaFutures with MockitoSugar
     }
   }
 
+  "isGmc" must {
+    "return true when source is 'gmc'" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val gmcMessage = message.copy(externalRef = message.externalRef.copy(source = "gmc"))
+      SecureMessageUtil.isGmc(gmcMessage) mustBe true
+    }
+
+    "return true when source is 'GMC' (case insensitive)" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val gmcMessage = message.copy(externalRef = message.externalRef.copy(source = "GMC"))
+      SecureMessageUtil.isGmc(gmcMessage) mustBe true
+    }
+
+    "return false when source is not 'gmc'" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      SecureMessageUtil.isGmc(message) mustBe false
+    }
+  }
+
+  "extractMessageDate" must {
+    "return issueDate when present in details" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val result = SecureMessageUtil.extractMessageDate(message)
+      result must not be empty
+    }
+
+    "return validFrom when issueDate is not present" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val messageWithoutIssueDate = message.copy(details = message.details.map(_.copy(issueDate = None)))
+      val result = SecureMessageUtil.extractMessageDate(messageWithoutIssueDate)
+      result mustBe SecureMessageUtil.formatter(message.validFrom)
+    }
+
+    "format date correctly" in {
+      import java.time.LocalDate
+      val date = LocalDate.of(2023, 12, 25)
+      SecureMessageUtil.formatter(date) mustBe "25 December 2023"
+    }
+  }
+
+  "isValidTaxIdentifier" must {
+    "return true for valid tax identifiers" in {
+      testUtil.isValidTaxIdentifier("nino") mustBe true
+      testUtil.isValidTaxIdentifier("sautr") mustBe true
+      testUtil.isValidTaxIdentifier("ctutr") mustBe true
+      testUtil.isValidTaxIdentifier("HMRC-OBTDS-ORG") mustBe true
+      testUtil.isValidTaxIdentifier("HMRC-MTD-VAT") mustBe true
+      testUtil.isValidTaxIdentifier("empRef") mustBe true
+      testUtil.isValidTaxIdentifier("HMCE-VATDEC-ORG") mustBe true
+      testUtil.isValidTaxIdentifier("HMRC-CUS-ORG") mustBe true
+      testUtil.isValidTaxIdentifier("HMRC-PPT-ORG") mustBe true
+      testUtil.isValidTaxIdentifier("HMRC-MTD-IT") mustBe true
+    }
+
+    "return false for invalid tax identifiers" in {
+      testUtil.isValidTaxIdentifier("invalid") mustBe false
+      testUtil.isValidTaxIdentifier("") mustBe false
+      testUtil.isValidTaxIdentifier("unknown-id") mustBe false
+    }
+  }
+
+  "checkValidSourceData" must {
+    "return success when sourceData is valid base64" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val validBase64 = Base64.encodeBase64String("test-data".getBytes("UTF-8"))
+      val messageWithSourceData = message.copy(details = message.details.map(_.copy(sourceData = Some(validBase64))))
+      testUtil.checkValidSourceData(messageWithSourceData).isSuccess mustBe true
+    }
+
+    "return failure when sourceData is empty string" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val messageWithEmptySourceData = message.copy(details = message.details.map(_.copy(sourceData = Some(""))))
+      testUtil.checkValidSourceData(messageWithEmptySourceData).isFailure mustBe true
+    }
+
+    "return failure when sourceData is not valid base64" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val messageWithInvalidSourceData =
+        message.copy(details = message.details.map(_.copy(sourceData = Some("not-base64!!!"))))
+      testUtil.checkValidSourceData(messageWithInvalidSourceData).isFailure mustBe true
+    }
+
+    "return success when sourceData is None for non-GMC messages" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val messageWithoutSourceData = message.copy(details = message.details.map(_.copy(sourceData = None)))
+      testUtil.checkValidSourceData(messageWithoutSourceData).isSuccess mustBe true
+    }
+  }
+
+  "checkDetailsIsPresent" must {
+    "return success when message is non-GMC" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      testUtil.checkDetailsIsPresent(message).isSuccess mustBe true
+    }
+
+    "return success when message is GMC and has formId in details" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val gmcMessage = message.copy(externalRef = message.externalRef.copy(source = "gmc"))
+      testUtil.checkDetailsIsPresent(gmcMessage).isSuccess mustBe true
+    }
+
+    "return failure when message is GMC and details has empty formId" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val gmcMessage = message.copy(
+        externalRef = message.externalRef.copy(source = "gmc"),
+        details = message.details.map(_.copy(formId = ""))
+      )
+      testUtil.checkDetailsIsPresent(gmcMessage).isFailure mustBe true
+    }
+  }
+
+  "checkEmptyEmailAddress" must {
+    "return success when email is not empty" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val messageWithEmail =
+        message.copy(alertDetails = message.alertDetails.copy(data = Map("email" -> "test@test.com")))
+      testUtil.checkEmptyEmailAddress(messageWithEmail).isSuccess mustBe true
+    }
+
+    "return success when email is not present" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      testUtil.checkEmptyEmailAddress(message).isSuccess mustBe true
+    }
+
+    "return failure when email is empty string" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val messageWithEmptyEmail = message.copy(alertDetails = message.alertDetails.copy(data = Map("email" -> "")))
+      testUtil.checkEmptyEmailAddress(messageWithEmptyEmail).isFailure mustBe true
+    }
+  }
+
+  "checkEmptyAlertQueue" must {
+    "return success when alertQueue is valid" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val messageWithAlertQueue = message.copy(alertQueue = Some("PRIORITY"))
+      testUtil.checkEmptyAlertQueue(messageWithAlertQueue).isSuccess mustBe true
+    }
+
+    "return success when alertQueue is None" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val messageWithoutAlertQueue = message.copy(alertQueue = None)
+      testUtil.checkEmptyAlertQueue(messageWithoutAlertQueue).isSuccess mustBe true
+    }
+
+    "return failure when alertQueue is empty string" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val messageWithEmptyAlertQueue = message.copy(alertQueue = Some(""))
+      testUtil.checkEmptyAlertQueue(messageWithEmptyAlertQueue).isFailure mustBe true
+    }
+  }
+
+  "checkValidIssueDate" must {
+    "return success when issueDate equals validFrom" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val messageWithMatchingDates =
+        message.copy(details = message.details.map(_.copy(issueDate = Some(message.validFrom))))
+      testUtil.checkValidIssueDate(messageWithMatchingDates).isSuccess mustBe true
+    }
+
+    "return success when issueDate is before validFrom" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val messageWithEarlierIssueDate =
+        message.copy(details = message.details.map(_.copy(issueDate = Some(message.validFrom.minusDays(1)))))
+      testUtil.checkValidIssueDate(messageWithEarlierIssueDate).isSuccess mustBe true
+    }
+
+    "return failure when issueDate is after validFrom" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val messageWithLaterIssueDate =
+        message.copy(details = message.details.map(_.copy(issueDate = Some(message.validFrom.plusDays(1)))))
+      testUtil.checkValidIssueDate(messageWithLaterIssueDate).isFailure mustBe true
+    }
+
+    "return success when issueDate is not present" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val messageWithoutIssueDate = message.copy(details = message.details.map(_.copy(issueDate = None)))
+      testUtil.checkValidIssueDate(messageWithoutIssueDate).isSuccess mustBe true
+    }
+  }
+
+  "checkInvalidEmailAddress" must {
+    "return success when email is valid" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val messageWithValidEmail = message.copy(recipient = message.recipient.copy(email = Some("test@example.com")))
+      testUtil.checkInvalidEmailAddress(messageWithValidEmail).isSuccess mustBe true
+    }
+
+    "return success when email is None" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val messageWithoutEmail = message.copy(recipient = message.recipient.copy(email = None))
+      testUtil.checkInvalidEmailAddress(messageWithoutEmail).isSuccess mustBe true
+    }
+
+    "return failure when email is invalid" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val messageWithInvalidEmail = message.copy(recipient = message.recipient.copy(email = Some("invalid-email")))
+      testUtil.checkInvalidEmailAddress(messageWithInvalidEmail).isFailure mustBe true
+    }
+  }
+
+  "checkEmailAbsentIfInvalidTaxId" must {
+    "return success when email is present" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val messageWithEmail = message.copy(recipient = message.recipient.copy(email = Some("test@example.com")))
+      testUtil.checkEmailAbsentIfInvalidTaxId(messageWithEmail).isSuccess mustBe true
+    }
+
+    "return success when email is None but taxId is valid" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val messageWithValidTaxId = message.copy(recipient = message.recipient.copy(email = None))
+      testUtil.checkEmailAbsentIfInvalidTaxId(messageWithValidTaxId).isSuccess mustBe true
+    }
+
+    "return failure when email is None and taxId is invalid" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      import uk.gov.hmrc.common.message.model.{ TaxEntity, Regime }
+      import uk.gov.hmrc.domain.{ TaxIdentifier, SimpleName }
+
+      case class InvalidTaxId(value: String) extends TaxIdentifier with SimpleName {
+        override val name = "invalid-taxid"
+      }
+
+      val messageWithInvalidTaxId = message.copy(
+        recipient = TaxEntity(Regime.paye, InvalidTaxId("test-value"), None)
+      )
+      testUtil.checkEmailAbsentIfInvalidTaxId(messageWithInvalidTaxId).isFailure mustBe true
+    }
+  }
+
+  "checkValidAlertQueue" must {
+    "return success when alertQueue is None" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val messageWithoutAlertQueue = message.copy(alertQueue = None)
+      testUtil.checkValidAlertQueue(messageWithoutAlertQueue).isSuccess mustBe true
+    }
+
+    "return failure when alertQueue is invalid" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val messageWithInvalidAlertQueue = message.copy(alertQueue = Some("INVALID_QUEUE"))
+      testUtil.checkValidAlertQueue(messageWithInvalidAlertQueue).isFailure mustBe true
+    }
+  }
+
+  "checkValidContent" must {
+    "return success when content body is valid base64" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val validBase64Body = Base64.encodeBase64String("test content".getBytes("UTF-8"))
+      val messageWithValidContent = message.copy(
+        content = message.content.map(content => content.copy(body = validBase64Body))
+      )
+      testUtil.checkValidContent(messageWithValidContent).isSuccess mustBe true
+    }
+
+    "return success even when content body is not valid base64 (documents bug in checkValidContent)" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val messageWithInvalidContent = message.copy(
+        content = message.content.map(content => content.copy(body = "not-base64!!!"))
+      )
+      testUtil.checkValidContent(messageWithInvalidContent).isSuccess mustBe false
+    }
+  }
+
+  "ignoreAlertQueueIfGmcAndSa" must {
+    "remove alertQueue when message is GMC and identifier is SAUTR" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_SAUTR_message.json").as[SecureMessage]
+      val gmcMessage = message.copy(
+        externalRef = message.externalRef.copy(source = "gmc"),
+        alertQueue = Some("PRIORITY")
+      )
+      testUtil.ignoreAlertQueueIfGmcAndSa(gmcMessage).futureValue.alertQueue mustBe None
+    }
+
+    "keep alertQueue when message is GMC but identifier is not SAUTR" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val gmcMessage = message.copy(
+        externalRef = message.externalRef.copy(source = "gmc"),
+        alertQueue = Some("PRIORITY")
+      )
+      testUtil.ignoreAlertQueueIfGmcAndSa(gmcMessage).futureValue.alertQueue mustBe Some("PRIORITY")
+    }
+
+    "keep alertQueue when message is not GMC" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val nonGmcMessage = message.copy(alertQueue = Some("PRIORITY"))
+      testUtil.ignoreAlertQueueIfGmcAndSa(nonGmcMessage).futureValue.alertQueue mustBe Some("PRIORITY")
+    }
+  }
+
+  "handleBiggerContent" must {
+    import play.api.libs.json._
+
+    "remove both sourceData and content when both are present" in {
+      val body = Json.obj(
+        "sourceData" -> "some-data",
+        "content"    -> Json.arr(Json.obj("body" -> "content-body")),
+        "other"      -> "field"
+      )
+      val result = testUtil.handleBiggerContent(body)
+      result must include("sourceData is removed to reduce size")
+      result must include("content is removed to reduce size")
+      result must include("other")
+    }
+
+    "remove only content when only content is present" in {
+      val body = Json.obj(
+        "content" -> Json.arr(Json.obj("body" -> "content-body")),
+        "other"   -> "field"
+      )
+      val result = testUtil.handleBiggerContent(body)
+      result must include("content is removed to reduce size")
+      result must not include "sourceData"
+      result must include("other")
+    }
+
+    "remove only sourceData when only sourceData is present" in {
+      val body = Json.obj(
+        "sourceData" -> "some-data",
+        "other"      -> "field"
+      )
+      val result = testUtil.handleBiggerContent(body)
+      result must include("sourceData is removed to reduce size")
+      result must not include "content"
+      result must include("other")
+    }
+
+    "keep body unchanged when neither sourceData nor content is present" in {
+      val body = Json.obj(
+        "other"   -> "field",
+        "another" -> "value"
+      )
+      val result = testUtil.handleBiggerContent(body)
+      result must include("other")
+      result must include("another")
+      result must not include "sourceData"
+      result must not include "content"
+    }
+  }
+
   override def beforeEach(): Unit =
     reset(taxpayerNameConnector)
 }
