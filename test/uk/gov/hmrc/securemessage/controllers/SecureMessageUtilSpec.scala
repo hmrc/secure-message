@@ -24,6 +24,7 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
+import play.api.i18n.{ Lang, Messages, MessagesImpl }
 import uk.gov.hmrc.common.message.model.TaxpayerName
 import uk.gov.hmrc.domain.SaUtr
 import uk.gov.hmrc.http.HeaderCarrier
@@ -34,11 +35,13 @@ import uk.gov.hmrc.securemessage.models.v4.SecureMessage
 import uk.gov.hmrc.securemessage.repository.{ ExtraAlertRepository, SecureMessageRepository, StatsMetricRepository }
 import uk.gov.hmrc.securemessage.services.MessageBrakeService
 import play.api.test.FakeRequest
-import play.api.test.Helpers._
+import play.api.test.Helpers.*
 import play.api.mvc.AnyContentAsEmpty
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.play.audit.model.EventTypes
 import play.api.libs.json.Json
+import play.i18n
+
 import scala.concurrent.{ ExecutionContext, Future }
 import uk.gov.hmrc.securemessage.models.v4.Content
 import uk.gov.hmrc.common.message.model.Language
@@ -652,6 +655,68 @@ class SecureMessageUtilSpec extends PlaySpec with ScalaFutures with MockitoSugar
 
       val result = testUtil.auditCreateMessageFor(EventTypes.Succeeded, message, "Message Created").futureValue
       result mustBe ()
+    }
+  }
+
+  "localizedExtractMessageDate" must {
+    import play.api.i18n.Messages
+    implicit val messagesImpl: Messages = new Messages {
+      override def lang: Lang = Lang("en")
+
+      override def apply(key: String, args: Any*): String = ???
+
+      override def apply(keys: Seq[String], args: Any*): String = ???
+
+      override def translate(key: String, args: Seq[Any]): Option[String] = ???
+
+      override def isDefinedAt(key: String): Boolean = ???
+
+      override def asJava: i18n.Messages = ???
+    }
+
+    "return formatted issueDate when present in details" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+
+      val result = SecureMessageUtil.localizedExtractMessageDate(message)
+      result must not be empty
+    }
+
+    "return formatted validFrom when issueDate is not present" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val messageWithoutIssueDate = message.copy(details = message.details.map(_.copy(issueDate = None)))
+      val result = SecureMessageUtil.localizedExtractMessageDate(messageWithoutIssueDate)
+      result mustBe SecureMessageUtil.formatter(message.validFrom)
+    }
+
+    "format date correctly for English" in {
+      import java.time.LocalDate
+      val date = LocalDate.of(2023, 12, 25)
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val messageWithIssueDate = message.copy(details = message.details.map(_.copy(issueDate = Some(date))))
+      SecureMessageUtil.localizedExtractMessageDate(messageWithIssueDate) mustBe "25 December 2023"
+    }
+
+    "format date correctly for Welsh" in {
+      import java.time.LocalDate
+      implicit val messagesWelshImpl: Messages = new Messages {
+        override def lang: Lang = Lang("cy")
+
+        override def apply(key: String, args: Any*): String = "Rhagfyr"
+
+        override def apply(keys: Seq[String], args: Any*): String = ???
+
+        override def translate(key: String, args: Seq[Any]): Option[String] = ???
+
+        override def isDefinedAt(key: String): Boolean = ???
+
+        override def asJava: i18n.Messages = ???
+      }
+      val date = LocalDate.of(2023, 12, 25)
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val messageWithWelshIssueDate = message.copy(details = message.details.map(_.copy(issueDate = Some(date))))
+      SecureMessageUtil.localizedExtractMessageDate(messageWithWelshIssueDate)(
+        messagesWelshImpl
+      ) mustBe "25 Rhagfyr 2023"
     }
   }
 
