@@ -145,13 +145,11 @@ class SecureMessageUtil @Inject() (
       _ <- checkValidContent(message)
     } yield message
 
-  def checkValidContent(message: SecureMessage): Try[SecureMessage] = {
-    for (content <- message.content)
-      if (!Base64.isBase64(content.body)) {
-        Failure(MessageValidationException("Content Body: Invalid content"))
-      }
-    Success(message)
-  }
+  def checkValidContent(message: SecureMessage): Try[SecureMessage] =
+    if (message.content.forall(content => Base64.isBase64(content.body))) {
+      Success(message)
+    } else
+      Failure(MessageValidationException("Content Body: Invalid content"))
 
   def checkValidSourceData(message: SecureMessage): Try[SecureMessage] = message.details.flatMap(_.sourceData) match {
     case Some(data) if data.trim.isEmpty || !Base64.isBase64(data) =>
