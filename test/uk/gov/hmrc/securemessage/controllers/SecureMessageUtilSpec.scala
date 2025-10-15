@@ -41,8 +41,8 @@ import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.play.audit.model.EventTypes
 import play.api.libs.json.Json
 import play.i18n
-import uk.gov.hmrc.common.message.model.{TaxEntity, Regime}
-import uk.gov.hmrc.domain.{TaxIdentifier, SimpleName}
+import uk.gov.hmrc.common.message.model.{ Regime, TaxEntity }
+import uk.gov.hmrc.domain.{ SimpleName, TaxIdentifier }
 import scala.concurrent.{ ExecutionContext, Future }
 import uk.gov.hmrc.securemessage.models.v4.Content
 import uk.gov.hmrc.common.message.model.Language
@@ -897,7 +897,6 @@ class SecureMessageUtilSpec extends PlaySpec with ScalaFutures with MockitoSugar
       status(result) mustBe BAD_REQUEST
       contentAsString(result) must include("email")
     }
-
 
     "return BAD_REQUEST when issueDate is after validFrom" in {
       val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
