@@ -30,7 +30,7 @@ object ScoverageSettings {
           |.*controllers\.javascript.*;
           |uk\.gov\.hmrc\.securemessage\.testonly\.controllers.*
   """.stripMargin.replaceAll("\\s+", ""),
-      ScoverageKeys.coverageMinimumStmtTotal := 63.50,
+      ScoverageKeys.coverageMinimumStmtTotal := 65.00,
       ScoverageKeys.coverageFailOnMinimum := true,
       ScoverageKeys.coverageHighlighting := true,
       ConfigKey.configurationToKey(Test) / parallelExecution := false
