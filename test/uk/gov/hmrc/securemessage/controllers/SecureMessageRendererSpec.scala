@@ -475,6 +475,352 @@ class SecureMessageRendererSpec extends PlaySpec with ScalaFutures with MockitoS
       status(response) mustBe OK
       contentAsString(response) must include("You need to activate your Self Assessment to view your message content.")
     }
+
+    "return OK with sa messages template for templateId 'SA251_v1' " in new TestCase {
+      val contentParams: Option[MessageContentParameters] =
+        Some(
+          MessageContentParameters(
+            Json.obj(
+              "taxYearStart"          -> "2023",
+              "taxYearEnd"            -> "2024",
+              "totalAmountDueToHmrc"  -> "1500.50",
+              "outstandingYear1Start" -> "2022",
+              "outstandingYear1End"   -> "2023"
+            ),
+            "SA251_v1"
+          )
+        )
+      val saMessage: Option[Letter] = letter.map(_.copy(contentParameters = contentParams))
+
+      when(mockAuthConnector.authorise(any(), any())(any(), any())).thenReturn(Future.successful {})
+      when(
+        mockSecureMessageService
+          .getLetter(any[ObjectId])(any[ExecutionContext])
+      )
+        .thenReturn(Future.successful(saMessage))
+
+      val response: Future[Result] =
+        controller.renderMessageUnencryptedUrl("some-utr", messageId.toString, Some(ShowLinkJourneyStep("/returnUrl")))(
+          fakeRequest
+        )
+      status(response) mustBe OK
+      contentAsString(response) must include("your financial circumstances change")
+      contentAsString(response) must include("You currently owe &pound;1,500.50")
+    }
+
+    "return OK with sa messages template for templateId 'SA251_v2' " in new TestCase {
+      import uk.gov.hmrc.securemessage.templates.satemplates.sa251.SA251_v2ContentParams
+      val SA251v2ContentParams: JsValue = Json.toJson(
+        SA251_v2ContentParams(
+          TaxYear(2023, 2024),
+          BigDecimal(1500.50),
+          Set(TaxYear(2022, 2023))
+        )
+      )
+      val contentParams: Option[MessageContentParameters] =
+        Some(MessageContentParameters(SA251v2ContentParams, "SA251_v2"))
+      val saMessage: Option[Letter] = letter.map(_.copy(contentParameters = contentParams))
+
+      when(mockAuthConnector.authorise(any(), any())(any(), any())).thenReturn(Future.successful {})
+      when(
+        mockSecureMessageService
+          .getLetter(any[ObjectId])(any[ExecutionContext])
+      )
+        .thenReturn(Future.successful(saMessage))
+
+      val response: Future[Result] =
+        controller.renderMessageUnencryptedUrl("utr", messageId.toString, Some(ShowLinkJourneyStep("/returnUrl")))(
+          fakeRequest
+        )
+      status(response) mustBe OK
+      contentAsString(response) must include("Tax to pay")
+      contentAsString(response) must include("You currently owe")
+    }
+
+    "return OK with sa messages template for templateId 'SA251_v3' " in new TestCase {
+      import uk.gov.hmrc.securemessage.templates.satemplates.sa251.SA251_v3ContentParams
+      val SA251v3ContentParams: JsValue = Json.toJson(
+        SA251_v3ContentParams(
+          TaxYear(2023, 2024),
+          BigDecimal(1500.50),
+          Set(TaxYear(2022, 2023)),
+          Some(LocalDate.now().plusDays(30))
+        )
+      )
+      val contentParams: Option[MessageContentParameters] =
+        Some(MessageContentParameters(SA251v3ContentParams, "SA251_v3"))
+      val saMessage: Option[Letter] = letter.map(_.copy(contentParameters = contentParams))
+
+      when(mockAuthConnector.authorise(any(), any())(any(), any())).thenReturn(Future.successful {})
+      when(
+        mockSecureMessageService
+          .getLetter(any[ObjectId])(any[ExecutionContext])
+      )
+        .thenReturn(Future.successful(saMessage))
+
+      val response: Future[Result] =
+        controller.renderMessageUnencryptedUrl("utr", messageId.toString, Some(ShowLinkJourneyStep("/returnUrl")))(
+          fakeRequest
+        )
+      status(response) mustBe OK
+      contentAsString(response) must include("What you still need to do")
+      contentAsString(response) must include("You currently owe")
+    }
+
+    "return OK with sa messages template for templateId 'SA309A_v1' " in new TestCase {
+      import uk.gov.hmrc.securemessage.templates.satemplates.sa309a.SA309A_v1ContentParams
+      val SA309AContentParams: JsValue = Json.toJson(
+        SA309A_v1ContentParams(
+          TaxYear(2023, 2024),
+          LocalDate.of(2025, 1, 31)
+        )
+      )
+      val contentParams: Option[MessageContentParameters] =
+        Some(MessageContentParameters(SA309AContentParams, "SA309A_v1"))
+      val saMessage: Option[Letter] = letter.map(_.copy(contentParameters = contentParams))
+
+      when(mockAuthConnector.authorise(any(), any())(any(), any())).thenReturn(Future.successful {})
+      when(
+        mockSecureMessageService
+          .getLetter(any[ObjectId])(any[ExecutionContext])
+      )
+        .thenReturn(Future.successful(saMessage))
+
+      val response: Future[Result] =
+        controller.renderMessageUnencryptedUrl("utr", messageId.toString, Some(ShowLinkJourneyStep("/returnUrl")))(
+          fakeRequest
+        )
+      status(response) mustBe OK
+      contentAsString(response) must include("The deadline to send a paper tax return for")
+    }
+
+    "return OK with sa messages template for templateId 'SA309C_v1' " in new TestCase {
+      import uk.gov.hmrc.securemessage.templates.satemplates.sa309c.SA309C_v1ContentParams
+      val SA309CContentParams: JsValue = Json.toJson(
+        SA309C_v1ContentParams(
+          TaxYear(2023, 2024),
+          LocalDate.of(2025, 1, 31)
+        )
+      )
+      val contentParams: Option[MessageContentParameters] =
+        Some(MessageContentParameters(SA309CContentParams, "SA309C_v1"))
+      val saMessage: Option[Letter] = letter.map(_.copy(contentParameters = contentParams))
+
+      when(mockAuthConnector.authorise(any(), any())(any(), any())).thenReturn(Future.successful {})
+      when(
+        mockSecureMessageService
+          .getLetter(any[ObjectId])(any[ExecutionContext])
+      )
+        .thenReturn(Future.successful(saMessage))
+
+      val response: Future[Result] =
+        controller.renderMessageUnencryptedUrl("utr", messageId.toString, Some(ShowLinkJourneyStep("/returnUrl")))(
+          fakeRequest
+        )
+      status(response) mustBe OK
+      contentAsString(response) must include("The 2023 to 2024 tax year ended 5 April 2024")
+    }
+
+    "return OK with sa messages template for templateId 'SA316_v1' " in new TestCase {
+      import uk.gov.hmrc.securemessage.templates.satemplates.sa316.SA316_v1ContentParams
+      val SA316ContentParams: JsValue = Json.toJson(
+        SA316_v1ContentParams(
+          TaxYear(2023, 2024),
+          Some(LocalDate.of(2024, 10, 31)),
+          LocalDate.of(2025, 1, 31),
+          LocalDate.of(2025, 1, 31)
+        )
+      )
+      val contentParams: Option[MessageContentParameters] =
+        Some(MessageContentParameters(SA316ContentParams, "SA316_v1"))
+      val saMessage: Option[Letter] = letter.map(_.copy(contentParameters = contentParams))
+
+      when(mockAuthConnector.authorise(any(), any())(any(), any())).thenReturn(Future.successful {})
+      when(
+        mockSecureMessageService
+          .getLetter(any[ObjectId])(any[ExecutionContext])
+      )
+        .thenReturn(Future.successful(saMessage))
+
+      val response: Future[Result] =
+        controller.renderMessageUnencryptedUrl("utr", messageId.toString, Some(ShowLinkJourneyStep("/returnUrl")))(
+          fakeRequest
+        )
+      status(response) mustBe OK
+      contentAsString(response) must include("You need to file a Self Assessment tax return for the 2023 to 2024")
+    }
+
+    "return OK with sa messages template for templateId 'SA316_v2' " in new TestCase {
+      import uk.gov.hmrc.securemessage.templates.satemplates.sa316.SA316_v2ContentParams
+      val SA316ContentParams: JsValue = Json.toJson(
+        SA316_v2ContentParams(
+          TaxYear(2023, 2024),
+          Some(LocalDate.of(2024, 10, 31)),
+          LocalDate.of(2025, 1, 31),
+          LocalDate.of(2025, 1, 31)
+        )
+      )
+      val contentParams: Option[MessageContentParameters] =
+        Some(MessageContentParameters(SA316ContentParams, "SA316_v2"))
+      val saMessage: Option[Letter] = letter.map(_.copy(contentParameters = contentParams))
+
+      when(mockAuthConnector.authorise(any(), any())(any(), any())).thenReturn(Future.successful {})
+      when(
+        mockSecureMessageService
+          .getLetter(any[ObjectId])(any[ExecutionContext])
+      )
+        .thenReturn(Future.successful(saMessage))
+
+      val response: Future[Result] =
+        controller.renderMessageUnencryptedUrl("utr", messageId.toString, Some(ShowLinkJourneyStep("/returnUrl")))(
+          fakeRequest
+        )
+      status(response) mustBe OK
+      contentAsString(response) must include("You need to file a Self Assessment tax return for the 2023 to 2024")
+    }
+
+    "return OK with sa messages template for templateId 'SA316_previous_year_v1' " in new TestCase {
+      import uk.gov.hmrc.securemessage.templates.satemplates.sa316.SA316_v1ContentParams
+      val SA316ContentParams: JsValue = Json.toJson(
+        SA316_v1ContentParams(
+          TaxYear(2022, 2023),
+          Some(LocalDate.of(2023, 10, 31)),
+          LocalDate.of(2024, 1, 31),
+          LocalDate.of(2024, 1, 31)
+        )
+      )
+      val contentParams: Option[MessageContentParameters] =
+        Some(MessageContentParameters(SA316ContentParams, "SA316_previous_year_v1"))
+      val saMessage: Option[Letter] = letter.map(_.copy(contentParameters = contentParams))
+
+      when(mockAuthConnector.authorise(any(), any())(any(), any())).thenReturn(Future.successful {})
+      when(
+        mockSecureMessageService
+          .getLetter(any[ObjectId])(any[ExecutionContext])
+      )
+        .thenReturn(Future.successful(saMessage))
+
+      val response: Future[Result] =
+        controller.renderMessageUnencryptedUrl("utr", messageId.toString, Some(ShowLinkJourneyStep("/returnUrl")))(
+          fakeRequest
+        )
+      status(response) mustBe OK
+      contentAsString(response) must include("The filing deadline depends on how you file")
+    }
+
+    "return OK with sa messages template for templateId 'SA316_previous_year_v2' " in new TestCase {
+      import uk.gov.hmrc.securemessage.templates.satemplates.sa316.SA316_v2ContentParams
+      val SA316ContentParams: JsValue = Json.toJson(
+        SA316_v2ContentParams(
+          TaxYear(2022, 2023),
+          Some(LocalDate.of(2023, 10, 31)),
+          LocalDate.of(2024, 1, 31),
+          LocalDate.of(2024, 1, 31)
+        )
+      )
+      val contentParams: Option[MessageContentParameters] =
+        Some(MessageContentParameters(SA316ContentParams, "SA316_previous_year_v2"))
+      val saMessage: Option[Letter] = letter.map(_.copy(contentParameters = contentParams))
+
+      when(mockAuthConnector.authorise(any(), any())(any(), any())).thenReturn(Future.successful {})
+      when(
+        mockSecureMessageService
+          .getLetter(any[ObjectId])(any[ExecutionContext])
+      )
+        .thenReturn(Future.successful(saMessage))
+
+      val response: Future[Result] =
+        controller.renderMessageUnencryptedUrl("utr", messageId.toString, Some(ShowLinkJourneyStep("/returnUrl")))(
+          fakeRequest
+        )
+      status(response) mustBe OK
+      contentAsString(response) must include("The filing deadline depends on how you file")
+    }
+
+    "return OK with sa messages template for templateId 'SA359_v1' " in new TestCase {
+      import uk.gov.hmrc.securemessage.templates.satemplates.sa359.SA359_v1ContentParams
+      val SA359ContentParams: JsValue = Json.toJson(
+        SA359_v1ContentParams(
+          TaxYear(2023, 2024),
+          Some(LocalDate.of(2025, 1, 31))
+        )
+      )
+      val contentParams: Option[MessageContentParameters] =
+        Some(MessageContentParameters(SA359ContentParams, "SA359_v1"))
+      val saMessage: Option[Letter] = letter.map(_.copy(contentParameters = contentParams))
+
+      when(mockAuthConnector.authorise(any(), any())(any(), any())).thenReturn(Future.successful {})
+      when(
+        mockSecureMessageService
+          .getLetter(any[ObjectId])(any[ExecutionContext])
+      )
+        .thenReturn(Future.successful(saMessage))
+
+      val response: Future[Result] =
+        controller.renderMessageUnencryptedUrl("utr", messageId.toString, Some(ShowLinkJourneyStep("/returnUrl")))(
+          fakeRequest
+        )
+      status(response) mustBe OK
+      contentAsString(response) must include("You didn't pay your 2023 to 2024 tax bill on time")
+    }
+
+    "return OK with sa messages template for templateId 'SA359_v2' " in new TestCase {
+      import uk.gov.hmrc.securemessage.templates.satemplates.sa359.SA359_v2ContentParams
+      val SA359ContentParams: JsValue = Json.toJson(
+        SA359_v2ContentParams(
+          TaxYear(2023, 2024),
+          Some(LocalDate.of(2025, 1, 31))
+        )
+      )
+      val contentParams: Option[MessageContentParameters] =
+        Some(MessageContentParameters(SA359ContentParams, "SA359_v2"))
+      val saMessage: Option[Letter] = letter.map(_.copy(contentParameters = contentParams))
+
+      when(mockAuthConnector.authorise(any(), any())(any(), any())).thenReturn(Future.successful {})
+      when(
+        mockSecureMessageService
+          .getLetter(any[ObjectId])(any[ExecutionContext])
+      )
+        .thenReturn(Future.successful(saMessage))
+
+      val response: Future[Result] =
+        controller.renderMessageUnencryptedUrl("utr", messageId.toString, Some(ShowLinkJourneyStep("/returnUrl")))(
+          fakeRequest
+        )
+      status(response) mustBe OK
+      contentAsString(response) must include("You didn't pay your 2023 to 2024 tax bill on time")
+    }
+
+    "return OK with sa messages template for templateId 'SA373_v1' " in new TestCase {
+      import uk.gov.hmrc.securemessage.templates.satemplates.sa373.SA373_ContentParams
+      val SA373ContentParams: JsValue = Json.toJson(
+        SA373_ContentParams(
+          TaxYear(2023, 2024),
+          "Test Partnership Ltd",
+          300
+        )
+      )
+      val contentParams: Option[MessageContentParameters] =
+        Some(MessageContentParameters(SA373ContentParams, "SA373_v1"))
+      val saMessage: Option[Letter] = letter.map(_.copy(contentParameters = contentParams))
+
+      when(mockAuthConnector.authorise(any(), any())(any(), any())).thenReturn(Future.successful {})
+      when(
+        mockSecureMessageService
+          .getLetter(any[ObjectId])(any[ExecutionContext])
+      )
+        .thenReturn(Future.successful(saMessage))
+
+      val response: Future[Result] =
+        controller.renderMessageUnencryptedUrl("utr", messageId.toString, Some(ShowLinkJourneyStep("/returnUrl")))(
+          fakeRequest
+        )
+      status(response) mustBe OK
+      contentAsString(response) must include(
+        "The tax return for Test Partnership Ltd for the 2023 to 2024 tax year is late"
+      )
+      contentAsString(response) must include("The penalty for each partner is at least &pound;300")
+    }
   }
 
   class TestCase {
