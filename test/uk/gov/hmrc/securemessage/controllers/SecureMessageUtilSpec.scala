@@ -41,7 +41,8 @@ import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.play.audit.model.EventTypes
 import play.api.libs.json.Json
 import play.i18n
-
+import uk.gov.hmrc.common.message.model.{ Regime, TaxEntity }
+import uk.gov.hmrc.domain.{ SimpleName, TaxIdentifier }
 import scala.concurrent.{ ExecutionContext, Future }
 import uk.gov.hmrc.securemessage.models.v4.Content
 import uk.gov.hmrc.common.message.model.Language
@@ -717,6 +718,207 @@ class SecureMessageUtilSpec extends PlaySpec with ScalaFutures with MockitoSugar
       SecureMessageUtil.localizedExtractMessageDate(messageWithWelshIssueDate)(
         messagesWelshImpl
       ) mustBe "25 Rhagfyr 2023"
+    }
+  }
+
+  "isValidSecureMessage" must {
+    "return success for a valid message" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val validMessage = message.copy(details = message.details.map(_.copy(sourceData = None)))
+      testUtil.isValidSecureMessage(validMessage).isSuccess mustBe true
+    }
+
+    "return success for a valid message with email" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val messageWithEmail = message.copy(
+        recipient = message.recipient.copy(email = Some("test@gmail.com")),
+        details = message.details.map(_.copy(sourceData = None))
+      )
+      testUtil.isValidSecureMessage(messageWithEmail).isSuccess mustBe true
+    }
+
+    "return failure when sourceData is invalid" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val messageWithInvalidSourceData =
+        message.copy(details = message.details.map(_.copy(sourceData = Some("invalid_source_data!!!"))))
+      val result = testUtil.isValidSecureMessage(messageWithInvalidSourceData)
+      result.isFailure mustBe true
+      result.failed.get.getMessage must include("sourceData")
+    }
+
+    "return failure when email in alertDetails is empty" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val messageWithEmptyEmail = message.copy(
+        alertDetails = message.alertDetails.copy(data = Map("email" -> "")),
+        details = message.details.map(_.copy(sourceData = None))
+      )
+      val result = testUtil.isValidSecureMessage(messageWithEmptyEmail)
+      result.isFailure mustBe true
+      result.failed.get.getMessage must include("email")
+    }
+
+    "return failure when alertQueue is empty" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val messageWithEmptyAlertQueue = message.copy(
+        alertQueue = Some(""),
+        details = message.details.map(_.copy(sourceData = None))
+      )
+      val result = testUtil.isValidSecureMessage(messageWithEmptyAlertQueue)
+      result.isFailure mustBe true
+      result.failed.get.getMessage must include("alertQueue")
+    }
+
+    "return failure when GMC message has no details or empty formId" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val gmcMessageWithoutDetails = message.copy(
+        externalRef = message.externalRef.copy(source = "gmc"),
+        details = None
+      )
+      val result = testUtil.isValidSecureMessage(gmcMessageWithoutDetails)
+      result.isFailure mustBe true
+      result.failed.get.getMessage must include("Invalid Message")
+    }
+
+    "return failure when GMC message has empty formId" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val validBase64 = Base64.encodeBase64String("test-data".getBytes("UTF-8"))
+      val gmcMessageWithEmptyFormId = message.copy(
+        externalRef = message.externalRef.copy(source = "gmc"),
+        details = message.details.map(_.copy(formId = "", sourceData = Some(validBase64)))
+      )
+      val result = testUtil.isValidSecureMessage(gmcMessageWithEmptyFormId)
+      result.isFailure mustBe true
+      result.failed.get.getMessage must include("details")
+    }
+
+    "return failure when issueDate is after validFrom" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val messageWithInvalidIssueDate = message.copy(
+        details = message.details.map(_.copy(issueDate = Some(message.validFrom.plusDays(1)), sourceData = None))
+      )
+      val result = testUtil.isValidSecureMessage(messageWithInvalidIssueDate)
+      result.isFailure mustBe true
+      result.failed.get.getMessage must include("Issue date after the valid from date")
+    }
+
+    "return failure when email address is invalid" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val messageWithInvalidEmail = message.copy(
+        recipient = message.recipient.copy(email = Some("not-an-email")),
+        details = message.details.map(_.copy(sourceData = None))
+      )
+      val result = testUtil.isValidSecureMessage(messageWithInvalidEmail)
+      result.isFailure mustBe true
+      result.failed.get.getMessage must include("email")
+    }
+
+    "return failure when email is absent with invalid tax ID" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      case class InvalidTaxId(value: String) extends TaxIdentifier with SimpleName {
+        override val name = "invalid-tax-id"
+      }
+
+      val messageWithInvalidTaxId = message.copy(
+        recipient = TaxEntity(Regime.paye, InvalidTaxId("test-value"), None),
+        details = message.details.map(_.copy(sourceData = None))
+      )
+      val result = testUtil.isValidSecureMessage(messageWithInvalidTaxId)
+      result.isFailure mustBe true
+      result.failed.get.getMessage must include("email address not provided")
+    }
+
+    "return failure when alertQueue is invalid" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val messageWithInvalidAlertQueue = message.copy(
+        alertQueue = Some("INVALID_QUEUE"),
+        details = message.details.map(_.copy(sourceData = None))
+      )
+      val result = testUtil.isValidSecureMessage(messageWithInvalidAlertQueue)
+      result.isFailure mustBe true
+      result.failed.get.getMessage must include("Invalid alert queue")
+    }
+
+    "return failure when content body is not valid base64" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val messageWithInvalidContent = message.copy(
+        content = message.content.map(content => content.copy(body = "not-valid-base64!!")),
+        details = message.details.map(_.copy(sourceData = None))
+      )
+      val result = testUtil.isValidSecureMessage(messageWithInvalidContent)
+      result.isFailure mustBe true
+      result.failed.get.getMessage must include("Invalid content")
+    }
+  }
+
+  "validateAndCreateMessage" must {
+    implicit val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
+
+    "return error response when message validation fails" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val invalidMessage = message.copy(
+        alertQueue = Some(""),
+        details = message.details.map(_.copy(sourceData = None))
+      )
+
+      val result = testUtil.validateAndCreateMessage(invalidMessage)
+      status(result) mustBe BAD_REQUEST
+      contentAsString(result) must include("alertQueue")
+    }
+
+    "successfully validate and call appropriate creation path when email is empty" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val messageWithoutEmail = message.copy(
+        recipient = message.recipient.copy(email = None),
+        details = message.details.map(_.copy(sourceData = None))
+      )
+      val result = testUtil.isValidSecureMessage(messageWithoutEmail)
+      result.isSuccess mustBe true
+    }
+
+    "successfully validate message when it has a valid email" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val messageWithEmail = message.copy(
+        recipient = message.recipient.copy(email = Some("test@gmail.com")),
+        details = message.details.map(_.copy(sourceData = None))
+      )
+
+      val result = testUtil.isValidSecureMessage(messageWithEmail)
+      result.isSuccess mustBe true
+    }
+
+    "return BAD_REQUEST when message has invalid email format" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val messageWithInvalidEmail = message.copy(
+        recipient = message.recipient.copy(email = Some("invalid-email")),
+        details = message.details.map(_.copy(sourceData = None))
+      )
+
+      val result = testUtil.validateAndCreateMessage(messageWithInvalidEmail)
+      status(result) mustBe BAD_REQUEST
+      contentAsString(result) must include("email")
+    }
+
+    "return BAD_REQUEST when issueDate is after validFrom" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val messageWithInvalidIssueDate = message.copy(
+        details = message.details.map(_.copy(issueDate = Some(message.validFrom.plusDays(1)), sourceData = None))
+      )
+
+      val result = testUtil.validateAndCreateMessage(messageWithInvalidIssueDate)
+      status(result) mustBe BAD_REQUEST
+      contentAsString(result) must include("Issue date after the valid from date")
+    }
+
+    "return BAD_REQUEST when alertQueue is invalid" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val messageWithInvalidAlertQueue = message.copy(
+        alertQueue = Some("INVALID_QUEUE"),
+        details = message.details.map(_.copy(sourceData = None))
+      )
+
+      val result = testUtil.validateAndCreateMessage(messageWithInvalidAlertQueue)
+      status(result) mustBe BAD_REQUEST
+      contentAsString(result) must include("Invalid alert queue")
     }
   }
 
