@@ -56,7 +56,7 @@ import uk.gov.hmrc.securemessage.services.utils.MessageFixtures
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ ExecutionContext, Future }
 
-class ExtraAlerterSpec extends PlaySpec with MockitoSugar with ScalaFutures {
+class AlerterSpec extends PlaySpec with MockitoSugar with ScalaFutures {
 
   "ExtraAlerter" should {
 
