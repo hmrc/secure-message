@@ -6,7 +6,7 @@
   "recipient": {
     "taxIdentifier": {
       "name": "HMRC-MTD-VAT123",
-      "value": "123 4567 89"
+      "value": "123456789"
     },
     "name": {
       "title": "Dr",

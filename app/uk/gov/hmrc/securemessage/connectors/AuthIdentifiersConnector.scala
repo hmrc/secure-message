@@ -95,7 +95,7 @@ class AuthIdentifiersConnector @Inject() (
       taxIds
         .flatMap { taxId =>
           taxId.name.toUpperCase match {
-            case "HMRC-MTD-VAT" => Set(taxId, HmceVatdecOrg(taxId.value)) ++ identifierSet[Vrn](taxId.value)(Vrn.apply)
+            case "HMRC-MTD-VAT"    => Set(taxId, HmceVatdecOrg(taxId.value), Vrn(taxId.value))
             case "HMCE-VATDEC-ORG" => Set(taxId, HmrcMtdVat(taxId.value))
             case "HMRC-PODS-ORG"   => Set(taxId, HmrcPodsOrg(taxId.value))
             case "HMRC-PODSPP-ORG" => Set(taxId, HmrcPodsPpOrg(taxId.value))
@@ -104,7 +104,7 @@ class AuthIdentifiersConnector @Inject() (
             case "HMRC-IOSS-NETP"  => Set(taxId, HmrcIossNetp(taxId.value))
             case "HMRC-OSS-ORG"    => Set(taxId) ++ identifierSet[HmrcOssOrg](taxId.value)(HmrcOssOrg.apply)
             case "HMRC-AD-ORG"     => Set(taxId, HmrcAdOrg(taxId.value))
-            case "VRN"             => identifierSet[Vrn](taxId.value)(Vrn.apply)
+            case "VRN"             => Set(Vrn(taxId.value))
             case _                 => Set(taxId)
           }
         }
