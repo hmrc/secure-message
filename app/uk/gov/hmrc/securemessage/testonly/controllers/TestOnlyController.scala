@@ -27,7 +27,7 @@ import play.api.mvc.{ Action, AnyContent, ControllerComponents }
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.securemessage.models.core.*
 import uk.gov.hmrc.securemessage.models.core.Letter.objectIdFormat
-import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository }
+import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository, SecureMessageRepository }
 import org.mongodb.scala.model.Filters.equal
 import org.mongodb.scala.SingleObservableFuture
 import uk.gov.hmrc.common.message.model.Language.English
@@ -39,7 +39,8 @@ import org.mongodb.scala.model.Filters
 class TestOnlyController @Inject() (
   cc: ControllerComponents,
   conversationRepository: ConversationRepository,
-  messageRepository: MessageRepository
+  messageRepository: MessageRepository,
+  secureMessageRepo: SecureMessageRepository
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) with Logging {
 
@@ -109,7 +110,7 @@ class TestOnlyController @Inject() (
 
   def deleteMessages(): Action[AnyContent] = Action.async {
     val deleteResult: Future[Int] =
-      messageRepository.collection.deleteMany(Filters.empty()).toFuture().map(_.getDeletedCount.toInt)
+      secureMessageRepo.collection.deleteMany(Filters.empty()).toFuture().map(_.getDeletedCount.toInt)
 
     deleteResult.map { n =>
       Ok(Json.obj("deleted" -> n))
