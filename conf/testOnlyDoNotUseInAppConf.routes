@@ -12,14 +12,16 @@
 # Add all the application app.routes to the prod.app.routes file
 
 ### NoDocs ###
-#GET   /assets/*file                         controllers.Assets.versioned(path="/public", file: Asset)
+#GET       /assets/*file                            controllers.Assets.versioned(path="/public", file: Asset)
 
-->         /                                prod.Routes
+->         /                                        prod.Routes
 
-PUT    /test-only/create/message/:id    uk.gov.hmrc.securemessage.testonly.controllers.TestOnlyController.insertMessage(id: String)
+PUT        /test-only/create/message/:id            uk.gov.hmrc.securemessage.testonly.controllers.TestOnlyController.insertMessage(id: String)
 
-PUT    /test-only/create/conversation/:id    uk.gov.hmrc.securemessage.testonly.controllers.TestOnlyController.insertConversation(id: String)
+PUT       /test-only/create/conversation/:id        uk.gov.hmrc.securemessage.testonly.controllers.TestOnlyController.insertConversation(id: String)
 
-DELETE    /test-only/delete/conversation/:id    uk.gov.hmrc.securemessage.testonly.controllers.TestOnlyController.deleteConversation(id: String)
+DELETE    /test-only/delete/conversation/:id        uk.gov.hmrc.securemessage.testonly.controllers.TestOnlyController.deleteConversation(id: String)
 
-DELETE    /test-only/delete/message/:id    uk.gov.hmrc.securemessage.testonly.controllers.TestOnlyController.deleteMessage(id: String)
+DELETE    /test-only/delete/message/:id             uk.gov.hmrc.securemessage.testonly.controllers.TestOnlyController.deleteMessage(id: String)
+
+DELETE    /test-only/delete/secure-messages         uk.gov.hmrc.securemessage.testonly.controllers.TestOnlyController.deleteSecureMessages()
