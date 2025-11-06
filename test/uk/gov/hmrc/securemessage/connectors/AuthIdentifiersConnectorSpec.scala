@@ -152,7 +152,7 @@ class AuthIdentifiersConnectorSpec
                            |      "identifiers": [
                            |        {
                            |          "key": "VRN",
-                           |          "value": "example vrn"
+                           |          "value": "123456789"
                            |        }
                            |      ],
                            |      "state": "Activated",
@@ -173,7 +173,7 @@ class AuthIdentifiersConnectorSpec
       )
 
       authConnector.currentEffectiveTaxIdentifiers.futureValue must be(
-        Set(HmrcMtdVat("example vrn"), HmceVatdecOrg("example vrn"), Vrn("example vrn"))
+        Set(HmrcMtdVat("123456789"), HmceVatdecOrg("123456789"), Vrn("123456789"))
       )
     }
 
@@ -187,7 +187,7 @@ class AuthIdentifiersConnectorSpec
                            |      "identifiers": [
                            |        {
                            |          "key": "VRN",
-                           |          "value": "123 4567 89"
+                           |          "value": "123456789"
                            |        }
                            |      ],
                            |      "state": "Activated",
@@ -208,7 +208,7 @@ class AuthIdentifiersConnectorSpec
       )
 
       authConnector.currentEffectiveTaxIdentifiers.futureValue must be(
-        Set(Vrn("123456789"), Vrn("123 4567 89"))
+        Set(Vrn("123456789"))
       )
     }
 
@@ -222,7 +222,7 @@ class AuthIdentifiersConnectorSpec
                            |      "identifiers": [
                            |        {
                            |          "key": "VATRegNo",
-                           |          "value": "example vrn"
+                           |          "value": "123456789"
                            |        }
                            |      ],
                            |      "state": "Activated",
@@ -233,7 +233,7 @@ class AuthIdentifiersConnectorSpec
                            |      "identifiers": [
                            |        {
                            |          "key": "VRN",
-                           |          "value": "example vrn"
+                           |          "value": "123456789"
                            |        }
                            |      ],
                            |      "state": "Activated",
@@ -244,7 +244,7 @@ class AuthIdentifiersConnectorSpec
                            |      "identifiers": [
                            |        {
                            |          "key": "VRN",
-                           |          "value": "example vrn"
+                           |          "value": "123456789"
                            |        }
                            |      ],
                            |      "state": "Activated",
@@ -263,9 +263,8 @@ class AuthIdentifiersConnectorSpec
               .withBody(responseBody)
           )
       )
-
       authConnector.currentEffectiveTaxIdentifiers.futureValue must be(
-        Set(HmrcMtdVat("example vrn"), HmceVatdecOrg("example vrn"), Vrn("example vrn"))
+        Set(HmrcMtdVat("123456789"), HmceVatdecOrg("123456789"), Vrn("123456789"))
       )
     }
 
@@ -279,7 +278,7 @@ class AuthIdentifiersConnectorSpec
                            |      "identifiers": [
                            |        {
                            |          "key": "VATRegNo",
-                           |          "value": "example vrn"
+                           |          "value": "123456789"
                            |        }
                            |      ],
                            |      "state": "Activated",
@@ -300,7 +299,7 @@ class AuthIdentifiersConnectorSpec
       )
 
       authConnector.currentEffectiveTaxIdentifiers.futureValue must be(
-        Set(HmrcMtdVat("example vrn"), HmceVatdecOrg("example vrn"))
+        Set(HmrcMtdVat("123456789"), HmceVatdecOrg("123456789"))
       )
     }
 
