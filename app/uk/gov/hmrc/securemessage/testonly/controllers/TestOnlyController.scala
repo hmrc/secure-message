@@ -108,7 +108,7 @@ class TestOnlyController @Inject() (
       }
     )
 
-  def deleteMessages(): Action[AnyContent] = Action.async {
+  def deleteSecureMessages(): Action[AnyContent] = Action.async {
     val deleteResult: Future[Int] =
       secureMessageRepo.collection.deleteMany(Filters.empty()).toFuture().map(_.getDeletedCount.toInt)
 

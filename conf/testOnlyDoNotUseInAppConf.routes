@@ -24,4 +24,4 @@ DELETE    /test-only/delete/conversation/:id        uk.gov.hmrc.securemessage.te
 
 DELETE    /test-only/delete/message/:id             uk.gov.hmrc.securemessage.testonly.controllers.TestOnlyController.deleteMessage(id: String)
 
-DELETE    /test-only/messages                       uk.gov.hmrc.securemessage.testonly.controllers.TestOnlyController.deleteMessages()
+DELETE    /test-only/messages                       uk.gov.hmrc.securemessage.testonly.controllers.TestOnlyController.deleteSecureMessages()
