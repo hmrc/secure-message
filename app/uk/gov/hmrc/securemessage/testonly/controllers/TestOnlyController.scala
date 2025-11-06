@@ -40,7 +40,7 @@ class TestOnlyController @Inject() (
   cc: ControllerComponents,
   conversationRepository: ConversationRepository,
   messageRepository: MessageRepository,
-  secureMessageRepo: SecureMessageRepository
+  secureMessageRepository: SecureMessageRepository
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) with Logging {
 
@@ -110,7 +110,7 @@ class TestOnlyController @Inject() (
 
   def deleteSecureMessages(): Action[AnyContent] = Action.async {
     val deleteResult: Future[Int] =
-      secureMessageRepo.collection.deleteMany(Filters.empty()).toFuture().map(_.getDeletedCount.toInt)
+      secureMessageRepository.collection.deleteMany(Filters.empty()).toFuture().map(_.getDeletedCount.toInt)
 
     deleteResult.map { n =>
       Ok(Json.obj("deleted" -> n))
