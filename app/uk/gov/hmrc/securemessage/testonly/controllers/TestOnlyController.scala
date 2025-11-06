@@ -19,6 +19,7 @@ package uk.gov.hmrc.securemessage.testonly.controllers
 import cats.data.NonEmptyList
 import com.google.inject.Inject
 import org.bson.types.ObjectId
+
 import java.time.Instant
 import play.api.Logging
 import play.api.libs.json.{ JsObject, JsValue, Json }
@@ -30,8 +31,11 @@ import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRep
 import org.mongodb.scala.model.Filters.equal
 import org.mongodb.scala.SingleObservableFuture
 import uk.gov.hmrc.common.message.model.Language.English
+
 import java.util.UUID
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ ExecutionContext, Future }
+import org.mongodb.scala.model.Filters
+
 class TestOnlyController @Inject() (
   cc: ControllerComponents,
   conversationRepository: ConversationRepository,
@@ -102,4 +106,13 @@ class TestOnlyController @Inject() (
         Ok(s"message $id deleted successfully")
       }
     )
+
+  def deleteMessages(): Action[AnyContent] = Action.async {
+    val deleteResult: Future[Int] =
+      messageRepository.collection.deleteMany(Filters.empty()).toFuture().map(_.getDeletedCount.toInt)
+
+    deleteResult.map { n =>
+      Ok(Json.obj("deleted" -> n))
+    }
+  }
 }
