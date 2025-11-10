@@ -142,7 +142,7 @@ class AuthIdentifiersConnectorSpec
       authConnector.currentEffectiveTaxIdentifiers.futureValue must be(Set(SaUtr("1872796160"), Nino("CE123456D")))
     }
 
-    "get all val tax ids for if only HMRC-MTD-VAT enrolment when its value doesnt match VRN format " in new TestCase {
+    "get all val tax ids for if only HMRC-MTD-VAT enrolment when its value does not match VRN format " in new TestCase {
 
       val responseBody =
         """
