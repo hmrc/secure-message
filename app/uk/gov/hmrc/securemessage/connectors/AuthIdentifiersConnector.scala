@@ -90,12 +90,15 @@ class AuthIdentifiersConnector @Inject() (
         Future.successful(Set.empty)
       }
 
+  private val ValidVrnFormat = "^[0-9]{9}$"
   def currentEffectiveTaxIdentifiers(implicit hc: HeaderCarrier): Future[Set[TaxIdWithName]] =
     currentTaxIdentifiers(hc).map { taxIds =>
       taxIds
         .flatMap { taxId =>
           taxId.name.toUpperCase match {
-            case "HMRC-MTD-VAT"    => Set(taxId, HmceVatdecOrg(taxId.value), Vrn(taxId.value))
+            case "HMRC-MTD-VAT" =>
+              Set(taxId, HmceVatdecOrg(taxId.value))
+                ++ Option.when(taxId.value.matches(ValidVrnFormat))(Vrn(taxId.value))
             case "HMCE-VATDEC-ORG" => Set(taxId, HmrcMtdVat(taxId.value))
             case "HMRC-PODS-ORG"   => Set(taxId, HmrcPodsOrg(taxId.value))
             case "HMRC-PODSPP-ORG" => Set(taxId, HmrcPodsPpOrg(taxId.value))
