@@ -16,13 +16,20 @@
 
 package uk.gov.hmrc.message.metrics
 
+import play.api.Logging
 import uk.gov.hmrc.securemessage.repository.SecureMessageRepository
 import uk.gov.hmrc.mongo.metrix.MetricSource
 
+import java.time.Instant
 import javax.inject.{ Inject, Singleton }
 import scala.concurrent.{ ExecutionContext, Future }
 
 @Singleton
-class MessageStatusMetrics @Inject() (secureMessageRepository: SecureMessageRepository) extends MetricSource {
-  def metrics(implicit ec: ExecutionContext): Future[Map[String, Int]] = secureMessageRepository.count()
+class MessageStatusMetrics @Inject() (secureMessageRepository: SecureMessageRepository)
+    extends MetricSource with Logging {
+  def metrics(implicit ec: ExecutionContext): Future[Map[String, Int]] = {
+    val stasCount = secureMessageRepository.count()
+    logger.warn(s"Message status metrics at ${Instant.now()} are $stasCount")
+    stasCount
+  }
 }

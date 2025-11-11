@@ -48,7 +48,10 @@ class MessageMain @Inject() (
       Try {
         metricOrchestator
           .attemptMetricRefresh()
-          .foreach(_.log())
+          .foreach { m =>
+            logger.warn(s"Metric process refreshed with result $m")
+            m.log()
+          }
       } match {
         case Failure(e) => logger.error(s"An error occurred processing metrics: ${e.getMessage}", e)
         case Success(_) => ()
