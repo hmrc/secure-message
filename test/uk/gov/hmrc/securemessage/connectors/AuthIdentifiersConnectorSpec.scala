@@ -142,7 +142,43 @@ class AuthIdentifiersConnectorSpec
       authConnector.currentEffectiveTaxIdentifiers.futureValue must be(Set(SaUtr("1872796160"), Nino("CE123456D")))
     }
 
-    "get all val tax ids for if only HMRC-MTD-VAT enrolment " in new TestCase {
+    "get all val tax ids for if only HMRC-MTD-VAT enrolment when its value does not match VRN format " in new TestCase {
+
+      val responseBody =
+        """
+          |{
+          |  "allEnrolments": [
+          |    {
+          |      "key": "HMRC-MTD-VAT",
+          |      "identifiers": [
+          |        {
+          |          "key": "VAT",
+          |          "value": "123 456 789"
+          |        }
+          |      ],
+          |      "state": "Activated",
+          |      "confidenceLevel": 200
+          |    }
+          |  ]
+          |}
+                         """.stripMargin
+
+      givenThat(
+        post(urlEqualTo("/auth/authorise"))
+          .withHeader(HeaderNames.AUTHORIZATION, equalTo(authToken))
+          .willReturn(
+            aResponse()
+              .withStatus(Status.OK)
+              .withBody(responseBody)
+          )
+      )
+
+      authConnector.currentEffectiveTaxIdentifiers.futureValue must be(
+        Set(HmrcMtdVat("123 456 789"), HmceVatdecOrg("123 456 789"))
+      )
+    }
+
+    "get all val tax ids for if only HMRC-MTD-VAT enrolment when its value matches valid VRN format" in new TestCase {
 
       val responseBody = """
                            |{
