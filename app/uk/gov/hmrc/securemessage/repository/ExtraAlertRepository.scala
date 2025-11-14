@@ -21,6 +21,7 @@ import org.bson.types.ObjectId
 
 import java.time.{ Duration, LocalDate }
 import org.mongodb.scala.model.{ Filters, IndexOptions, Updates }
+import org.mongodb.scala.result.DeleteResult
 import org.mongodb.scala.{ SingleObservableFuture, model }
 import play.api.libs.json.{ Json, OFormat }
 import play.api.{ Configuration, Environment }
@@ -116,8 +117,8 @@ class ExtraAlertRepository @Inject() (
   def alertCompleted(id: ObjectId, status: ProcessingStatus): Future[Boolean] =
     markAs(id, status)
 
-  def removeAlerts(ref: String)(implicit ec: ExecutionContext): Future[Unit] =
-    collection.deleteMany(Filters.equal("item.reference", ref)).toFuture().map(_ => ())
+  def removeAlerts(ref: String)(implicit ec: ExecutionContext): Future[DeleteResult] =
+    collection.deleteMany(Filters.equal("item.reference", ref)).toFuture()
 
   def brakeBatchAccepted(brakeBatchApproval: BrakeBatchApproval)(implicit ec: ExecutionContext): Future[Boolean] = {
 
