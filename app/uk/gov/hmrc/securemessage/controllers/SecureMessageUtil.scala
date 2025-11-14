@@ -24,6 +24,7 @@ import java.time.format.DateTimeFormatter
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document.OutputSettings
 import org.jsoup.safety.Safelist as JsouptAllowList
+import org.mongodb.scala.result.DeleteResult
 import play.api.http.Status.{ BAD_REQUEST, CONFLICT, NOT_FOUND }
 import play.api.i18n.Messages
 import play.api.libs.json.{ JsArray, JsObject, JsValue, Json }
@@ -585,7 +586,7 @@ class SecureMessageUtil @Inject() (
   def addReadTime(id: ObjectId)(implicit ec: ExecutionContext): Future[Either[SecureMessageError, SecureMessage]] =
     secureMessageRepository.addReadTime(id, Instant.now)
 
-  def removeD2Alerts(id: ObjectId)(implicit ec: ExecutionContext): Future[Unit] =
+  def removeD2Alerts(id: ObjectId)(implicit ec: ExecutionContext): Future[DeleteResult] =
     extraAlertRepository.removeAlerts(id.toString)
 }
 

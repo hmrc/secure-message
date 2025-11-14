@@ -16,10 +16,11 @@
 
 package uk.gov.hmrc.securemessage.services
 
+import com.mongodb.client.result.DeleteResult
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.testkit.NoMaterializer
 import org.mockito.ArgumentMatchers
-import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.{ any, eq => meq }
 import org.mockito.Mockito.{ never, times, verify, when }
 import org.mongodb.scala.bson.ObjectId
 import org.scalatest.EitherValues
@@ -704,6 +705,21 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
     "return count" in new AddReadTimesTestContext {
       val result = service.getMessagesCount(enrolments, filters()).futureValue
       result mustBe MessagesCount(3, 2)
+    }
+  }
+
+  "setReadTimeAndRemoveD2Alerts by id" must {
+    "return a v4 message with read-time & delete the extra alerts for D2" in {
+      when(mockSecureMessageUtil.getMessage(any[ObjectId], any[Set[Identifier]])(any[ExecutionContext]))
+        .thenReturn(Future(Right(v4Message)))
+      when(mockSecureMessageUtil.addReadTime(meq(v4Message._id))(any[ExecutionContext]))
+        .thenReturn(Future(Right(v4Message.copy(readTime = Some(Instant.now())))))
+      when(mockSecureMessageUtil.removeD2Alerts(meq(v4Message._id))(any[ExecutionContext]))
+        .thenReturn(Future(DeleteResult.acknowledged(1)))
+      val result = await(
+        service.setReadTimeAndRemoveD2Alerts(v4Message)
+      ).toOption.get
+      result.readTime.isDefined mustBe true
     }
   }
   class AddReadTimesTestContext {
