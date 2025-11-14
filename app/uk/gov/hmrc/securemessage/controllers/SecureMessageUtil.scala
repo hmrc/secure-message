@@ -584,6 +584,9 @@ class SecureMessageUtil @Inject() (
 
   def addReadTime(id: ObjectId)(implicit ec: ExecutionContext): Future[Either[SecureMessageError, SecureMessage]] =
     secureMessageRepository.addReadTime(id, Instant.now)
+
+  def removeD2Alerts(id: ObjectId)(implicit ec: ExecutionContext): Future[Unit] =
+    extraAlertRepository.removeAlerts(id.toString)
 }
 
 case class MessageValidationException(message: String) extends RuntimeException(message)

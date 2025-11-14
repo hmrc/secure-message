@@ -202,7 +202,7 @@ class NonCDSMessageRetriever @Inject() (
                    case Some(l: Letter) if identifiers.contains(l.recipient.identifier) =>
                      secureMessageService.setReadTime(l)
                    case Some(m: SecureMessage) if taxIds.contains(m.recipient.identifier) || strideUser =>
-                     secureMessageService.setReadTime(m)
+                     secureMessageService.setReadTimeAndRemoveD2Alerts(m)
                    case Some(_) =>
                      Future.successful(Left(UserNotAuthorised("Unauthorised for the requested identifiers")))
                    case None =>

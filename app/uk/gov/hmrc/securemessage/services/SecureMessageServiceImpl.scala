@@ -385,10 +385,13 @@ class SecureMessageServiceImpl @Inject() (
   def setReadTime(letter: Letter)(implicit ec: ExecutionContext): Future[Either[SecureMessageError, Letter]] =
     messageRepository.addReadTime(letter._id)
 
-  def setReadTime(secureMessage: SecureMessage)(implicit
+  def setReadTimeAndRemoveD2Alerts(secureMessage: SecureMessage)(implicit
     ec: ExecutionContext
   ): Future[Either[SecureMessageError, SecureMessage]] =
-    secureMessageUtil.addReadTime(secureMessage._id)
+    for {
+      secureMsgWithReadTime <- secureMessageUtil.addReadTime(secureMessage._id)
+      _                     <- secureMessageUtil.removeD2Alerts(secureMessage._id)
+    } yield secureMsgWithReadTime
 
   private def formatMessageContent(message: SecureMessage)(implicit messages: Messages) = {
     val language = if (messages.lang.language == "cy") Welsh else English
