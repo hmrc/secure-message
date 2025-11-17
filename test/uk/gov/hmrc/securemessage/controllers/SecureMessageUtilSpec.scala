@@ -20,7 +20,7 @@ import com.mongodb.client.result.DeleteResult
 import org.apache.commons.codec.binary.Base64
 import org.bson.types.ObjectId
 import org.mockito.ArgumentMatchers.{ any, eq as meq }
-import org.mockito.Mockito.{ doNothing, reset, verifyNoInteractions, when }
+import org.mockito.Mockito.{ doNothing, reset, times, verify, verifyNoInteractions, when }
 import org.mongodb.scala.result.DeleteResult
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
@@ -938,6 +938,12 @@ class SecureMessageUtilSpec extends PlaySpec with ScalaFutures with MockitoSugar
         .thenReturn(Future.successful(DeleteResult.acknowledged(1)))
 
       testUtil.removeAlerts(secureMessageId, "mainTemplate").futureValue.getDeletedCount mustBe 1
+    }
+
+    "not call delete for D2 alerts when extra-alert templateId is not matched" in {
+      val secureMessageId: ObjectId = ObjectId()
+      testUtil.removeAlerts(secureMessageId, "otherTemplate").futureValue.getDeletedCount mustBe 0
+      verify(extraAlertRepository, times(0)).removeAlerts(any[String])(any[ExecutionContext])
     }
   }
 
