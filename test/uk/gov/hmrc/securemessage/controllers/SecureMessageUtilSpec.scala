@@ -931,7 +931,7 @@ class SecureMessageUtilSpec extends PlaySpec with ScalaFutures with MockitoSugar
     }
   }
 
-  "removeD2Alerts" must {
+  "removeAlerts" must {
     "delete the D2 alerts for given secure-message id" in {
       val secureMessageId: ObjectId = ObjectId()
       when(extraAlertRepository.removeAlerts(meq(secureMessageId.toString))(any[ExecutionContext]))
