@@ -34,7 +34,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.securemessage.connectors.{ EntityResolverConnector, PreferencesConnector, TaxpayerNameConnector }
 import uk.gov.hmrc.securemessage.helpers.Resources
-import uk.gov.hmrc.securemessage.models.v4.SecureMessage
+import uk.gov.hmrc.securemessage.models.v4.{ Content, ExtraAlertConfig, SecureMessage }
 import uk.gov.hmrc.securemessage.repository.{ ExtraAlertRepository, SecureMessageRepository, StatsMetricRepository }
 import uk.gov.hmrc.securemessage.services.MessageBrakeService
 import play.api.test.FakeRequest
@@ -48,8 +48,9 @@ import uk.gov.hmrc.common.message.model.{ Regime, TaxEntity }
 import uk.gov.hmrc.domain.{ SimpleName, TaxIdentifier }
 
 import scala.concurrent.{ ExecutionContext, Future }
-import uk.gov.hmrc.securemessage.models.v4.Content
 import uk.gov.hmrc.common.message.model.Language
+
+import java.time.Duration
 
 class SecureMessageUtilSpec extends PlaySpec with ScalaFutures with MockitoSugar with BeforeAndAfterEach {
   val appName: String = "Test"
@@ -77,7 +78,11 @@ class SecureMessageUtilSpec extends PlaySpec with ScalaFutures with MockitoSugar
     messageBrakeService,
     auditConnector,
     configuration
-  )
+  ) {
+    override val extraAlerts: List[ExtraAlertConfig] = List(
+      ExtraAlertConfig("mainTemplate", "extra", Duration.ofSeconds(2))
+    )
+  }
 
   "addTaxpayerNameToMessageIfRequired" must {
     "get the tax-payer name when the tax identifier is SaUtr" in {
@@ -932,7 +937,7 @@ class SecureMessageUtilSpec extends PlaySpec with ScalaFutures with MockitoSugar
       when(extraAlertRepository.removeAlerts(meq(secureMessageId.toString))(any[ExecutionContext]))
         .thenReturn(Future.successful(DeleteResult.acknowledged(1)))
 
-      testUtil.removeD2Alerts(secureMessageId).futureValue.getDeletedCount mustBe 1
+      testUtil.removeAlerts(secureMessageId, "mainTemplate").futureValue.getDeletedCount mustBe 1
     }
   }
 

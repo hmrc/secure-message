@@ -20,7 +20,7 @@ import com.mongodb.client.result.DeleteResult
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.testkit.NoMaterializer
 import org.mockito.ArgumentMatchers
-import org.mockito.ArgumentMatchers.{ any, eq => meq }
+import org.mockito.ArgumentMatchers.{ any, eq as meq }
 import org.mockito.Mockito.{ never, times, verify, when }
 import org.mongodb.scala.bson.ObjectId
 import org.scalatest.EitherValues
@@ -47,13 +47,13 @@ import uk.gov.hmrc.securemessage.handlers.MessageBroker
 import uk.gov.hmrc.securemessage.helpers.{ ConversationUtil, MessageUtil, Resources }
 import uk.gov.hmrc.securemessage.models.core.Conversation.*
 import uk.gov.hmrc.securemessage.models.core.*
-import uk.gov.hmrc.securemessage.models.v4.SecureMessage
+import uk.gov.hmrc.securemessage.models.v4.{ ExtraAlertConfig, SecureMessage }
 import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryMessageWrapper, Tags }
 import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository }
 import uk.gov.hmrc.securemessage.{ DuplicateConversationError, EmailLookupError, NoReceiverEmailError, SecureMessageError, * }
 
 import java.time.format.DateTimeFormatter
-import java.time.{ Instant, OffsetDateTime, ZoneId, ZoneOffset }
+import java.time.{ Duration, Instant, OffsetDateTime, ZoneId, ZoneOffset }
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -708,17 +708,19 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
     }
   }
 
-  "setReadTimeAndRemoveD2Alerts by id" must {
+  "setReadTimeAndRemoveAlerts by id" must {
     "return a v4 message with read-time & delete the extra alerts for D2" in {
       when(mockSecureMessageUtil.getMessage(any[ObjectId], any[Set[Identifier]])(any[ExecutionContext]))
         .thenReturn(Future(Right(v4Message)))
       when(mockSecureMessageUtil.addReadTime(meq(v4Message._id))(any[ExecutionContext]))
         .thenReturn(Future(Right(v4Message.copy(readTime = Some(Instant.now())))))
-      when(mockSecureMessageUtil.removeD2Alerts(meq(v4Message._id))(any[ExecutionContext]))
+      when(mockSecureMessageUtil.extraAlerts).thenReturn(
+        List(ExtraAlertConfig("value 1", "value2", Duration.ofSeconds(2)))
+      )
+      when(mockSecureMessageUtil.removeAlerts(meq(v4Message._id), meq(v4Message.templateId))(any[ExecutionContext]))
         .thenReturn(Future(DeleteResult.acknowledged(1)))
-      val result = await(
-        service.setReadTimeAndRemoveD2Alerts(v4Message)
-      ).toOption.get
+
+      val result = await(service.setReadTimeAndRemoveAlerts(v4Message)).toOption.get
       result.readTime.isDefined mustBe true
     }
   }

@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.securemessage.controllers
 
+import com.mongodb.client.result.DeleteResult
 import org.apache.commons.codec.binary.Base64
 import org.bson.types.ObjectId
 
@@ -586,8 +587,10 @@ class SecureMessageUtil @Inject() (
   def addReadTime(id: ObjectId)(implicit ec: ExecutionContext): Future[Either[SecureMessageError, SecureMessage]] =
     secureMessageRepository.addReadTime(id, Instant.now)
 
-  def removeD2Alerts(id: ObjectId)(implicit ec: ExecutionContext): Future[DeleteResult] =
-    extraAlertRepository.removeAlerts(id.toString)
+  def removeAlerts(id: ObjectId, templateId: String)(implicit ec: ExecutionContext): Future[DeleteResult] =
+    if (extraAlerts.exists(_.mainTemplate == templateId))
+      extraAlertRepository.removeAlerts(id.toString)
+    else Future.successful(DeleteResult.acknowledged(0))
 }
 
 case class MessageValidationException(message: String) extends RuntimeException(message)
