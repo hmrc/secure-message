@@ -708,20 +708,16 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
     }
   }
 
-  "setReadTimeAndRemoveAlerts by id" must {
-    "return a v4 message with read-time & delete the extra alerts for D2" in {
-      when(mockSecureMessageUtil.getMessage(any[ObjectId], any[Set[Identifier]])(any[ExecutionContext]))
-        .thenReturn(Future(Right(v4Message)))
-      when(mockSecureMessageUtil.addReadTime(meq(v4Message._id))(any[ExecutionContext]))
-        .thenReturn(Future(Right(v4Message.copy(readTime = Some(Instant.now())))))
+  "removeAlerts" must {
+    "delete the extra alerts for given message id" in {
       when(mockSecureMessageUtil.extraAlerts).thenReturn(
         List(ExtraAlertConfig("value 1", "value2", Duration.ofSeconds(2)))
       )
       when(mockSecureMessageUtil.removeAlerts(meq(v4Message._id), meq(v4Message.templateId))(any[ExecutionContext]))
         .thenReturn(Future(DeleteResult.acknowledged(1)))
 
-      val result = await(service.setReadTimeAndRemoveAlerts(v4Message)).toOption.get
-      result.readTime.isDefined mustBe true
+      val result: DeleteResult = await(service.removeAlerts(v4Message))
+      result.getDeletedCount mustBe 1
     }
   }
   class AddReadTimesTestContext {

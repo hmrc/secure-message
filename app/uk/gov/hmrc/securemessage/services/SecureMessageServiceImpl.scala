@@ -19,10 +19,13 @@ package uk.gov.hmrc.securemessage.services
 import cats.data.*
 import cats.implicits.*
 import com.google.inject.Inject
+import com.mongodb.client.result.DeleteResult
 import org.apache.commons.codec.binary.Base64
+
 import java.time.format.DateTimeFormatter
 import java.time.{ Instant, LocalDate, ZoneOffset }
 import org.mongodb.scala.bson.ObjectId
+import org.mongodb.scala.result.DeleteResult
 import play.api.i18n.Messages
 import play.api.mvc.{ AnyContent, Request, Result }
 import uk.gov.hmrc.auth.core.{ Enrolment, Enrolments }
@@ -385,13 +388,17 @@ class SecureMessageServiceImpl @Inject() (
   def setReadTime(letter: Letter)(implicit ec: ExecutionContext): Future[Either[SecureMessageError, Letter]] =
     messageRepository.addReadTime(letter._id)
 
-  def setReadTimeAndRemoveAlerts(secureMessage: SecureMessage)(implicit
+  def setReadTime(secureMessage: SecureMessage)(implicit
     ec: ExecutionContext
-  ): Future[Either[SecureMessageError, SecureMessage]] =
-    for {
-      secureMsgWithReadTime <- secureMessageUtil.addReadTime(secureMessage._id)
-      _                     <- secureMessageUtil.removeAlerts(secureMessage._id, secureMessage.templateId)
-    } yield secureMsgWithReadTime
+  ): Future[Either[SecureMessageError, SecureMessage]] = secureMessageUtil.addReadTime(secureMessage._id)
+
+  def removeAlerts(message: Message)(implicit
+    ec: ExecutionContext
+  ): Future[DeleteResult] =
+    message match {
+      case secureMsg: SecureMessage => secureMessageUtil.removeAlerts(secureMsg._id, secureMsg.templateId)
+      case _                        => Future.successful(DeleteResult.acknowledged(0))
+    }
 
   private def formatMessageContent(message: SecureMessage)(implicit messages: Messages) = {
     val language = if (messages.lang.language == "cy") Welsh else English
