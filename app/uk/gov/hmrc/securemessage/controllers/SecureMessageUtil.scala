@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.securemessage.controllers
 
+import com.mongodb.client.result.DeleteResult
 import org.apache.commons.codec.binary.Base64
 import org.bson.types.ObjectId
 
@@ -24,6 +25,7 @@ import java.time.format.DateTimeFormatter
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document.OutputSettings
 import org.jsoup.safety.Safelist as JsouptAllowList
+import org.mongodb.scala.result.DeleteResult
 import play.api.http.Status.{ BAD_REQUEST, CONFLICT, NOT_FOUND }
 import play.api.i18n.Messages
 import play.api.libs.json.{ JsArray, JsObject, JsValue, Json }
@@ -584,6 +586,11 @@ class SecureMessageUtil @Inject() (
 
   def addReadTime(id: ObjectId)(implicit ec: ExecutionContext): Future[Either[SecureMessageError, SecureMessage]] =
     secureMessageRepository.addReadTime(id, Instant.now)
+
+  def removeAlerts(id: ObjectId, templateId: String)(implicit ec: ExecutionContext): Future[DeleteResult] =
+    if (extraAlerts.exists(_.mainTemplate == templateId))
+      extraAlertRepository.removeAlerts(id.toString)
+    else Future.successful(DeleteResult.acknowledged(0))
 }
 
 case class MessageValidationException(message: String) extends RuntimeException(message)

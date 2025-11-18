@@ -16,10 +16,11 @@
 
 package uk.gov.hmrc.securemessage.services
 
+import com.mongodb.client.result.DeleteResult
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.testkit.NoMaterializer
 import org.mockito.ArgumentMatchers
-import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.{ any, eq as meq }
 import org.mockito.Mockito.{ never, times, verify, when }
 import org.mongodb.scala.bson.ObjectId
 import org.scalatest.EitherValues
@@ -46,13 +47,13 @@ import uk.gov.hmrc.securemessage.handlers.MessageBroker
 import uk.gov.hmrc.securemessage.helpers.{ ConversationUtil, MessageUtil, Resources }
 import uk.gov.hmrc.securemessage.models.core.Conversation.*
 import uk.gov.hmrc.securemessage.models.core.*
-import uk.gov.hmrc.securemessage.models.v4.SecureMessage
+import uk.gov.hmrc.securemessage.models.v4.{ ExtraAlertConfig, SecureMessage }
 import uk.gov.hmrc.securemessage.models.{ EmailRequest, QueryMessageWrapper, Tags }
 import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRepository }
 import uk.gov.hmrc.securemessage.{ DuplicateConversationError, EmailLookupError, NoReceiverEmailError, SecureMessageError, * }
 
 import java.time.format.DateTimeFormatter
-import java.time.{ Instant, OffsetDateTime, ZoneId, ZoneOffset }
+import java.time.{ Duration, Instant, OffsetDateTime, ZoneId, ZoneOffset }
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -704,6 +705,19 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
     "return count" in new AddReadTimesTestContext {
       val result = service.getMessagesCount(enrolments, filters()).futureValue
       result mustBe MessagesCount(3, 2)
+    }
+  }
+
+  "removeAlerts" must {
+    "delete the extra alerts for given message id" in {
+      when(mockSecureMessageUtil.extraAlerts).thenReturn(
+        List(ExtraAlertConfig("value 1", "value2", Duration.ofSeconds(2)))
+      )
+      when(mockSecureMessageUtil.removeAlerts(meq(v4Message._id), meq(v4Message.templateId))(any[ExecutionContext]))
+        .thenReturn(Future(DeleteResult.acknowledged(1)))
+
+      val result: DeleteResult = await(service.removeAlerts(v4Message))
+      result.getDeletedCount mustBe 1
     }
   }
   class AddReadTimesTestContext {

@@ -312,11 +312,15 @@ class SecureMessageController @Inject() (
           Future.successful(InternalServerError)
         case Right(Some(message)) =>
           logger.debug(s"Secure Message is Read $id")
+          secureMessageService.removeAlerts(message).recover { case e =>
+            logger.error(s"Extra Alerts removal is failed ${e.getMessage}")
+          }
           val audit = auditMessageReadStatus(message).recover { case e =>
             logger.error("Audit for setReadTime is failed ")
           }
-          val stats = updateStats(message).recover { case e => logger.error("Stats update for setReadTime is failed") }
-
+          val stats = updateStats(message).recover { case e =>
+            logger.error("Stats update for setReadTime is failed")
+          }
           Future.sequence(Seq(audit, stats)).map(_ => Ok)
 
         case Right(None) => Future.successful(InternalServerError(s"failed to set read time for: $id"))

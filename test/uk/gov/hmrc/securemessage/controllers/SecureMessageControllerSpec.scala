@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.securemessage.controllers
 
+import com.mongodb.client.result.DeleteResult
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.testkit.NoMaterializer
 
@@ -509,6 +510,8 @@ class SecureMessageControllerSpec extends PlaySpec with ScalaFutures with Mockit
     "return success when it is able to set read-time value" in new TestCase {
       val fakeRequest = FakeRequest(GET, s"/messages/$messageId/read-time")
       val message: Letter = Resources.readJson("model/core/full-db-letter.json").as[Letter]
+      when(mockSecureMessageService.removeAlerts(any[Message])(any[ExecutionContext]))
+        .thenReturn(Future.successful(DeleteResult.acknowledged(1)))
       when(
         mockMessageRetriever.findAndSetReadTime(any[ObjectId])(any[ExecutionContext], any[HeaderCarrier])
       )
