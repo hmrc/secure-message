@@ -14,27 +14,27 @@
  * limitations under the License.
  */
 
-import play.sbt.PlayImport._
-import sbt._
+import play.sbt.PlayImport.*
+import sbt.*
 
 object AppDependencies {
 
-  private val bootstrapVersion = "10.2.0"
-  private val dcMessageLibraryVersion = "1.21.0"
+  private val bootstrapVersion = "10.4.0"
+  private val dcMessageLibraryVersion = "1.22.0"
 
-  val compile = Seq(
+  val compile: Seq[ModuleID] = Seq(
     caffeine,
-    "uk.gov.hmrc"    %% "bootstrap-backend-play-30" % bootstrapVersion,
-    "uk.gov.hmrc"    %% "dc-message-library"        % dcMessageLibraryVersion,
-    "org.typelevel"  %% "cats-core"                 % "2.13.0",
-    "com.networknt"  %  "json-schema-validator"     % "1.5.9" excludeAll ("com.fasterxml.jackson.core", "jackson-databind"),
-    "org.jsoup"      %  "jsoup"                     % "1.21.2",
-    "net.codingwell" %% "scala-guice"               % "6.0.0"
+    "uk.gov.hmrc"   %% "bootstrap-backend-play-30" % bootstrapVersion,
+    "uk.gov.hmrc"   %% "dc-message-library"        % dcMessageLibraryVersion,
+    "org.typelevel" %% "cats-core"                 % "2.13.0",
+    "com.networknt"   % "json-schema-validator" % "1.5.9" excludeAll ("com.fasterxml.jackson.core", "jackson-databind"),
+    "org.jsoup"       % "jsoup"                 % "1.21.2",
+    "net.codingwell" %% "scala-guice"           % "6.0.0"
   )
 
-  val test = Seq(
+  val test: Seq[ModuleID] = Seq(
     "uk.gov.hmrc"         %% "bootstrap-test-play-30"  % bootstrapVersion        % Test,
-    "uk.gov.hmrc.mongo"   %% "hmrc-mongo-test-play-30" % "2.10.0"                 % Test,
+    "uk.gov.hmrc.mongo"   %% "hmrc-mongo-test-play-30" % "2.10.0"                % Test,
     "org.scalatestplus"   %% "mockito-4-11"            % "3.2.18.0"              % Test,
     "uk.gov.hmrc"         %% "dc-message-library"      % dcMessageLibraryVersion % Test,
     "com.vladsch.flexmark" % "flexmark-all"            % "0.64.8"                % Test,
