@@ -20,7 +20,6 @@ import java.time.{ Instant, LocalDate }
 import org.mongodb.scala.bson.ObjectId
 import org.mongodb.scala.model.Filters
 import org.mongodb.scala.SingleObservableFuture
-import org.mongodb.scala.ObservableFuture
 import org.scalatest.EitherValues
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.play.PlaySpec
@@ -34,12 +33,14 @@ import uk.gov.hmrc.securemessage.models.core.{ ExternalReference, FilterTag, Ide
 import uk.gov.hmrc.securemessage.{ MessageNotFound, SecureMessageError }
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ Await, Future }
+import scala.concurrent.duration.*
 
 class MessageRepositorySpec
     extends PlaySpec with DefaultPlayMongoRepositorySupport[Letter] with ScalaFutures with StaticTestData
     with EitherValues {
 
+  Await.result(mongoComponent.database.drop().toFuture(), 5.seconds)
   override def checkTtlIndex: Boolean = false
 
   val timeSource: TimeSource = new TimeSource() {

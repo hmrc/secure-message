@@ -36,13 +36,15 @@ import uk.gov.hmrc.securemessage.helpers.DateTimeHelper.*
 
 import scala.collection.immutable
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ Await, Future }
+import scala.concurrent.duration.*
 
 //TODO: remove PlaySpec from all tests except controllers
 //TODO: reuse test data as variables, do not have same string twice anywhere
 class ConversationRepositorySpec
     extends PlaySpec with DefaultPlayMongoRepositorySupport[Conversation] with BeforeAndAfterEach with ScalaFutures {
 
+  Await.result(mongoComponent.database.drop().toFuture(), 5.seconds)
   override val repository: ConversationRepository = new ConversationRepository(mongoComponent)
 
   override def checkTtlIndex: Boolean = false

@@ -33,6 +33,8 @@ import uk.gov.hmrc.securemessage.models.core.{ Identifier, MessageFilter }
 import uk.gov.hmrc.securemessage.models.v4.{ BrakeBatch, BrakeBatchApproval, BrakeBatchDetails, BrakeBatchMessage, SecureMessage }
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Await
+import scala.concurrent.duration.*
 
 class SecureMessageRepositorySpec
     extends PlaySpec with MockitoSugar with DefaultPlayMongoRepositorySupport[SecureMessage] with BeforeAndAfterEach
@@ -40,6 +42,7 @@ class SecureMessageRepositorySpec
 
   override def checkTtlIndex: Boolean = false
 
+  Await.result(mongoComponent.database.drop().toFuture(), 5.seconds)
   override val repository: SecureMessageRepository =
     new SecureMessageRepository(mongoComponent, mock[TimeSource], 30, 30, 30)
 
