@@ -28,7 +28,7 @@ import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.securemessage.EmailLookupError
 import uk.gov.hmrc.securemessage.models.core.Identifier
 import common.url
-
+import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 import javax.inject.{ Inject, Singleton }
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success, Try }
@@ -38,26 +38,31 @@ class ChannelPreferencesConnector @Inject() (config: Configuration, httpClient: 
   ec: ExecutionContext
 ) extends ServicesConfig(config) with Logging {
 
-  def getEmailForEnrolment(id: Identifier)(implicit hc: HeaderCarrier): Future[Either[EmailLookupError, EmailAddress]] =
-    httpClient
-      .get(
-        url(
-          s"${baseUrl("channel-preferences")}/channel-preferences/preferences/" +
-            s"enrolments/${id.enrolment.getOrElse("")}/" +
-            s"identifier-keys/${id.name}/" +
-            s"identifier-values/${id.value}/" +
-            s"channels/email"
-        )
-      )
-      .execute[HttpResponse]
-      .map { resp =>
-        resp.status match {
-          case OK => parseEmail(resp.body)
-          case s =>
-            val errMsg = s"channel-preferences returned status: $s body: ${resp.body}"
-            Left(EmailLookupError(errMsg))
-        }
-      }
+  def getEmailForEnrolment(identifier: Identifier)(implicit
+    hc: HeaderCarrier
+  ): Future[Either[EmailLookupError, EmailAddress]] =
+    identifier.enrolment match {
+      case None => Future.successful(Left(EmailLookupError("Enrolment cannot be Empty")))
+      case Some(enrolment) =>
+        httpClient
+          .post(url(s"${baseUrl("channel-preferences")}/channel-preferences/get-verified-email"))
+          .withBody(
+            Json.obj(
+              "enrolmentKey"    -> enrolment,
+              "identifierKey"   -> identifier.name,
+              "identifierValue" -> identifier.value,
+              "channel"         -> "email"
+            )
+          )
+          .execute[HttpResponse]
+          .map { resp =>
+            resp.status match {
+              case OK => parseEmail(resp.body)
+              case s =>
+                Left(EmailLookupError(s"channel-preferences returned status: $s body: ${resp.body}"))
+            }
+          }
+    }
 
   private def parseEmail(body: String): Either[EmailLookupError, EmailAddress] =
     Try(Json.parse(body)) match {

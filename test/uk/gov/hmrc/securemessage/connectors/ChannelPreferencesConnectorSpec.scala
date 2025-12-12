@@ -92,9 +92,10 @@ class ChannelPreferencesConnectorSpec extends PlaySpec with ScalaFutures with Mo
   trait TestCase {
     val mockHttpClient: HttpClientV2 = mock[HttpClientV2]
     val mockHttpResponse: HttpResponse = mock[HttpResponse]
-    val requestBuilder = mock[RequestBuilder]
+    val requestBuilder: RequestBuilder = mock[RequestBuilder]
 
-    when(mockHttpClient.get(any[URL])(any[HeaderCarrier])).thenReturn(requestBuilder)
+    when(mockHttpClient.post(any[URL])(any[HeaderCarrier])).thenReturn(requestBuilder)
+    when(requestBuilder.withBody(any)(any, any, any)).thenReturn(requestBuilder)
     when(requestBuilder.execute[HttpResponse]).thenReturn(Future.successful(mockHttpResponse))
 
     when(mockHttpResponse.status).thenReturn(OK)
