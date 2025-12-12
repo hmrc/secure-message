@@ -28,7 +28,9 @@ import uk.gov.hmrc.common.message.emailaddress.EmailAddress
 import uk.gov.hmrc.http.client.{ HttpClientV2, RequestBuilder }
 import uk.gov.hmrc.securemessage.EmailLookupError
 import uk.gov.hmrc.securemessage.models.core.Identifier
+import uk.gov.hmrc.securemessage.models.VerifyEmailRequest
 import uk.gov.hmrc.http.HttpReads.Implicits.*
+import play.api.libs.json.Json
 
 import java.net.URL
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -86,7 +88,23 @@ class ChannelPreferencesConnectorSpec extends PlaySpec with ScalaFutures with Mo
         .fold(EmailLookupError(""))(identity)
       res.message mustBe s"""channel-preferences returned status: $BAD_REQUEST body: """
     }
+  }
 
+  "VerifyEmailRequest" should {
+    "serialize to JSON" in {
+      val request = VerifyEmailRequest(
+        enrolmentKey = "HMRC-CUS-ORG",
+        identifierKey = "EORINumber",
+        identifierValue = "GB1234567890"
+      )
+
+      val json = Json.toJson(request)
+
+      (json \ "enrolmentKey").as[String] mustBe "HMRC-CUS-ORG"
+      (json \ "identifierKey").as[String] mustBe "EORINumber"
+      (json \ "identifierValue").as[String] mustBe "GB1234567890"
+      (json \ "channel").as[String] mustBe "email"
+    }
   }
 
   trait TestCase {

@@ -27,6 +27,7 @@ import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.securemessage.EmailLookupError
 import uk.gov.hmrc.securemessage.models.core.Identifier
+import uk.gov.hmrc.securemessage.models.VerifyEmailRequest
 import common.url
 import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 import javax.inject.{ Inject, Singleton }
@@ -44,16 +45,14 @@ class ChannelPreferencesConnector @Inject() (config: Configuration, httpClient: 
     identifier.enrolment match {
       case None => Future.successful(Left(EmailLookupError("Enrolment cannot be Empty")))
       case Some(enrolment) =>
+        val request = VerifyEmailRequest(
+          enrolmentKey = enrolment,
+          identifierKey = identifier.name,
+          identifierValue = identifier.value
+        )
         httpClient
           .post(url(s"${baseUrl("channel-preferences")}/channel-preferences/get-verified-email"))
-          .withBody(
-            Json.obj(
-              "enrolmentKey"    -> enrolment,
-              "identifierKey"   -> identifier.name,
-              "identifierValue" -> identifier.value,
-              "channel"         -> "email"
-            )
-          )
+          .withBody(Json.toJson(request))
           .execute[HttpResponse]
           .map { resp =>
             resp.status match {
