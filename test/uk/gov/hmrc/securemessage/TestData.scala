@@ -43,4 +43,7 @@ object TestData {
   val TEST_WAIT_TIME = "200"
   val TEST_TOPIC = "test_topic"
   val TEST_ENVELOPE_ID = "adfg#1456hjftwer=="
+
+  val TEST_KEY = "test_key"
+  val TEST_KEY_VALUE = "test_key_value"
 }

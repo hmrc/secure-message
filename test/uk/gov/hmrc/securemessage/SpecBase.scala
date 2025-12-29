@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.securemessage
 
-import org.scalatest.matchers.should.Matchers
+import org.scalatest.matchers.must.{ Matchers => MustMatchers }
 import org.scalatest.wordspec.AnyWordSpecLike
 import org.scalatestplus.mockito.MockitoSugar
 
-trait SpecBase extends AnyWordSpecLike with Matchers with MockitoSugar {}
+trait SpecBase extends AnyWordSpecLike with MustMatchers with MockitoSugar {}
