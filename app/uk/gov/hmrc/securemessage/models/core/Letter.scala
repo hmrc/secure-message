@@ -172,7 +172,7 @@ case class Details(
   properties: Option[JsValue] = None
 ) {
 
-  val paramsMap = Map(
+  private val paramsMap = Map(
     "formId"       -> form,
     "type"         -> `type`,
     "suppressedAt" -> suppressedAt,
@@ -189,14 +189,14 @@ case class Details(
     "properties"   -> properties
   )
 
-  val toMap = paramsMap.collect { case (key, Some(value)) => key -> value.toString }
+  val toMap: Map[String, String] = paramsMap.collect { case (key, Some(value)) => key -> value.toString }
 }
+
 object Details {
   private val localDateFormatString = "yyyy-MM-dd"
 
   implicit val localDateFormat: Format[LocalDate] =
     Format(formatLocalDateReads(localDateFormatString), formatLocalDateWrites(localDateFormatString))
 
-//  implicit val isoTime: Reads[LocalDate] = (__ \ "issueDate").read[LocalDate]
   implicit val format: OFormat[Details] = Json.format[Details]
 }
