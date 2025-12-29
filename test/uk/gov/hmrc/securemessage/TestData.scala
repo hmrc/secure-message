@@ -17,12 +17,16 @@
 package uk.gov.hmrc.securemessage
 
 import uk.gov.hmrc.common.message.model.Adviser
+import uk.gov.hmrc.securemessage.models.core.Identifier
 
-import java.time.LocalDate
+import java.time.{ Instant, LocalDate }
 
 object TestData {
   val TEST_IDENTIFIER_NAME = "test_name"
   val TEST_IDENTIFIER_VALUE = "test_value"
+  val TEST_IDENTIFIER_ENROLMENT = "HMRC-CUS-ORG"
+  val TEST_IDENTIFIER: Identifier =
+    Identifier(TEST_IDENTIFIER_NAME, TEST_IDENTIFIER_VALUE, Some(TEST_IDENTIFIER_ENROLMENT))
 
   val TEST_FORM = "test_form"
   val TEST_TYPE = "test_type"
@@ -36,6 +40,9 @@ object TestData {
   val TEST_DAY = 20
   val TEST_DATE: LocalDate = LocalDate.of(TEST_YEAR, TEST_MONTH, TEST_DAY)
 
+  val EPOCH_MILLI_SECONDS = 789245L
+  val TEST_TIME_INSTANT: Instant = Instant.ofEpochMilli(EPOCH_MILLI_SECONDS)
+
   val TEST_EMAIL_ADDRESS_VALUE = "test@test.com"
   val TEST_THREAD_ID = "adfg#1456hjftwer==+gj123"
   val TEST_ENQUIRY_TYPE = "test_enquiry"
@@ -43,7 +50,12 @@ object TestData {
   val TEST_WAIT_TIME = "200"
   val TEST_TOPIC = "test_topic"
   val TEST_ENVELOPE_ID = "adfg#1456hjftwer=="
+  val TEST_SUBJECT = "sub_test"
+  val TEST_CONTENT = "adfg#1456hjftwer=="
 
   val TEST_KEY = "test_key"
   val TEST_KEY_VALUE = "test_key_value"
+
+  val TEST_URL = "test@test.com"
+  val TEST_SERVICE_NAME = "test_service"
 }
