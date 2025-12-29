@@ -50,8 +50,13 @@ object TestData {
   val TEST_WAIT_TIME = "200"
   val TEST_TOPIC = "test_topic"
   val TEST_ENVELOPE_ID = "adfg#1456hjftwer=="
+  val TEST_EXT_REF_ID = "adfg1278"
   val TEST_SUBJECT = "sub_test"
+  val TEST_WELSH_SUBJECT = "Nodyn atgoffa i ffeilio ffurflen Hunanasesiad"
   val TEST_CONTENT = "adfg#1456hjftwer=="
+  val TEST_WELSH_CONTENT = "Q3lubnd5cyAtIDQyNTQxMDEzODQxNzQ5MTcxNDE="
+  val TEST_MSG_TYPE = "letter"
+  val TEST_TEMPLATE_ID = "test_template_id"
 
   val TEST_KEY = "test_key"
   val TEST_KEY_VALUE = "test_key_value"
