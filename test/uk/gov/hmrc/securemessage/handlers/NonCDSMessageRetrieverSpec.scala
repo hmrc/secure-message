@@ -53,6 +53,7 @@ class NonCDSMessageRetrieverSpec extends PlaySpec with MockitoSugar with UnitTes
       result.map(_.as[List[MessageMetadata]] mustBe letters)
     }
   }
+
   "getMessagesCount" must {
     "return count" in new TestCase() {
       val result: Future[JsValue] =
@@ -66,6 +67,14 @@ class NonCDSMessageRetrieverSpec extends PlaySpec with MockitoSugar with UnitTes
       val result: Future[Option[Letter]] = retriever.updateMessageContent(Some(storedLetter))
       result.futureValue mustBe Some(expectedLetterJson.as[Letter])
     }
+  }
+
+  "getMessage" must {
+    "return correct message" in new TestCase {}
+  }
+
+  "getMessagesContentChain" must {
+    "return the correct list of content" in new TestCase {}
   }
 
   class TestCase {
