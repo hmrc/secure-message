@@ -34,6 +34,7 @@ object TestData {
   val TEST_ID = "test_id"
   val TEST_PID_ID = "1234567"
   val TEST_BATCH_ID = "87912345"
+  val TEST_REGIME = "test_regime"
 
   val TEST_YEAR = 2025
   val TEST_MONTH = 12
@@ -60,6 +61,7 @@ object TestData {
 
   val TEST_KEY = "test_key"
   val TEST_KEY_VALUE = "test_key_value"
+  val TEST_HASH = "1456hjftwer+===####"
 
   val TEST_URL = "test@test.com"
   val TEST_SERVICE_NAME = "test_service"

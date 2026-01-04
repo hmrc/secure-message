@@ -20,31 +20,36 @@ import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.testkit.NoMaterializer
 import org.mockito.ArgumentMatchers.{ any, eq as eqTo }
 import org.mockito.Mockito.when
+import org.mongodb.scala.bson.ObjectId
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.i18n.Messages
 import play.api.libs.json.{ JsValue, Json }
-import play.api.test.Helpers.stubMessages
+import play.api.test.Helpers.{ await, stubMessages }
+import play.api.test.Helpers.*
 import uk.gov.hmrc.common.message.model.Language.English
-import uk.gov.hmrc.common.message.model.MessagesCount
+import uk.gov.hmrc.common.message.model.{ MessageContentParameters, MessagesCount }
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.domain.TaxIds.TaxIdWithName
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.securemessage.UnitTest
+import uk.gov.hmrc.securemessage.{ SecureMessageError, UnitTest }
 import uk.gov.hmrc.securemessage.connectors.AuthIdentifiersConnector
+import uk.gov.hmrc.securemessage.controllers.model.{ ApiMessage, MessageResourceResponse, ServiceUrl }
 import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata
 import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core.*
 import uk.gov.hmrc.securemessage.services.SecureMessageServiceImpl
+import uk.gov.hmrc.auth.core.{ Enrolment, EnrolmentIdentifier, Enrolments }
+import uk.gov.hmrc.securemessage.TestData.{ TEST_DATE, TEST_DATE_STRING, TEST_EMAIL_ADDRESS_VALUE, TEST_FORM, TEST_HASH, TEST_IDENTIFIER, TEST_REGIME, TEST_SERVICE_NAME, TEST_SUBJECT, TEST_TEMPLATE_ID, TEST_TIME_INSTANT, TEST_TYPE, TEST_URL }
+import uk.gov.hmrc.securemessage.controllers.model.MessageType.Letter
+import uk.gov.hmrc.securemessage.controllers.utils.IdCoder.DecodedId
 
+import java.time.{ Instant, LocalDate }
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ ExecutionContext, Future }
 
 class NonCDSMessageRetrieverSpec extends PlaySpec with MockitoSugar with UnitTest with ScalaFutures {
-  implicit val mat: Materializer = NoMaterializer
-  implicit val hc: HeaderCarrier = HeaderCarrier()
-  implicit val stubMsgs: Messages = stubMessages()
 
   "fetch messages" must {
     "return metadata for both conversations and letters" in new TestCase {
@@ -70,14 +75,121 @@ class NonCDSMessageRetrieverSpec extends PlaySpec with MockitoSugar with UnitTes
   }
 
   "getMessage" must {
-    "return correct message" in new TestCase {}
+    "return correct output" when {
+      "messageType is Letter and letter is found for the provided messageId" in new TestCase {
+        val enrolment: Enrolment = Enrolment(
+          "bar",
+          List(EnrolmentIdentifier("key-a", "val-a"), EnrolmentIdentifier("key-b", "val-b")),
+          "activated",
+          None
+        )
+
+        val enrolments: Enrolments = Enrolments(Set(enrolment))
+        val messageId: DecodedId = "123414566667676767676767"
+
+        val msgReadReq: MessageReadRequest =
+          MessageReadRequest(messageType = Letter, authEnrolments = enrolments, messageId = messageId)
+
+        val letter: Letter = uk.gov.hmrc.securemessage.models.core.Letter(
+          _id = new ObjectId("6021481d59f23de1fe8389db"),
+          subject = TEST_SUBJECT,
+          validFrom = TEST_DATE,
+          hash = TEST_HASH,
+          alertQueue = None,
+          alertFrom = None,
+          status = "test_status",
+          content = None,
+          statutory = true,
+          lastUpdated = Some(TEST_TIME_INSTANT),
+          recipient =
+            Recipient(regime = TEST_REGIME, identifier = TEST_IDENTIFIER, email = Some(TEST_EMAIL_ADDRESS_VALUE)),
+          renderUrl = RenderUrl(TEST_SERVICE_NAME, TEST_URL),
+          externalRef = None,
+          alertDetails = AlertDetails(templateId = TEST_TEMPLATE_ID, recipientName = None),
+          alerts = None,
+          readTime = None,
+          replyTo = Some(TEST_EMAIL_ADDRESS_VALUE),
+          tags = None
+        )
+
+        when(mockSecureMessageService.getLetter(any)(any)).thenReturn(Future.successful(Some(letter)))
+        when(mockAuthConnector.isStrideUser(any)).thenReturn(Future.successful(true))
+
+        val result: Either[SecureMessageError, ApiMessage] = await(retriever.getMessage(msgReadReq))
+
+        result must be(
+          Right(
+            MessageResourceResponse(
+              id = "6021481d59f23de1fe8389db",
+              subject = TEST_SUBJECT,
+              body = None,
+              validFrom = TEST_DATE,
+              readTime =
+                Left(ServiceUrl("secure-message", "/secure-messaging/messages/6021481d59f23de1fe8389db/read-time ")),
+              contentParameters = None,
+              sentInError = false,
+              renderUrl = ServiceUrl(TEST_SERVICE_NAME, TEST_URL)
+            )
+          )
+        )
+      }
+    }
   }
 
   "getMessagesContentChain" must {
-    "return the correct list of content" in new TestCase {}
+    "return the correct list of content" in new TestCase {
+      val details: Details = Details(
+        form = Some(TEST_FORM),
+        `type` = Some(TEST_TYPE),
+        suppressedAt = Some(TEST_DATE_STRING),
+        detailsId = Some(TEST_TEMPLATE_ID),
+        replyTo = Some("6021481d59f23de1fe8389db")
+      )
+
+      val letter: Letter = uk.gov.hmrc.securemessage.models.core.Letter(
+        _id = new ObjectId("6021481d59f23de1fe8389db"),
+        subject = TEST_SUBJECT,
+        validFrom = TEST_DATE,
+        hash = TEST_HASH,
+        alertQueue = None,
+        alertFrom = None,
+        status = "test_status",
+        content = None,
+        statutory = true,
+        lastUpdated = Some(TEST_TIME_INSTANT),
+        recipient =
+          Recipient(regime = TEST_REGIME, identifier = TEST_IDENTIFIER, email = Some(TEST_EMAIL_ADDRESS_VALUE)),
+        renderUrl = RenderUrl(TEST_SERVICE_NAME, TEST_URL),
+        externalRef = None,
+        alertDetails = AlertDetails(templateId = TEST_TEMPLATE_ID, recipientName = None),
+        alerts = None,
+        readTime = None,
+        replyTo = Some(TEST_EMAIL_ADDRESS_VALUE),
+        tags = None,
+        body = None
+      )
+
+      when(mockSecureMessageService.getLetter(any)(any)).thenReturn(Future.successful(Some(letter)))
+
+      val objectId = new ObjectId("6021481d59f23de1fe8389db")
+
+      val result: List[DecodedId] = await(retriever.getMessagesContentChain(objectId))
+
+      val expectedContentList: List[DecodedId] = List(
+        <h1 lang="en" class="govuk-heading-xl">sub_test</h1>.mkString ++
+          <p class="message_time faded-text--small govuk-body">date.text.advisor</p><br/>.mkString
+      )
+
+      result must be(expectedContentList)
+    }
   }
 
   class TestCase {
+    implicit val mat: Materializer = NoMaterializer
+    implicit val hc: HeaderCarrier = HeaderCarrier()
+    implicit val stubMsgs: Messages = stubMessages()
+    implicit lazy val lang: Language = English
+
     val mockSecureMessageService: SecureMessageServiceImpl = mock[SecureMessageServiceImpl]
     val mockAuthConnector: AuthIdentifiersConnector = mock[AuthIdentifiersConnector]
 
