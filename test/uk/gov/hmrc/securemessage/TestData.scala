@@ -16,7 +16,9 @@
 
 package uk.gov.hmrc.securemessage
 
+import uk.gov.hmrc.common.message.emailaddress.EmailAddress
 import uk.gov.hmrc.common.message.model.Adviser
+import uk.gov.hmrc.securemessage.models.Tags
 import uk.gov.hmrc.securemessage.models.core.Identifier
 
 import java.time.{ Instant, LocalDate }
@@ -45,6 +47,8 @@ object TestData {
   val TEST_TIME_INSTANT: Instant = Instant.ofEpochMilli(EPOCH_MILLI_SECONDS)
 
   val TEST_EMAIL_ADDRESS_VALUE = "test@test.com"
+  val TEST_EMAIL_ADDRESS: EmailAddress = EmailAddress(TEST_EMAIL_ADDRESS_VALUE)
+
   val TEST_THREAD_ID = "adfg#1456hjftwer==+gj123"
   val TEST_ENQUIRY_TYPE = "test_enquiry"
   val TEST_ADVISER: Adviser = Adviser(TEST_PID_ID)
@@ -65,4 +69,15 @@ object TestData {
 
   val TEST_URL = "test@test.com"
   val TEST_SERVICE_NAME = "test_service"
+  val TEST_SOURCE = "gmc"
+  val TEST_MSG_ID = "1456hjftwer"
+  val TEST_ENROLMENT_VALUE = "HMRC-ORG"
+
+  val TEST_PARAMETERS: Map[String, String] = Map(TEST_IDENTIFIER_NAME -> TEST_IDENTIFIER_VALUE)
+  val TEST_TAGS: Tags =
+    Tags(messageId = Some(TEST_MSG_ID), source = Some(TEST_SOURCE), enrolment = Some(TEST_ENROLMENT_VALUE))
+
+  val TEST_SAUTR = "1234567890"
+  val TEST_NINO = "SJ123456A"
+  val TEST_HMRC_MTD_ITSA_VALUE = "X99999999999"
 }

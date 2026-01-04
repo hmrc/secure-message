@@ -33,7 +33,7 @@ import uk.gov.hmrc.common.message.model.{ MessageContentParameters, MessagesCoun
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.domain.TaxIds.TaxIdWithName
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.securemessage.{ SecureMessageError, UnitTest }
+import uk.gov.hmrc.securemessage.{ MessageNotFound, SecureMessageError, UnitTest }
 import uk.gov.hmrc.securemessage.connectors.AuthIdentifiersConnector
 import uk.gov.hmrc.securemessage.controllers.model.{ ApiMessage, MessageResourceResponse, ServiceUrl }
 import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata
@@ -181,6 +181,100 @@ class NonCDSMessageRetrieverSpec extends PlaySpec with MockitoSugar with UnitTes
       )
 
       result must be(expectedContentList)
+    }
+  }
+
+  "findAndSetReadTime" must {
+    "return MessageNotFound error when no message is found for the provided object id" in new TestCase {
+      val details: Details = Details(
+        form = Some(TEST_FORM),
+        `type` = Some(TEST_TYPE),
+        suppressedAt = Some(TEST_DATE_STRING),
+        detailsId = Some(TEST_TEMPLATE_ID),
+        replyTo = Some("6021481d59f23de1fe8389db")
+      )
+
+      val letter: Letter = uk.gov.hmrc.securemessage.models.core.Letter(
+        _id = new ObjectId("6021481d59f23de1fe8389db"),
+        subject = TEST_SUBJECT,
+        validFrom = TEST_DATE,
+        hash = TEST_HASH,
+        alertQueue = None,
+        alertFrom = None,
+        status = "test_status",
+        content = None,
+        statutory = true,
+        lastUpdated = Some(TEST_TIME_INSTANT),
+        recipient = Recipient(
+          regime = TEST_REGIME,
+          identifier = TEST_IDENTIFIER.copy(name = "nino", value = "SJ123456A"),
+          email = Some(TEST_EMAIL_ADDRESS_VALUE)
+        ),
+        renderUrl = RenderUrl(TEST_SERVICE_NAME, TEST_URL),
+        externalRef = None,
+        alertDetails = AlertDetails(templateId = TEST_TEMPLATE_ID, recipientName = None),
+        alerts = None,
+        readTime = None,
+        replyTo = Some(TEST_EMAIL_ADDRESS_VALUE),
+        tags = None,
+        body = None
+      )
+
+      when(mockSecureMessageService.getLetter(any)(any)).thenReturn(Future.successful(None))
+      when(mockSecureMessageService.getSecureMessage(any)(any)).thenReturn(Future.successful(None))
+      when(mockAuthConnector.isStrideUser(any)).thenReturn(Future.successful(true))
+
+      val objectId = new ObjectId("6021481d59f23de1fe8389db")
+
+      val result: Either[SecureMessageError, Option[Message]] = await(retriever.findAndSetReadTime(objectId))
+
+      result must be(Right(None))
+    }
+
+    "return the message with updated read time" in new TestCase {
+      val details: Details = Details(
+        form = Some(TEST_FORM),
+        `type` = Some(TEST_TYPE),
+        suppressedAt = Some(TEST_DATE_STRING),
+        detailsId = Some(TEST_TEMPLATE_ID),
+        replyTo = Some("6021481d59f23de1fe8389db")
+      )
+
+      val letter: Letter = uk.gov.hmrc.securemessage.models.core.Letter(
+        _id = new ObjectId("6021481d59f23de1fe8389db"),
+        subject = TEST_SUBJECT,
+        validFrom = TEST_DATE,
+        hash = TEST_HASH,
+        alertQueue = None,
+        alertFrom = None,
+        status = "test_status",
+        content = None,
+        statutory = true,
+        lastUpdated = Some(TEST_TIME_INSTANT),
+        recipient = Recipient(
+          regime = TEST_REGIME,
+          identifier = TEST_IDENTIFIER.copy(name = "nino", value = "SJ123456A"),
+          email = Some(TEST_EMAIL_ADDRESS_VALUE)
+        ),
+        renderUrl = RenderUrl(TEST_SERVICE_NAME, TEST_URL),
+        externalRef = None,
+        alertDetails = AlertDetails(templateId = TEST_TEMPLATE_ID, recipientName = None),
+        alerts = None,
+        readTime = None,
+        replyTo = Some(TEST_EMAIL_ADDRESS_VALUE),
+        tags = None,
+        body = None
+      )
+
+      when(mockSecureMessageService.getLetter(any)(any)).thenReturn(Future.successful(Some(letter)))
+      when(mockAuthConnector.isStrideUser(any)).thenReturn(Future.successful(true))
+      when(mockSecureMessageService.setReadTime(any[Letter])(any)).thenReturn(Future.successful(Right(letter)))
+
+      val objectId = new ObjectId("6021481d59f23de1fe8389db")
+
+      val result: Either[SecureMessageError, Option[Message]] = await(retriever.findAndSetReadTime(objectId))
+
+      result must be(Right(None))
     }
   }
 
