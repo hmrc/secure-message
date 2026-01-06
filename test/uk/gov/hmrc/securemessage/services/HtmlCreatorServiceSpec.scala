@@ -149,15 +149,7 @@ class HtmlCreatorServiceSpec extends SpecBase {
   }
 
   trait Setup {
-    // val service: HtmlCreatorService = app.injector.instanceOf[HtmlCreatorService]
-    val servicesConfig = new ServicesConfig(
-      Configuration(
-        "microservice.services.email.host"     -> "host",
-        "microservice.services.email.port"     -> 443,
-        "microservice.services.email.protocol" -> "https",
-        "contact-hmrc-url"                     -> "test_url"
-      )
-    )
+    val servicesConfig = new ServicesConfig(Configuration("contact-hmrc-url" -> "test_url"))
     val service: HtmlCreatorService = new HtmlCreatorService(servicesConfig)
 
     val message: Message = Message(

@@ -17,9 +17,9 @@
 package uk.gov.hmrc.securemessage.connectors
 
 import ch.qos.logback.classic.spi.ILoggingEvent
-import ch.qos.logback.classic.{ Level, Logger => LogbackLogger }
+import ch.qos.logback.classic.{ Level, Logger as LogbackLogger }
 import ch.qos.logback.core.read.ListAppender
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{ Config, ConfigFactory }
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.*
 import org.scalatest.concurrent.{ Eventually, IntegrationPatience, ScalaFutures }
@@ -27,9 +27,7 @@ import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import org.slf4j.LoggerFactory
-import play.api.{ Application, Configuration }
-import play.api.inject.bind
-import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.Configuration
 import play.api.libs.json.*
 import uk.gov.hmrc.common.message.model.TaxpayerName
 import uk.gov.hmrc.domain.SaUtr
@@ -48,7 +46,7 @@ class TaxpayerNameConnectorSpec
     extends PlaySpec with ScalaFutures with LogCapturing with Eventually with MockitoSugar with GuiceOneAppPerSuite
     with MetricOrchestratorStub with IntegrationPatience {
 
-  val fullTaxpayerName = TaxpayerName(
+  val fullTaxpayerName: TaxpayerName = TaxpayerName(
     title = Some("Mr"),
     forename = Some("Erbert"),
     secondForename = Some("Donaldson"),
@@ -56,7 +54,7 @@ class TaxpayerNameConnectorSpec
     honours = Some("KCBE")
   )
 
-  val utr = SaUtr("12345678990")
+  val utr: SaUtr = SaUtr("12345678990")
 
   "Parsing from JSON to a" must {
 
@@ -152,9 +150,10 @@ class TaxpayerNameConnectorSpec
   }
 
   "Taxpayer connector" must {
-    implicit val hc = HeaderCarrier()
+    implicit val hc: HeaderCarrier = HeaderCarrier()
+
     "log an error and return empty TaxpayerName on 5** or non 404 4** error" in {
-      val logger = play.api.Logger(connector.getClass()).underlyingLogger.asInstanceOf[LogbackLogger]
+      val logger = play.api.Logger(connector.getClass).underlyingLogger.asInstanceOf[LogbackLogger]
       withCaptureOfLoggingFrom(logger) { logEvents =>
         connectorWithResponse(None, 500).taxpayerName(utr).futureValue must be(None)
 
@@ -167,7 +166,7 @@ class TaxpayerNameConnectorSpec
     }
 
     "log an warn level message and return empty TaxpayerName on 404 error" in {
-      val logger = play.api.Logger(connector.getClass()).underlyingLogger.asInstanceOf[LogbackLogger]
+      val logger = play.api.Logger(connector.getClass).underlyingLogger.asInstanceOf[LogbackLogger]
       withCaptureOfLoggingFrom(logger) { logEvents =>
         connectorWithResponse(None, 404).taxpayerName(utr).futureValue must be(None)
         logEvents.head.getLevel must be(Level.WARN)
@@ -176,10 +175,29 @@ class TaxpayerNameConnectorSpec
     }
   }
 
-  val mockHttp = mock[HttpClientV2]
-  val requestBuilder = mock[RequestBuilder]
-  val underlyingConfig = ConfigFactory.load()
-  val configuration =
+  "NameFromHods.format" must {
+    import NameFromHods.format
+
+    "read the json correctly" in new Setup {
+      Json.parse(nameFromHodsJsonString).as[NameFromHods] mustBe nameFromHods
+    }
+
+    "throw exception for invalid json" in new Setup {
+      intercept[JsResultException] {
+        Json.parse(nameFromHodsInvalidJsonString).as[NameFromHods]
+      }
+    }
+
+    "write the object correctly" in new Setup {
+      Json.toJson(nameFromHods) mustBe Json.parse(nameFromHodsJsonString)
+    }
+  }
+
+  val mockHttp: HttpClientV2 = mock[HttpClientV2]
+  val requestBuilder: RequestBuilder = mock[RequestBuilder]
+  val underlyingConfig: Config = ConfigFactory.load()
+
+  val configuration: Configuration =
     Configuration(underlyingConfig)
       .withFallback(
         Configuration(
@@ -208,6 +226,14 @@ class TaxpayerNameConnectorSpec
 
     connector
   }
+
+  trait Setup {
+    val taxpayerName: TaxpayerName = TaxpayerName(title = Some("test_title"))
+    val nameFromHods: NameFromHods = NameFromHods(Some(taxpayerName))
+
+    val nameFromHodsJsonString: String = """{"name":{"title":"test_title"}}""".stripMargin
+    val nameFromHodsInvalidJsonString: String = """{"name":{"title":true}}""".stripMargin
+  }
 }
 
 trait LogCapturing {
@@ -222,7 +248,6 @@ trait LogCapturing {
 
   def withCaptureOfLoggingFrom(logger: LogbackLogger)(body: (=> List[ILoggingEvent]) => Any): Any = {
     val appender = new ListAppender[ILoggingEvent]()
-//    appender.setContext(logger.getLoggerContext)
     appender.start()
     logger.addAppender(appender)
     logger.setLevel(Level.TRACE)
