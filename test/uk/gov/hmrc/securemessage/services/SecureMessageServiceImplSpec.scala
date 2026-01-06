@@ -615,6 +615,7 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
   "getMessages" should {
     "return both conversations and letters sorted in descending order by issue date" in new GetMessagesTestContext() {
       private val result: List[Message] = service.getMessages(enrolments, filters()).futureValue
+
       result must not be (conversations ++ letters)
       result mustBe (conversations ++ letters ++ List(v4Message)).sortWith { (a, b) =>
         a.issueDate.isAfter(b.issueDate)
@@ -642,8 +643,8 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
     }
 
     "add readTime when there are new messages after last readTime" in new AddReadTimesTestContext {
-      val readTimeStamp = OffsetDateTime.parse("2020-11-09T15:00:00.000", dtf).toInstant
-      val conversation = ConversationUtil.getFullConversation(
+      val readTimeStamp: Instant = OffsetDateTime.parse("2020-11-09T15:00:00.000", dtf).toInstant
+      val conversation: Conversation = ConversationUtil.getFullConversation(
         new ObjectId(),
         "D-80542-20201120",
         "HMRC-CUS-ORG",
@@ -662,8 +663,8 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
     }
 
     "add read time when no messages were read" in new AddReadTimesTestContext {
-      val readTimeStamp = OffsetDateTime.parse("2020-11-09T15:00:00.000", dtf).toInstant
-      val conversation = ConversationUtil.getFullConversation(
+      val readTimeStamp: Instant = OffsetDateTime.parse("2020-11-09T15:00:00.000", dtf).toInstant
+      val conversation: Conversation = ConversationUtil.getFullConversation(
         new ObjectId(),
         "D-80542-20201120",
         "HMRC-CUS-ORG",
@@ -682,8 +683,8 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
     }
 
     "not add readTime when there are no new messages after last readtime" in new AddReadTimesTestContext {
-      val readTimeStamp = OffsetDateTime.parse("2021-11-09T15:00:00.000", dtf).toInstant
-      val conversation = ConversationUtil.getFullConversation(
+      val readTimeStamp: Instant = OffsetDateTime.parse("2021-11-09T15:00:00.000", dtf).toInstant
+      val conversation: Conversation = ConversationUtil.getFullConversation(
         new ObjectId(),
         "D-80542-20201120",
         "HMRC-CUS-ORG",
@@ -780,24 +781,37 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
   "getContentForv3Message" must {
     "return correct content" when {
       "message is found" in new TestHelpers {
+        when(mockAuthConnector.currentEffectiveTaxIdentifiers(any))
+          .thenReturn(Future.successful(Set(Nino("SJ123456A"))))
+
+        when(mockAuthConnector.isStrideUser(any)).thenReturn(Future.successful(true))
+
+        when(mockMessageRepository.getLetter(any, any)(any)).thenReturn(Future.successful(Right(letter)))
+
         when(mockMessageV3Service.getMessage(any)(any, any, any)).thenReturn(Future.successful(Right(letter)))
 
         val result: Option[String] = await(service.getContentForv3Message(new ObjectId()))
-        result must be("")
+
+        result.map { content =>
+          assert(
+            content.contains(
+              <h1 lang="en" class="govuk-heading-xl">subject</h1>
+                <p class="message_time faded-text--small govuk-body">date.text.advisor</p><br/>.mkString
+            )
+          )
+        }
       }
     }
 
     "return None" when {
       "error occurs while finding a message" in new TestHelpers {
-        when(mockMessageV3Service.getMessage(any)(any, any, any))
+        when(mockAuthConnector.currentEffectiveTaxIdentifiers(any))
+          .thenReturn(Future.successful(Set(Nino("SJ123456A"))))
+
+        when(mockAuthConnector.isStrideUser(any)).thenReturn(Future.successful(true))
+
+        when(mockMessageRepository.getLetter(any, any)(any))
           .thenReturn(Future.successful(Left(MessageNotFound("error occurred"))))
-
-        val result: Option[String] = await(service.getContentForv3Message(new ObjectId()))
-        result mustBe empty
-      }
-
-      "conversation is found as Message" in new TestHelpers {
-        when(mockMessageV3Service.getMessage(any)(any, any, any)).thenReturn(Future.successful(Right(v4Message)))
 
         val result: Option[String] = await(service.getContentForv3Message(new ObjectId()))
         result mustBe empty
