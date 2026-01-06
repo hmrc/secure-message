@@ -17,7 +17,8 @@
 package uk.gov.hmrc.securemessage
 
 import uk.gov.hmrc.common.message.emailaddress.EmailAddress
-import uk.gov.hmrc.common.message.model.Adviser
+import uk.gov.hmrc.common.message.model.{ Adviser, Details, EmailAlert, Regime, RenderUrl, TaxEntity }
+import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.securemessage.models.Tags
 import uk.gov.hmrc.securemessage.models.core.Identifier
 
@@ -76,6 +77,25 @@ object TestData {
   val TEST_PARAMETERS: Map[String, String] = Map(TEST_IDENTIFIER_NAME -> TEST_IDENTIFIER_VALUE)
   val TEST_TAGS: Tags =
     Tags(messageId = Some(TEST_MSG_ID), source = Some(TEST_SOURCE), enrolment = Some(TEST_ENROLMENT_VALUE))
+
+  val TEST_TAX_ENTITY: TaxEntity = TaxEntity(Regime.paye, Nino("SJ123456A"), Some(TEST_EMAIL_ADDRESS_VALUE))
+  val TEST_DETAILS: Details =
+    Details(
+      form = Some(TEST_FORM),
+      `type` = Some(TEST_TYPE),
+      suppressedAt = Some("2026-01-05"),
+      detailsId = Some(TEST_TEMPLATE_ID),
+      enquiryType = Some("p800_D2")
+    )
+
+  val TEST_EMAIL_ALERT: EmailAlert = EmailAlert(
+    emailAddress = Some(TEST_EMAIL_ADDRESS_VALUE),
+    alertTime = TEST_TIME_INSTANT,
+    success = true,
+    failureReason = Some("server error")
+  )
+
+  val TEST_RENDER_URL: RenderUrl = RenderUrl(service = TEST_SERVICE_NAME, url = TEST_URL)
 
   val TEST_SAUTR = "1234567890"
   val TEST_NINO = "SJ123456A"

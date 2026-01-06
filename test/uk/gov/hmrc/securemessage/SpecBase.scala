@@ -16,8 +16,16 @@
 
 package uk.gov.hmrc.securemessage
 
-import org.scalatest.matchers.must.{ Matchers => MustMatchers }
+import org.scalatest.matchers.must.Matchers as MustMatchers
 import org.scalatest.wordspec.AnyWordSpecLike
 import org.scalatestplus.mockito.MockitoSugar
+import play.api.Application
+import play.api.inject.guice.GuiceApplicationBuilder
 
-trait SpecBase extends AnyWordSpecLike with MustMatchers with MockitoSugar {}
+trait SpecBase extends AnyWordSpecLike with MustMatchers with MockitoSugar {
+  lazy val app: Application = new GuiceApplicationBuilder()
+    .configure(
+      "metrics.enabled" -> "false"
+    )
+    .build()
+}
