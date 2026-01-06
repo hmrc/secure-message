@@ -36,6 +36,7 @@ import play.api.test.Helpers.*
 import uk.gov.hmrc.auth.core.{ Enrolment, EnrolmentIdentifier, Enrolments }
 import uk.gov.hmrc.common.message.model.{ Language, MessagesCount }
 import uk.gov.hmrc.common.message.emailaddress.EmailAddress
+import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.securemessage.connectors.{ AuthIdentifiersConnector, ChannelPreferencesConnector, EISConnector, EmailConnector }
@@ -703,8 +704,21 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
 
   "getMessagesCount" must {
     "return count" in new AddReadTimesTestContext {
-      val result = service.getMessagesCount(enrolments, filters()).futureValue
+      val result: MessagesCount = service.getMessagesCount(enrolments, filters()).futureValue
       result mustBe MessagesCount(3, 2)
+    }
+  }
+
+  "getMessagesCount(Set[TaxIdWithName])" must {
+    "return correct MessagesCount" in new TestHelpers {
+      implicit val messageFilter: MessageFilter = MessageFilter()
+
+      when(mockMessageRepository.countBy(any)(any)).thenReturn(Future.successful(MessagesCount(5, 2)))
+      when(mockSecureMessageUtil.countBy(any)(any)).thenReturn(Future.successful(MessagesCount(5, 2)))
+
+      val result: MessagesCount = await(service.getMessagesCount(Set(Nino("SJ123456A"))))
+
+      result must be(MessagesCount(10, 4))
     }
   }
 
@@ -720,14 +734,87 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
       result.getDeletedCount mustBe 1
     }
   }
+
+  "getMessagesList" must {
+    "return correct list of messages" in new TestHelpers {
+      implicit val messageFilter: MessageFilter = MessageFilter()
+
+      when(mockMessageRepository.findBy(any)(any, any)).thenReturn(Future.successful(List(letter)))
+      when(mockSecureMessageUtil.findBy(any)(any, any)).thenReturn(Future.successful(List(v4Message)))
+
+      val result: List[Message] = await(service.getMessagesList(Set(Nino("SJ123456A"))))
+
+      result must be(List(letter, v4Message))
+    }
+  }
+
+  "findSecureMessageById" must {
+    "return secure message" in new TestHelpers {
+      when(mockSecureMessageUtil.findById(any)).thenReturn(Future.successful(Some(v4Message)))
+
+      val result: Option[SecureMessage] = await(service.findSecureMessageById(new ObjectId()))
+
+      result must be(Some(v4Message))
+    }
+  }
+
+  "getLetter" must {
+    "return the found the Message" in new TestHelpers {
+      when(mockMessageRepository.getLetter(any, any)(any)).thenReturn(Future.successful(Right(letter)))
+
+      val result: Option[Letter] = await(service.getLetter(new ObjectId()))
+
+      result must be(Option(letter))
+    }
+
+    "return None when no Message is found for the provided id" in new TestHelpers {
+      when(mockMessageRepository.getLetter(any, any)(any))
+        .thenReturn(Future.successful(Left(MessageNotFound("error occurred"))))
+
+      val result: Option[Letter] = await(service.getLetter(new ObjectId()))
+
+      result mustBe empty
+    }
+  }
+
+  "getContentForv3Message" must {
+    "return correct content" when {
+      "message is found" in new TestHelpers {
+        when(mockMessageV3Service.getMessage(any)(any, any, any)).thenReturn(Future.successful(Right(letter)))
+
+        val result: Option[String] = await(service.getContentForv3Message(new ObjectId()))
+        result must be("")
+      }
+    }
+
+    "return None" when {
+      "error occurs while finding a message" in new TestHelpers {
+        when(mockMessageV3Service.getMessage(any)(any, any, any))
+          .thenReturn(Future.successful(Left(MessageNotFound("error occurred"))))
+
+        val result: Option[String] = await(service.getContentForv3Message(new ObjectId()))
+        result mustBe empty
+      }
+
+      "conversation is found as Message" in new TestHelpers {
+        when(mockMessageV3Service.getMessage(any)(any, any, any)).thenReturn(Future.successful(Right(v4Message)))
+
+        val result: Option[String] = await(service.getContentForv3Message(new ObjectId()))
+        result mustBe empty
+      }
+    }
+  }
+
   class AddReadTimesTestContext {
     val mockEisConnector: EISConnector = mock[EISConnector]
     val mockAuditConnector: AuditConnector = mock[AuditConnector]
     val mockConversationRepository: ConversationRepository = mock[ConversationRepository]
     val mockMessageRepository: MessageRepository = mock[MessageRepository]
     val mockSecureMessageUtil: SecureMessageUtil = mock[SecureMessageUtil]
+
     val mockEmailConnector: EmailConnector = mock[EmailConnector]
     when(mockEmailConnector.send(any[EmailRequest])(any[HeaderCarrier])).thenReturn(Future.successful(Right(())))
+
     val mockChannelPreferencesConnector: ChannelPreferencesConnector = mock[ChannelPreferencesConnector]
     when(
       mockConversationRepository.addReadTime(any[String], any[String], any[Int], any[Instant])(any[ExecutionContext])
@@ -761,6 +848,7 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
         mockAuditConnector
       )
   }
+
   class CreateMessageTestContext(
     dbInsertResult: Either[SecureMessageError, Unit] = Right(()),
     getEmailResult: Either[EmailLookupError, EmailAddress] = Right(EmailAddress("joeblogs@yahoo.com"))
@@ -852,14 +940,17 @@ class SecureMessageServiceImplSpec extends PlaySpec with ScalaFutures with TestH
 //TODO: change this with specialized TestCases, reuse values: no strings
 trait TestHelpers extends MockitoSugar with UnitTest {
   import uk.gov.hmrc.auth.core.Enrolment
+
   implicit val hc: HeaderCarrier = HeaderCarrier()
   implicit val mat: Materializer = NoMaterializer
   implicit val messages: Messages = stubMessages()
   implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
+
   val objectID: ObjectId = new ObjectId()
   protected val identifierName = "EORINumber"
   protected val identifierValue90 = "GB1234567890"
   protected val identifierEnrolment = "HMRC-CUS-ORG"
+
   val identifier: Identifier = Identifier(identifierName, identifierValue90, Some(identifierEnrolment))
   val identifierWithNoEnrolment: Identifier = Identifier(identifierName, identifierValue90, Some(identifierEnrolment))
   val participant: Participant = Participant(1, ParticipantType.Customer, identifier, None, None, None, None)
@@ -870,13 +961,17 @@ trait TestHelpers extends MockitoSugar with UnitTest {
   val mockMessageRepository: MessageRepository = mock[MessageRepository]
   val mockSecureMessageUtil: SecureMessageUtil = mock[SecureMessageUtil]
   val mockMessageBroker: MessageBroker = mock[MessageBroker]
+  val mockMessageV3Service: MessageV3Service = mock[MessageV3Service]
+
   val mockEmailConnector: EmailConnector = mock[EmailConnector]
   when(mockEmailConnector.send(any[EmailRequest])(any[HeaderCarrier])).thenReturn(Future.successful(Right(())))
+
   val mockChannelPreferencesConnector: ChannelPreferencesConnector = mock[ChannelPreferencesConnector]
   when(mockChannelPreferencesConnector.getEmailForEnrolment(any[Identifier])(any[HeaderCarrier]))
     .thenReturn(Future.successful(Right(EmailAddress("test@test.com"))))
   when(mockConversationRepository.insertIfUnique(any[Conversation])(any[ExecutionContext]))
     .thenReturn(Future.successful(Right(())))
+
   val service: SecureMessageServiceImpl =
     new SecureMessageServiceImpl(
       mockConversationRepository,
@@ -894,8 +989,10 @@ trait TestHelpers extends MockitoSugar with UnitTest {
       Enrolment(identifierEnrolment, Vector(EnrolmentIdentifier(identifierName, identifierValue90)), "Activated", None)
     )
   )
+
   def filters(identifier: Identifier = identifier): Filters =
     Filters(enrolmentKeys = identifier.enrolment.map(List(_)), None, None)
+
   val systemIdentifier: Identifier = Identifier("CDCM", "123", None)
   val systemParticipant: Participant =
     Participant(1, ParticipantType.System, systemIdentifier, None, None, None, None)
@@ -933,18 +1030,22 @@ trait TestHelpers extends MockitoSugar with UnitTest {
       identifierValue90,
       email = Some(EmailAddress("test@test.com"))
     )
-  val conversations = List(conversation)
+
+  val conversations: List[Conversation] = List(conversation)
   val letter: Letter = MessageUtil.getMessage("subject", "content")
-  val letters = List(letter)
+  val letters: List[Letter] = List(letter)
   val v4JsonMessage: JsObject = Resources.readJson("model/core/v4/valid_message.json").as[JsObject] + ("_id" -> Json
     .toJson(new ObjectId))
+
   val v4Message: SecureMessage = v4JsonMessage.as[SecureMessage]
   val conversationJson: JsObject = Resources
     .readJson("model/api/cdcm/write/conversation-request.json")
     .as[JsObject] + ("_id" -> Json.toJson(objectID))
+
   val cnvWithNoEmail: Conversation =
     conversationJson.as[Conversation]
   val cnvWithNoCustomer: Conversation = cnvWithNoEmail.copy(participants = List(cnvWithNoEmail.participants.head))
+
   val cnvWithMultipleCustomers: Conversation =
     ConversationUtil.getConversationRequestWithMultipleCustomers
       .asConversationWithCreatedDate("CDCM", "123", now, randomId, Some(reference))

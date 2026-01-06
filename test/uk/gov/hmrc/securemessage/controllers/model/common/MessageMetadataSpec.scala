@@ -16,18 +16,21 @@
 
 package uk.gov.hmrc.securemessage.controllers.model.common
 
+import org.bson.types.ObjectId
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.i18n.{ Lang, Messages, MessagesApi }
+import play.api.libs.json.{ JsResultException, Json }
 import uk.gov.hmrc.securemessage.controllers.model.MessageType
 import uk.gov.hmrc.securemessage.models.core.*
 import uk.gov.hmrc.common.message.model.{ Language, TaxpayerName }
 import uk.gov.hmrc.securemessage.models.v4.{ Content, SecureMessage }
 import uk.gov.hmrc.auth.core.{ Enrolment, Enrolments }
+import uk.gov.hmrc.securemessage.TestData.{ TEST_ID, TEST_SUBJECT, TEST_TIME_INSTANT }
 import uk.gov.hmrc.securemessage.controllers.model.common.read.MessageMetadata
 import uk.gov.hmrc.securemessage.helpers.Resources
 
-import java.time.LocalDate
+import java.time.{ Instant, LocalDate }
 
 class MessageMetadataSpec extends AnyWordSpec with Matchers {
 
@@ -78,6 +81,21 @@ class MessageMetadataSpec extends AnyWordSpec with Matchers {
       result.subject shouldBe "MRN: 19GB4S24GC3PPFGVR7"
       result.id should not be empty
     }
+
+    "throw IllegalArgumentException for unknown Message type" in {
+      case class UnknownMessage(id: String) extends Message {
+        override def issueDate: Instant = TEST_TIME_INSTANT
+        def readTime: Option[Instant] = None
+        val _id: ObjectId = new ObjectId()
+      }
+
+      val lang: Language = Language.English
+      val readerEnrolments = Enrolments(Set(Enrolment("HMRC-NI", Seq.empty, "active")))
+
+      intercept[IllegalArgumentException] {
+        MessageMetadata(UnknownMessage(TEST_ID), readerEnrolments, lang)
+      }.getMessage shouldBe "Unsupported Message"
+    }
   }
 
   "contentForLanguage" should {
@@ -117,6 +135,50 @@ class MessageMetadataSpec extends AnyWordSpec with Matchers {
     }
   }
 
-  private def stubMessagesApi(): MessagesApi =
-    new play.api.i18n.DefaultMessagesApi()
+  "messageMetadataFormat" should {
+    import MessageMetadata.messageMetadataFormat
+
+    "read the json correctly" in new Setup {
+      Json.parse(messageMetadataJsonString).as[MessageMetadata] shouldBe messageMetadata
+    }
+
+    "throw exception for invalid json" in new Setup {
+      intercept[JsResultException] {
+        Json.parse(messageMetadataInvalidJsonString).as[MessageMetadata]
+      }
+    }
+
+    "write the object correctly" in new Setup {
+      Json.toJson(messageMetadata) shouldBe Json.parse(messageMetadataJsonString)
+    }
+  }
+
+  private def stubMessagesApi(): MessagesApi = new play.api.i18n.DefaultMessagesApi()
+
+  trait Setup {
+    val messageMetadata: MessageMetadata = MessageMetadata(
+      messageType = MessageType.Letter,
+      id = TEST_ID,
+      subject = TEST_SUBJECT,
+      issueDate = TEST_TIME_INSTANT
+    )
+
+    val messageMetadataJsonString: String =
+      """{
+        |"messageType":"letter",
+        |"id":"test_id",
+        |"subject":"sub_test",
+        |"issueDate":"1970-01-01T00:13:09.245+0000",
+        |"unreadMessages":false,
+        |"count":1
+        |}""".stripMargin
+
+    val messageMetadataInvalidJsonString: String =
+      """{
+        |"subject":"sub_test",
+        |"issueDate":"1970-01-01T00:13:09.245+0000",
+        |"unreadMessages":false,
+        |"count":1
+        |}""".stripMargin
+  }
 }

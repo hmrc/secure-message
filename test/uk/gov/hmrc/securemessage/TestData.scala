@@ -64,6 +64,7 @@ object TestData {
   val TEST_MSG_TYPE = "letter"
   val TEST_TEMPLATE_ID = "test_template_id"
 
+  val TEST_NAME = "test_name"
   val TEST_KEY = "test_key"
   val TEST_KEY_VALUE = "test_key_value"
   val TEST_HASH = "1456hjftwer+===####"
