@@ -30,8 +30,9 @@ object ScoverageSettings {
           |.*controllers\.javascript.*;
           |uk\.gov\.hmrc\.securemessage\.testonly\.controllers.*
   """.stripMargin.replaceAll("\\s+", ""),
-      ScoverageKeys.coverageExcludedFiles := """.*v1.template.*|.*v3.template.*""".stripMargin
-        .replaceAll("\\s+", ""),
+      ScoverageKeys.coverageExcludedFiles :=
+        """.*v1.template.*|.*v3.template.*|.*ExtraAlertsStream.*|.*StatsMetricResetStream.*""".stripMargin
+          .replaceAll("\\s+", ""),
       ScoverageKeys.coverageMinimumStmtTotal := 90,
       ScoverageKeys.coverageFailOnMinimum := true,
       ScoverageKeys.coverageHighlighting := true,

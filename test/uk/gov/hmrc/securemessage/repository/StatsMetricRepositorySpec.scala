@@ -21,13 +21,15 @@ import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.{ IntegrationPatience, ScalaFutures }
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import play.api.inject._
+import play.api.inject.*
 import play.api.Application
 import org.mongodb.scala.SingleObservableFuture
 import org.mongodb.scala.ObservableFuture
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.libs.json.{ JsResultException, Json, OFormat }
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.metrix.MetricOrchestrator
+import uk.gov.hmrc.securemessage.TestData.TEST_NAME
 import uk.gov.hmrc.securemessage.services.utils.MetricOrchestratorStub
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -47,7 +49,7 @@ class StatsMetricRepositorySpec
       )
       .build()
 
-  val mongoComponent = app.injector.instanceOf[MongoComponent]
+  val mongoComponent: MongoComponent = app.injector.instanceOf[MongoComponent]
   lazy val repo = new StatsMetricRepository(mongoComponent)
 
   override def beforeEach(): Unit = {
@@ -113,5 +115,30 @@ class StatsMetricRepositorySpec
       metrics("stats.sautr.form2.created.count") mustBe 1
       metrics("stats.sautr.form2.created.total") mustBe 1
     }
+  }
+
+  "StatsCount.format" must {
+    implicit val statsCountFormat: OFormat[StatsCount] = StatsCount.format
+
+    "read the json correctly" in new Setup {
+      Json.parse(statsCountJsString).as[StatsCount] mustBe statsCount
+    }
+
+    "throw exception for invalid json" in new Setup {
+      intercept[JsResultException] {
+        Json.parse(statsCountInvalidJsString).as[StatsCount]
+      }
+    }
+
+    "write the object correctly" in new Setup {
+      Json.toJson(statsCount) mustBe Json.parse(statsCountJsString)
+    }
+  }
+
+  trait Setup {
+    val statsCount: StatsCount = StatsCount(TEST_NAME, 2, 1)
+
+    val statsCountJsString: String = """{"name":"test_name","total":2,"count":1}""".stripMargin
+    val statsCountInvalidJsString: String = """{"name":"test_name"}""".stripMargin
   }
 }
