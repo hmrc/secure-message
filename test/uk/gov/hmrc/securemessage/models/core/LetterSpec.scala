@@ -108,59 +108,59 @@ class LetterSpec extends PlaySpec {
     "return correct map of available values" in new Setup {
       details.toMap.size must be(12)
     }
+  }
 
-    "AlertDetails.format" should {
-      import AlertDetails.format
+  "AlertDetails.format" should {
+    import AlertDetails.format
 
-      "read the json correctly" in new Setup {
-        Json.parse(alertDetailsJsonString).as[AlertDetails] mustBe alertDetails
-      }
+    "read the json correctly" in new Setup {
+      Json.parse(alertDetailsJsonString).as[AlertDetails] mustBe alertDetails
+    }
 
-      "throw exception for the invalid json" in new Setup {
-        intercept[JsResultException] {
-          Json.parse(alertDetailsInvalidJsonString).as[AlertDetails]
-        }
-      }
-
-      "write the object correctly" in new Setup {
-        Json.toJson(alertDetails) mustBe Json.parse(alertDetailsJsonString)
+    "throw exception for the invalid json" in new Setup {
+      intercept[JsResultException] {
+        Json.parse(alertDetailsInvalidJsonString).as[AlertDetails]
       }
     }
 
-    "ExternalReference.format" should {
-      import ExternalReference.externalReferenceFormat
+    "write the object correctly" in new Setup {
+      Json.toJson(alertDetails) mustBe Json.parse(alertDetailsJsonString)
+    }
+  }
 
-      "read the json correctly" in new Setup {
-        Json.parse(externalReferenceJsonString).as[ExternalReference] mustBe externalReference
-      }
+  "ExternalReference.format" should {
+    import ExternalReference.externalReferenceFormat
 
-      "throw exception for the invalid json" in new Setup {
-        intercept[JsResultException] {
-          Json.parse(externalReferenceInvalidJsonString).as[ExternalReference]
-        }
-      }
+    "read the json correctly" in new Setup {
+      Json.parse(externalReferenceJsonString).as[ExternalReference] mustBe externalReference
+    }
 
-      "write the object correctly" in new Setup {
-        Json.toJson(externalReference) mustBe Json.parse(externalReferenceJsonString)
+    "throw exception for the invalid json" in new Setup {
+      intercept[JsResultException] {
+        Json.parse(externalReferenceInvalidJsonString).as[ExternalReference]
       }
     }
 
-    "EmailAlert.format" should {
-      import EmailAlert.emailAlertFormat
+    "write the object correctly" in new Setup {
+      Json.toJson(externalReference) mustBe Json.parse(externalReferenceJsonString)
+    }
+  }
 
-      "read the json correctly" in new Setup {
-        Json.parse(emailAlertJsonString).as[EmailAlert] mustBe emailAlert
-      }
+  "EmailAlert.format" should {
+    import EmailAlert.emailAlertFormat
 
-      "throw exception for the invalid json" in new Setup {
-        intercept[JsResultException] {
-          Json.parse(emailAlertInvalidJsonString).as[EmailAlert]
-        }
-      }
+    "read the json correctly" in new Setup {
+      Json.parse(emailAlertJsonString).as[EmailAlert] mustBe emailAlert
+    }
 
-      "write the object correctly" in new Setup {
-        Json.toJson(emailAlert) mustBe Json.parse(emailAlertJsonString)
+    "throw exception for the invalid json" in new Setup {
+      intercept[JsResultException] {
+        Json.parse(emailAlertInvalidJsonString).as[EmailAlert]
       }
+    }
+
+    "write the object correctly" in new Setup {
+      Json.toJson(emailAlert) mustBe Json.parse(emailAlertJsonString)
     }
   }
 
