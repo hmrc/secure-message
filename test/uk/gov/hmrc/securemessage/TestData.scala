@@ -40,9 +40,12 @@ object TestData {
   val TEST_REGIME = "test_regime"
 
   val TEST_YEAR = 2025
+  val TEST_YEAR_2026 = 2026
   val TEST_MONTH = 12
+  val TEST_MONTH_JAN = 1
   val TEST_DAY = 20
   val TEST_DATE: LocalDate = LocalDate.of(TEST_YEAR, TEST_MONTH, TEST_DAY)
+  val TEST_DATE1: LocalDate = LocalDate.of(TEST_YEAR_2026, TEST_MONTH_JAN, 6)
 
   val EPOCH_MILLI_SECONDS = 789245L
   val TEST_TIME_INSTANT: Instant = Instant.ofEpochMilli(EPOCH_MILLI_SECONDS)
@@ -86,7 +89,8 @@ object TestData {
       `type` = Some(TEST_TYPE),
       suppressedAt = Some("2026-01-05"),
       detailsId = Some(TEST_TEMPLATE_ID),
-      enquiryType = Some("p800_D2")
+      enquiryType = Some("p800_D2"),
+      issueDate = Some(TEST_DATE1)
     )
 
   val TEST_EMAIL_ALERT: EmailAlert = EmailAlert(

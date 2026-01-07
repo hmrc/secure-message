@@ -28,29 +28,31 @@ import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
 import play.api.i18n.{ Lang, Messages, MessagesImpl }
-import uk.gov.hmrc.common.message.model.TaxpayerName
-import uk.gov.hmrc.domain.SaUtr
+import uk.gov.hmrc.common.message.model.{ AlertDetails, ExternalRef, Language, MessagesCount, Regime, TaxEntity, TaxpayerName }
+import uk.gov.hmrc.domain.{ Nino, SaUtr, SimpleName, TaxIdentifier }
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.securemessage.connectors.{ EntityResolverConnector, PreferencesConnector, TaxpayerNameConnector }
 import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.v4.{ Content, ExtraAlertConfig, SecureMessage }
-import uk.gov.hmrc.securemessage.repository.{ ExtraAlertRepository, SecureMessageRepository, StatsMetricRepository }
+import uk.gov.hmrc.securemessage.repository.{ ExtraAlert, ExtraAlertRepository, SecureMessageRepository, StatsMetricRepository }
 import uk.gov.hmrc.securemessage.services.MessageBrakeService
-import play.api.test.FakeRequest
+import play.api.test.{ FakeHeaders, FakeRequest }
 import play.api.test.Helpers.*
-import play.api.mvc.AnyContentAsEmpty
+import play.api.mvc.{ AnyContentAsEmpty, Result }
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.play.audit.model.EventTypes
-import play.api.libs.json.Json
+import play.api.libs.json.{ JsString, Json }
 import play.i18n
-import uk.gov.hmrc.common.message.model.{ Regime, TaxEntity }
-import uk.gov.hmrc.domain.{ SimpleName, TaxIdentifier }
+import uk.gov.hmrc.common.message.model.Regime.sa
+import uk.gov.hmrc.mongo.workitem.{ ProcessingStatus, WorkItem }
+import uk.gov.hmrc.mongo.workitem.ProcessingStatus.ToDo
 
 import scala.concurrent.{ ExecutionContext, Future }
-import uk.gov.hmrc.common.message.model.Language
+import uk.gov.hmrc.securemessage.TestData.{ TEST_EMAIL_ADDRESS, TEST_EMAIL_ADDRESS_VALUE, TEST_EXT_REF_ID, TEST_IDENTIFIER, TEST_TEMPLATE_ID, TEST_TIME_INSTANT }
+import uk.gov.hmrc.securemessage.models.core.MessageFilter
 
-import java.time.Duration
+import java.time.{ Duration, Instant }
 
 class SecureMessageUtilSpec extends PlaySpec with ScalaFutures with MockitoSugar with BeforeAndAfterEach {
   val appName: String = "Test"
@@ -234,6 +236,58 @@ class SecureMessageUtilSpec extends PlaySpec with ScalaFutures with MockitoSugar
       contentAsString(result) must include(
         "The backend has rejected the message due to not being able to verify the email address"
       )
+    }
+
+    "return CREATED when message is successfully created" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val messageExternalRef: ExternalRef = ExternalRef(id = "abcd1234", source = "gmc")
+      val messageRecipient =
+        TaxEntity(regime = sa, identifier = SaUtr("1097133334"), email = Some(TEST_EMAIL_ADDRESS_VALUE))
+
+      when(
+        preferencesConnector
+          .verifiedEmailAddress(any[TaxEntity]())(any[HeaderCarrier]())
+      ).thenReturn(Future.successful(EmailValidation(TEST_EMAIL_ADDRESS_VALUE)))
+
+      when(messageBrakeService.allowlistContains(any)(any)).thenReturn(Future.successful(true))
+      when(taxpayerNameConnector.taxpayerName(any)(any))
+        .thenReturn(Future.successful(Some(TaxpayerName(title = Some("test_title")))))
+
+      when(secureMessageRepository.save(any)).thenReturn(Future.successful(true))
+      when(auditConnector.sendEvent(any())(any(), any())).thenReturn(Future.successful(AuditResult.Success))
+      when(statsMetricRepository.incrementCreated(any, any)(any)).thenReturn(Future.unit)
+
+      val result = testUtil.checkPreferencesAndCreateMessage(
+        message.copy(externalRef = messageExternalRef, recipient = messageRecipient)
+      )
+
+      status(result) mustBe CREATED
+    }
+
+    "return CONFLICT when message creation is rejected due to duplicate content" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val messageExternalRef: ExternalRef = ExternalRef(id = "abcd1234", source = "gmc")
+      val messageRecipient =
+        TaxEntity(regime = sa, identifier = SaUtr("1097133334"), email = Some(TEST_EMAIL_ADDRESS_VALUE))
+
+      when(
+        preferencesConnector
+          .verifiedEmailAddress(any[TaxEntity]())(any[HeaderCarrier]())
+      ).thenReturn(Future.successful(EmailValidation(TEST_EMAIL_ADDRESS_VALUE)))
+
+      when(messageBrakeService.allowlistContains(any)(any)).thenReturn(Future.successful(true))
+      when(taxpayerNameConnector.taxpayerName(any)(any))
+        .thenReturn(Future.successful(Some(TaxpayerName(title = Some("test_title")))))
+
+      when(secureMessageRepository.save(any)).thenReturn(Future.successful(false))
+      when(auditConnector.sendEvent(any())(any(), any())).thenReturn(Future.successful(AuditResult.Success))
+      when(statsMetricRepository.incrementDuplicate(any)(any)).thenReturn(Future.unit)
+
+      val result = testUtil.checkPreferencesAndCreateMessage(
+        message.copy(externalRef = messageExternalRef, recipient = messageRecipient)
+      )
+
+      status(result) mustBe CONFLICT
     }
   }
 
@@ -944,6 +998,78 @@ class SecureMessageUtilSpec extends PlaySpec with ScalaFutures with MockitoSugar
       val secureMessageId: ObjectId = ObjectId()
       testUtil.removeAlerts(secureMessageId, "otherTemplate").futureValue.getDeletedCount mustBe 0
       verify(extraAlertRepository, times(0)).removeAlerts(any[String])(any[ExecutionContext])
+    }
+  }
+
+  "auditCreateMessageForFailure" must {
+    implicit val fakeRequest: FakeRequest[JsString] = FakeRequest(POST, "/messages", FakeHeaders(), JsString("test"))
+
+    "log correct log message" when {
+      "send event for audit returns Success" in {
+        when(auditConnector.sendEvent(any())(any(), any())).thenReturn(Future.successful(AuditResult.Success))
+
+        val result: Unit = await(testUtil.auditCreateMessageForFailure("test_transaction"))
+        result must be(())
+      }
+
+      "send event for audit returns Disabled" in {
+        when(auditConnector.sendEvent(any())(any(), any())).thenReturn(Future.successful(AuditResult.Disabled))
+
+        val result: Unit = await(testUtil.auditCreateMessageForFailure("test_transaction"))
+        result must be(())
+      }
+
+      "send event for audit returns Failure" in {
+        when(auditConnector.sendEvent(any())(any(), any()))
+          .thenReturn(Future.successful(AuditResult.Failure("error occurred")))
+
+        val result: Unit = await(testUtil.auditCreateMessageForFailure("test_transaction"))
+        result must be(())
+      }
+    }
+  }
+
+  "countBy" must {
+    "return the correct MessageCount" in {
+      val messageFilter: MessageFilter = MessageFilter(List("nino"))
+
+      when(secureMessageRepository.countBy(any)(any, any)).thenReturn(Future.successful(MessagesCount(2, 1)))
+
+      val result: MessagesCount = await(testUtil.countBy(Set(Nino("SJ123456A")))(messageFilter))
+      result mustBe MessagesCount(2, 1)
+    }
+  }
+
+  "getSecureMessageCount" must {
+    "return the correct MessageCount" in {
+      when(secureMessageRepository.getSecureMessageCount(any, any)(any))
+        .thenReturn(Future.successful(MessagesCount(2, 1)))
+
+      val result = await(testUtil.getSecureMessageCount(Set(TEST_IDENTIFIER), None))
+      result mustBe MessagesCount(2, 1)
+    }
+  }
+
+  "findById" must {
+    "return the SecureMessage for the provided id" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_SAUTR_message.json").as[SecureMessage]
+
+      when(secureMessageRepository.findById(any)).thenReturn(Future.successful(Some(message)))
+
+      val result: Option[SecureMessage] = await(testUtil.findById(new ObjectId()))
+      result mustBe Option(message)
+    }
+  }
+
+  "findBy" must {
+    "return the SecureMessage for the provided TaxIds" in {
+      implicit val messageFilter: MessageFilter = MessageFilter(List("nino"))
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_SAUTR_message.json").as[SecureMessage]
+
+      when(secureMessageRepository.findBy(any)(any, any)).thenReturn(Future.successful(List(message)))
+
+      val result: List[SecureMessage] = await(testUtil.findBy(Set(Nino("SJ123456A"))))
+      result mustBe List(message)
     }
   }
 
