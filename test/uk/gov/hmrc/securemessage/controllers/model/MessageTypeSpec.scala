@@ -14,36 +14,48 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.securemessage.models.core
+package uk.gov.hmrc.securemessage.controllers.model
 
 import play.api.libs.json.{ JsNumber, JsResultException, JsString, Json }
-import uk.gov.hmrc.securemessage.models.core.ParticipantType.{ Customer, System }
 import uk.gov.hmrc.securemessage.SpecBase
+import uk.gov.hmrc.securemessage.controllers.model.MessageType.{ Conversation, Letter }
 
-class ParticipantTypeSpec extends SpecBase {
+class MessageTypeSpec extends SpecBase {
 
   "Json Reads" must {
-    import ParticipantType.reads
+    import MessageType.format
 
     "read the json correctly" in {
-      JsString("System").as[ParticipantType] mustBe System
+      JsString("Conversation").as[MessageType] mustBe Conversation
     }
 
     "throw exception for invalid json" in {
       intercept[JsResultException] {
-        JsString("CDS-UNKNOWN").as[ParticipantType]
+        JsString("UNKNOWN").as[MessageType]
       }
 
       intercept[JsResultException] {
-        JsNumber(100).as[ParticipantType]
+        JsNumber(100).as[MessageType]
       }
     }
   }
 
   "Json Writes" must {
     "write the object correctly" in {
-      Json.toJson(System) mustBe JsString("system")
-      Json.toJson(Customer) mustBe JsString("customer")
+      Json.toJson(Conversation) mustBe JsString("conversation")
+      Json.toJson(Letter) mustBe JsString("letter")
+    }
+  }
+
+  "withName" must {
+    "return correct MessageType for a valid input" in {
+      MessageType.withName("Conversation") mustBe Conversation
+    }
+
+    "throw exception for invalid input" in {
+      intercept[NoSuchElementException] {
+        MessageType.withName("unknown")
+      }.getMessage mustBe "unknown is not a valid MessageType"
     }
   }
 }
