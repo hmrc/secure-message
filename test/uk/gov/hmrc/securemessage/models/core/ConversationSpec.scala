@@ -19,11 +19,14 @@ package uk.gov.hmrc.securemessage.models.core
 import cats.data.NonEmptyList
 import org.mongodb.scala.bson.ObjectId
 import org.scalatestplus.play.PlaySpec
-import play.api.libs.json.{ JsObject, JsSuccess, JsValue, Json }
+import play.api.libs.json.{ JsObject, JsResult, JsResultException, JsSuccess, JsValue, Json }
 import uk.gov.hmrc.common.message.model.Language
+import uk.gov.hmrc.common.message.model.Language.English
+import uk.gov.hmrc.securemessage.TestData.{ TEST_CONTENT, TEST_ID, TEST_PARAMETERS, TEST_SUBJECT, TEST_TEMPLATE_ID, TEST_TIME_INSTANT }
 import uk.gov.hmrc.securemessage.helpers.{ ConversationUtil, Resources }
 import uk.gov.hmrc.securemessage.models.core.Conversation.*
 import uk.gov.hmrc.securemessage.helpers.DateTimeHelper.*
+import uk.gov.hmrc.securemessage.models.core.ConversationStatus.Open
 
 import java.time.format.DateTimeFormatter
 import java.time.{ Instant, ZoneId, ZoneOffset, ZonedDateTime }
@@ -98,6 +101,23 @@ class ConversationSpec extends PlaySpec with ConversationTestData with OrderingD
     }
   }
 
+  "conversationFormat" must {
+    import Conversation.conversationFormat
+
+    "read the json correctly" in {
+      Json.parse(conversationJsonString).as[Conversation] mustBe conversation
+    }
+
+    "throw exception for invalid json" in {
+      intercept[JsResultException] {
+        Json.parse(conversationInvalidJsonString).as[Conversation]
+      }
+    }
+
+    "write the object correctly" in {
+      Json.toJson(conversation) mustBe Json.parse(conversationJsonString)
+    }
+  }
 }
 
 trait ConversationTestData {
@@ -107,6 +127,54 @@ trait ConversationTestData {
 
   val system: Participant =
     Participant(1, ParticipantType.System, Identifier("system", "value", None), None, None, None, None)
+
+  val conversation: Conversation = Conversation(
+    _id = new ObjectId("adf145612345678656782456"),
+    client = "test_client",
+    id = TEST_ID,
+    status = Open,
+    tags = Some(TEST_PARAMETERS),
+    subject = TEST_SUBJECT,
+    language = English,
+    participants = List(),
+    messages = NonEmptyList.of(
+      ConversationMessage(
+        id = Some(TEST_ID),
+        senderId = 1,
+        created = TEST_TIME_INSTANT,
+        content = TEST_CONTENT,
+        reference = None
+      )
+    ),
+    alert = Alert(templateId = TEST_TEMPLATE_ID, parameters = Some(TEST_PARAMETERS))
+  )
+
+  val conversationJsonString: String =
+    """{
+      |"_id":{"$oid":"adf145612345678656782456"},
+      |"client":"test_client",
+      |"id":"test_id",
+      |"status":"open",
+      |"tags":{"test_name":"test_value"},
+      |"subject":"sub_test",
+      |"language":"en",
+      |"participants":[],
+      |"messages":[{"id":"test_id","senderId":1,"created":"1970-01-01T00:13:09.245+0000","content":"adfg#1456hjftwer=="}],
+      |"alert":{"templateId":"test_template_id","parameters":{"test_name":"test_value"}}
+      |}""".stripMargin
+
+  val conversationInvalidJsonString: String =
+    """{
+      |"_id":{"$oid":"adf145612345678656782456"},
+      |"id":"test_id",
+      |"status":"open",
+      |"tags":{"test_name":"test_value"},
+      |"subject":"sub_test",
+      |"language":"en",
+      |"participants":[],
+      |"messages":[{"id":"test_id","senderId":1,"created":"1970-01-01T00:13:09.245+0000","content":"adfg#1456hjftwer=="}],
+      |"alert":{"templateId":"test_template_id","parameters":{"test_name":"test_value"}}
+      |}""".stripMargin
 
   def customerWith(readTime: Instant = dateTime): Participant =
     Participant(

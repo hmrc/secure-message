@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.securemessage
 
+import org.bson.types.ObjectId
 import uk.gov.hmrc.common.message.emailaddress.EmailAddress
 import uk.gov.hmrc.common.message.model.{ Adviser, Details, EmailAlert, Regime, RenderUrl, TaxEntity }
 import uk.gov.hmrc.domain.Nino
@@ -39,6 +40,7 @@ object TestData {
   val TEST_BATCH_ID = "87912345"
   val TEST_REGIME = "test_regime"
   val TEST_STATUS = "test_status"
+  val TEST_CLIENT = "test_client"
 
   val TEST_YEAR = 2025
   val TEST_YEAR_2026 = 2026
@@ -107,4 +109,7 @@ object TestData {
   val TEST_SAUTR = "1234567890"
   val TEST_NINO = "SJ123456A"
   val TEST_HMRC_MTD_ITSA_VALUE = "X99999999999"
+
+  val EMPTY_STRING = ""
+  val TEST_OBJECT_ID = ObjectId("adf145612345678656782456")
 }

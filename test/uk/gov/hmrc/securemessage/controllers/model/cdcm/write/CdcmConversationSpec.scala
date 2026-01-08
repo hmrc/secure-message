@@ -54,6 +54,20 @@ class CdcmConversationSpec extends SpecBase {
     }
   }
 
+  "CdcmSender.tagsFormats" must {
+    import CdcmSender.senderReads
+
+    "read the json correctly" in new Setup {
+      Json.parse(cdcmSenderJsonString).as[CdcmSender] mustBe cdcmSender
+    }
+
+    "throw the exception for invalid json" in new Setup {
+      intercept[JsResultException] {
+        Json.parse(cdcmSenderInvalidJsonString).as[CdcmSender]
+      }
+    }
+  }
+
   trait Setup {
     val testSystem = "test"
     val testMrn = "test_mrn"
@@ -61,11 +75,15 @@ class CdcmConversationSpec extends SpecBase {
 
     val cdcmSystem: CdcmSystem = CdcmSystem(testSystem)
     val cdcmTags: CdcmTags = CdcmTags(mrn = testMrn, notificationType = CDSExports)
+    val cdcmSender: CdcmSender = CdcmSender(cdcmSystem)
 
     val cdcmSystemJsonString: String = """{"display":"test"}""".stripMargin
     val cdcmSystemInvalidJsonString: String = """{}""".stripMargin
 
     val cdcmTagsJsonString: String = """{"mrn":"test_mrn","notificationType":"CDS-EXPORTS"}""".stripMargin
     val cdcmTagsInvalidJsonString: String = """{}""".stripMargin
+
+    val cdcmSenderJsonString: String = """{"system":{"display":"test"}}""".stripMargin
+    val cdcmSenderInvalidJsonString: String = """{}""".stripMargin
   }
 }
