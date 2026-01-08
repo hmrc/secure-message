@@ -26,7 +26,7 @@ class MobileNotificationSpec extends SpecBase {
   "Json Reads" should {
     import MobileNotification.mobileNotificationFormats
 
-    "read the json correctly" ignore new Setup {
+    "read the json correctly" in new Setup {
       Json.parse(mobileNotificationWithTaxIdJsonString).as[MobileNotification] mustBe mobileNotification
     }
 
@@ -51,7 +51,7 @@ class MobileNotificationSpec extends SpecBase {
       """{"identifier":{"nino":"SJ123456A"},"templateId":"test_template_id"}""".stripMargin
 
     val mobileNotificationWithTaxIdJsonString: String =
-      """{"identifier":["nino":"SJ123456A"],"templateId":"test_template_id"}""".stripMargin
+      """{"identifier":{"name":"nino","value":"SJ123456A"},"templateId":"test_template_id"}""".stripMargin
 
     val mobileNotificationInvalidJsonString: String =
       """{"templateId":"test_template_id"}""".stripMargin
