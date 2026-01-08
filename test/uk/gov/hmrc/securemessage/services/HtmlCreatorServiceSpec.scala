@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import org.mongodb.scala.bson.ObjectId
 import play.api.Configuration
 import play.api.test.Helpers.*
 import play.twirl.api.Html
-import uk.gov.hmrc.common.message.model.{ AlertDetails, ConversationItem, Details, EmailAlert, ExternalRef, Lifecycle, MailgunStatus, Message, MessageContentParameters, RenderUrl, Rescindment, TaxEntity }
+import uk.gov.hmrc.common.message.model.*
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.securemessage.SpecBase

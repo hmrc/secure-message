@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package uk.gov.hmrc.securemessage.models.v4
 
 import play.api.libs.json.{ JsResultException, Json }
 import uk.gov.hmrc.securemessage.SpecBase
-import uk.gov.hmrc.securemessage.TestData.{ TEST_CONTENT, TEST_DATE, TEST_EXT_REF_ID, TEST_IDENTIFIER_NAME, TEST_MSG_TYPE, TEST_SUBJECT, TEST_WELSH_CONTENT, TEST_WELSH_SUBJECT }
+import uk.gov.hmrc.securemessage.TestData.*
 
 class BrakeBatchSpec extends SpecBase {
 
