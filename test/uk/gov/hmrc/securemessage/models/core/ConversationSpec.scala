@@ -22,7 +22,7 @@ import org.scalatestplus.play.PlaySpec
 import play.api.libs.json.{ JsObject, JsResult, JsResultException, JsSuccess, JsValue, Json }
 import uk.gov.hmrc.common.message.model.Language
 import uk.gov.hmrc.common.message.model.Language.English
-import uk.gov.hmrc.securemessage.TestData.{ TEST_CONTENT, TEST_ID, TEST_PARAMETERS, TEST_SUBJECT, TEST_TEMPLATE_ID, TEST_TIME_INSTANT }
+import uk.gov.hmrc.securemessage.TestData.{ TEST_CONTENT, TEST_ID, TEST_OBJECT_ID, TEST_PARAMETERS, TEST_SUBJECT, TEST_TEMPLATE_ID, TEST_TIME_INSTANT }
 import uk.gov.hmrc.securemessage.helpers.{ ConversationUtil, Resources }
 import uk.gov.hmrc.securemessage.models.core.Conversation.*
 import uk.gov.hmrc.securemessage.helpers.DateTimeHelper.*
@@ -129,7 +129,7 @@ trait ConversationTestData {
     Participant(1, ParticipantType.System, Identifier("system", "value", None), None, None, None, None)
 
   val conversation: Conversation = Conversation(
-    _id = new ObjectId("adf145612345678656782456"),
+    _id = TEST_OBJECT_ID,
     client = "test_client",
     id = TEST_ID,
     status = Open,
