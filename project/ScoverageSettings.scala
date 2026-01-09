@@ -15,12 +15,12 @@
  */
 
 import sbt.Keys.parallelExecution
-import sbt._
+import sbt.*
 import scoverage.ScoverageKeys
 
 object ScoverageSettings {
-  def apply(): Seq[Def.Setting[_ >: String with Double with Boolean]] =
-    Seq( // Semicolon-separated list of regexes matching classes to exclude
+  def apply(): Seq[Def.Setting[? >: String & Double & Boolean]] =
+    Seq(
       ScoverageKeys.coverageExcludedPackages :=
         """<empty>;
           |.*Reverse.*;
@@ -30,7 +30,10 @@ object ScoverageSettings {
           |.*controllers\.javascript.*;
           |uk\.gov\.hmrc\.securemessage\.testonly\.controllers.*
   """.stripMargin.replaceAll("\\s+", ""),
-      ScoverageKeys.coverageMinimumStmtTotal := 74.00,
+      ScoverageKeys.coverageExcludedFiles :=
+        """.*v1.template.*|.*v3.template.*|.*ExtraAlertsStream.*|.*StatsMetricResetStream.*""".stripMargin
+          .replaceAll("\\s+", ""),
+      ScoverageKeys.coverageMinimumStmtTotal := 90,
       ScoverageKeys.coverageFailOnMinimum := true,
       ScoverageKeys.coverageHighlighting := true,
       ConfigKey.configurationToKey(Test) / parallelExecution := false

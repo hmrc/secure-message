@@ -69,4 +69,36 @@ class ExtraAlertConfigSpec extends PlaySpec {
       )
     )
   }
+
+  "throw exception" when {
+    "mainTemplate is missing from the configuration" in {
+      intercept[RuntimeException] {
+        ExtraAlertConfig(Map())
+      }.getMessage mustBe "mainTemplate is missing"
+    }
+
+    "extraTemplate is missing from the configuration" in {
+      intercept[RuntimeException] {
+        ExtraAlertConfig(Map("mainTemplate" -> "test"))
+      }.getMessage mustBe "extraTemplate is missing"
+    }
+
+    "delay is missing from the configuration" in {
+      intercept[RuntimeException] {
+        ExtraAlertConfig(Map("mainTemplate" -> "test", "extraTemplate" -> "test"))
+      }.getMessage mustBe "delay is missing"
+    }
+
+    "alertProfile error occurs" in {
+      intercept[RuntimeException] {
+        ExtraAlertConfig(Map("mainTemplate" -> "test", "extraTemplate" -> "test", "delay" -> "test"))
+      }.getMessage mustBe "can not read alertProfile"
+    }
+
+    "match error occurs" in {
+      intercept[RuntimeException] {
+        ExtraAlertConfig(Map("mainTemplate" -> "test", "extraTemplate" -> "test", "delay" -> "100y"))
+      }.getMessage mustBe "can not read alertProfile"
+    }
+  }
 }

@@ -30,10 +30,8 @@ import play.api.libs.json.JsValue
 import play.api.mvc.*
 import play.api.test.Helpers.{ POST, defaultAwaitTimeout, status, stubMessages }
 import play.api.test.{ FakeHeaders, FakeRequest, Helpers }
-import uk.gov.hmrc.common.message.util.SecureMessageUtil as commonUtil
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.securemessage.UnitTest
-import uk.gov.hmrc.securemessage.controllers.message.MessageController
 import uk.gov.hmrc.securemessage.controllers.{ SecureMessageController, SecureMessageUtil }
 import uk.gov.hmrc.securemessage.helpers.Resources
 
@@ -56,25 +54,33 @@ class MessageControllerSpec extends PlaySpec with ScalaFutures with MockitoSugar
           }
         when(mockSecureMessageController.createMessage()).thenReturn(mockSecureMessageAction)
 
-        val response = controller.createMessageForV3()(fakeRequest)
+        val response: Future[Result] = controller.createMessageForV3()(fakeRequest)
         status(response) mustBe CREATED
       }
+
     "return BAD_REQUEST for the message with missing mandatory fields" in
       new TestCase(requestBody = Resources.readJson("model/core/v3/missing_mandatory_fields.json")) {
-        val response = controller.createMessageForV3()(fakeRequest)
+        val response: Future[Result] = controller.createMessageForV3()(fakeRequest)
+
         status(response) mustBe BAD_REQUEST
+      }
+
+    "return BAD_REQUEST for the message with missing email" in
+      new TestCase(requestBody = Resources.readJson("model/core/v3/message_with_empty_email.json")) {
+        val response: Future[Result] = controller.createMessageForV3()(fakeRequest)
+
+        status(response) must be(BAD_REQUEST)
       }
   }
 
   class TestCase(requestBody: JsValue) {
     val mockSecureMessageController: SecureMessageController = mock[SecureMessageController]
-    val mockSecuremessageUtil: SecureMessageUtil = mock[SecureMessageUtil]
+    val mockSecureMessageUtil: SecureMessageUtil = mock[SecureMessageUtil]
     val cc: ControllerComponents = Helpers.stubControllerComponents()
-    val controller = new MessageController(cc, mockSecureMessageController, mockSecuremessageUtil)
+    val controller = new MessageController(cc, mockSecureMessageController, mockSecureMessageUtil)
 
-    val fakeRequest = FakeRequest(POST, "/messages", FakeHeaders(), requestBody)
+    val fakeRequest: FakeRequest[JsValue] = FakeRequest(POST, "/messages", FakeHeaders(), requestBody)
 
-    when(mockSecuremessageUtil.auditCreateMessageForFailure(any())(any(), any())).thenReturn(Future.successful(()))
-
+    when(mockSecureMessageUtil.auditCreateMessageForFailure(any())(any(), any())).thenReturn(Future.successful(()))
   }
 }

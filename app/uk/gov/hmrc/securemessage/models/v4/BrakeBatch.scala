@@ -71,6 +71,7 @@ object BrakeBatchMessage {
   def apply(m: SecureMessage): BrakeBatchMessage = {
     val englishContent = m.content.find(_.lang == English)
     val welshContent = m.content.find(_.lang == Welsh)
+
     BrakeBatchMessage(
       subject = englishContent.map(_.subject).getOrElse(""),
       welshSubject = welshContent.map(_.subject).getOrElse(""),

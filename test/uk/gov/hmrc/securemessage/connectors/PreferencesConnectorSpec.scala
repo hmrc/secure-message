@@ -24,12 +24,12 @@ import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.{ JsObject, JsString }
+import play.api.libs.json.{ JsObject, JsResultException, JsString }
 import uk.gov.hmrc.domain.{ HmrcMtdVat, SaUtr }
 import uk.gov.hmrc.http.client.{ HttpClientV2, RequestBuilder }
 import uk.gov.hmrc.http.{ HeaderCarrier, HttpReads, HttpResponse }
 import uk.gov.hmrc.mongo.metrix.MetricOrchestrator
-import uk.gov.hmrc.securemessage.models.TaxId
+import uk.gov.hmrc.securemessage.TestData.TEST_EMAIL_ADDRESS_VALUE
 import uk.gov.hmrc.securemessage.services.utils.{ GenerateRandom, MessageFixtures, MetricOrchestratorStub }
 
 import java.net.URL
@@ -43,7 +43,7 @@ class PreferencesConnectorSpec
   lazy implicit val ec: ExecutionContext = mock[ExecutionContext]
 
   lazy val mockHttp: HttpClientV2 = mock[HttpClientV2]
-  lazy val requestBuilder = mock[RequestBuilder]
+  lazy val requestBuilder: RequestBuilder = mock[RequestBuilder]
 
   private val injector = new GuiceApplicationBuilder()
     .overrides(bind[MetricOrchestrator].to(mockMetricOrchestrator))
@@ -141,5 +141,31 @@ class PreferencesConnectorSpec
 
       result.left.value mustBe VerifiedEmailNotFound("EMAIL_ADDRESS_NOT_VERIFIED")
     }
+  }
+
+  "EmailValidation.format" must {
+    import play.api.libs.json.Json
+    import EmailValidation.format
+
+    "read the json correctly" in new Setup {
+      Json.parse(emailValidationJsonString).as[EmailValidation] mustBe emailValidation
+    }
+
+    "throw exception for invalid json" in new Setup {
+      intercept[JsResultException] {
+        Json.parse(emailValidationInvalidJsonString).as[EmailValidation]
+      }
+    }
+
+    "write the object correctly" in new Setup {
+      Json.toJson(emailValidation) mustBe Json.parse(emailValidationJsonString)
+    }
+  }
+
+  trait Setup {
+    val emailValidation: EmailValidation = EmailValidation(email = TEST_EMAIL_ADDRESS_VALUE)
+
+    val emailValidationJsonString: String = """{"email":"test@test.com"}""".stripMargin
+    val emailValidationInvalidJsonString: String = """{}""".stripMargin
   }
 }

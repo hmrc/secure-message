@@ -24,16 +24,19 @@ import org.mongodb.scala.bson.ObjectId
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
-import uk.gov.hmrc.common.message.model.{ EmailAlert, TaxEntity }
+import play.api.test.Helpers.*
+import uk.gov.hmrc.common.message.model.{ AlertDetails, EmailAlert, ExternalRef, MessageDetails, TaxEntity }
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus
 import uk.gov.hmrc.play.audit.http.connector.{ AuditConnector, AuditResult }
 import uk.gov.hmrc.play.audit.model.DataEvent
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import uk.gov.hmrc.securemessage.TestData.*
 import uk.gov.hmrc.securemessage.connectors.{ EmailConnector, EntityResolverConnector, MobilePushNotificationsConnector }
 import uk.gov.hmrc.securemessage.models.{ EmailRequest, TaxId }
-import uk.gov.hmrc.securemessage.models.v4.MobileNotification
+import uk.gov.hmrc.securemessage.models.v4.{ MobileNotification, SecureMessage }
 import uk.gov.hmrc.securemessage.repository.SecureMessageRepository
+import uk.gov.hmrc.securemessage.services.utils.SecureMessageFixtures
 import uk.gov.hmrc.securemessage.services.utils.SecureMessageFixtures.messageForSA
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -56,8 +59,7 @@ class EmailAlertServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures
 
       private val result = emailAlertService.sendEmailAlerts().futureValue
 
-      // noinspection RedundantDefaultArgument
-      result mustBe EmailResults(sent = 3, requeued = 0)
+      result mustBe EmailResults(sent = 3)
 
       verify(emailConnector, times(3)).send(any[EmailRequest])(any[HeaderCarrier])
       verify(auditConnector, times(3)).sendEvent(any[DataEvent])(any[HeaderCarrier], any[ExecutionContext])
@@ -65,9 +67,9 @@ class EmailAlertServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures
     }
 
     "email request should include tax identifier" in new TestCase {
-      val message = messageForSA(utr = "3254567990")
+      val message: SecureMessage = messageForSA(utr = "3254567990")
 
-      val emailRequest =
+      val emailRequest: EmailRequest =
         EmailRequest.createEmailRequest(message, Some(TaxId("", Some("3254567990"), Some("SK12345678A"))))
 
       emailRequest.parameters.get("sautr") mustBe Some("3254567990")
@@ -75,13 +77,34 @@ class EmailAlertServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures
     }
 
     "email request should include tax identifier along with Nino and SaUtr" in new TestCase {
-      val message = messageForSA(utr = "3254567990")
+      val message: SecureMessage = messageForSA(utr = "3254567990")
 
-      val emailRequest = EmailRequest.createEmailRequest(message)
+      val emailRequest: EmailRequest = EmailRequest.createEmailRequest(message)
 
       emailRequest.parameters.get("sautr") mustBe Some("3254567990")
     }
+  }
 
+  "baseUrl" should {
+    "return correct url for secure-message service" in new TestCase {
+      when(servicesConfig.baseUrl(any)).thenReturn(TEST_URL)
+
+      emailAlertService.baseUrl must be(TEST_URL)
+    }
+  }
+
+  "processItem" should {
+    "send the alerts successfully" in new TestCase {
+      given ActorSystem = ActorSystem()
+      implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
+
+      when(entityResolverConnector.getTaxId(any[TaxEntity])(any[HeaderCarrier])).thenReturn(Future.successful(None))
+
+      val result: EmailResults =
+        await(emailAlertService.processItem(state = EmailResults(requeued = 1), message = secureMessage))
+
+      result mustBe EmailResults(1, 1)
+    }
   }
 
   trait TestCase {
@@ -103,6 +126,21 @@ class EmailAlertServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures
         .sendNotification(any[MobileNotification])(any[HeaderCarrier], any[ExecutionContext])
     )
       .thenReturn(Future.successful(()))
+
+    val secureMessage: SecureMessage = SecureMessage(
+      _id = new ObjectId,
+      ExternalRef(TEST_ID, TEST_SOURCE),
+      recipient = TEST_TAX_ENTITY,
+      None,
+      TEST_MSG_TYPE,
+      validFrom = TEST_DATE,
+      List(),
+      alertDetails = AlertDetails(TEST_TEMPLATE_ID, None, Map()),
+      alertQueue = None,
+      Some(MessageDetails(formId = TEST_FORM, None, None, None, Some("batch-1234"), None, None)),
+      "testemail@email.com",
+      hash = TEST_HASH
+    )
 
     val emailAlertService = new EmailAlertService(
       secureMessageRepository,

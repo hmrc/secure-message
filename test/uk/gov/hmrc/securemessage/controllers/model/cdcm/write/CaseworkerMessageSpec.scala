@@ -18,14 +18,14 @@ package uk.gov.hmrc.securemessage.controllers.model.cdcm.write
 
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import play.api.libs.json.{ JsSuccess, Json }
+import play.api.libs.json.{ JsResultException, JsSuccess, Json }
 import uk.gov.hmrc.securemessage.controllers.model.cdcm.write.CaseworkerMessage.{ Sender, System, SystemIdentifier }
 import uk.gov.hmrc.securemessage.models.core.Identifier
 
 import java.util.UUID
 
 class CaseworkerMessageSpec extends AnyWordSpec with Matchers {
-  val conversionId = UUID.randomUUID().toString
+  val conversionId: String = UUID.randomUUID().toString
 
   "CaseworkerMessage" must {
     "create a sender identifier with correct values" in {
@@ -45,6 +45,15 @@ class CaseworkerMessageSpec extends AnyWordSpec with Matchers {
       result.get.content mustBe "some message content"
     }
 
+    "throw exception while reading invalid json" in {
+      import CaseworkerMessage.caseworkerMessageRequestReads
+
+      val invalidJson = """{}""".stripMargin
+
+      intercept[JsResultException] {
+        Json.parse(invalidJson).as[CaseworkerMessage]
+      }
+    }
   }
 
   "SystemIdentifier" must {
@@ -63,6 +72,16 @@ class CaseworkerMessageSpec extends AnyWordSpec with Matchers {
       result mustBe a[JsSuccess[_]]
       result.get.name mustBe "some-name"
       result.get.value mustBe "some-value"
+    }
+
+    "throw exception while reading invalid json" in {
+      import SystemIdentifier.identifierReads
+
+      val invalidJson = """{"value": "test_value"}""".stripMargin
+
+      intercept[JsResultException] {
+        Json.parse(invalidJson).as[SystemIdentifier]
+      }
     }
   }
 
@@ -94,6 +113,16 @@ class CaseworkerMessageSpec extends AnyWordSpec with Matchers {
       result mustBe a[JsSuccess[_]]
       result.get.identifier.name mustBe "HMRC-CUS-ORG"
       result.get.identifier.value mustBe "GB123456789000"
+    }
+
+    "throw exception while reading invalid json" in {
+      import System.systemReads
+
+      val invalidJson = """{}""".stripMargin
+
+      intercept[JsResultException] {
+        Json.parse(invalidJson).as[System]
+      }
     }
   }
 
@@ -130,6 +159,16 @@ class CaseworkerMessageSpec extends AnyWordSpec with Matchers {
       val sender = result.get
       sender.system.identifier.name mustBe "CDCM"
       sender.system.identifier.value mustBe conversionId
+    }
+
+    "throw exception while reading invalid json" in {
+      import Sender.senderReads
+
+      val invalidJson = """{}""".stripMargin
+
+      intercept[JsResultException] {
+        Json.parse(invalidJson).as[Sender]
+      }
     }
   }
 

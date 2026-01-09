@@ -17,8 +17,10 @@
 package uk.gov.hmrc.securemessage.controllers.model
 
 import org.scalatestplus.play.PlaySpec
+import play.api.libs.json.{ JsResultException, Json }
+import uk.gov.hmrc.securemessage.TestData.{ TEST_SERVICE_NAME, TEST_URL }
 import uk.gov.hmrc.securemessage.helpers.Resources
-import uk.gov.hmrc.securemessage.models.core.Letter
+import uk.gov.hmrc.securemessage.models.core.{ Letter, RenderUrl }
 
 class MessageResourceResponseSpec extends PlaySpec {
 
@@ -28,13 +30,48 @@ class MessageResourceResponseSpec extends PlaySpec {
       val letterFromDb = Resources.readJson("model/core/full-db-letter.json").as[Letter]
       MessageResourceResponse.from(letterFromDb).renderUrl.service mustBe "secure-message"
     }
+
     "should not update renderUrl service name for 'two-way-message'" in {
       val letterFromDb = Resources.readJson("model/core/full-db-letter-two-way-message.json").as[Letter]
       MessageResourceResponse.from(letterFromDb).renderUrl.service mustBe "two-way-message"
     }
+
     "should not update renderUrl service name for 'sa-message-renderer' " in {
       val letterFromDb = Resources.readJson("model/core/full-db-letter-sa-message-renderer.json").as[Letter]
       MessageResourceResponse.from(letterFromDb).renderUrl.service mustBe "sa-message-renderer"
     }
+  }
+
+  "ServiceUrl.fmt" must {
+
+    import ServiceUrl.fmt
+
+    "read the json correctly" in new Setup {
+      Json.parse(serviceUrlJsonString).as[ServiceUrl] mustBe serviceUrl
+    }
+
+    "throw the exception for invalid json" in new Setup {
+      intercept[JsResultException] {
+        Json.parse(serviceUrlInvalidJsonString).as[ServiceUrl]
+      }
+    }
+
+    "write the object correctly" in new Setup {
+      Json.toJson(serviceUrl) mustBe Json.parse(serviceUrlJsonString)
+    }
+  }
+
+  "ServiceUrl.fromRenderUrl" must {
+    "produce ServiceUrl from RenderUrl" in new Setup {
+      ServiceUrl.fromRenderUrl(renderUrl) mustBe serviceUrl
+    }
+  }
+
+  trait Setup {
+    val renderUrl: RenderUrl = RenderUrl(service = TEST_URL, url = TEST_SERVICE_NAME)
+    val serviceUrl: ServiceUrl = ServiceUrl(service = TEST_URL, url = TEST_SERVICE_NAME)
+
+    val serviceUrlJsonString: String = """{"service":"test@test.com","url":"test_service"}""".stripMargin
+    val serviceUrlInvalidJsonString: String = """{}""".stripMargin
   }
 }

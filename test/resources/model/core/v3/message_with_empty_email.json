@@ -1,0 +1,26 @@
+{
+  "externalRef": {
+    "id": "ABC8885779001007",
+    "source": "mdtp"
+  },
+  "recipient": {
+    "taxIdentifier": {
+      "name": "MTDITID",
+      "value": "ITSA38863566001"
+    },
+    "name": {
+      "line1": "Yanrong",
+      "line2": "Zhang"
+    },
+    "email": ""
+  },
+  "messageType": "mailout-batch",
+  "subject": "subject",
+  "content": "SGVyZSBpcyBzb21lIGNvbnRlbnQ=",
+  "validFrom": "2024-12-23",
+  "details": {
+    "formId": "LPP2_ITSA_cy",
+    "batchId": "1555567",
+    "issueDate": "2025-11-15"
+  }
+}

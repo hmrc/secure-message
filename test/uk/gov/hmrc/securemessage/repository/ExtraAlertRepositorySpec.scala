@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.securemessage.repository
 
+import org.bson.types.ObjectId
 import org.mongodb.scala.model.Filters
 import org.mongodb.scala.SingleObservableFuture
 import org.mongodb.scala.ObservableFuture
@@ -26,11 +27,13 @@ import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import uk.gov.hmrc.common.message.model.AlertDetails
+import play.api.libs.json.{ JsResultException, Json }
+import uk.gov.hmrc.common.message.model.{ AlertDetails, TaxEntity }
 import uk.gov.hmrc.domain.SaUtr
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.metrix.MetricOrchestrator
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.Succeeded
+import uk.gov.hmrc.securemessage.TestData.{ TEST_OBJECT_ID, TEST_PARAMETERS, TEST_TAX_ENTITY, TEST_TEMPLATE_ID }
 import uk.gov.hmrc.securemessage.services.utils.{ MessageFixtures, MetricOrchestratorStub }
 
 import java.time.Instant
@@ -141,8 +144,25 @@ class ExtraAlertRepositorySpec
     }
   }
 
+  "ExtraAlert.extraAlertFormat" must {
+
+    "read the json correctly" in new TestCase {
+      Json.parse(extraAlertJsonString).as[ExtraAlert] mustBe extraAlert
+    }
+
+    "throw the exception for invalid json" in new TestCase {
+      intercept[JsResultException] {
+        Json.parse(extraAlertInvalidJsonString).as[ExtraAlert]
+      }
+    }
+
+    "write the object correctly" in new TestCase {
+      Json.toJson(extraAlert) mustBe Json.parse(extraAlertJsonString)
+    }
+  }
+
   trait TestCase {
-    val repo = app.injector.instanceOf[ExtraAlertRepository]
+    val repo: ExtraAlertRepository = app.injector.instanceOf[ExtraAlertRepository]
 
     val alert: ExtraAlert = ExtraAlert.build(
       MessageFixtures.createTaxEntity(SaUtr("10000001")),
@@ -150,5 +170,30 @@ class ExtraAlertRepositorySpec
       "emailTemplateId",
       AlertDetails("template-id", None, Map())
     )
+
+    val extraAlert: ExtraAlert = ExtraAlert(
+      id = TEST_OBJECT_ID,
+      messageRecipient = TEST_TAX_ENTITY,
+      reference = "test_reference",
+      emailTemplateId = TEST_TEMPLATE_ID,
+      alertDetails = AlertDetails(templateId = TEST_TEMPLATE_ID, recipientName = None, data = TEST_PARAMETERS)
+    )
+
+    val extraAlertJsonString: String =
+      """{
+        |"id":{"$oid":"adf145612345678656782456"},
+        |"messageRecipient":{"regime":"paye","identifier":{"name":"nino","value":"SJ123456A"},"email":"test@test.com"},
+        |"reference":"test_reference",
+        |"emailTemplateId":"test_template_id",
+        |"alertDetails":{"templateId":"test_template_id","data":{"test_name":"test_value"}}
+        |}""".stripMargin
+
+    val extraAlertInvalidJsonString: String =
+      """{
+        |"id":{"$oid":"adf145612345678656782456"},
+        |"reference":"test_reference",
+        |"emailTemplateId":"test_template_id",
+        |"alertDetails":{"templateId":"test_template_id","data":{"test_name":"test_value"}}
+        |}""".stripMargin
   }
 }
