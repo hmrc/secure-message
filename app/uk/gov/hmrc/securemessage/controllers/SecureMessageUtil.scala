@@ -25,9 +25,7 @@ import java.time.format.DateTimeFormatter
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document.OutputSettings
 import org.jsoup.safety.Safelist as JsouptAllowList
-import org.mongodb.scala.result.DeleteResult
 import play.api.http.Status.{ BAD_REQUEST, CONFLICT, NOT_FOUND }
-import play.api.i18n.Messages
 import play.api.libs.json.{ JsArray, JsObject, JsValue, Json }
 import play.api.mvc.Results.Created
 import play.api.mvc.{ AnyContent, Request, Result }
@@ -43,7 +41,7 @@ import uk.gov.hmrc.mongo.workitem.WorkItem
 import uk.gov.hmrc.play.audit.http.connector.{ AuditConnector, AuditResult }
 import uk.gov.hmrc.play.audit.model.{ DataEvent, EventTypes }
 import uk.gov.hmrc.securemessage.SecureMessageError
-import uk.gov.hmrc.securemessage.connectors.{ EmailValidation, EntityResolverConnector, PreferencesConnector, TaxpayerNameConnector }
+import uk.gov.hmrc.securemessage.connectors.{ EmailValidation, PreferencesConnector, TaxpayerNameConnector }
 import uk.gov.hmrc.securemessage.models.core.{ FilterTag, Identifier, MessageFilter }
 import uk.gov.hmrc.securemessage.models.v4.{ Content, ExtraAlertConfig, SecureMessage }
 import uk.gov.hmrc.securemessage.repository.{ ExtraAlert, ExtraAlertRepository, SecureMessageRepository, StatsMetricRepository }
@@ -55,34 +53,21 @@ import scala.jdk.CollectionConverters.*
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success, Try }
 
-object SecureMessageUtil {
+@Singleton
+class SecureMessageUtil @Inject() (
+  @Named("app-name") appName: String,
+  preferencesConnector: PreferencesConnector,
+  taxpayerNameConnector: TaxpayerNameConnector,
+  secureMessageRepository: SecureMessageRepository,
+  extraAlertRepository: ExtraAlertRepository,
+  statsMetricRepository: StatsMetricRepository,
+  messageBrakeService: MessageBrakeService,
+  auditConnector: AuditConnector,
+  configuration: Configuration
+)(implicit ec: ExecutionContext)
+    extends Logging {
 
-  def isGmc(message: SecureMessage): Boolean = "gmc".equalsIgnoreCase(message.externalRef.source)
-
-  def extractMessageDate(message: SecureMessage): String =
-    message.details.flatMap(_.issueDate) match {
-      case Some(issueDate) => formatter(issueDate)
-      case None            => formatter(message.validFrom)
-    }
-
-  def localizedExtractMessageDate(message: SecureMessage)(implicit messages: Messages): String =
-    message.details.flatMap(_.issueDate) match {
-      case Some(issueDate) => localizedFormatter(issueDate)
-      case None            => localizedFormatter(message.validFrom)
-    }
-
-  private val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd MMMM yyyy")
-  def formatter(date: LocalDate): String = date.format(dateFormatter)
-
-  private def localizedFormatter(date: LocalDate)(implicit messages: Messages): String = {
-    val formatter =
-      if (messages.lang.language == "cy") {
-        DateTimeFormatter.ofPattern(s"d '${messages(s"month.${date.getMonthValue}")}' yyyy")
-      } else {
-        dateFormatter
-      }
-    date.format(formatter)
-  }
+  private def isGmc(message: SecureMessage): Boolean = "gmc".equalsIgnoreCase(message.externalRef.source)
 
   private def errorResponseWithErrorId(errorMessage: String, responseCode: Int = BAD_REQUEST) =
     errorResponseResult(errorMessage, responseCode, showErrorID = true)
@@ -98,24 +83,8 @@ object SecureMessageUtil {
     issueDate.format(formatter)
   }
 
-}
-@Singleton
-class SecureMessageUtil @Inject() (
-  @Named("app-name") appName: String,
-  preferencesConnector: PreferencesConnector,
-  taxpayerNameConnector: TaxpayerNameConnector,
-  secureMessageRepository: SecureMessageRepository,
-  extraAlertRepository: ExtraAlertRepository,
-  statsMetricRepository: StatsMetricRepository,
-  messageBrakeService: MessageBrakeService,
-  auditConnector: AuditConnector,
-  configuration: Configuration
-)(implicit ec: ExecutionContext)
-    extends Logging {
-  import SecureMessageUtil._
-
-  lazy val defaultAuditEventMaxSize = 128000
-  lazy val auditEventMaxSize: Int =
+  private val defaultAuditEventMaxSize = 128000
+  private val auditEventMaxSize: Int =
     configuration.getOptional[Int]("auditEventMaxSize").getOrElse(defaultAuditEventMaxSize)
 
   val extraAlerts: List[ExtraAlertConfig] = configuration.underlying
@@ -250,7 +219,7 @@ class SecureMessageUtil @Inject() (
       }
   }
 
-  def cleanUpAndCreateMessage(
+  private def cleanUpAndCreateMessage(
     message: SecureMessage
   )(implicit request: Request[AnyContent], hc: HeaderCarrier): Future[Result] =
     cleanupContent(message).flatMap(m => createMessage(m)).recoverWith { case e: Throwable =>
@@ -545,7 +514,7 @@ class SecureMessageUtil @Inject() (
     )
   }
 
-  def checkAndUpdateMessageBrake(message: SecureMessage): Future[SecureMessage] =
+  private def checkAndUpdateMessageBrake(message: SecureMessage): Future[SecureMessage] =
     if (isGmc(message)) {
       message.details
         .map { d =>
