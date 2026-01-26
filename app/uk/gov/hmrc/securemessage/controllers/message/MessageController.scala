@@ -59,8 +59,7 @@ class MessageController @Inject() (
         Future.successful(errorResponseResult(errs.headOption.fold("Unknown") { case (_, validationErrors) =>
           val errorMessage = validationErrors.headOption.fold("Unknown") { errors =>
             errors.messages
-              .filter(_.startsWith("The backend has rejected the message due to an unknown tax identifier."))
-              .headOption
+              .find(_.startsWith("The backend has rejected the message due to an unknown tax identifier."))
               .getOrElse(errors.messages.toString)
           }
           secureMessageUtil.auditCreateMessageForFailure(errorMessage)
