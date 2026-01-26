@@ -53,6 +53,7 @@ import uk.gov.hmrc.securemessage.TestData.{ TEST_EMAIL_ADDRESS, TEST_EMAIL_ADDRE
 import uk.gov.hmrc.securemessage.models.core.MessageFilter
 
 import java.time.{ Duration, Instant }
+import scala.util.Failure
 
 class SecureMessageUtilSpec extends PlaySpec with ScalaFutures with MockitoSugar with BeforeAndAfterEach {
   val appName: String = "Test"
@@ -297,6 +298,17 @@ class SecureMessageUtilSpec extends PlaySpec with ScalaFutures with MockitoSugar
       val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
       val messageWithoutSourceData = message.copy(details = message.details.map(_.copy(sourceData = None)))
       testUtil.checkValidSourceData(messageWithoutSourceData).isSuccess mustBe true
+    }
+
+    "return error when sourceData is None for GMC messages" in {
+      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+      val messageWithoutSourceData = message.copy(
+        externalRef = message.externalRef.copy(source = "gmc"),
+        details = message.details.map(_.copy(sourceData = None))
+      )
+      testUtil.checkValidSourceData(messageWithoutSourceData) mustBe Failure(
+        MessageValidationException("Invalid Message")
+      )
     }
   }
 

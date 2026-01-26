@@ -34,7 +34,7 @@ class AuthIdentifiersConnector @Inject() (
 )(implicit ec: ExecutionContext)
     extends AuthorisedFunctions {
 
-  private def getIdentifierValue(enrolment: Enrolment): Option[String] =
+  def getIdentifierValue(enrolment: Enrolment): Option[String] =
     enrolment.identifiers match {
       case Seq(identifier) => Some(identifier.value)
       case Seq(
@@ -46,30 +46,29 @@ class AuthIdentifiersConnector @Inject() (
     }
 
   // scalastyle:off cyclomatic.complexity
-  private def collectEnrolments(enrolments: Enrolments): Set[TaxIdWithName] = enrolments.enrolments.flatMap {
-    enrolment =>
-      val taxIdValue = getIdentifierValue(enrolment)
-      enrolment.key match {
-        case "IR-CT"           => taxIdValue.map(CtUtr.apply)
-        case "HMRC-NI"         => taxIdValue.map(Nino.apply)
-        case "IR-SA"           => taxIdValue.map(SaUtr.apply)
-        case "HMRC-OBTDS-ORG"  => taxIdValue.map(HmrcObtdsOrg.apply)
-        case "HMRC-MTD-VAT"    => taxIdValue.map(HmrcMtdVat.apply)
-        case "VRN"             => taxIdValue.map(Vrn.apply)
-        case "IR-PAYE"         => taxIdValue.map(Epaye.apply)
-        case "HMCE-VATDEC-ORG" => taxIdValue.map(HmceVatdecOrg.apply)
-        case "HMRC-CUS-ORG"    => taxIdValue.map(HmrcCusOrg.apply)
-        case "HMRC-PPT-ORG"    => taxIdValue.map(HmrcPptOrg.apply)
-        case "HMRC-MTD-IT"     => taxIdValue.map(HmrcMtdItsa.apply)
-        case "HMRC-PODS-ORG"   => taxIdValue.map(HmrcPodsOrg.apply)
-        case "HMRC-PODSPP-ORG" => taxIdValue.map(HmrcPodsPpOrg.apply)
-        case "HMRC-IOSS-ORG"   => taxIdValue.map(HmrcIossOrg.apply)
-        case "HMRC-IOSS-INT"   => taxIdValue.map(HmrcIossInt.apply)
-        case "HMRC-IOSS-NETP"  => taxIdValue.map(HmrcIossNetp.apply)
-        case "HMRC-OSS-ORG"    => taxIdValue.map(HmrcOssOrg.apply)
-        case "HMRC-AD-ORG"     => taxIdValue.map(HmrcAdOrg.apply)
-        case _                 => None
-      }
+  def collectEnrolments(enrolments: Enrolments): Set[TaxIdWithName] = enrolments.enrolments.flatMap { enrolment =>
+    val taxIdValue = getIdentifierValue(enrolment)
+    enrolment.key match {
+      case "IR-CT"           => taxIdValue.map(CtUtr.apply)
+      case "HMRC-NI"         => taxIdValue.map(Nino.apply)
+      case "IR-SA"           => taxIdValue.map(SaUtr.apply)
+      case "HMRC-OBTDS-ORG"  => taxIdValue.map(HmrcObtdsOrg.apply)
+      case "HMRC-MTD-VAT"    => taxIdValue.map(HmrcMtdVat.apply)
+      case "VRN"             => taxIdValue.map(Vrn.apply)
+      case "IR-PAYE"         => taxIdValue.map(Epaye.apply)
+      case "HMCE-VATDEC-ORG" => taxIdValue.map(HmceVatdecOrg.apply)
+      case "HMRC-CUS-ORG"    => taxIdValue.map(HmrcCusOrg.apply)
+      case "HMRC-PPT-ORG"    => taxIdValue.map(HmrcPptOrg.apply)
+      case "HMRC-MTD-IT"     => taxIdValue.map(HmrcMtdItsa.apply)
+      case "HMRC-PODS-ORG"   => taxIdValue.map(HmrcPodsOrg.apply)
+      case "HMRC-PODSPP-ORG" => taxIdValue.map(HmrcPodsPpOrg.apply)
+      case "HMRC-IOSS-ORG"   => taxIdValue.map(HmrcIossOrg.apply)
+      case "HMRC-IOSS-INT"   => taxIdValue.map(HmrcIossInt.apply)
+      case "HMRC-IOSS-NETP"  => taxIdValue.map(HmrcIossNetp.apply)
+      case "HMRC-OSS-ORG"    => taxIdValue.map(HmrcOssOrg.apply)
+      case "HMRC-AD-ORG"     => taxIdValue.map(HmrcAdOrg.apply)
+      case _                 => None
+    }
   }
 
   private def identifierSet[T](value: String)(identfier: String => T): Set[T] = {
@@ -82,7 +81,7 @@ class AuthIdentifiersConnector @Inject() (
     }
   }
 
-  private def currentTaxIdentifiers(implicit hc: HeaderCarrier): Future[Set[TaxIdWithName]] =
+  def currentTaxIdentifiers(implicit hc: HeaderCarrier): Future[Set[TaxIdWithName]] =
     authorised()
       .retrieve(Retrievals.allEnrolments) { enrolments =>
         Future.successful(collectEnrolments(enrolments))

@@ -67,8 +67,6 @@ class SecureMessageUtil @Inject() (
 )(implicit ec: ExecutionContext)
     extends Logging {
 
-  private def isGmc(message: SecureMessage): Boolean = "gmc".equalsIgnoreCase(message.externalRef.source)
-
   private def errorResponseWithErrorId(errorMessage: String, responseCode: Int = BAD_REQUEST) =
     errorResponseResult(errorMessage, responseCode, showErrorID = true)
 
@@ -121,6 +119,8 @@ class SecureMessageUtil @Inject() (
       Success(message)
     } else
       Failure(MessageValidationException("Content Body: Invalid content"))
+
+  private def isGmc(message: SecureMessage): Boolean = "gmc".equalsIgnoreCase(message.externalRef.source)
 
   def checkValidSourceData(message: SecureMessage): Try[SecureMessage] = message.details.flatMap(_.sourceData) match {
     case Some(data) if data.trim.isEmpty || !Base64.isBase64(data) =>
