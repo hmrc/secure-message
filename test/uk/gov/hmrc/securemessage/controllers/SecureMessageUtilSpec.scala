@@ -20,39 +20,34 @@ import com.mongodb.client.result.DeleteResult
 import org.apache.commons.codec.binary.Base64
 import org.bson.types.ObjectId
 import org.mockito.ArgumentMatchers.{ any, eq as meq }
-import org.mockito.Mockito.{ doNothing, reset, times, verify, verifyNoInteractions, when }
+import org.mockito.Mockito.*
 import org.mongodb.scala.result.DeleteResult
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
-import play.api.i18n.{ Lang, Messages, MessagesImpl }
-import uk.gov.hmrc.common.message.model.{ AlertDetails, ExternalRef, Language, MessagesCount, Regime, TaxEntity, TaxpayerName }
+import play.api.libs.json.{ JsString, Json }
+import play.api.mvc.AnyContentAsEmpty
+import play.api.test.Helpers.*
+import play.api.test.{ FakeHeaders, FakeRequest }
+import uk.gov.hmrc.common.message.model.Regime.sa
+import uk.gov.hmrc.common.message.model.*
 import uk.gov.hmrc.domain.{ Nino, SaUtr, SimpleName, TaxIdentifier }
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import uk.gov.hmrc.securemessage.connectors.{ EntityResolverConnector, PreferencesConnector, TaxpayerNameConnector }
-import uk.gov.hmrc.securemessage.helpers.Resources
-import uk.gov.hmrc.securemessage.models.v4.{ Content, ExtraAlertConfig, SecureMessage }
-import uk.gov.hmrc.securemessage.repository.{ ExtraAlert, ExtraAlertRepository, SecureMessageRepository, StatsMetricRepository }
-import uk.gov.hmrc.securemessage.services.MessageBrakeService
-import play.api.test.{ FakeHeaders, FakeRequest }
-import play.api.test.Helpers.*
-import play.api.mvc.{ AnyContentAsEmpty, Result }
-import uk.gov.hmrc.play.audit.http.connector.AuditResult
+import uk.gov.hmrc.mongo.workitem.ProcessingStatus
+import uk.gov.hmrc.play.audit.http.connector.{ AuditConnector, AuditResult }
 import uk.gov.hmrc.play.audit.model.EventTypes
-import play.api.libs.json.{ JsString, Json }
-import play.i18n
-import uk.gov.hmrc.common.message.model.Regime.sa
-import uk.gov.hmrc.mongo.workitem.{ ProcessingStatus, WorkItem }
-import uk.gov.hmrc.mongo.workitem.ProcessingStatus.ToDo
-
-import scala.concurrent.{ ExecutionContext, Future }
-import uk.gov.hmrc.securemessage.TestData.{ TEST_EMAIL_ADDRESS, TEST_EMAIL_ADDRESS_VALUE, TEST_EXT_REF_ID, TEST_IDENTIFIER, TEST_TEMPLATE_ID, TEST_TIME_INSTANT }
+import uk.gov.hmrc.securemessage.TestData.{ TEST_EMAIL_ADDRESS_VALUE, TEST_IDENTIFIER }
+import uk.gov.hmrc.securemessage.connectors.{ PreferencesConnector, TaxpayerNameConnector }
+import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core.MessageFilter
+import uk.gov.hmrc.securemessage.models.v4.{ Content, ExtraAlertConfig, SecureMessage }
+import uk.gov.hmrc.securemessage.repository.{ ExtraAlertRepository, SecureMessageRepository, StatsMetricRepository }
+import uk.gov.hmrc.securemessage.services.MessageBrakeService
 
 import java.time.{ Duration, Instant }
+import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.Failure
 
 class SecureMessageUtilSpec extends PlaySpec with ScalaFutures with MockitoSugar with BeforeAndAfterEach {
@@ -127,10 +122,9 @@ class SecureMessageUtilSpec extends PlaySpec with ScalaFutures with MockitoSugar
   }
 
   "checkPreferencesAndCreateMessage" must {
-    import play.api.test.FakeRequest
-    import play.api.test.Helpers._
     import play.api.mvc.AnyContentAsEmpty
-    import cats.data.EitherT
+    import play.api.test.FakeRequest
+    import play.api.test.Helpers.*
     import uk.gov.hmrc.securemessage.connectors.{ EmailValidation, VerifiedEmailNotFound }
 
     implicit val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
@@ -438,8 +432,8 @@ class SecureMessageUtilSpec extends PlaySpec with ScalaFutures with MockitoSugar
 
     "return failure when email is None and taxId is invalid" in {
       val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
-      import uk.gov.hmrc.common.message.model.{ TaxEntity, Regime }
-      import uk.gov.hmrc.domain.{ TaxIdentifier, SimpleName }
+      import uk.gov.hmrc.common.message.model.{ Regime, TaxEntity }
+      import uk.gov.hmrc.domain.{ SimpleName, TaxIdentifier }
 
       case class InvalidTaxId(value: String) extends TaxIdentifier with SimpleName {
         override val name = "invalid-taxid"
@@ -512,7 +506,7 @@ class SecureMessageUtilSpec extends PlaySpec with ScalaFutures with MockitoSugar
   }
 
   "handleBiggerContent" must {
-    import play.api.libs.json._
+    import play.api.libs.json.*
 
     "remove both sourceData and content when both are present" in {
       val body = Json.obj(
