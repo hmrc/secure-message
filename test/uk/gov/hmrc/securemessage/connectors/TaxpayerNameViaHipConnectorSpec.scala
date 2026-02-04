@@ -1,0 +1,241 @@
+/*
+ * Copyright 2023 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package uk.gov.hmrc.securemessage.connectors
+
+import ch.qos.logback.classic.{ Level, Logger as LogbackLogger }
+import com.typesafe.config.{ Config, ConfigFactory }
+import org.mockito.ArgumentMatchers.{ any, eq as meq }
+import org.mockito.Mockito.*
+import org.scalatest.concurrent.{ Eventually, IntegrationPatience, ScalaFutures }
+import org.scalatestplus.mockito.MockitoSugar
+import org.scalatestplus.play.PlaySpec
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import play.api.Configuration
+import play.api.libs.json.*
+import uk.gov.hmrc.common.message.model.TaxpayerName
+import uk.gov.hmrc.domain.SaUtr
+import uk.gov.hmrc.http.client.{ HttpClientV2, RequestBuilder }
+import uk.gov.hmrc.http.{ HeaderCarrier, HttpReads, NotFoundException, StringContextOps }
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import uk.gov.hmrc.securemessage.services.utils.MetricOrchestratorStub
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ ExecutionContext, Future }
+
+//ToDo Refactor the tests to TaxpayerNameConnectorSpec once hip endpoint is enabled
+class TaxpayerNameViaHipConnectorSpec
+    extends PlaySpec with ScalaFutures with LogCapturing with Eventually with MockitoSugar with GuiceOneAppPerSuite
+    with MetricOrchestratorStub with IntegrationPatience {
+
+  val fullTaxpayerName: TaxpayerName = TaxpayerName(
+    title = Some("Mr"),
+    forename = Some("Erbert"),
+    secondForename = Some("Donaldson"),
+    surname = Some("Ducking"),
+    honours = Some("KCBE")
+  )
+
+  val utr: SaUtr = SaUtr("12345678990")
+
+  "Parsing from JSON to a" must {
+
+    implicit val headerCarrier: HeaderCarrier = new HeaderCarrier()
+    "work for more complete Taxpayer data JSON" in {
+      val json = Some(Json.parse("""{
+                                   |    "name" : {
+                                   |        "title": "Mr",
+                                   |        "forename": "Erbert",
+                                   |        "secondForename": "Donaldson",
+                                   |        "surname": "Ducking",
+                                   |        "honours": "KCBE"
+                                   |    },
+                                   |    "address": {
+                                   |        "addressLine1": "42 Somewhere's Street",
+                                   |        "addressLine2": "London",
+                                   |        "addressLine3": "Greater London",
+                                   |        "addressLine4": "",
+                                   |        "addressLine5": "",
+                                   |        "postcode": "WO9H 8AA",
+                                   |        "foreignCountry": null,
+                                   |        "returnedLetter": true,
+                                   |        "additionalDeliveryInformation": "Leave by door"
+                                   |    },
+                                   |    "contact": {
+                                   |        "telephone": {
+                                   |            "daytime": "02654321#1235",
+                                   |            "evening": "027123456",
+                                   |            "mobile": "07676767",
+                                   |            "fax": "0209798969"
+                                   |        },
+                                   |        "email": {
+                                   |            "primary": "erbert@notthere.co.uk"
+                                   |        },
+                                   |        "other": {}
+                                   |    }
+                                   |}
+                                   | """.stripMargin))
+
+      val result = connectorWithResponse(json).taxpayerName(utr)
+
+      result.futureValue must be(Some(fullTaxpayerName))
+    }
+
+    "work for Taxpayer JSON which holds no name field" in {
+      val json = Some(Json.parse("""{
+                                   |    "address": {
+                                   |        "addressLine1": "42 Somewhere's Street",
+                                   |        "addressLine2": "London",
+                                   |        "addressLine3": "Greater London",
+                                   |        "postcode": "WO9H 8AA",
+                                   |        "foreignCountry": null,
+                                   |        "returnedLetter": true,
+                                   |        "additionalDeliveryInformation": "Leave by door"
+                                   |    },
+                                   |    "contact": {
+                                   |        "telephone": {
+                                   |            "mobile": "07676767"
+                                   |        },
+                                   |        "email": {
+                                   |            "primary": "erbert@notthere.co.uk"
+                                   |        },
+                                   |        "other": {}
+                                   |    }
+                                   |}
+                                   | """.stripMargin))
+
+      val result = connectorWithResponse(json).taxpayerName(utr)
+
+      result.futureValue must be(None)
+    }
+
+    "work for empty Taxpayer JSON" in {
+      val result = connectorWithResponse(Some(Json.parse("{}"))).taxpayerName(utr)
+      result.futureValue must be(None)
+    }
+
+    "work for JSON which only holds the name data" in {
+      val json = Some(Json.parse("""{
+                                   |"name" : {
+                                   |        "title": "Mr",
+                                   |        "forename": "Erbert",
+                                   |        "secondForename": "Donaldson",
+                                   |        "surname": "Ducking",
+                                   |        "honours": "KCBE"
+                                   |    }
+                                   |}""".stripMargin))
+
+      val result = connectorWithResponse(json).taxpayerName(utr)
+
+      result.futureValue must be(Some(fullTaxpayerName))
+    }
+  }
+
+  "Taxpayer connector" must {
+    implicit val hc: HeaderCarrier = HeaderCarrier()
+
+    "log an error and return empty TaxpayerName on 5** or non 404 4** error" in {
+      val logger = play.api.Logger(connector.getClass).underlyingLogger.asInstanceOf[LogbackLogger]
+      withCaptureOfLoggingFrom(logger) { logEvents =>
+        connectorWithResponse(None, 500).taxpayerName(utr).futureValue must be(None)
+
+        connectorWithResponse(None, 501).taxpayerName(utr).futureValue must be(None)
+
+        connectorWithResponse(None, 401).taxpayerName(utr).futureValue must be(None)
+
+        logEvents.count(_.getLevel == Level.ERROR) must be(3)
+      }
+    }
+
+    "log an warn level message and return empty TaxpayerName on 404 error" in {
+      val logger = play.api.Logger(connector.getClass).underlyingLogger.asInstanceOf[LogbackLogger]
+      withCaptureOfLoggingFrom(logger) { logEvents =>
+        connectorWithResponse(None, 404).taxpayerName(utr).futureValue must be(None)
+        logEvents.head.getLevel must be(Level.WARN)
+        logEvents.head.getMessage must include(utr.value)
+      }
+    }
+  }
+
+  "NameFromHods.format" must {
+    import NameFromHods.format
+
+    "read the json correctly" in new Setup {
+      Json.parse(nameFromHodsJsonString).as[NameFromHods] mustBe nameFromHods
+    }
+
+    "throw exception for invalid json" in new Setup {
+      intercept[JsResultException] {
+        Json.parse(nameFromHodsInvalidJsonString).as[NameFromHods]
+      }
+    }
+
+    "write the object correctly" in new Setup {
+      Json.toJson(nameFromHods) mustBe Json.parse(nameFromHodsJsonString)
+    }
+  }
+
+  val mockHttp: HttpClientV2 = mock[HttpClientV2]
+  val requestBuilder: RequestBuilder = mock[RequestBuilder]
+  val underlyingConfig: Config = ConfigFactory.empty()
+
+  val configuration: Configuration =
+    Configuration(underlyingConfig)
+      .withFallback(
+        Configuration(
+          "microservice.services.taxpayer-data.host"         -> "host",
+          "microservice.services.taxpayer-data.port"         -> 443,
+          "microservice.services.taxpayer-data.protocol"     -> "https",
+          "microservice.services.taxpayer-data-hip.host"     -> "host",
+          "microservice.services.taxpayer-data-hip.port"     -> 443,
+          "microservice.services.taxpayer-data-hip.protocol" -> "https",
+          "microservice.services.taxpayer-data-hip.enabled"  -> true
+        )
+      )
+  val serviceCOnfig = ServicesConfig(configuration)
+
+  val connector = new TaxpayerNameConnector(mockHttp, serviceCOnfig)
+
+  def connectorWithResponse(json: Option[JsValue], status: Int = 200): TaxpayerNameConnector = {
+    val nameResponse = json
+      .map(js => Future.successful(js.as[NameFromHods]))
+      .getOrElse(
+        Future.failed(status match {
+          case 404 => new NotFoundException("test")
+          case _   => new RuntimeException("some other error")
+        })
+      )
+
+    when(
+      mockHttp.get(meq(url"https://host:443/ods-sa/v1/self-assessment/individual/$utr/designatory-details/taxpayer"))(
+        any[HeaderCarrier]
+      )
+    ).thenReturn(requestBuilder)
+    when(requestBuilder.setHeader(any)).thenReturn(requestBuilder)
+    when(requestBuilder.execute[NameFromHods](any[HttpReads[NameFromHods]], any[ExecutionContext]))
+      .thenReturn(nameResponse)
+
+    connector
+  }
+
+  trait Setup {
+    val taxpayerName: TaxpayerName = TaxpayerName(title = Some("test_title"))
+    val nameFromHods: NameFromHods = NameFromHods(Some(taxpayerName))
+
+    val nameFromHodsJsonString: String = """{"name":{"title":"test_title"}}""".stripMargin
+    val nameFromHodsInvalidJsonString: String = """{"name":{"title":true}}""".stripMargin
+  }
+}
