@@ -27,12 +27,15 @@ trait SchedulingConfig {
   val name: String
   val configuration: Configuration
 
-  def durationFromConfig(propertyKey: String): FiniteDuration =
+  private def durationFromConfig(propertyKey: String): FiniteDuration =
     configuration
       .getOptional[FiniteDuration](s"scheduling.$name.$propertyKey")
       .getOrElse(FiniteDuration(0, TimeUnit.MILLISECONDS))
 
-  lazy val initialDelay = durationFromConfig("initialDelay")
-  lazy val interval = durationFromConfig("interval")
-  lazy val lockDuration = durationFromConfig("lockDuration")
+  lazy val initialDelay: FiniteDuration = durationFromConfig("initialDelay")
+  lazy val interval: FiniteDuration = durationFromConfig("interval")
+  lazy val lockDuration: FiniteDuration = durationFromConfig("lockDuration")
+
+  protected def lockTtl(default: Long): FiniteDuration =
+    Option(lockDuration).getOrElse(default.hours)
 }
