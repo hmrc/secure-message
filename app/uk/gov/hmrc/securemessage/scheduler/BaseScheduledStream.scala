@@ -38,7 +38,7 @@ trait BaseScheduledStream extends Logging {
   protected lazy val initialDelay: FiniteDuration
   protected lazy val interval: FiniteDuration
 
-  protected def processJob(): Future[Result]
+  def processJob(): Future[Result]
 
   protected def startMessage: String = s"$name Start"
 
@@ -52,13 +52,12 @@ trait BaseScheduledStream extends Logging {
         case None      => Result(s"$name cannot acquire mongo lock, not running")
 
   private def buildStream(): UniqueKillSwitch =
-    val (ks, _) = Source
+    Source
       .tick(initialDelay, interval, ())
       .viaMat(KillSwitches.single)(Keep.right)
       .mapAsync(1)(_ => runJob())
-      .toMat(Sink.ignore)(Keep.both)
+      .to(Sink.ignore)
       .run()
-    ks
 
   final def runJob(): Future[Unit] =
     logger.warn(startMessage)

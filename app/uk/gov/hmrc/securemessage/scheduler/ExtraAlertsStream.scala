@@ -47,7 +47,7 @@ class ExtraAlertsStream @Inject() (
 
   override protected def stopMessage = s"$name Stop processing extra alerts to send email requests"
 
-  override protected def processJob(): Future[Result] =
+  override def processJob(): Future[Result] =
     withLock:
       extraAlerter
         .sendAlerts()

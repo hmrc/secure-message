@@ -77,13 +77,13 @@ class EmailAlertsStreamSpec
       when(mockLockRepo.releaseLock(any(), any())).thenReturn(Future.unit)
       when(mockEmailAlerter.sendEmailAlerts()).thenReturn(Future.successful(EmailResults(3, 1)))
 
-      newStream.processSecureMessages().futureValue.message shouldBe expectedResult
+      newStream.processJob().futureValue.message shouldBe expectedResult
     }
 
     "return lock acquisition failure when lock cannot be acquired" in {
       when(mockLockRepo.takeLock(any(), any(), any())).thenReturn(Future.successful(None))
 
-      newStream.processSecureMessages().futureValue.message shouldBe
+      newStream.processJob().futureValue.message shouldBe
         "EmailAlertsStream cannot acquire mongo lock, not running"
     }
 
@@ -95,7 +95,7 @@ class EmailAlertsStreamSpec
       when(mockLockRepo.releaseLock(any(), any())).thenReturn(Future.unit)
       when(mockEmailAlerter.sendEmailAlerts()).thenReturn(Future.failed(error))
 
-      val result = newStream.processSecureMessages().futureValue
+      val result = newStream.processJob().futureValue
       result.message should include("Error processing Alerts")
     }
   }

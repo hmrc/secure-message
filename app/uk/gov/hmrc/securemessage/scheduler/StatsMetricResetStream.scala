@@ -49,7 +49,7 @@ class StatsMetricResetStream @Inject() (
 
   override protected def stopMessage = s"$name Stop resetting statistics metrics"
 
-  override protected def processJob(): Future[Result] =
+  override def processJob(): Future[Result] =
     withLock:
       statsMetricRepository
         .reset()
