@@ -31,16 +31,16 @@ import scala.concurrent.{ ExecutionContext, Future }
 
 @Singleton
 class EmailAlertsStream @Inject() (
-  override val configuration: Configuration,
+  val configuration: Configuration,
   val lockRepository: LockRepository,
   emailAlerter: EmailAlertService,
   val lifecycle: ApplicationLifecycle
 )(using val ec: ExecutionContext, val mat: Materializer)
-    extends BaseScheduledStream with SchedulingConfig {
+    extends BaseScheduledStream {
 
-  override val name = "EmailAlertsStream"
+  lazy val name = "EmailAlertsStream"
 
-  override val lockService: LockService =
+  lazy val lockService: LockService =
     LockService(lockRepository, lockId = name, ttl = lockTtl(default = 1))
 
   override protected def startMessage = s"$name Start processing secure messages to send email requests"

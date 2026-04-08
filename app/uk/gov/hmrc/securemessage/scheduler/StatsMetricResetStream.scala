@@ -38,11 +38,11 @@ class StatsMetricResetStream @Inject() (
   timeSource: TimeSource,
   val lifecycle: ApplicationLifecycle
 )(using val ec: ExecutionContext, val mat: Materializer)
-    extends BaseScheduledStream with SchedulingConfig {
+    extends BaseScheduledStream {
 
-  override val name = "StatsMetricResetStream"
+  val name = "StatsMetricResetStream"
 
-  override val lockService: LockService =
+  lazy val lockService: LockService =
     LockService(lockRepository, lockId = name, ttl = 10.hours)
 
   override protected def startMessage = s"$name Start resetting statistics metrics"

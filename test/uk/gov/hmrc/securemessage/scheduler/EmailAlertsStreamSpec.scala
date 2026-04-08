@@ -51,7 +51,6 @@ class EmailAlertsStreamSpec
   private val testLockDuration = 1.hour
 
   override def beforeEach(): Unit = {
-    super.beforeEach()
     when(mockConfig.getOptional[FiniteDuration](eqTo("scheduling.EmailAlertsStream.initialDelay"))(any()))
       .thenReturn(Some(testInitialDelay))
     when(mockConfig.getOptional[FiniteDuration](eqTo("scheduling.EmailAlertsStream.interval"))(any()))

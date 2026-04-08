@@ -18,25 +18,36 @@ package uk.gov.hmrc.securemessage.scheduler
 
 import org.apache.pekko.stream.scaladsl.{ Keep, Sink, Source }
 import org.apache.pekko.stream.{ KillSwitches, Materializer, UniqueKillSwitch }
-import play.api.Logging
 import play.api.inject.ApplicationLifecycle
+import play.api.{ Configuration, Logging }
 import uk.gov.hmrc.mongo.lock.LockService
 import uk.gov.hmrc.securemessage.scheduler.BaseScheduledStream.Result
 
+import java.util.concurrent.TimeUnit
+import scala.concurrent.duration.*
 import scala.concurrent.{ ExecutionContext, Future }
-import scala.concurrent.duration.FiniteDuration
 
 trait BaseScheduledStream extends Logging {
 
-  val name: String
-  val lockService: LockService
-  val lifecycle: ApplicationLifecycle
+  def name: String
+  def configuration: Configuration
+  def lockService: LockService
+  def lifecycle: ApplicationLifecycle
 
   implicit val ec: ExecutionContext
   implicit val mat: Materializer
 
-  protected lazy val initialDelay: FiniteDuration
-  protected lazy val interval: FiniteDuration
+  private def durationFromConfig(propertyKey: String): FiniteDuration =
+    configuration
+      .getOptional[FiniteDuration](s"scheduling.$name.$propertyKey")
+      .getOrElse(FiniteDuration(0, TimeUnit.MILLISECONDS))
+
+  lazy val initialDelay: FiniteDuration = durationFromConfig("initialDelay")
+  lazy val interval: FiniteDuration = durationFromConfig("interval")
+  lazy val lockDuration: FiniteDuration = durationFromConfig("lockDuration")
+
+  protected def lockTtl(default: Long): FiniteDuration =
+    Option(lockDuration).getOrElse(default.hours)
 
   def processJob(): Future[Result]
 
@@ -59,7 +70,7 @@ trait BaseScheduledStream extends Logging {
       .to(Sink.ignore)
       .run()
 
-  final def runJob(): Future[Unit] =
+  private final def runJob(): Future[Unit] =
     logger.warn(startMessage)
     processJob().map: result =>
       logger.warn(result.message)
