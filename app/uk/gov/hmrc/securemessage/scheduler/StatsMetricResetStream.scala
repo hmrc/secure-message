@@ -33,14 +33,13 @@ import scala.concurrent.{ ExecutionContext, Future }
 @Singleton
 class StatsMetricResetStream @Inject() (
   val configuration: Configuration,
-  statsMetricRepository: StatsMetricRepository,
   val lockRepository: LockRepository,
-  timeSource: TimeSource,
+  statsMetricRepository: StatsMetricRepository,
   val lifecycle: ApplicationLifecycle
 )(using val ec: ExecutionContext, val mat: Materializer)
     extends BaseScheduledStream {
 
-  val name = "StatsMetricResetStream"
+  lazy val name = "StatsMetricResetStream"
 
   lazy val lockService: LockService =
     LockService(lockRepository, lockId = name, ttl = 10.hours)

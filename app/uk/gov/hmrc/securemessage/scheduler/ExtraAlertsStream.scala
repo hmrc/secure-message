@@ -38,7 +38,7 @@ class ExtraAlertsStream @Inject() (
 )(using val ec: ExecutionContext, val mat: Materializer, actorSystem: ActorSystem)
     extends BaseScheduledStream {
 
-  val name = "ExtraAlertsStream"
+  lazy val name = "ExtraAlertsStream"
 
   lazy val lockService: LockService =
     LockService(lockRepository, lockId = name, ttl = lockTtl(default = 10))
