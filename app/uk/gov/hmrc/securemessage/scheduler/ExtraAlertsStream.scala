@@ -17,16 +17,14 @@
 package uk.gov.hmrc.securemessage.scheduler
 
 import org.apache.pekko.actor.ActorSystem
-import org.apache.pekko.stream.{ KillSwitches, Materializer, UniqueKillSwitch }
-import org.apache.pekko.stream.scaladsl.{ Keep, Sink, Source }
+import org.apache.pekko.stream.Materializer
+import play.api.Configuration
 import play.api.inject.ApplicationLifecycle
-import play.api.{ Configuration, Logging }
 import uk.gov.hmrc.mongo.lock.{ LockRepository, LockService }
 import uk.gov.hmrc.securemessage.scheduler.BaseScheduledStream.Result
 import uk.gov.hmrc.securemessage.services.{ EmailResults, ExtraAlerter }
 
 import javax.inject.{ Inject, Singleton }
-import scala.concurrent.duration.*
 import scala.concurrent.{ ExecutionContext, Future }
 
 @Singleton
