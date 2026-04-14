@@ -17,75 +17,43 @@
 package uk.gov.hmrc.securemessage.scheduler
 
 import org.apache.pekko.actor.ActorSystem
-import org.apache.pekko.stream.{ KillSwitches, Materializer, UniqueKillSwitch }
-import org.apache.pekko.stream.scaladsl.{ Keep, Sink, Source }
+import org.apache.pekko.stream.Materializer
+import play.api.Configuration
 import play.api.inject.ApplicationLifecycle
-import play.api.{ Configuration, Logging }
 import uk.gov.hmrc.mongo.lock.{ LockRepository, LockService }
+import uk.gov.hmrc.securemessage.scheduler.BaseScheduledStream.Result
 import uk.gov.hmrc.securemessage.services.{ EmailResults, ExtraAlerter }
 
 import javax.inject.{ Inject, Singleton }
-import scala.concurrent.duration._
 import scala.concurrent.{ ExecutionContext, Future }
 
 @Singleton
 class ExtraAlertsStream @Inject() (
-  override val configuration: Configuration,
-  lockRepository: LockRepository,
+  val configuration: Configuration,
+  val lockRepository: LockRepository,
   extraAlerter: ExtraAlerter,
-  lifecycle: ApplicationLifecycle
-)(implicit ec: ExecutionContext, mat: Materializer, actorSystem: ActorSystem)
-    extends SchedulingConfig with Logging {
+  val lifecycle: ApplicationLifecycle
+)(using val ec: ExecutionContext, val mat: Materializer, actorSystem: ActorSystem)
+    extends BaseScheduledStream {
 
-  override val name = "ExtraAlertsStream"
+  lazy val name = "ExtraAlertsStream"
 
-  private val maxLockHours: Long = 10
-  private val releaseLockAfter: FiniteDuration = Option(lockDuration).getOrElse(maxLockHours.hours)
+  lazy val lockService: LockService =
+    LockService(lockRepository, lockId = name, ttl = lockTtl(default = 10))
 
-  val lockService: LockService = LockService(lockRepository = lockRepository, lockId = name, ttl = releaseLockAfter)
+  override protected def startMessage = s"$name Start processing extra alerts to send email requests"
 
-  private val (killSwitch: UniqueKillSwitch, _) = Source
-    .tick(initialDelay, interval, ())
-    .viaMat(KillSwitches.single)(Keep.right)
-    .mapAsync(1)(_ => runJob())
-    .toMat(Sink.ignore)(Keep.both)
-    .run()
+  override protected def stopMessage = s"$name Stop processing extra alerts to send email requests"
 
-  // To stop the stream gracefully when system is shut down
-  lifecycle.addStopHook { () =>
-    logger.info(s"Shutting down $name stream using KillSwitch")
-    killSwitch.shutdown()
-    Future.unit
-  }
-
-  def runJob(): Future[Unit] = {
-    logger.warn(s"$name Start processing extra alerts to send email requests")
-
-    processExtraAlerts().map { result =>
-      logger.warn(result.message)
-      logger.warn(s"$name Stop processing extra alerts to send email requests")
-    }
-  }
-
-  def processExtraAlerts(): Future[Result] =
-    lockService
-      .withLock[String] {
-        extraAlerter
-          .sendAlerts()
-          .map {
-            case EmailResults(0, 0, 0, 0) =>
-              s"$name No messages to process"
-            case EmailResults(sent, requeued, failed, hardCopyRequested) =>
-              s"$name: Succeeded - $sent, Will be retried - $requeued, Permanently failed - $failed, Hard copy requested = $hardCopyRequested"
-          }
-          .recover { case e: Exception =>
-            s"$name Error processing Extra Alerts: ${e.getMessage}"
-          }
-      }
-      .map {
-        case Some(msg) => Result(msg)
-        case None      => Result(s"$name cannot acquire mongo lock, not running")
-      }
+  override def processJob(): Future[Result] =
+    withLock:
+      extraAlerter
+        .sendAlerts()
+        .map:
+          case EmailResults(0, 0, 0, 0) =>
+            s"$name No messages to process"
+          case EmailResults(sent, requeued, failed, hardCopyRequested) =>
+            s"$name: Succeeded - $sent, Will be retried - $requeued, Permanently failed - $failed, Hard copy requested = $hardCopyRequested"
+        .recover:
+          case e: Exception => s"$name Error processing Extra Alerts: ${e.getMessage}"
 }
-
-case class Result(message: String)

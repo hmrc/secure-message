@@ -28,22 +28,22 @@ import org.scalatestplus.mockito.MockitoSugar
 import play.api.Configuration
 import play.api.inject.ApplicationLifecycle
 import uk.gov.hmrc.mongo.lock.{ Lock, LockRepository }
-import uk.gov.hmrc.securemessage.services.{ EmailAlertService, EmailResults }
+import uk.gov.hmrc.securemessage.services.{ EmailResults, ExtraAlerter }
 
 import java.time.Instant
 import scala.concurrent.duration.*
 import scala.concurrent.{ ExecutionContext, Future }
 
-class EmailAlertsStreamSpec
+class ExtraAlertsStreamSpec
     extends AnyWordSpec with Matchers with MockitoSugar with ScalaFutures with BeforeAndAfterEach {
 
-  implicit val system: ActorSystem = ActorSystem("EmailAlertsStreamSpec")
+  implicit val system: ActorSystem = ActorSystem("ExtraAlertsStreamSpec")
   implicit val mat: Materializer = Materializer(system)
   implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.global
 
   private val mockConfig = mock[Configuration]
   private val mockLockRepo = mock[LockRepository]
-  private val mockEmailAlerter = mock[EmailAlertService]
+  private val mockExtraAlerter = mock[ExtraAlerter]
   private val mockLifecycle = mock[ApplicationLifecycle]
 
   private val testInitialDelay = 1.second
@@ -51,30 +51,31 @@ class EmailAlertsStreamSpec
   private val testLockDuration = 1.hour
 
   override def beforeEach(): Unit = {
-    when(mockConfig.getOptional[FiniteDuration](eqTo("scheduling.EmailAlertsStream.initialDelay"))(any()))
+    when(mockConfig.getOptional[FiniteDuration](eqTo("scheduling.ExtraAlertsStream.initialDelay"))(any()))
       .thenReturn(Some(testInitialDelay))
-    when(mockConfig.getOptional[FiniteDuration](eqTo("scheduling.EmailAlertsStream.interval"))(any()))
+    when(mockConfig.getOptional[FiniteDuration](eqTo("scheduling.ExtraAlertsStream.interval"))(any()))
       .thenReturn(Some(testInterval))
-    when(mockConfig.getOptional[FiniteDuration](eqTo("scheduling.EmailAlertsStream.lockDuration"))(any()))
+    when(mockConfig.getOptional[FiniteDuration](eqTo("scheduling.ExtraAlertsStream.lockDuration"))(any()))
       .thenReturn(Some(testLockDuration))
   }
 
-  private def newStream = new EmailAlertsStream(mockConfig, mockLockRepo, mockEmailAlerter, mockLifecycle)
+  private def newStream = new ExtraAlertsStream(mockConfig, mockLockRepo, mockExtraAlerter, mockLifecycle)
 
   private def createLock: Lock = {
     val now = Instant.now()
-    Lock("emailAlertsStreamLock", "EmailAlertsStream", now, now.plusSeconds(testLockDuration.toSeconds))
+    Lock("extraAlertsStreamLock", "ExtraAlertsStream", now, now.plusSeconds(testLockDuration.toSeconds))
   }
 
-  "EmailAlertsStream" should {
+  "ExtraAlertsStream" should {
 
-    "return success result when lock is acquired and email alerts are sent" in {
-      val expectedResult = "EmailAlertsStream: Succeeded - 3, Will be retried - 1"
+    "return success result when lock is acquired and extra alerts are sent" in {
+      val expectedResult =
+        "ExtraAlertsStream: Succeeded - 3, Will be retried - 1, Permanently failed - 0, Hard copy requested = 0"
       val testLock = createLock
 
       when(mockLockRepo.takeLock(any(), any(), any())).thenReturn(Future.successful(Some(testLock)))
       when(mockLockRepo.releaseLock(any(), any())).thenReturn(Future.unit)
-      when(mockEmailAlerter.sendEmailAlerts()).thenReturn(Future.successful(EmailResults(3, 1)))
+      when(mockExtraAlerter.sendAlerts()).thenReturn(Future.successful(EmailResults(3, 1)))
 
       newStream.processJob().futureValue.message shouldBe expectedResult
     }
@@ -83,19 +84,19 @@ class EmailAlertsStreamSpec
       when(mockLockRepo.takeLock(any(), any(), any())).thenReturn(Future.successful(None))
 
       newStream.processJob().futureValue.message shouldBe
-        "EmailAlertsStream cannot acquire mongo lock, not running"
+        "ExtraAlertsStream cannot acquire mongo lock, not running"
     }
 
-    "return error message when email alert sending fails" in {
+    "return error message when alert sending fails" in {
       val testLock = createLock
-      val error = new RuntimeException("Failed to send emails")
+      val error = new RuntimeException("Failed to send alerts")
 
       when(mockLockRepo.takeLock(any(), any(), any())).thenReturn(Future.successful(Some(testLock)))
       when(mockLockRepo.releaseLock(any(), any())).thenReturn(Future.unit)
-      when(mockEmailAlerter.sendEmailAlerts()).thenReturn(Future.failed(error))
+      when(mockExtraAlerter.sendAlerts()).thenReturn(Future.failed(error))
 
       val result = newStream.processJob().futureValue
-      result.message should include("Error processing Alerts")
+      result.message should include("Failed to send alerts")
     }
   }
 }
