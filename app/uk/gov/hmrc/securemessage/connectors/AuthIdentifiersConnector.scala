@@ -20,7 +20,7 @@ import uk.gov.hmrc.auth.core
 import uk.gov.hmrc.auth.core.AuthProvider.PrivilegedApplication
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.auth.core.{ Nino as _, * }
-import uk.gov.hmrc.common.message.model.TaxEntity.{ Epaye, HmceVatdecOrg, HmrcAdOrg, HmrcCusOrg, HmrcIossInt, HmrcIossNetp, HmrcIossOrg, HmrcOssOrg, HmrcPodsOrg, HmrcPodsPpOrg, HmrcPptOrg }
+import uk.gov.hmrc.common.message.model.TaxEntity.{ Epaye, HmceVatdecOrg, HmrcAdOrg, HmrcCusOrg, HmrcIossInt, HmrcIossNetp, HmrcIossOrg, HmrcOssOrg, HmrcPlrOrg, HmrcPodsOrg, HmrcPodsPpOrg, HmrcPptOrg }
 import uk.gov.hmrc.domain.TaxIds.*
 import uk.gov.hmrc.domain.*
 import uk.gov.hmrc.http.HeaderCarrier
@@ -49,25 +49,26 @@ class AuthIdentifiersConnector @Inject() (
   def collectEnrolments(enrolments: Enrolments): Set[TaxIdWithName] = enrolments.enrolments.flatMap { enrolment =>
     val taxIdValue = getIdentifierValue(enrolment)
     enrolment.key match {
-      case "IR-CT"           => taxIdValue.map(CtUtr.apply)
-      case "HMRC-NI"         => taxIdValue.map(Nino.apply)
-      case "IR-SA"           => taxIdValue.map(SaUtr.apply)
-      case "HMRC-OBTDS-ORG"  => taxIdValue.map(HmrcObtdsOrg.apply)
-      case "HMRC-MTD-VAT"    => taxIdValue.map(HmrcMtdVat.apply)
-      case "VRN"             => taxIdValue.map(Vrn.apply)
-      case "IR-PAYE"         => taxIdValue.map(Epaye.apply)
-      case "HMCE-VATDEC-ORG" => taxIdValue.map(HmceVatdecOrg.apply)
-      case "HMRC-CUS-ORG"    => taxIdValue.map(HmrcCusOrg.apply)
-      case "HMRC-PPT-ORG"    => taxIdValue.map(HmrcPptOrg.apply)
-      case "HMRC-MTD-IT"     => taxIdValue.map(HmrcMtdItsa.apply)
-      case "HMRC-PODS-ORG"   => taxIdValue.map(HmrcPodsOrg.apply)
-      case "HMRC-PODSPP-ORG" => taxIdValue.map(HmrcPodsPpOrg.apply)
-      case "HMRC-IOSS-ORG"   => taxIdValue.map(HmrcIossOrg.apply)
-      case "HMRC-IOSS-INT"   => taxIdValue.map(HmrcIossInt.apply)
-      case "HMRC-IOSS-NETP"  => taxIdValue.map(HmrcIossNetp.apply)
-      case "HMRC-OSS-ORG"    => taxIdValue.map(HmrcOssOrg.apply)
-      case "HMRC-AD-ORG"     => taxIdValue.map(HmrcAdOrg.apply)
-      case _                 => None
+      case "IR-CT"            => taxIdValue.map(CtUtr.apply)
+      case "HMRC-NI"          => taxIdValue.map(Nino.apply)
+      case "IR-SA"            => taxIdValue.map(SaUtr.apply)
+      case "HMRC-OBTDS-ORG"   => taxIdValue.map(HmrcObtdsOrg.apply)
+      case "HMRC-MTD-VAT"     => taxIdValue.map(HmrcMtdVat.apply)
+      case "VRN"              => taxIdValue.map(Vrn.apply)
+      case "IR-PAYE"          => taxIdValue.map(Epaye.apply)
+      case "HMCE-VATDEC-ORG"  => taxIdValue.map(HmceVatdecOrg.apply)
+      case "HMRC-CUS-ORG"     => taxIdValue.map(HmrcCusOrg.apply)
+      case "HMRC-PPT-ORG"     => taxIdValue.map(HmrcPptOrg.apply)
+      case "HMRC-MTD-IT"      => taxIdValue.map(HmrcMtdItsa.apply)
+      case "HMRC-PODS-ORG"    => taxIdValue.map(HmrcPodsOrg.apply)
+      case "HMRC-PODSPP-ORG"  => taxIdValue.map(HmrcPodsPpOrg.apply)
+      case "HMRC-IOSS-ORG"    => taxIdValue.map(HmrcIossOrg.apply)
+      case "HMRC-IOSS-INT"    => taxIdValue.map(HmrcIossInt.apply)
+      case "HMRC-IOSS-NETP"   => taxIdValue.map(HmrcIossNetp.apply)
+      case "HMRC-OSS-ORG"     => taxIdValue.map(HmrcOssOrg.apply)
+      case "HMRC-AD-ORG"      => taxIdValue.map(HmrcAdOrg.apply)
+      case "HMRC-PILLAR2-ORG" => taxIdValue.map(HmrcPlrOrg.apply)
+      case _                  => None
     }
   }
 
@@ -108,6 +109,7 @@ class AuthIdentifiersConnector @Inject() (
             case "HMRC-OSS-ORG"    => Set(taxId) ++ identifierSet[HmrcOssOrg](taxId.value)(HmrcOssOrg.apply)
             case "HMRC-AD-ORG"     => Set(taxId, HmrcAdOrg(taxId.value))
             case "VRN"             => Set(Vrn(taxId.value))
+            case "HMRC-PL"         => Set(HmrcPlrOrg(taxId.value))
             case _                 => Set(taxId)
           }
         }

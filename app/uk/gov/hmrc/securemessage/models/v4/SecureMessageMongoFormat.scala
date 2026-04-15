@@ -52,7 +52,8 @@ object SecureMessageMongoFormat {
         :+ SerialisableTaxId("HMRC-AD-ORG", HmrcAdOrg.apply)
         :+ SerialisableTaxId("ETMPREGISTRATIONNUMBER", HmrcPptOrg.apply)
         :+ SerialisableTaxId("PSAID", HmrcPodsOrg.apply)
-        :+ SerialisableTaxId("PSPID", HmrcPodsPpOrg.apply))
+        :+ SerialisableTaxId("PSPID", HmrcPodsPpOrg.apply)
+        :+ SerialisableTaxId("HMRC-PL", HmrcPlrOrg.apply))
         .find(_.taxIdName == name)
         .map(_.build(value)) match {
         case Some(taxIdWithName) =>

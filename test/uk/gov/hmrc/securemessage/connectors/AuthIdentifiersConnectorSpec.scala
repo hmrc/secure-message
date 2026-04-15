@@ -800,6 +800,41 @@ class AuthIdentifiersConnectorSpec
       )
     }
 
+    "get all val tax ids for only HMRC-PILLAR2-ORG enrolment " in new TestCase {
+
+      val responseBody: String =
+        """
+          |{
+          |  "allEnrolments": [
+          |    {
+          |      "key": "HMRC-PILLAR2-ORG",
+          |      "identifiers": [
+          |        {
+          |          "key": "PLRID",
+          |          "value": "XTPLR0022103336"
+          |        }
+          |      ],
+          |      "state": "Activated",
+          |      "confidenceLevel": 200
+          |    }
+          |  ]
+          |}""".stripMargin
+
+      givenThat(
+        post(urlEqualTo("/auth/authorise"))
+          .withHeader(HeaderNames.AUTHORIZATION, equalTo(authToken))
+          .willReturn(
+            aResponse()
+              .withStatus(Status.OK)
+              .withBody(responseBody)
+          )
+      )
+
+      authConnector.currentEffectiveTaxIdentifiers.futureValue must be(
+        Set(HmrcPlrOrg("XTPLR0022103336"))
+      )
+    }
+
     "get all val tax ids for only HMRC-AD-ORG (Alcohol Duty) enrolment " in new TestCase {
 
       val responseBody = """
