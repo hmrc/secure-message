@@ -108,8 +108,8 @@ class AuthIdentifiersConnector @Inject() (
             case "HMRC-IOSS-NETP"  => Set(taxId, HmrcIossNetp(taxId.value))
             case "HMRC-OSS-ORG"    => Set(taxId) ++ identifierSet[HmrcOssOrg](taxId.value)(HmrcOssOrg.apply)
             case "HMRC-AD-ORG"     => Set(taxId, HmrcAdOrg(taxId.value))
+            case "HMRC-PL"         => Set(taxId, HmrcPlrOrg(taxId.value))
             case "VRN"             => Set(Vrn(taxId.value))
-            case "HMRC-PL"         => Set(HmrcPlrOrg(taxId.value))
             case _                 => Set(taxId)
           }
         }
