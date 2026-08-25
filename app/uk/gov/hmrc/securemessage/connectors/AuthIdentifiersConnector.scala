@@ -20,7 +20,7 @@ import uk.gov.hmrc.auth.core
 import uk.gov.hmrc.auth.core.AuthProvider.PrivilegedApplication
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.auth.core.{ Nino as _, * }
-import uk.gov.hmrc.common.message.model.TaxEntity.{ Epaye, HmceVatdecOrg, HmrcAdOrg, HmrcCusOrg, HmrcIossInt, HmrcIossNetp, HmrcIossOrg, HmrcOssOrg, HmrcPlrOrg, HmrcPodsOrg, HmrcPodsPpOrg, HmrcPptOrg }
+import uk.gov.hmrc.common.message.model.TaxEntity.{ Epaye, HmceVatdecOrg, HmrcAdOrg, HmrcCusOrg, HmrcIossInt, HmrcIossNetp, HmrcIossOrg, HmrcOssOrg, HmrcPlrOrg, HmrcPodsOrg, HmrcPodsPpOrg, HmrcPptOrg, HmrcVpdOrg }
 import uk.gov.hmrc.domain.TaxIds.*
 import uk.gov.hmrc.domain.*
 import uk.gov.hmrc.http.HeaderCarrier
@@ -68,6 +68,7 @@ class AuthIdentifiersConnector @Inject() (
       case "HMRC-OSS-ORG"     => taxIdValue.map(HmrcOssOrg.apply)
       case "HMRC-AD-ORG"      => taxIdValue.map(HmrcAdOrg.apply)
       case "HMRC-PILLAR2-ORG" => taxIdValue.map(HmrcPlrOrg.apply)
+      case "HMRC-VPD-ORG"     => taxIdValue.map(HmrcVpdOrg.apply)
       case _                  => None
     }
   }
