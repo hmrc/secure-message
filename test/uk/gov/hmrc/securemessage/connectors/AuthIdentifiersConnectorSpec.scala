@@ -870,6 +870,42 @@ class AuthIdentifiersConnectorSpec
       )
     }
 
+    "get all val tax ids for only HMRC-VPD-ORG enrolment " in new TestCase {
+
+      val responseBody =
+        """
+          |{
+          |  "allEnrolments": [
+          |    {
+          |      "key": "HMRC-VPD-ORG",
+          |      "identifiers": [
+          |        {
+          |          "key": "ZVPD",
+          |          "value": "example value"
+          |        }
+          |      ],
+          |      "state": "Activated",
+          |      "confidenceLevel": 200
+          |    }
+          |  ]
+          |}
+                             """.stripMargin
+
+      givenThat(
+        post(urlEqualTo("/auth/authorise"))
+          .withHeader(HeaderNames.AUTHORIZATION, equalTo(authToken))
+          .willReturn(
+            aResponse()
+              .withStatus(Status.OK)
+              .withBody(responseBody)
+          )
+      )
+
+      authConnector.currentEffectiveTaxIdentifiers.futureValue must be(
+        Set(HmrcVpdOrg("example value"))
+      )
+    }
+
     "isStrideUser return Future when the call to authorise succeed" in new TestCase {
       val responseBody = """
                            |{
