@@ -116,6 +116,8 @@ object MessageBrakeAllowList {
     "PA302 2019",
     "PA302 2020",
     "PA302 2021",
-    "PA302 2022"
+    "PA302 2022",
+    "CH(A)1700",
+    "CH(A)1708"
   )
 }
