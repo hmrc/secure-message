@@ -212,11 +212,11 @@ class MessageBrakeServiceSpec
           cache.get[Allowlist]("brake-gmc-allowlist").futureValue.get mustBe Some(Allowlist(allowlistWithoutSA359))
         }
       }
+    }
 
-      "MessageBrakeAllowList.default" must {
-        "contain the Child Benefit form ids" in {
-          defaultAllowlist must contain allOf ("CH(A)1700", "CH(A)1708")
-        }
+    "MessageBrakeAllowList.default" must {
+      "contain the Child Benefit form ids" in {
+        defaultAllowlist must contain allOf ("CH(A)1700", "CH(A)1708")
       }
     }
   }
