@@ -216,7 +216,7 @@ class MessageBrakeServiceSpec
 
     "MessageBrakeAllowList.default" must {
       "contain the Child Benefit form ids" in {
-        defaultAllowlist must contain allOf ("CH(A)1700", "CH(A)1708")
+        defaultAllowlist must contain allOf ("CHA1700", "CHA1708")
       }
     }
   }
