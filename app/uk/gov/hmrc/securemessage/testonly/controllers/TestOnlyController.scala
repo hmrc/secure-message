@@ -22,7 +22,7 @@ import org.bson.types.ObjectId
 
 import java.time.Instant
 import play.api.Logging
-import play.api.libs.json.{ JsObject, JsValue, Json }
+import play.api.libs.json.{ JsNull, JsObject, JsValue, Json }
 import play.api.mvc.{ Action, AnyContent, ControllerComponents }
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.securemessage.models.core.*
@@ -31,7 +31,7 @@ import uk.gov.hmrc.securemessage.repository.{ ConversationRepository, MessageRep
 import org.mongodb.scala.model.Filters.equal
 import org.mongodb.scala.SingleObservableFuture
 import uk.gov.hmrc.common.message.model.Language.English
-
+import uk.gov.hmrc.securemessage.models.v4.SecureMessageMongoFormat._
 import java.util.UUID
 import scala.concurrent.{ ExecutionContext, Future }
 import org.mongodb.scala.model.Filters
@@ -105,6 +105,13 @@ class TestOnlyController @Inject() (
     Action.async(_ =>
       messageRepository.collection.deleteOne(equal("_id", new ObjectId(id))).toFuture().map { _ =>
         Ok(s"message $id deleted successfully")
+      }
+    )
+
+  def getMessage(id: String): Action[AnyContent] =
+    Action.async(_ =>
+      secureMessageRepository.collection.find(equal("_id", new ObjectId(id))).headOption().map { secureM =>
+        Ok(secureM.fold(JsNull)(m => Json.toJson(m)))
       }
     )
 
