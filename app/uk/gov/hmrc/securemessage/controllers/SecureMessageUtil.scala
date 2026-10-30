@@ -42,11 +42,13 @@ import uk.gov.hmrc.play.audit.http.connector.{ AuditConnector, AuditResult }
 import uk.gov.hmrc.play.audit.model.{ DataEvent, EventTypes }
 import uk.gov.hmrc.securemessage.SecureMessageError
 import uk.gov.hmrc.securemessage.connectors.{ EmailValidation, PreferencesConnector, TaxpayerNameConnector }
+import uk.gov.hmrc.securemessage.controllers.utils.MessageCleansing
 import uk.gov.hmrc.securemessage.models.core.{ FilterTag, Identifier, MessageFilter }
 import uk.gov.hmrc.securemessage.models.v4.{ Content, ExtraAlertConfig, SecureMessage }
 import uk.gov.hmrc.securemessage.repository.{ ExtraAlert, ExtraAlertRepository, SecureMessageRepository, StatsMetricRepository }
 import uk.gov.hmrc.securemessage.services.MessageBrakeService
 
+import java.util
 import java.util.Locale
 import javax.inject.{ Inject, Named, Singleton }
 import scala.jdk.CollectionConverters.*
@@ -63,7 +65,8 @@ class SecureMessageUtil @Inject() (
   statsMetricRepository: StatsMetricRepository,
   messageBrakeService: MessageBrakeService,
   auditConnector: AuditConnector,
-  configuration: Configuration
+  configuration: Configuration,
+  messageCleansing: MessageCleansing
 )(implicit ec: ExecutionContext)
     extends Logging {
 
@@ -230,95 +233,36 @@ class SecureMessageUtil @Inject() (
     val updateContent = for {
       content <- message.content
     } yield cleanUpSubjectAndBody(content)
+
     Try(updateContent) match {
       case Success(contentList) => Future.successful(message.copy(content = contentList))
       case Failure(exception)   => Future.failed(exception)
     }
   }
 
-  def cleanUpSubjectAndBody(content: Content): Content =
-    cleanHtml(content.subject) match {
-      case Success(cleanSubject) =>
-        cleanHtml(
-          content.body,
-          List(
-            AllowedTagAndAttributes("details"),
-            AllowedTagAndAttributes("summary"),
-            AllowedTagAndAttributes("section", List("lang"))
-          )
-        ) match {
-          case Success(cleanContent) =>
-            content.copy(subject = cleanSubject, body = cleanContent)
-          case Failure(e) => throw e
-        }
-
-      case Failure(exception) => throw exception
-    }
-
-  private def cleanHtml(dirtyHtml: String, extraAllowedTags: List[AllowedTagAndAttributes] = List()): Try[String] = {
-    val settings = new OutputSettings().prettyPrint(false).syntax(OutputSettings.Syntax.xml)
-    Try(Jsoup.clean(dirtyHtml, "", relaxedAllowlistWithClassAttributes(extraAllowedTags), settings))
-  }
-
-  // scalastyle:off
-  private def relaxedAllowlistWithClassAttributes(extraTags: List[AllowedTagAndAttributes]): JsouptAllowList = {
-    // We want to allow "class" for all allowed tags.  Unfortunately there is no way to do
-    // getTags() on a Allowlist, so I have copied the list of tags from the Allowlist.relaxed()
-    // implementation here.  Obviously this is not ideal, but there isn't a way around it.
-    val allTags = List(
-      "a",
-      "b",
-      "blockquote",
-      "br",
-      "caption",
-      "cite",
-      "code",
-      "col",
-      "colgroup",
-      "dd",
-      "div",
-      "dl",
-      "dt",
-      "em",
-      "h1",
-      "h2",
-      "h3",
-      "h4",
-      "h5",
-      "h6",
-      "i",
-      "img",
-      "li",
-      "ol",
-      "p",
-      "pre",
-      "q",
-      "small",
-      "span",
-      "strike",
-      "strong",
-      "sub",
-      "sup",
-      "table",
-      "tbody",
-      "td",
-      "tfoot",
-      "th",
-      "thead",
-      "tr",
-      "u",
-      "ul"
+  private def cleanUpSubjectAndBody(content: Content): Content = {
+    println(content.subject)
+    val errorOrCleansedContent = for {
+      cleanSubject <- messageCleansing.cleanseSubject(content.subject)
+      potentiallyDecodedHtml = decodeIfBase64(content.body)
+      cleanContent <- messageCleansing.cleanseBody(potentiallyDecodedHtml)
+    } yield content.copy(
+      subject = cleanSubject,
+      body = util.Base64.getEncoder.encodeToString(cleanContent.getBytes("UTF-8"))
     )
-    // scalastyle:on
 
-    val allTagsAndAttributes = allTags.map(t => AllowedTagAndAttributes(t))
-
-    (allTagsAndAttributes ++ extraTags)
-      .foldLeft(JsouptAllowList.relaxed().addAttributes("a", "target")) { (allowlist, tagAndAttributes) =>
-        val attributes = "class" :: tagAndAttributes.attributes
-        allowlist.addAttributes(tagAndAttributes.tag, attributes: _*)
-      }
+    errorOrCleansedContent match {
+      case Left(throwable) => throw throwable
+      case Right(content)  => content
+    }
   }
+
+  private def decodeIfBase64(text: String): String =
+    // the comons decoder does not fail on things it shoudl fail on
+    Try(util.Base64.getDecoder.decode(text)).fold(
+      _ => text,
+      decodedBytes => new String(decodedBytes)
+    )
 
   private def createMessage(
     message: SecureMessage

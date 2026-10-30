@@ -21,8 +21,7 @@ import org.apache.commons.codec.binary.Base64
 import org.bson.types.ObjectId
 import org.mockito.ArgumentMatchers.{ any, eq as meq }
 import org.mockito.Mockito.*
-import org.mongodb.scala.result.DeleteResult
-import org.scalatest.BeforeAndAfterEach
+import org.scalatest.{ BeforeAndAfterEach, OptionValues }
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
@@ -31,26 +30,27 @@ import play.api.libs.json.{ JsString, Json }
 import play.api.mvc.AnyContentAsEmpty
 import play.api.test.Helpers.*
 import play.api.test.{ FakeHeaders, FakeRequest }
-import uk.gov.hmrc.common.message.model.Regime.sa
 import uk.gov.hmrc.common.message.model.*
+import uk.gov.hmrc.common.message.model.Regime.sa
 import uk.gov.hmrc.domain.{ Nino, SaUtr, SimpleName, TaxIdentifier }
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.mongo.workitem.ProcessingStatus
 import uk.gov.hmrc.play.audit.http.connector.{ AuditConnector, AuditResult }
 import uk.gov.hmrc.play.audit.model.EventTypes
 import uk.gov.hmrc.securemessage.TestData.{ TEST_EMAIL_ADDRESS_VALUE, TEST_IDENTIFIER }
 import uk.gov.hmrc.securemessage.connectors.{ PreferencesConnector, TaxpayerNameConnector }
+import uk.gov.hmrc.securemessage.controllers.utils.MessageCleansing
 import uk.gov.hmrc.securemessage.helpers.Resources
 import uk.gov.hmrc.securemessage.models.core.MessageFilter
 import uk.gov.hmrc.securemessage.models.v4.{ Content, ExtraAlertConfig, SecureMessage }
 import uk.gov.hmrc.securemessage.repository.{ ExtraAlertRepository, SecureMessageRepository, StatsMetricRepository }
 import uk.gov.hmrc.securemessage.services.MessageBrakeService
 
-import java.time.{ Duration, Instant }
+import java.time.Duration
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.Failure
 
-class SecureMessageUtilSpec extends PlaySpec with ScalaFutures with MockitoSugar with BeforeAndAfterEach {
+class SecureMessageUtilSpec
+    extends PlaySpec with ScalaFutures with MockitoSugar with BeforeAndAfterEach with OptionValues {
   val appName: String = "Test"
   val preferencesConnector: PreferencesConnector = mock[PreferencesConnector]
   val taxpayerNameConnector: TaxpayerNameConnector = mock[TaxpayerNameConnector]
@@ -59,6 +59,8 @@ class SecureMessageUtilSpec extends PlaySpec with ScalaFutures with MockitoSugar
   val statsMetricRepository: StatsMetricRepository = mock[StatsMetricRepository]
   val messageBrakeService: MessageBrakeService = mock[MessageBrakeService]
   val auditConnector: AuditConnector = mock[AuditConnector]
+  val messageCleansing: MessageCleansing = mock[MessageCleansing]
+
   val configuration: Configuration = Configuration.from(
     Map(
       "alertProfile" -> List()
@@ -75,7 +77,8 @@ class SecureMessageUtilSpec extends PlaySpec with ScalaFutures with MockitoSugar
     statsMetricRepository,
     messageBrakeService,
     auditConnector,
-    configuration
+    configuration,
+    messageCleansing
   ) {
     override val extraAlerts: List[ExtraAlertConfig] = List(
       ExtraAlertConfig("mainTemplate", "extra", Duration.ofSeconds(2))
@@ -211,6 +214,8 @@ class SecureMessageUtilSpec extends PlaySpec with ScalaFutures with MockitoSugar
       when(secureMessageRepository.save(any)).thenReturn(Future.successful(true))
       when(auditConnector.sendEvent(any())(any(), any())).thenReturn(Future.successful(AuditResult.Success))
       when(statsMetricRepository.incrementCreated(any, any)(any)).thenReturn(Future.unit)
+      when(messageCleansing.cleanseSubject(any)).thenReturn(Right(""))
+      when(messageCleansing.cleanseBody(any)).thenReturn(Right(""))
 
       val result = testUtil.checkPreferencesAndCreateMessage(
         message.copy(externalRef = messageExternalRef, recipient = messageRecipient)
@@ -237,6 +242,8 @@ class SecureMessageUtilSpec extends PlaySpec with ScalaFutures with MockitoSugar
       when(secureMessageRepository.save(any)).thenReturn(Future.successful(false))
       when(auditConnector.sendEvent(any())(any(), any())).thenReturn(Future.successful(AuditResult.Success))
       when(statsMetricRepository.incrementDuplicate(any)(any)).thenReturn(Future.unit)
+      when(messageCleansing.cleanseSubject(any)).thenReturn(Right(""))
+      when(messageCleansing.cleanseBody(any)).thenReturn(Right(""))
 
       val result = testUtil.checkPreferencesAndCreateMessage(
         message.copy(externalRef = messageExternalRef, recipient = messageRecipient)
@@ -556,68 +563,80 @@ class SecureMessageUtilSpec extends PlaySpec with ScalaFutures with MockitoSugar
   }
 
   "cleanupContent" must {
-    "successfully clean up all content in the message" in {
-      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+    val subject1 = "Reminder to file a Self Assessment return"
+    val messageContent1 = "Message content - 4254101384174917141"
+
+    val subject2 = "Nodyn atgoffa i ffeilio ffurflen Hunanasesiad"
+    val messageContent2 = "Cynnwys - 4254101384174917141"
+
+    val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
+
+    val encoder = java.util.Base64.getEncoder
+
+    "successfully clean up content in the message when the body is not base64, converting it to base64" in {
+      when(messageCleansing.cleanseSubject(subject1))
+        .thenReturn(Right("cleansed subject1"))
+
+      when(messageCleansing.cleanseSubject(subject2))
+        .thenReturn(Right("cleansed subject2"))
+
+      when(messageCleansing.cleanseBody(messageContent1))
+        .thenReturn(Right("cleansed content1"))
+
+      val encodedBase64CleansedContent1 = new String(encoder.encode("cleansed content1".getBytes("UTF-8")))
+
+      when(messageCleansing.cleanseBody(messageContent2))
+        .thenReturn(Right("cleansed content2"))
+
+      val encodedBase64CleansedContent2 = new String(encoder.encode("cleansed content2".getBytes("UTF-8")))
+
       val result = testUtil.cleanupContent(message).futureValue
-      result.content.size mustBe message.content.size
+
+      val content1WithEncodedContents =
+        message.content.headOption.value.copy(subject = "cleansed subject1", body = encodedBase64CleansedContent1)
+
+      val content2WithEncodedContents =
+        message.content.lastOption.value.copy(subject = "cleansed subject2", body = encodedBase64CleansedContent2)
+
+      result mustBe message.copy(content = List(content1WithEncodedContents, content2WithEncodedContents))
+
     }
 
-    "clean HTML from subject and body" in {
-      val message: SecureMessage = Resources.readJson("model/core/v4/valid_message.json").as[SecureMessage]
-      val dirtySubject = "<script>alert('xss')</script>Clean Subject"
-      val dirtyBody = Base64.encodeBase64String("<div>Test</div>".getBytes("UTF-8"))
-      val dirtyContent = message.content.head.copy(subject = dirtySubject, body = dirtyBody)
-      val messageWithDirtyContent = message.copy(content = List(dirtyContent))
+    "successfully clean up content in the message when the body is base64, decoding before cleaning and then re-encoding" in {
 
-      val result = testUtil.cleanupContent(messageWithDirtyContent).futureValue
-      result.content.head.subject must not include "<script>"
-    }
-  }
+      val content1WithEncodedBody =
+        message.content.headOption.value
+          .copy(body = encoder.encodeToString(messageContent1.getBytes("UTF-8")))
 
-  "cleanUpSubjectAndBody" must {
-    "clean up subject successfully" in {
-      val dirtySubject = "Clean <b>Subject</b>"
-      val body = "<p>Test Body</p>"
-      val content = Content(Language.English, dirtySubject, body)
+      val content2WithEncodedBody =
+        message.content.lastOption.value
+          .copy(body = encoder.encodeToString(messageContent2.getBytes("UTF-8")))
 
-      val result = testUtil.cleanUpSubjectAndBody(content)
-      result.subject must not be empty
-      result.subject must include("Clean")
-      result.subject must include("Subject")
-    }
+      val messageWithBase64Contents = message.copy(content = List(content1WithEncodedBody, content2WithEncodedBody))
 
-    "clean up body successfully with allowed tags" in {
-      val subject = "Test Subject"
-      val dirtyBody = "<details><summary>Summary</summary><p>Content</p></details>"
-      val content = Content(Language.English, subject, dirtyBody)
+      when(messageCleansing.cleanseSubject(subject1))
+        .thenReturn(Right("cleansed subject1"))
 
-      val result = testUtil.cleanUpSubjectAndBody(content)
-      result.body must include("details")
-      result.body must include("summary")
-    }
+      when(messageCleansing.cleanseSubject(subject2))
+        .thenReturn(Right("cleansed subject2"))
 
-    "remove script tags from subject" in {
-      val dirtySubject = "Subject <script>alert('xss')</script>"
-      val body = "<p>Body</p>"
-      val content = Content(Language.English, dirtySubject, body)
+      when(messageCleansing.cleanseBody(messageContent1))
+        .thenReturn(Right("cleansed content1"))
 
-      val result = testUtil.cleanUpSubjectAndBody(content)
-      result.subject must not include "<script>"
-    }
+      when(messageCleansing.cleanseBody(messageContent2))
+        .thenReturn(Right("cleansed content2"))
 
-    "throw exception when subject cleaning fails" in {
-      val content = Content(Language.English, null, "body")
-      intercept[NullPointerException] {
-        testUtil.cleanUpSubjectAndBody(content)
-      }
-    }
+      val result = testUtil.cleanupContent(messageWithBase64Contents).futureValue
 
-    "throw exception when body cleaning fails" in {
-      val subject = "Subject"
-      val content = Content(Language.English, subject, null)
-      intercept[NullPointerException] {
-        testUtil.cleanUpSubjectAndBody(content)
-      }
+      val encodedBase64CleansedContent1 = new String(encoder.encode("cleansed content1".getBytes("UTF-8")))
+      val content1WithEncodedContents =
+        message.content.headOption.value.copy(subject = "cleansed subject1", body = encodedBase64CleansedContent1)
+
+      val encodedBase64CleansedContent2 = new String(encoder.encode("cleansed content2".getBytes("UTF-8")))
+      val content2WithEncodedContents =
+        message.content.lastOption.value.copy(subject = "cleansed subject2", body = encodedBase64CleansedContent2)
+
+      result mustBe message.copy(content = List(content1WithEncodedContents, content2WithEncodedContents))
     }
   }
 
