@@ -51,8 +51,10 @@ class TestOnlyController @Inject() (
   }
 
   def deleteConversations(): Action[AnyContent] = Action.async { _ =>
-    conversationRepository.collection.deleteMany(Filters.empty()).toFuture().map { _ =>
-      Ok("Conversations deleted successfully")
+    conversationRepository.collection.deleteMany(Filters.empty()).toFuture().map { result =>
+      if (result.wasAcknowledged())
+        Ok(s"Conversations deleted successfully ${result.getDeletedCount}")
+      else NotModified
     }
   }
 
