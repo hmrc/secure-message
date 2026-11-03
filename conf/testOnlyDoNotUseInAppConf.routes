@@ -22,6 +22,8 @@ PUT       /test-only/create/conversation/:id        uk.gov.hmrc.securemessage.te
 
 DELETE    /test-only/delete/conversation/:id        uk.gov.hmrc.securemessage.testonly.controllers.TestOnlyController.deleteConversation(id: String)
 
+DELETE    /test-only/delete/conversations           uk.gov.hmrc.securemessage.testonly.controllers.TestOnlyController.deleteConversations()
+
 DELETE    /test-only/delete/message/:id             uk.gov.hmrc.securemessage.testonly.controllers.TestOnlyController.deleteMessage(id: String)
 
 DELETE    /test-only/delete/secure-messages         uk.gov.hmrc.securemessage.testonly.controllers.TestOnlyController.deleteSecureMessages()

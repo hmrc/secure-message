@@ -50,6 +50,14 @@ class TestOnlyController @Inject() (
     }
   }
 
+  def deleteConversations(): Action[AnyContent] = Action.async { _ =>
+    conversationRepository.collection.deleteMany(Filters.empty()).toFuture().map { result =>
+      if (result.wasAcknowledged())
+        Ok(s"Conversations deleted successfully ${result.getDeletedCount}")
+      else NotModified
+    }
+  }
+
   def insertMessage(id: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
     val messageBody: JsObject = request.body.as[JsObject] + ("_id" -> Json.toJson(new ObjectId(id)))
     val letter = messageBody.validate[Letter].get
